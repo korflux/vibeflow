@@ -78,7 +78,8 @@ Windows é case-insensitive: `regras.md` = `REGRAS.md`.
 | `symlink_ok` | link cujo alvo resolve para `.vibeflow/REGRAS.md` (path normalizado) |
 | `symlink_quebrado` | link cujo alvo não existe |
 | `symlink_outro` | link para outro arquivo que existe |
-| `arquivo_igual` | arquivo regular cujo conteúdo = `REGRAS.md` (checkout Git no Windows sem symlink) |
+| `arquivo_igual` | arquivo regular cujo conteúdo = `REGRAS.md` (cópia, não link) |
+| `ponteiro_texto` | arquivo regular cujo texto é só o alvo (`.vibeflow/REGRAS.md`) — checkout Git no Windows com `core.symlinks=false` / ZIP do GitHub. **Não é regra.** |
 | `arquivo_legado` | arquivo regular com conteúdo próprio |
 | `inesperado` | diretório ou tipo que não é arquivo/link |
 
@@ -94,7 +95,7 @@ Qualquer conteúdo que o usuário (ou o time) já tinha e que o fluxo vai **deix
 
 | Peça | Quando | Nome em `old/` |
 |---|---|---|
-| `AGENTS.md` arquivo regular com conteúdo (`legado` ou `arquivo_igual`) | antes de virar symlink | `AGENTS.md` |
+| `AGENTS.md` arquivo regular com conteúdo (`legado`, `arquivo_igual` ou `ponteiro_texto`) | antes de virar symlink | `AGENTS.md` |
 | `CLAUDE.md` idem | idem | `CLAUDE.md` |
 | `REGRAS.md` na raiz | antes de mover ou apagar | `REGRAS-raiz.md` |
 | `.vibeflow/REGRAS.md` | só se a IA for **reescrever** por merge (duas fontes / legado vs regras / regras duplicado) | `REGRAS.md` |
@@ -205,6 +206,7 @@ Depende de REGRAS existir **e** de não haver merge pendente que ainda use este 
 | `symlink_ok` | nada |
 | `symlink_quebrado` | recriar symlink para REGRAS |
 | `arquivo_igual` | old → trocar por symlink |
+| `ponteiro_texto` | old → trocar por symlink; **não** entra em `merges[]` |
 | `symlink_outro` | **CONFLITO** `ponteiro_alheio` (ainda pergunta: o alvo é outro doc). Se redirecionar: grava `*.target.txt` em old/ |
 | `arquivo_legado` e merge desta fonte já escrito no REGRAS | old já feito → trocar por symlink |
 | `arquivo_legado` e merge ainda pendente | não toca o original |
@@ -219,7 +221,8 @@ Depende de REGRAS existir **e** de não haver merge pendente que ainda use este 
 | `.vibeflow/` sem `phases/` | REPARAR | só cria `phases/` (e o que mais faltar) |
 | `.vibeflow/` + REGRAS, sem ponteiros | REPARAR | só os dois links |
 | Tudo ok, SLOTs abertos | REPARAR | IA continua perguntas |
-| Tudo ok, sem SLOT | REPARAR | “já ok”; sem old, sem reentrevista |
+| Tudo ok, sem SLOT | REPARAR | disco ok (sem old); IA ainda faz P4 |
+| AGENTS/CLAUDE = texto do path do link | REPARAR | `ponteiro_texto`: sem merge; restaura symlink |
 | Só `AGENTS.md` arquivo | REPARAR | old → merge no REGRAS → AGENTS vira link → cria CLAUDE |
 | Só `CLAUDE.md` arquivo | REPARAR | simétrico |
 | AGENTS e CLAUDE **iguais** | REPARAR | old dos dois → um merge (texto único) → os dois viram link |
@@ -250,7 +253,7 @@ Quando o relatório tem `merges[]`, a skill **não pergunta “qual arquivo vale
    - está só numa → entra, sem “melhorar” a redação;
    - A diz X e C diz o contrário → os dois entram sob `## Conflito a fechar` com rótulo da origem, e vira **uma** pergunta (qual vale). O perdedor continua no old; some só do REGRAS vivo depois da resposta.
 4. Encaixa no template quando o trecho é claramente da seção (parágrafo, ambiente, semver, git, estrutura). O resto vai para `## Regras deste repo`.
-5. Política fixa do template (semver, sem Co-Authored-By) entra sempre. Se o legado já tinha um bloco equivalente, não duplica o de semver/git — o do template ganha, o legado equivalente some do vivo (o old guarda o original).
+5. Política do template (semver, sem Co-Authored-By) é oferta. Se o legado não tem equivalente, entra. Se tem política diferente: as duas ficam visíveis (`padrão: X` / `deles: Y`) e a IA pergunta qual vale — não apaga a do usuário em silêncio.
 6. Depois de gravar, mostra no chat um mapa curto (5–15 linhas): `de AGENTS: …` / `de CLAUDE: …` / `das duas: …` / `contradição: …`. Sem reimprimir os arquivos.
 
 A IA **não** inventa regra que não estava em fonte alguma. **Não** resume um parágrafo de produto que só existia numa fonte — traz o texto.
@@ -287,6 +290,11 @@ Em REPARAR: se a seção já não tem SLOT, o scan não mexe. Merge da IA pode p
 
 ```markdown
 # Regras do projeto
+
+<!-- VIBEFLOW:CADEIA start -->
+| esforço | fluxo | quando |
+(texto canônico no template; o script só atualiza este bloco)
+<!-- VIBEFLOW:CADEIA end -->
 
 ## Projeto
 <!-- SLOT:paragrafo -->
@@ -333,13 +341,13 @@ Migration em produção é irreversível no sentido prático. Não gerar, não a
     "vibeflow": "ausente|vazia|sem_regras|com_regras",
     "phases": "ausente|ok",
     "regras": "ausente|vazio|template|preenchido|raiz_sozinho|raiz_e_vibeflow",
-    "agents": "ausente|vazio|symlink_ok|symlink_quebrado|symlink_outro|arquivo_igual|arquivo_legado|inesperado",
+    "agents": "ausente|vazio|symlink_ok|symlink_quebrado|symlink_outro|arquivo_igual|ponteiro_texto|arquivo_legado|inesperado",
     "claude": "…"
   },
   "olds": [
     { "from": "AGENTS.md", "to": ".vibeflow/old/AGENTS.md", "bytes": 1234, "sha256": "…" }
   ],
-  "actions": [{ "op": "criar_dir|criar_phases|escrever_template|old|merge_pendente|mover|symlink_criar|symlink_recriar|apagar_raiz", "alvo": "…" }],
+  "actions": [{ "op": "criar_dir|criar_phases|escrever_template|old|merge_pendente|mover|symlink_criar|symlink_recriar|apagar_raiz|cadeia_upsert", "alvo": "…" }],
   "merges": [{
     "id": "duas_fontes|legado_vs_regras|regras_duplicado",
     "sources": [".vibeflow/old/AGENTS.md", ".vibeflow/old/CLAUDE.md"],
@@ -355,7 +363,7 @@ Migration em produção é irreversível no sentido prático. Não gerar, não a
 }
 ```
 
-A IA lê: este JSON + `REGRAS.md` atual + **cada path em `merges[].sources`**. Não varre o repo de novo “pra enriquecer”.
+A IA lê: este JSON + `REGRAS.md` atual + **cada path em `merges[].sources`** (pula `ponteiro_texto`). Pode abrir **só** paths que o relatório/SLOT/evidência/humano apontaram para preencher ou corrigir o `REGRAS.md`. Não varre a árvore inteira.
 
 ---
 
@@ -364,19 +372,19 @@ A IA lê: este JSON + `REGRAS.md` atual + **cada path em `merges[].sources`**. N
 1. Mostra 5 linhas: fluxo, olds gravados, merges, conflitos, slots.
 2. Se há `merges[]`: une (§7), grava REGRAS, mostra o mapa de origem. Só então os originais podem virar symlink.
 3. Fecha `contradição` / `ponteiro_alheio` / `tipo_inesperado`, um por vez.
-4. **Perguntas pré-definidas** — só as que ainda estão SLOT:
+4. **Perguntas pré-definidas** — P1–P3 só com SLOT aberto; P4 sempre até o humano encerrar:
 
    | # | Pergunta | Não perguntar se |
    |---|---|---|
    | P1 | Parágrafo do projeto — mostra extraído ou o que o merge já trouxe | `paragrafo` fechado |
    | P2 | Homolog ou produção? | `ambiente` fechado |
    | P3 | Qual regra deste repo o scan/merge não pega? | humano já ditou nesta run |
-   | P4 | Falta alguma informação? | REPARAR saudável sem merge e sem P1–P3 |
+   | P4 | Falta alguma informação? Algo ambíguo que queira registrar? | humano já encerrou nesta run |
 
-5. **Extras** só com evidência no relatório ou na resposta anterior. Sem pergunta “por garantia”.
+5. **Extras** quando relatório, leitura dirigida ou resposta anterior deixar ambiguidade. Sem pergunta no vazio.
 6. Uma pergunta por vez. Várias respostas de uma vez: aceita e fecha.
 7. Patch de pergunta: só o SLOT. Texto do humano, sem “melhorar”.
-8. NOVO: P1–P4 obrigatórias (P3 pode ser “nenhuma”). REPARAR saudável sem SLOT e sem merge: para.
+8. NOVO: P1–P4 obrigatórias (P3 pode ser “nenhuma”). REPARAR saudável: não reprocessa disco; **P4 continua**.
 
 ---
 
@@ -391,7 +399,7 @@ A IA lê: este JSON + `REGRAS.md` atual + **cada path em `merges[].sources`**. N
 | Old | `.vibeflow/old/` | Cópias intactas |
 | Phases | `.vibeflow/phases/` | Pasta da cadeia; init só cria, não escreve arquivo |
 
-Install recomendado: user-scope (`<grok-home>/skills/vibe-init`). Fonte canônica: esta pasta.
+Install recomendado: user-scope (`<grok-home>/skills/vibe-init`) — só `SKILL.md`, `scripts/`, `templates/`. Fonte canônica da skill: `vibe-init/`. Este doc fica em `docs/vibe-init/` e não vai no install.
 
 Git: commit `REGRAS.md`, os dois symlinks, `.vibeflow/old/` e `.vibeflow/phases/.gitkeep` (pasta vazia não sobrevive no git sem isso). Não commitir `init-report.json`.  
 Windows: `core.symlinks=true` é aviso, não forçado. Sem privilegio de link: falha alto; original fica (old já está).
@@ -413,6 +421,12 @@ Windows: `core.symlinks=true` é aviso, não forçado. Sem privilegio de link: f
 10. Tudo `symlink_ok` sem SLOT → `actions` vazio, sem old novo.
 11. `REGRAS.md` só na raiz → old `REGRAS-raiz.md` + move.
 12. Crash simulado depois do old e antes do symlink → originais ainda no lugar; old presente.
+13. `AGENTS.md`/`CLAUDE.md` com só o path `.vibeflow/REGRAS.md` + REGRAS vivo → `ponteiro_texto`; sem `merges[]`; REGRAS intacto; vira symlink.
+14. Só `AGENTS.md` com esse path, sem REGRAS → sem merge; a string do path **não** entra no vivo.
+15. REGRAS sem bloco `VIBEFLOW:CADEIA` → `cadeia_upsert`; texto do usuário permanece.
+16. Bloco cadeia desatualizado → conteúdo vira o do template; resto intacto.
+
+Primeira vez (repo sem `.vibeflow`): o gatilho é o `description` da skill instalada no usuário — o bloco cadeia **não** existe ainda. Depois do init, o roteador vive no `REGRAS.md` (ambiente via symlink). O script atualiza **só** o que está entre os delimitadores.
 
 (Merge da IA — união / sem invenção / contradição marcada — é contrato da skill, não do script.)
 
@@ -429,10 +443,10 @@ Windows: `core.symlinks=true` é aviso, não forçado. Sem privilegio de link: f
 
 ## 15. Assumido até você contradizer
 
-- Semver + “sem Co-Authored-By” entram sempre (política).
+- Semver + “sem Co-Authored-By” são oferta; política diferente do legado não some sem o humano escolher.
 - Old nunca é sobrescrito; colisão vira timestamp.
 - `old/` commita; relatório não.
 - AGENTS ≠ CLAUDE → união pela IA, não menu “qual vale”.
-- Só pergunta em contradição real, ponteiro alheio ou tipo inesperado.
-- REPARAR saudável não reentrevista.
+- `ponteiro_texto` não é legado e não entra em merge.
+- REPARAR saudável não reprocessa disco; P4 (e extras com gancho) continuam.
 - Symlink ou falha alto — sem cópia na raiz.
