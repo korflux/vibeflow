@@ -1,3 +1,4 @@
+﻿#Requires -Version 7.0
 # vibe-plan/scripts/plan.ps1
 # Inventário de .vibeflow/phases → promove plan-wip.md para phase-N-slug/plan.md.
 param(

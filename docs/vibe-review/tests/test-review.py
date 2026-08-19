@@ -125,6 +125,16 @@ class PythonContracts(unittest.TestCase):
         self.assertEqual("novo\n", (phase / "review.md").read_text(encoding="utf-8"))
         self.assertEqual("atualizar", report["modo"])
 
+    def test_implement_listed_in_files(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        phase = vf / "phases" / "phase-1-com-implement"
+        phase.mkdir(parents=True)
+        (phase / "plan.md").write_text("p\n", encoding="utf-8")
+        (phase / "implement.md").write_text("i\n", encoding="utf-8")
+        _, report = invoke(self.repo)
+        self.assertIn("implement.md", report["alvo"]["files"])
+        self.assertIn("plan.md", report["alvo"]["files"])
+
     def test_gitignore_preserves_siblings(self) -> None:
         vf = seed_vibeflow(self.repo)
         invoke(self.repo)
@@ -141,7 +151,16 @@ class PythonContracts(unittest.TestCase):
         self.assertIn("PHASES_INESPERADO", process.stderr)
 
 
-@unittest.skipUnless(shutil.which("pwsh"), "pwsh indisponível")
+
+# Verifica se existe uma versão real de PowerShell 7, única suportada pelo motor gêmeo.
+def powershell7() -> str | None:
+    executable = shutil.which("pwsh")
+    if not executable:
+        return None
+    probe = subprocess.run([executable, "-NoProfile", "-Command", "$PSVersionTable.PSVersion.Major"], capture_output=True, text=True, check=False)
+    return executable if probe.stdout.strip().isdigit() and int(probe.stdout.strip()) >= 7 else None
+
+@unittest.skipUnless(powershell7(), "PowerShell 7 indisponível")
 class PowershellParity(unittest.TestCase):
     """Confere que o apply reuse do PowerShell grava o mesmo path."""
 
@@ -159,7 +178,7 @@ class PowershellParity(unittest.TestCase):
         (phase / "plan.md").write_text("plan\n", encoding="utf-8")
         (vf / "review-wip.md").write_text("# review\n", encoding="utf-8")
         process = subprocess.run(
-            ["pwsh", "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo), "-Apply"],
+            [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo), "-Apply"],
             capture_output=True,
             text=True,
             check=False,

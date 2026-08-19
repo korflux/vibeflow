@@ -1,3 +1,4 @@
+﻿#Requires -Version 7.0
 # vibe-init/scripts/init.ps1
 # Inventário → old verificado → matriz → scan factual → init-report.json.
 # Symlink de ponteiro só com merge já fechado (ou -ApplyPointers após a IA unir).
@@ -12,6 +13,8 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $script:EvidenceWarnings = New-Object System.Collections.Generic.List[string]
+# Estado vivo da run, para que uma falha depois da primeira escrita ainda produza relatório.
+$script:Partial = $null
 
 # --- paths e bytes -----------------------------------------------------------
 
@@ -340,6 +343,10 @@ function Get-Estrutura([string]$Repo) {
             foreach ($k in $kids) { [void]$out.Add("$($e.Name)/$($k.Name)") }
         }
     }
+    if ($out.Count -gt 120) {
+        $extra = $out.Count - 120
+        return @(@($out[0..119]) + @("… (+$extra itens omitidos)"))
+    }
     return @($out)
 }
 
@@ -363,14 +370,14 @@ function Test-Migrations([string]$Repo) {
     }
     # Percorre diretórios com poda real; filtrar depois de -Recurse ainda entraria em árvores enormes.
     $ignore = @('node_modules', '.git', 'vendor', 'dist', 'build', '.next', '__pycache__')
-    $queue = New-Object 'System.Collections.Generic.Queue[string]'
-    $queue.Enqueue($Repo)
+    $queue = New-Object 'System.Collections.Generic.Queue[object]'
+    $queue.Enqueue(@{ path = $Repo; depth = 0 })
     while ($queue.Count -gt 0) {
         $current = $queue.Dequeue()
-        foreach ($dir in @(Get-ChildItem -LiteralPath $current -Directory -Force -ErrorAction SilentlyContinue)) {
+        foreach ($dir in @(Get-ChildItem -LiteralPath $current.path -Directory -Force -ErrorAction SilentlyContinue)) {
             if ($ignore -contains $dir.Name -or (Test-IsSymlink $dir)) { continue }
             if ($dir.Name -eq 'migrations') { return $true }
-            $queue.Enqueue($dir.FullName)
+            if ($current.depth + 1 -lt 4) { $queue.Enqueue(@{ path = $dir.FullName; depth = $current.depth + 1 }) }
         }
     }
     return $false
@@ -524,6 +531,10 @@ function Invoke-VibeInit {
     $merges = New-Object System.Collections.Generic.List[object]
     $conflicts = New-Object System.Collections.Generic.List[object]
     $avisos = New-Object System.Collections.Generic.List[string]
+    $script:Partial = [ordered]@{
+        repo = $repo; flow = $flow; inventory = $inventory; olds = $olds
+        actions = $actions; merges = $merges; conflicts = $conflicts; avisos = $avisos
+    }
 
     # Registra ações em um formato único para o relatório consumido pela IA.
     function Add-Action([string]$Op, [string]$Alvo) {
@@ -559,9 +570,12 @@ function Invoke-VibeInit {
     }
     if (-not (Test-Path -LiteralPath $phases)) {
         New-Item -ItemType Directory -Path $phases -Force | Out-Null
-        $gitkeep = Join-Path $phases '.gitkeep'
-        if (-not (Test-Path -LiteralPath $gitkeep)) { [System.IO.File]::WriteAllText($gitkeep, '') }
         Add-Action 'criar_phases' '.vibeflow/phases'
+    }
+    $gitkeep = Join-Path $phases '.gitkeep'
+    if (-not (Test-Path -LiteralPath $gitkeep)) {
+        [System.IO.File]::WriteAllText($gitkeep, '')
+        Add-Action 'criar_phases' '.vibeflow/phases/.gitkeep'
     }
     $gi = Join-Path $vf '.gitignore'
     [void](Add-GitIgnoreEntry $gi 'init-report.json')
@@ -585,48 +599,42 @@ function Invoke-VibeInit {
     $needTemplate = ($inventory.regras -eq 'ausente' -or $regrasContentState -eq 'ausente' -or $regrasContentState -eq 'vazio') -and
         $inventory.regras -ne 'raiz_sozinho' -and $inventory.regras -ne 'raiz_e_vibeflow'
 
+    # Toda fonte de texto que perde o papel de arquivo editável vira merge, inclusive quando o
+    # REGRAS vem da raiz: sem isso o legado só sobrevive em old/ e some do consolidado.
+    # AGENTS idêntico a CLAUDE entra uma vez só; a IA não precisa ler o mesmo texto duas vezes.
+    $legacySources = @()
+    if ($agentsLegado) { $legacySources += '.vibeflow/old/AGENTS.md' }
+    if ($claudeLegado -and -not $agentsEqClaude) { $legacySources += '.vibeflow/old/CLAUDE.md' }
+    $liveHasText = (Test-Path -LiteralPath $vfRegras -PathType Leaf) -and -not (Test-WhitespaceOnly $vfRegras)
+    $duplicated = $inventory.regras -eq 'raiz_e_vibeflow' -and -not (Test-SameBytes $rootRegras $vfRegras)
+
     $mergePending = $false
     if (-not $ApplyPointers) {
-        if ($needTemplate -or $regrasContentState -eq 'vazio' -or $inventory.regras -eq 'ausente') {
-            if ($agentsLegado -and $claudeLegado -and -not $agentsEqClaude) {
-                $mergePending = $true
-                [void]$merges.Add([ordered]@{
-                    id      = 'duas_fontes'
-                    sources = @('.vibeflow/old/AGENTS.md', '.vibeflow/old/CLAUDE.md')
-                    target  = '.vibeflow/REGRAS.md'
-                })
-            } elseif ($agentsLegado -or $claudeLegado) {
-                $mergePending = $true
-                $src = @()
-                if ($agentsLegado) { $src += '.vibeflow/old/AGENTS.md' }
-                if ($claudeLegado) { $src += '.vibeflow/old/CLAUDE.md' }
-                [void]$merges.Add([ordered]@{
-                    id      = 'legado_vs_regras'
-                    sources = $src
-                    target  = '.vibeflow/REGRAS.md'
-                })
-            }
-        } elseif ($inventory.regras -eq 'template' -or $inventory.regras -eq 'preenchido') {
-            $src = @()
-            if ($agentsLegado) { $src += '.vibeflow/old/AGENTS.md' }
-            if ($claudeLegado) { $src += '.vibeflow/old/CLAUDE.md' }
-            if ($src.Count -gt 0) {
-                $mergePending = $true
-                $src += '.vibeflow/old/REGRAS.md'
-                [void]$merges.Add([ordered]@{
-                    id      = 'legado_vs_regras'
-                    sources = $src
-                    target  = '.vibeflow/REGRAS.md'
-                })
-            }
-        } elseif ($inventory.regras -eq 'raiz_e_vibeflow' -and -not (Test-SameBytes $rootRegras $vfRegras)) {
-            $mergePending = $true
+        if ($duplicated) {
             [void]$merges.Add([ordered]@{
                 id      = 'regras_duplicado'
                 sources = @('.vibeflow/old/REGRAS-raiz.md', '.vibeflow/old/REGRAS.md')
                 target  = '.vibeflow/REGRAS.md'
             })
         }
+        if ($legacySources.Count -gt 0) {
+            # Texto que o consolidado já terá nesta run: o vivo, ou o REGRAS da raiz que vira o vivo.
+            $existing = @()
+            if ($duplicated) {
+                $existing = @()
+            } elseif ($inventory.regras -eq 'raiz_sozinho') {
+                $existing = @('.vibeflow/old/REGRAS-raiz.md')
+            } elseif ($liveHasText -and $inventory.regras -in @('template', 'preenchido', 'raiz_e_vibeflow')) {
+                $existing = @('.vibeflow/old/REGRAS.md')
+            }
+            $mergeId = if ($existing.Count -eq 0 -and $legacySources.Count -gt 1) { 'duas_fontes' } else { 'legado_vs_regras' }
+            [void]$merges.Add([ordered]@{
+                id      = $mergeId
+                sources = @($legacySources + $existing)
+                target  = '.vibeflow/REGRAS.md'
+            })
+        }
+        $mergePending = $merges.Count -gt 0
     }
 
     if ($merges.Count -gt 0) { Add-Action 'merge_pendente' '.vibeflow/REGRAS.md' }
@@ -656,6 +664,7 @@ function Invoke-VibeInit {
     }
 
     # b. old de toda peça que esta run vai mexer (original permanece até o symlink)
+    $neededSources = @($merges | ForEach-Object { $_.sources } | Select-Object -Unique)
     $oldSourceMap = @{}
     if (-not $ApplyPointers) {
         if ($agentsLegado -or $inventory.agents -in @('arquivo_igual', 'ponteiro_texto')) {
@@ -667,7 +676,7 @@ function Invoke-VibeInit {
         if ($inventory.regras -eq 'raiz_sozinho' -or $inventory.regras -eq 'raiz_e_vibeflow') {
             $oldSourceMap['.vibeflow/old/REGRAS-raiz.md'] = Get-RepoRelativePath $repo (Save-Old $rootRegras 'REGRAS-raiz.md')
         }
-        if ($mergePending -and ($inventory.regras -in @('template', 'preenchido', 'raiz_e_vibeflow')) -and (Test-Path -LiteralPath $vfRegras) -and -not (Test-WhitespaceOnly $vfRegras)) {
+        if ($neededSources -contains '.vibeflow/old/REGRAS.md' -and $liveHasText) {
             $oldSourceMap['.vibeflow/old/REGRAS.md'] = Get-RepoRelativePath $repo (Save-Old $vfRegras 'REGRAS.md')
         }
         foreach ($merge in $merges) {
@@ -855,4 +864,21 @@ function Write-Report(
     Write-Output $jsonPath
 }
 
-Invoke-VibeInit
+# Grava o que a run já fez quando ela falha no meio: sem isso a IA fica sem contrato de disco
+# justamente no cenário em que o repositório ficou parcialmente convertido.
+function Write-PartialReport([string]$Message) {
+    if (-not $script:Partial) { return }
+    $state = $script:Partial
+    if ($state.actions.Count -eq 0) { return }
+    if (-not (Test-Path -LiteralPath (Join-Path $state.repo '.vibeflow'))) { return }
+    [void]$state.avisos.Add("run interrompida: $Message")
+    Write-Report $state.repo $state.flow $state.inventory $state.olds $state.actions `
+        $state.merges $state.conflicts $state.avisos @{} @() $false @{} $false $false $null
+}
+
+try {
+    Invoke-VibeInit
+} catch {
+    Write-PartialReport $_.Exception.Message
+    throw
+}

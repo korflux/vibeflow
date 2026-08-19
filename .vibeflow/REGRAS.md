@@ -92,7 +92,7 @@ Dois arquivos obrigatórios. Não misturar os papéis.
 
 | Arquivo | Papel | Pergunta que responde |
 |---|---|---|
-| `ARQUITETURA.md` | Contrato | O que o disco faz, quem é dono de cada path, schema do relatório, erros, testes, Fora |
+| `ARQUITETURA.md` | Contrato | O que o disco faz, quem é dono de cada path, schema do relatório, erros, testes, limites de contrato |
 | `ANALISE.md` | Fluxo e decisão | O que acontece numa run de ponta a ponta, por que as peças existem, o que foi cortado, o que foi assumido |
 
 `ARQUITETURA.md` não narra a conversa. `ANALISE.md` não é a spec do script. Se um fato precisa valer no código, ele mora na arquitetura (e a skill aponta para o script, não copia o schema).
@@ -178,7 +178,7 @@ Corpo, nesta ordem, salvo se a arquitetura justificar furo:
 2. **0. Script primeiro** (path da skill, comando Windows/Unix, o que ler no relatório, erros que não se contorna).
 3. **1. Abrir** em ~5 linhas de estado (fluxo, slots, next_n, aberta, wip). Bloco de exemplo curto.
 4. Passos numerados: gate, trabalho semântico, gravar, fechar.
-5. **Fora (v1)** explícito.
+5. Sem seção de escopo no fim. Limite que vale durante a run é invariante ancorado no passo onde vale; escopo de produto vive em `docs/ESCOPO.md` e limite de contrato em `docs/vibe-<nome>/ARQUITETURA.md`.
 
 Regras de prosa na skill:
 
@@ -221,11 +221,13 @@ Vale para skill, docs, relatório em prosa e conversa neste repo.
 
 Não inverter: skill sem arquitetura vira path inventado (foi o defeito da interview em `docs/fluxline/`).
 
-### Fora deste repo (v1)
+### Limites permanentes deste repo
+
+Escopo ainda não construído, com o que já foi feito marcado, vive em `docs/ESCOPO.md`.
 
 - Copiar `REGRAS.md` para `AGENTS.md` / `CLAUDE.md` na raiz.
 - Segunda fonte de regras fora de `.vibeflow/REGRAS.md`.
 - Artefato da cadeia fora de `.vibeflow/phases/phase-N-slug/`.
 - Skill nova sem o par `ARQUITETURA.md` + `ANALISE.md`.
-- Dependência nova, CI, hook, `--force`, motor único “só Python” ou “só PowerShell”.
+- Motor único “só Python” ou “só PowerShell”. Dependência nova sem o humano pedir.
 - Disparar a próxima skill da cadeia sem o humano pedir.

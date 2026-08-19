@@ -1,3 +1,4 @@
+﻿#Requires -Version 7.0
 # vibe-analyze/scripts/analyze.ps1
 # Inventário de .vibeflow/phases → promove analyze-wip.md para phase-N-slug/analyze.md.
 param(

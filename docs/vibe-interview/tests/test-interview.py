@@ -155,7 +155,16 @@ class PythonContracts(unittest.TestCase):
         self.assertIn("PHASES_INESPERADO", process.stderr)
 
 
-@unittest.skipUnless(shutil.which("pwsh"), "pwsh indisponível")
+
+# Verifica se existe uma versão real de PowerShell 7, única suportada pelo motor gêmeo.
+def powershell7() -> str | None:
+    executable = shutil.which("pwsh")
+    if not executable:
+        return None
+    probe = subprocess.run([executable, "-NoProfile", "-Command", "$PSVersionTable.PSVersion.Major"], capture_output=True, text=True, check=False)
+    return executable if probe.stdout.strip().isdigit() and int(probe.stdout.strip()) >= 7 else None
+
+@unittest.skipUnless(powershell7(), "PowerShell 7 indisponível")
 class PowershellParity(unittest.TestCase):
     """Confere que o apply essencial do PowerShell grava o mesmo path."""
 
@@ -170,8 +179,7 @@ class PowershellParity(unittest.TestCase):
         vf = seed_vibeflow(self.repo)
         (vf / "interview-wip.md").write_text("# trilha\n", encoding="utf-8")
         process = subprocess.run(
-            [
-                "pwsh",
+            [powershell7(),
                 "-File",
                 str(POWERSHELL_SCRIPT),
                 "-Root",

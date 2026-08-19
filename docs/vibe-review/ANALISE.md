@@ -45,9 +45,11 @@ A IA lê a fase e o diff. Julga. Cruza A*/C* com o código. Grava `R*`. **Não**
 | Passe cobertura | Converge | Seção Cobertura; gap = `R*` com `source`/`gap` |
 | `unrequested` | Converge | FYI ou Required se inflar |
 | Constitution | Converge + analyze | `REGRAS.md` MUST = Critical |
-| Re-review no mesmo arquivo | Fluxline | Não abre fase nova |
+| Etapas no mesmo arquivo | Fluxline + pedido | Não abre fase nova. `### Etapa N` no vivo |
 | Approve sem perfeição | Fluxline | Não bloquear gosto |
-| Apply + wip | Analyze/spec | Review tem artefato; implement não |
+| Apply + wip | Analyze/spec | First-pass promove wip; etapa N edita o vivo |
+| Lê `implement.md` | ESCOPO 3.1 | Inventário lista se existir; skill lê fatia, prova e “Para a review” |
+| Checklist vivo | Pedido | Campo abre com o achado e fecha com a prova. `## Etapas` no lugar de `## Re-review` |
 | Handoff sem disparar | REGRAS | `vibe-implement` / `volta vibe-spec` / fechada |
 
 ---
@@ -66,6 +68,8 @@ A IA lê a fase e o diff. Julga. Cruza A*/C* com o código. Grava `R*`. **Não**
 | Open Questions no `.md` | Chat |
 | LGTM só no chat | Disco completo |
 | Disparar implement | Handoff é linha |
+| Segundo `review.md` por rodada | Espalha o veredito. Etapa N no mesmo arquivo |
+| `## Re-review` no rodapé | Dump da rodada. Substituído por `## Etapas` |
 
 ---
 
@@ -76,11 +80,10 @@ A IA lê a fase e o diff. Julga. Cruza A*/C* com o código. Grava `R*`. **Não**
 [2] IA lê relatório + vivos da alvo + REGRAS.md + diff
 [3] Sem alvo e sem diff → para. T* abertas + “pronto da feature” → recusa Approve de feature
 [4] Testes → cobertura A*/C* × código → cinco eixos
-[5] Wip = review.md (veredito + R*)
-[6] Apply promove
-[7] Chat: path + veredito + contagem R*. Humano lê o arquivo
-[8] Request changes → handoff implement. Re-review no mesmo path
-[9] Fecha. Não commita. Não dispara. Não pisa plan/spec
+[5] Etapa 1: wip + apply. Etapa N: patch no vivo (### Etapa N + checklist + veredito vigente)
+[6] Chat: path + etapa + veredito vigente + o que abriu/fechou. Humano lê o arquivo
+[7] Request changes → handoff implement. Próxima etapa no mesmo path
+[8] Fecha. Não commita. Não dispara. Não pisa plan/spec/implement
 ```
 
 ---
@@ -91,4 +94,4 @@ A IA lê a fase e o diff. Julga. Cruza A*/C* com o código. Grava `R*`. **Não**
 - Review da cadeia reusa a pasta do plan. Avulsa é pedido **outro**.
 - `vibe-analyze` não é substituída: ela é spec×plan antes; o passe aqui é código×A* depois.
 - Implement já declara: se `review.md` tem `R*` em `[ ]`, essa fila manda.
-- Re-run de apply por cima de `review.md` é first-pass de novo. Re-review consciente edita o vivo.
+- Re-run de apply por cima de `review.md` só se o wip já trouxer o arquivo inteiro. Etapa consciente edita o vivo.

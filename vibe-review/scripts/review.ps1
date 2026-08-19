@@ -1,3 +1,4 @@
+﻿#Requires -Version 7.0
 # vibe-review/scripts/review.ps1
 # Inventário de .vibeflow/phases → promove review-wip.md para phase-N-slug/review.md.
 param(
@@ -8,7 +9,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$script:ChainFiles = @('interview.md', 'spec.md', 'plan.md', 'analyze.md', 'review.md')
+$script:ChainFiles = @('interview.md', 'spec.md', 'plan.md', 'analyze.md', 'implement.md', 'review.md')
 $script:MaxSlug = 48
 
 # Resolve a raiz por parâmetro, Git ou cwd sem exigir que Git esteja instalado.

@@ -1,3 +1,4 @@
+﻿#Requires -Version 7.0
 # vibe-spec/scripts/spec.ps1
 # Inventário de .vibeflow/phases → promove spec-wip.md para phase-N-slug/spec.md.
 param(

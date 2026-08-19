@@ -1,0 +1,67 @@
+# Gate de contrato: suítes docs/vibe-*/tests/ + varredura de segredo.
+# Sem lockfile neste repo, não há job de CVE/SCA até existir dependência pinada.
+name: contrato
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Arquivos test-*.py têm hífen: discover não importa. Cada suíte é um script.
+      - name: Suítes de contrato (Python)
+        run: |
+          set -eu
+          for skill in init interview spec plan analyze implement review; do
+            echo "::group::vibe-${skill}"
+            python "docs/vibe-${skill}/tests/test-${skill}.py" -v
+            echo "::endgroup::"
+          done
+
+      - name: Paridade essencial do init (PowerShell)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          & "./docs/vibe-init/tests/test-init.ps1"
+
+      # Launchers Unix: seleção de motor e repasse de flags. Não reexecutam a suíte Python.
+      - name: Launchers .sh
+        run: |
+          set -eu
+          for skill in init interview spec plan analyze implement review; do
+            echo "::group::launcher vibe-${skill}"
+            bash "docs/vibe-${skill}/tests/test-${skill}.sh"
+            echo "::endgroup::"
+          done
+
+  segredos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # CLI direto, sem a Action oficial: ela exige licença em repo privado.
+      - name: Instalar gitleaks
+        run: |
+          set -eu
+          ver="8.24.3"
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${ver}/gitleaks_${ver}_linux_x64.tar.gz" \
+            | tar -xz -C /usr/local/bin gitleaks
+          gitleaks version
+
+      - name: Varredura de segredo
+        run: gitleaks detect --source . --verbose --redact --no-banner

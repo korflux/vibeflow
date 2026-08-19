@@ -196,16 +196,17 @@ Chat sozinho não conta. Wip durante a sessão; vivo depois do sim.
 12. Com `spec.md` na mesma pasta → essa fase não é `aberta`.
 13. `phases` é arquivo → `PHASES_INESPERADO`.
 
-Suíte em `docs/vibe-interview/tests/`. `test-interview.py` cobre o motor Python e compara o apply essencial com PowerShell quando `pwsh` está disponível.
+Suíte em `docs/vibe-interview/tests/`. `test-interview.py` cobre o motor Python e compara o apply essencial com PowerShell quando `pwsh` está disponível. Launcher: `test-interview.sh`.
 
 ---
 
-## 10. Fora (v1)
+## 10. Limites de contrato
 
-- Outras `vibe-*` (spec, plan, analyze, implement, review), CI, hook, `--force`.
-- Inventar `n` ou slug no chat sem passar pelo script.
-- Gravar em `docs/`, raiz do repo, ou `interview-fase-N-…md`.
-- Escolher a solução na Fase 1. Fechar CSS/paleta. Commit.
+- `n` e slug saem do script. Chat não cria fase.
+- Grava só em `.vibeflow/phases/phase-N-slug/interview.md`. Nunca em `docs/`, na raiz, nem como `interview-fase-N-….md`.
+- Fase 1 fecha intenção, não solução. Interview não fecha CSS nem paleta.
+
+Backlog e decisões de escopo: [`docs/ESCOPO.md`](../ESCOPO.md).
 
 ---
 

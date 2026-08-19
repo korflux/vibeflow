@@ -195,18 +195,18 @@ Teto: 50 achados. O resto vira uma linha de overflow nas Métricas.
 9. `phases` é arquivo → `PHASES_INESPERADO`.
 10. Paridade pwsh: apply reuse grava o mesmo path.
 
-Suíte: `docs/vibe-analyze/tests/test-analyze.py`.
+Suíte: `docs/vibe-analyze/tests/test-analyze.py`. Launcher: `docs/vibe-analyze/tests/test-analyze.sh`.
 
 ---
 
-## 10. Fora (v1)
+## 10. Limites de contrato
 
-- Outras `vibe-*` (implement, review), código, CI, hook, `--force`.
-- Path `docs/fluxline/`, `specs/`, `tasks.md`, `checklists/`.
-- `next_n` / `--slug`. Pasta nova.
-- Editar `interview.md` / `spec.md` / `plan.md`.
-- Hooks / `extensions.yml` do spec-kit.
-- Open Questions no `.md`. Dump no chat. Commit. Disparar implement.
+- Grava um arquivo só: `.vibeflow/phases/phase-N-slug/analyze.md`. Sem `tasks.md`, `checklists/`, `docs/`, `specs/`.
+- Não edita `interview.md`, `spec.md` nem `plan.md`. Achado vira `F*` com remédio, não patch na fonte.
+- Sem `next_n`, sem `--slug`, sem pasta nova: analyze entra na pasta do plan.
+- Veredito e gravidade são semântica da skill; o script não os interpreta.
+
+Backlog e decisões de escopo: [`docs/ESCOPO.md`](../ESCOPO.md).
 
 ---
 

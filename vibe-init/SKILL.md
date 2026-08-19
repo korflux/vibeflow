@@ -24,11 +24,14 @@ Depois do init: preserve o bloco `<!-- VIBEFLOW:CADEIA -->`; o script o atualiza
    - Windows: `pwsh "<skill>/scripts/init.ps1"`
    - Unix: `bash "<skill>/scripts/init.sh"`
      - O launcher usa Python 3; se indisponível, usa PowerShell 7. Sem um deles, pare e informe a dependência.
-3. Leia `.vibeflow/init-report.json` + `.vibeflow/REGRAS.md` atual + **cada** path em `merges[].sources` (ignore fonte `ponteiro_texto`: é path de checkout, não regra).
+     - O motor `.ps1` exige PowerShell 7. Se a mensagem for de versão, não contorne: é dependência, não bug.
+3. Leia `.vibeflow/init-report.json` + `.vibeflow/REGRAS.md` atual + **cada** path em `merges[].sources` (ignore fonte `ponteiro_texto`: é path de checkout, não regra). Pode haver mais de um merge na mesma run: una todas as fontes no mesmo consolidado antes do apply.
 4. Leitura dirigida para preencher/corrigir `REGRAS.md`: só o que o relatório, SLOTs, evidência ou o humano apontaram (README, manifest, path citado). Não abrir a árvore inteira nem `node_modules` / `.git` / `dist`.
 
 Se o script parar com `SYMLINK_RECUSADO`: mostre Developer Mode / admin. Não copie `REGRAS.md` para a raiz — a cópia diverge na próxima edição e deixa de ser uma fonte.
 Se parar com `MERGE_PENDENTE`, `MERGE_TOKEN_INVALIDO`, `MERGE_SOURCE_ALTERADA` ou `MERGE_NAO_APLICADO`: não contorne. Releia o relatório e as fontes apontadas; preserve os arquivos legados até o consolidado estar gravado.
+Token perdido (o relatório é gitignored): apague `.vibeflow/init-pending.json` e rode o script de novo. Os olds ficam, nada foi convertido, e o inventário recomeça. É a única saída, e ela não perde arquivo.
+Relatório com `run interrompida:` em `avisos` = a run anterior parou no meio. Leia as `actions` para saber o que já está no disco antes de agir.
 Se `inventory` trouxer `ponteiro_texto`: checkout Windows/`core.symlinks=false`. Avise; o script tenta restaurar o symlink. Não mergeie essa string — é o alvo do Git, não uma regra.
 
 Old verificado **antes** de substituir qualquer arquivo do usuário: um crash no meio sem old apaga o original.
@@ -103,6 +106,3 @@ Migration em produção é irreversível no sentido prático. Não gerar, não a
 Não commita. Avise: commitar `REGRAS.md`, os dois symlinks, `.vibeflow/old/` (se existir) e `.vibeflow/phases/.gitkeep`. Não commitar `init-report.json` nem `init-pending.json`.
 Windows: `core.symlinks=true` é aviso no relatório, não forçado.
 
-## Fora (v1)
-
-Outras `vibe-*`, CI, hook, `--force`, copiar `REGRAS` na raiz, escolher homolog/produção sozinho, inventar regra, spec/plan/todo.

@@ -188,17 +188,19 @@ Sem Open Questions. Sem `todo.md`. Sem `checklists/`. Sem T001/[P]/[US1].
 9. `phases` é arquivo → `PHASES_INESPERADO`.
 10. Paridade pwsh: apply reuse grava o mesmo path.
 
-Suíte: `docs/vibe-plan/tests/test-plan.py`.
+Suíte: `docs/vibe-plan/tests/test-plan.py`. Launcher: `docs/vibe-plan/tests/test-plan.sh`.
 
 ---
 
-## 10. Fora (v1)
+## 10. Limites de contrato
 
-- Outras `vibe-*` (implement, analyze, review), código, CI, hook, `--force`.
-- Path `docs/fluxline/`, `specs/`, `todo.md`, `tasks.md`, `checklists/`.
-- `next_n` / `--slug`. Pasta nova.
-- Pisar pasta com `analyze.md`. Apagar `spec.md`.
-- Open Questions no `.md`. Dump no chat. Commit. Disparar implement.
+- Grava um arquivo só: `.vibeflow/phases/phase-N-slug/plan.md`. Sem `todo.md`, `tasks.md`, `checklists/`, `docs/`, `specs/`.
+- Sem `next_n`, sem `--slug`, sem pasta nova: plan entra na pasta da spec.
+- Não pisa pasta com `analyze.md`. Não apaga `spec.md`.
+- IDs `T1`, `T2`… Sem `T001`, `[P]`, `[US1]`.
+- Zero código nesta porta.
+
+Backlog e decisões de escopo: [`docs/ESCOPO.md`](../ESCOPO.md).
 
 ---
 

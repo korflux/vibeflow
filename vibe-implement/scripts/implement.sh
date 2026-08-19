@@ -3,20 +3,17 @@
 set -euo pipefail
 
 ROOT=""
+APPLY=0
+SLUG=""
 DIR=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --root) ROOT="$2"; shift 2 ;;
+    --apply) APPLY=1; shift ;;
+    --slug) SLUG="$2"; shift 2 ;;
     --dir) DIR="$2"; shift 2 ;;
-    --apply|--slug|-Apply|-Slug)
-      echo "FLAG_DESCONHECIDA: $1 não existe nesta skill." >&2
-      exit 1
-      ;;
-    *)
-      echo "FLAG_DESCONHECIDA: $1 não existe nesta skill." >&2
-      exit 1
-      ;;
+    *) echo "uso: implement.sh [--root DIR] [--apply [--dir PASTA] [--slug SLUG]]" >&2; exit 2 ;;
   esac
 done
 
@@ -31,15 +28,19 @@ fi
 if [[ -n "$PYTHON_BIN" ]]; then
   args=()
   [[ -n "$ROOT" ]] && args+=(--root "$ROOT")
+  [[ "$APPLY" -eq 1 ]] && args+=(--apply)
+  [[ -n "$SLUG" ]] && args+=(--slug "$SLUG")
   [[ -n "$DIR" ]] && args+=(--dir "$DIR")
   exec "$PYTHON_BIN" "$(dirname "$0")/implement.py" "${args[@]}"
 fi
 
-if command -v pwsh >/dev/null 2>&1; then
+if command -v pwsh >/dev/null 2>&1 && pwsh -NoProfile -Command 'exit [int]($PSVersionTable.PSVersion.Major -lt 7)' >/dev/null 2>&1; then
   args=()
   [[ -n "$ROOT" ]] && args+=(-Root "$ROOT")
+  [[ "$APPLY" -eq 1 ]] && args+=(-Apply)
+  [[ -n "$SLUG" ]] && args+=(-Slug "$SLUG")
   [[ -n "$DIR" ]] && args+=(-Dir "$DIR")
-  exec pwsh -File "$(dirname "$0")/implement.ps1" "${args[@]}"
+  exec pwsh -NoProfile -ExecutionPolicy Bypass -File "$(dirname "$0")/implement.ps1" "${args[@]}"
 fi
 
 echo "implement.sh precisa de Python 3 ou PowerShell 7+." >&2

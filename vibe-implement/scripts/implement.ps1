@@ -1,12 +1,16 @@
+#Requires -Version 7.0
 # vibe-implement/scripts/implement.ps1
-# Inventário de .vibeflow/phases → implement-report.json. Sem apply e sem wip.
+# Inventário de .vibeflow/phases → promove implement-wip.md para phase-N-slug/implement.md.
 param(
     [string]$Root,
+    [switch]$Apply,
+    [string]$Slug,
     [string]$Dir
 )
 
 $ErrorActionPreference = 'Stop'
-$script:ChainFiles = @('interview.md', 'spec.md', 'plan.md', 'analyze.md', 'review.md')
+$script:ChainFiles = @('interview.md', 'spec.md', 'plan.md', 'analyze.md', 'implement.md', 'review.md')
+$script:MaxSlug = 48
 
 # Resolve a raiz por parâmetro, Git ou cwd sem exigir que Git esteja instalado.
 function Get-RepoRoot {
@@ -16,6 +20,11 @@ function Get-RepoRoot {
         if ($LASTEXITCODE -eq 0 -and $git) { return $git.Trim() }
     }
     return (Get-Location).Path
+}
+
+# Calcula o hash usado para validar a cópia do wip byte a byte.
+function Get-Sha256File([string]$Path) {
+    return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
 }
 
 # Acrescenta exclusões operacionais preservando regras existentes e evitando duplicação.
@@ -32,9 +41,30 @@ function Add-GitignoreEntry([string]$Path, [string]$Entry) {
     [System.IO.File]::AppendAllText($Path, "$prefix$Entry`n")
 }
 
-# Garante que o relatório não entre no Git sem apagar as entradas das outras skills.
+# Garante que relatório e wip não entrem no Git sem apagar as entradas das outras skills.
 function Assert-ImplementGitignore([string]$Vf) {
-    Add-GitignoreEntry (Join-Path $Vf '.gitignore') 'implement-report.json'
+    $gi = Join-Path $Vf '.gitignore'
+    Add-GitignoreEntry $gi 'implement-report.json'
+    Add-GitignoreEntry $gi 'implement-wip.md'
+}
+
+# Transforma a frase curta da fase em slug ASCII [a-z0-9-], 2–48 chars.
+function ConvertTo-Slug([string]$Raw) {
+    if ([string]::IsNullOrWhiteSpace($Raw)) { return '' }
+    $formD = $Raw.Normalize([Text.NormalizationForm]::FormD)
+    $chars = foreach ($ch in $formD.ToCharArray()) {
+        $cat = [Globalization.CharUnicodeInfo]::GetUnicodeCategory($ch)
+        if ($cat -ne [Globalization.UnicodeCategory]::NonSpacingMark) { $ch }
+    }
+    $ascii = -join $chars
+    $ascii = $ascii.Normalize([Text.NormalizationForm]::FormC).ToLowerInvariant()
+    $compact = [regex]::Replace($ascii, '[^a-z0-9]+', '-')
+    $compact = $compact.Trim('-')
+    $compact = [regex]::Replace($compact, '-{2,}', '-')
+    if ($compact.Length -gt $script:MaxSlug) {
+        $compact = $compact.Substring(0, $script:MaxSlug).Trim('-')
+    }
+    return $compact
 }
 
 # Lista pastas que batem o padrão phase-N-slug e ignora o restante.
@@ -70,7 +100,23 @@ function Get-PhaseList([string]$Phases) {
     return @{ existing = $sorted; warnings = @($warnings) }
 }
 
-# Maior n que já tem plan.md: é a fila desta skill sem -Dir.
+# Maior n com plan e sem implement: primeira escrita desta skill na fila.
+function Get-PlanPendente($Existing) {
+    foreach ($item in ($Existing | Sort-Object n -Descending)) {
+        if ($item.files -contains 'plan.md' -and $item.files -notcontains 'implement.md') { return $item }
+    }
+    return $null
+}
+
+# Maior n que já tem implement.md: vivo atualizável.
+function Get-Rascunho($Existing) {
+    foreach ($item in ($Existing | Sort-Object n -Descending)) {
+        if ($item.files -contains 'implement.md') { return $item }
+    }
+    return $null
+}
+
+# Maior n com plan.md: é a fila desta skill sem -Dir.
 function Get-AlvoComPlan($Existing) {
     foreach ($item in ($Existing | Sort-Object n -Descending)) {
         if ($item.files -contains 'plan.md') { return $item }
@@ -90,8 +136,20 @@ function ConvertTo-PhaseMap($Item) {
     }
 }
 
-# Destino: -Dir se veio; senão maior n com plan. Sem alvo = não há fila no disco.
-function Get-ImplementAlvo($Existing, [string]$Phases) {
+# Destino preferido: fase com plan, senão implement avulso, senão criar.
+function Get-ImplementAlvo($Existing) {
+    $withPlan = Get-AlvoComPlan $Existing
+    if ($null -ne $withPlan) {
+        $modo = if ($withPlan.files -contains 'implement.md') { 'atualizar' } else { 'reuse' }
+        return @{ item = $withPlan; modo = $modo }
+    }
+    $draft = Get-Rascunho $Existing
+    if ($null -ne $draft) { return @{ item = $draft; modo = 'atualizar' } }
+    return @{ item = $null; modo = 'criar' }
+}
+
+# Destino: -Dir se veio; senão o alvo do inventário.
+function Get-ImplementAlvoComDir($Existing, [string]$Phases) {
     if (-not [string]::IsNullOrWhiteSpace($Dir)) {
         $destName = [System.IO.Path]::GetFileName($Dir)
         $destDir = Join-Path $Phases $destName
@@ -102,17 +160,14 @@ function Get-ImplementAlvo($Existing, [string]$Phases) {
             throw "FASE_AUSENTE: $destName não é uma pasta de fase."
         }
         foreach ($item in $Existing) {
-            if ($item.dir -eq $destName) { return @{ item = $item; modo = 'reuse' } }
-        }
-        $listed = Get-PhaseList $Phases
-        foreach ($item in $listed.existing) {
-            if ($item.dir -eq $destName) { return @{ item = $item; modo = 'reuse' } }
+            if ($item.dir -eq $destName) {
+                $modo = if ($item.files -contains 'implement.md') { 'atualizar' } else { 'reuse' }
+                return @{ item = $item; modo = $modo }
+            }
         }
         throw "FASE_AUSENTE: .vibeflow/phases/$destName não é uma pasta de fase."
     }
-    $found = Get-AlvoComPlan $Existing
-    if ($null -ne $found) { return @{ item = $found; modo = 'reuse' } }
-    return @{ item = $null; modo = 'criar' }
+    return Get-ImplementAlvo $Existing
 }
 
 # Monta o JSON que a skill lê; stdout só o path do relatório.
@@ -124,11 +179,12 @@ function Write-ImplementReport([string]$Vf, [hashtable]$Payload) {
     Write-Output $reportPath
 }
 
-# Inventaria o disco. Não escreve plan/spec e não promove wip.
+# Inventaria o disco e opcionalmente promove o wip para implement.md.
 function Invoke-Implement {
     $repo = Get-RepoRoot
     $vf = Join-Path $repo '.vibeflow'
     $phases = Join-Path $vf 'phases'
+    $wip = Join-Path $vf 'implement-wip.md'
     $actions = New-Object System.Collections.Generic.List[object]
 
     if (-not (Test-Path -LiteralPath $vf)) {
@@ -160,30 +216,111 @@ function Invoke-Implement {
     foreach ($w in $listed.warnings) { $warnings.Add($w) }
     $nextN = 1
     if ($existing.Count -gt 0) { $nextN = [int]$existing[-1].n + 1 }
-    $resolved = Get-ImplementAlvo $existing $phases
+    $resolved = Get-ImplementAlvoComDir $existing $phases
     $alvoItem = $resolved.item
     $modoSugerido = $resolved.modo
+    $created = $null
+    $modo = $null
+
+    if ($Apply) {
+        if (-not (Test-Path -LiteralPath $wip) -or (Get-Item -LiteralPath $wip).Length -eq 0) {
+            throw 'WIP_AUSENTE: falta .vibeflow/implement-wip.md preenchido.'
+        }
+
+        $createdDir = $false
+        if (-not [string]::IsNullOrWhiteSpace($Dir)) {
+            $destDir = Join-Path $phases ([System.IO.Path]::GetFileName($Dir))
+            if (-not (Test-Path -LiteralPath $destDir) -or -not (Get-Item -LiteralPath $destDir).PSIsContainer) {
+                throw "FASE_AUSENTE: .vibeflow/phases/$([System.IO.Path]::GetFileName($Dir)) não é uma pasta de fase."
+            }
+            $name = [System.IO.Path]::GetFileName($destDir)
+            if (-not [regex]::IsMatch($name, '^phase-(\d+)-([a-z0-9]+(?:-[a-z0-9]+)*)$')) {
+                throw "FASE_AUSENTE: $name não é uma pasta de fase."
+            }
+            $modo = if (Test-Path -LiteralPath (Join-Path $destDir 'implement.md')) { 'atualizar' } else { 'reuse' }
+        } elseif ($null -ne $alvoItem) {
+            $destDir = Join-Path $repo $alvoItem.path
+            $modo = $modoSugerido
+        } else {
+            if ([string]::IsNullOrWhiteSpace($Slug)) {
+                throw 'IMPLEMENT_SEM_ALVO: sem fase alvo; passe -Slug para abrir uma pasta nova.'
+            }
+            $clean = ConvertTo-Slug $Slug
+            if ($clean.Length -lt 2) {
+                throw 'SLUG_INVALIDO: a frase curta não gerou um slug utilizável.'
+            }
+            $destDir = Join-Path $phases "phase-$nextN-$clean"
+            if (Test-Path -LiteralPath $destDir) {
+                throw "FASE_EXISTE: .vibeflow/phases/phase-$nextN-$clean já existe."
+            }
+            New-Item -ItemType Directory -Path $destDir -Force | Out-Null
+            $createdDir = $true
+            $modo = 'criar'
+            $actions.Add([pscustomobject]@{ op = 'criar_fase'; alvo = ".vibeflow/phases/phase-$nextN-$clean" })
+        }
+
+        $destFile = Join-Path $destDir 'implement.md'
+        $destName = [System.IO.Path]::GetFileName($destDir)
+        $rel = ".vibeflow/phases/$destName"
+        try {
+            Copy-Item -LiteralPath $wip -Destination $destFile -Force
+            $srcHash = Get-Sha256File $wip
+            $dstHash = Get-Sha256File $destFile
+            $srcLen = (Get-Item -LiteralPath $wip).Length
+            $dstLen = (Get-Item -LiteralPath $destFile).Length
+            if ($srcHash -ne $dstHash -or $srcLen -ne $dstLen) {
+                Remove-Item -LiteralPath $destFile -Force
+                if ($createdDir -and -not (Get-ChildItem -LiteralPath $destDir -Force)) {
+                    Remove-Item -LiteralPath $destDir -Force
+                }
+                throw 'COPY_HASH_MISMATCH: a cópia do wip não bateu com o original.'
+            }
+        } catch {
+            if ($createdDir) {
+                if (Test-Path -LiteralPath $destFile) { Remove-Item -LiteralPath $destFile -Force }
+                if ((Test-Path -LiteralPath $destDir) -and -not (Get-ChildItem -LiteralPath $destDir -Force)) {
+                    Remove-Item -LiteralPath $destDir -Force
+                }
+            }
+            throw
+        }
+        Remove-Item -LiteralPath $wip -Force
+        $actions.Add([pscustomobject]@{ op = 'promover_wip'; alvo = "$rel/implement.md" })
+        $listed = Get-PhaseList $phases
+        $existing = @($listed.existing)
+        foreach ($w in $listed.warnings) { $warnings.Add($w) }
+        $nextN = 1
+        if ($existing.Count -gt 0) { $nextN = [int]$existing[-1].n + 1 }
+        $resolved = Get-ImplementAlvo $existing
+        $alvoItem = $resolved.item
+        $modoSugerido = $resolved.modo
+        foreach ($item in $existing) {
+            if ($item.dir -eq $destName) { $created = $item; break }
+        }
+    }
 
     $mapped = New-Object System.Collections.Generic.List[object]
     foreach ($item in @($existing)) {
         if ($null -ne $item) { [void]$mapped.Add((ConvertTo-PhaseMap $item)) }
     }
+    $wipState = 'ausente'
+    if (Test-Path -LiteralPath $wip) { $wipState = 'presente' }
 
     $payload = @{
-        root               = "$repo"
-        vibeflow           = 'ok'
-        phases             = "$phState"
-        next_n             = [int]$nextN
-        existing           = $mapped.ToArray()
-        plan_pendente      = $null
-        rascunho           = $null
-        alvo               = ConvertTo-PhaseMap $alvoItem
-        modo_sugerido      = "$modoSugerido"
-        wip                = 'ausente'
-        created            = $null
-        modo               = $null
-        actions            = $actions.ToArray()
-        avisos             = $warnings.ToArray()
+        root           = "$repo"
+        vibeflow       = 'ok'
+        phases         = "$phState"
+        next_n         = [int]$nextN
+        existing       = $mapped.ToArray()
+        plan_pendente  = ConvertTo-PhaseMap (Get-PlanPendente $existing)
+        rascunho       = ConvertTo-PhaseMap (Get-Rascunho $existing)
+        alvo           = ConvertTo-PhaseMap $alvoItem
+        modo_sugerido  = "$modoSugerido"
+        wip            = "$wipState"
+        created        = ConvertTo-PhaseMap $created
+        modo           = $modo
+        actions        = $actions.ToArray()
+        avisos         = $warnings.ToArray()
     }
     Write-ImplementReport $vf $payload
 }

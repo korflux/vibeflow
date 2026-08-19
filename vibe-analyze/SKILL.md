@@ -109,6 +109,3 @@ Rascunho sem “aprovado” e sem pedido da próxima porta **não** autoriza có
 Não commita. Avise: commitar `.vibeflow/phases/phase-N-slug/analyze.md`. Não commitar `analyze-report.json` nem `analyze-wip.md`.
 Handoff no arquivo. **Não** dispare a skill. Zero implementação e zero patch nas fontes nesta run.
 
-## Fora (v1)
-
-Implement, review, código, `tasks.md`, `checklists/`, `docs/`/`specs/`/`fluxline`, `--slug`/fase nova, editar interview/spec/plan, hooks do spec-kit, Open Questions no `.md`, dump no chat, commit.

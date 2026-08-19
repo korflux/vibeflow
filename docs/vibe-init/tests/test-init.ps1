@@ -1,3 +1,4 @@
+﻿#Requires -Version 7.0
 # docs/vibe-init/tests/test-init.ps1
 # Contratos de docs/vibe-init/ARQUITETURA.md §13 — sem framework.
 $ErrorActionPreference = 'Stop'
@@ -369,6 +370,60 @@ try {
     $r = Read-Report $s
     Assert (-not $r.migrations_detectadas) '21-migrations-poda' 'detectou migration dentro de node_modules'
 } catch { Bad '21-migrations-poda' "$_" }
+
+# 22. REGRAS na raiz somado a legado deve virar merge; o legado não pode virar link nesta run.
+$s = New-Sandbox
+try {
+    [System.IO.File]::WriteAllText((Join-Path $s 'REGRAS.md'), "regra da raiz`n")
+    [System.IO.File]::WriteAllText((Join-Path $s 'AGENTS.md'), "regra critica do agents`n")
+    Invoke-Init $s
+    $r = Read-Report $s
+    $temMerge = @($r.merges).Count -eq 1 -and $r.merges[0].id -eq 'legado_vs_regras'
+    $fonteLegado = @($r.merges[0].sources) -contains '.vibeflow/old/AGENTS.md'
+    $aindaArquivo = -not (Test-IsLink (Join-Path $s 'AGENTS.md'))
+    Complete-Merge $s $r 'regra critica do agents'
+    $virou = Test-IsLink (Join-Path $s 'AGENTS.md')
+    Assert ($temMerge -and $fonteLegado -and $aindaArquivo -and $virou) '22-raiz-mais-legado' "merge=$temMerge fonte=$fonteLegado arquivo=$aindaArquivo link=$virou"
+} catch { Bad '22-raiz-mais-legado' "$_" }
+
+# 23. Legados idênticos entram uma vez como fonte, com os dois backups gravados.
+$s = New-Sandbox
+try {
+    [System.IO.File]::WriteAllText((Join-Path $s 'AGENTS.md'), "mesmo texto`n")
+    [System.IO.File]::WriteAllText((Join-Path $s 'CLAUDE.md'), "mesmo texto`n")
+    Invoke-Init $s
+    $r = Read-Report $s
+    $umaFonte = @($r.merges[0].sources).Count -eq 1
+    $doisOlds = @($r.olds).Count -eq 2
+    Assert ($umaFonte -and $doisOlds) '23-fonte-unica' "fontes=$(@($r.merges[0].sources).Count) olds=$(@($r.olds).Count)"
+} catch { Bad '23-fonte-unica' "$_" }
+
+# 24. phases sem .gitkeep deve recriar o arquivo que sustenta a pasta no git.
+$s = New-Sandbox
+try {
+    New-Item -ItemType Directory -Path (Join-Path $s '.vibeflow\phases') -Force | Out-Null
+    Invoke-Init $s
+    $r = Read-Report $s
+    $alvos = @($r.actions | ForEach-Object { $_.alvo })
+    $ok = (Test-Path (Join-Path $s '.vibeflow\phases\.gitkeep')) -and ($alvos -contains '.vibeflow/phases/.gitkeep')
+    Assert $ok '24-gitkeep-restaurado' "alvos=$($alvos -join ',')"
+} catch { Bad '24-gitkeep-restaurado' "$_" }
+
+# 25. Falha depois da primeira escrita ainda deixa relatório parcial com o motivo.
+$s = New-Sandbox
+try {
+    [System.IO.File]::WriteAllText((Join-Path $s 'AGENTS.md'), "regra critica`n")
+    $env:VIBE_INIT_TEST_CORRUPT_OLD = '1'
+    $threw = $false
+    try { Invoke-Init $s } catch { $threw = $true }
+    Remove-Item Env:VIBE_INIT_TEST_CORRUPT_OLD
+    $r = Read-Report $s
+    $temAviso = @($r.avisos | Where-Object { $_ -like 'run interrompida*' }).Count -gt 0
+    Assert ($threw -and $temAviso) '25-relatorio-parcial' "threw=$threw aviso=$temAviso"
+} catch {
+    Remove-Item Env:VIBE_INIT_TEST_CORRUPT_OLD -ErrorAction SilentlyContinue
+    Bad '25-relatorio-parcial' "$_"
+}
 
 Write-Host ""
 Write-Host "pass=$pass fail=$fail"

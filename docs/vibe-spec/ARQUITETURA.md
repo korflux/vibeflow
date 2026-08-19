@@ -198,17 +198,18 @@ Sem Open Questions. Sem mural de user story. Sem FR-00N.
 10. `phases` é arquivo → `PHASES_INESPERADO`.
 11. Paridade pwsh: apply reuse grava o mesmo path.
 
-Suíte: `docs/vibe-spec/tests/test-spec.py`.
+Suíte: `docs/vibe-spec/tests/test-spec.py`. Launcher: `docs/vibe-spec/tests/test-spec.sh`.
 
 ---
 
-## 10. Fora (v1)
+## 10. Limites de contrato
 
-- Outras `vibe-*` (plan, analyze, implement, review), CI, hook, `--force`.
-- Path `docs/fluxline/`, `specs/`, branch `###-feature`.
-- `next_n` quando existe `interview_pendente`.
-- Apagar `interview.md`. Pisar pasta com `plan.md`.
-- Open Questions no `.md`. Dump da spec no chat. Commit. Disparar plan.
+- Grava um arquivo só: `.vibeflow/phases/phase-N-slug/spec.md`. Sem `docs/`, `specs/`, sem branch `###-feature`.
+- `next_n` é proibido enquanto houver `interview_pendente`.
+- Não apaga `interview.md`. Não pisa pasta com `plan.md`.
+- Fecha comportamento e aceite, não forma: sem `FR-00N`, mural de user story ou CSS/paleta.
+
+Backlog e decisões de escopo: [`docs/ESCOPO.md`](../ESCOPO.md).
 
 ---
 

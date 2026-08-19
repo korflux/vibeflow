@@ -48,7 +48,7 @@ def seed_phase(vf: Path, name: str, *files: str) -> Path:
 
 
 class PythonContracts(unittest.TestCase):
-    """Verifica inventário, alvo com plan, flags recusadas e gitignore."""
+    """Verifica inventário, alvo com plan, apply do wip e gitignore."""
 
     def setUp(self) -> None:
         self.repo = Path.cwd() / f".vibe-implement-python-{uuid.uuid4().hex}"
@@ -114,12 +114,14 @@ class PythonContracts(unittest.TestCase):
         self.assertNotEqual(0, process.returncode)
         self.assertIn("FASE_AUSENTE", process.stderr)
 
-    def test_review_listed_in_files(self) -> None:
+    def test_review_and_implement_listed_in_files(self) -> None:
         vf = seed_vibeflow(self.repo)
-        seed_phase(vf, "phase-1-com-review", "plan.md", "review.md")
+        seed_phase(vf, "phase-1-com-review", "plan.md", "review.md", "implement.md")
         _, report = invoke(self.repo)
         self.assertIn("review.md", report["alvo"]["files"])
         self.assertIn("plan.md", report["alvo"]["files"])
+        self.assertIn("implement.md", report["alvo"]["files"])
+        self.assertEqual("atualizar", report["modo_sugerido"])
 
     def test_gitignore_preserves_siblings(self) -> None:
         vf = seed_vibeflow(self.repo)
@@ -127,18 +129,54 @@ class PythonContracts(unittest.TestCase):
         text = (vf / ".gitignore").read_text(encoding="utf-8")
         self.assertIn("plan-report.json", text)
         self.assertIn("implement-report.json", text)
-        self.assertNotIn("implement-wip.md", text)
+        self.assertIn("implement-wip.md", text)
 
-    def test_apply_and_slug_rejected(self) -> None:
+    def test_apply_without_wip(self) -> None:
         vf = seed_vibeflow(self.repo)
-        process, report = invoke(self.repo, "--apply", check=False)
+        seed_phase(vf, "phase-1-a", "plan.md")
+        process, _ = invoke(self.repo, "--apply", check=False)
         self.assertNotEqual(0, process.returncode)
-        self.assertIn("FLAG_DESCONHECIDA", process.stderr)
-        self.assertIsNone(report)
+        self.assertIn("WIP_AUSENTE", process.stderr)
+        self.assertFalse((vf / "phases" / "phase-1-a" / "implement.md").exists())
+
+    def test_apply_reuses_plan_folder(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        seed_phase(vf, "phase-1-a", "spec.md", "plan.md")
+        (vf / "implement-wip.md").write_text("# trilha\n", encoding="utf-8")
+        _, report = invoke(self.repo, "--apply")
+        dest = vf / "phases" / "phase-1-a" / "implement.md"
+        self.assertTrue(dest.is_file())
+        self.assertEqual("# trilha\n", dest.read_text(encoding="utf-8"))
         self.assertFalse((vf / "implement-wip.md").exists())
-        process, _ = invoke(self.repo, "--slug", "x", check=False)
+        self.assertFalse((vf / "phases" / "phase-2-a").exists())
+        self.assertEqual("reuse", report["modo"])
+        self.assertIn("implement.md", report["alvo"]["files"])
+
+    def test_apply_updates_existing_implement(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        seed_phase(vf, "phase-1-a", "plan.md", "implement.md")
+        (vf / "implement-wip.md").write_text("# fatia 2\n", encoding="utf-8")
+        _, report = invoke(self.repo, "--apply")
+        self.assertEqual("# fatia 2\n", (vf / "phases" / "phase-1-a" / "implement.md").read_text(encoding="utf-8"))
+        self.assertEqual("atualizar", report["modo"])
+
+    def test_apply_without_alvo_or_slug(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        (vf / "implement-wip.md").write_text("x\n", encoding="utf-8")
+        process, _ = invoke(self.repo, "--apply", check=False)
         self.assertNotEqual(0, process.returncode)
-        self.assertIn("FLAG_DESCONHECIDA", process.stderr)
+        self.assertIn("IMPLEMENT_SEM_ALVO", process.stderr)
+        self.assertTrue((vf / "implement-wip.md").is_file())
+
+    def test_slug_creates_avulsa(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        (vf / "implement-wip.md").write_text("# avulsa\n", encoding="utf-8")
+        _, report = invoke(self.repo, "--apply", "--slug", "hotfix-cor")
+        dest = vf / "phases" / "phase-1-hotfix-cor" / "implement.md"
+        self.assertTrue(dest.is_file())
+        self.assertEqual("# avulsa\n", dest.read_text(encoding="utf-8"))
+        self.assertEqual("criar", report["modo"])
+        self.assertEqual(2, report["next_n"])
 
     def test_phases_file_is_unexpected(self) -> None:
         vf = seed_vibeflow(self.repo)
@@ -148,9 +186,18 @@ class PythonContracts(unittest.TestCase):
         self.assertIn("PHASES_INESPERADO", process.stderr)
 
 
-@unittest.skipUnless(shutil.which("pwsh"), "pwsh indisponível")
+# Verifica se existe uma versão real de PowerShell 7, única suportada pelo motor gêmeo.
+def powershell7() -> str | None:
+    executable = shutil.which("pwsh")
+    if not executable:
+        return None
+    probe = subprocess.run([executable, "-NoProfile", "-Command", "$PSVersionTable.PSVersion.Major"], capture_output=True, text=True, check=False)
+    return executable if probe.stdout.strip().isdigit() and int(probe.stdout.strip()) >= 7 else None
+
+
+@unittest.skipUnless(powershell7(), "PowerShell 7 indisponível")
 class PowershellParity(unittest.TestCase):
-    """Confere que o inventário PowerShell aponta o mesmo alvo.path."""
+    """Confere que o apply reuse do PowerShell grava o mesmo path."""
 
     def setUp(self) -> None:
         self.repo = Path.cwd() / f".vibe-implement-ps-{uuid.uuid4().hex}"
@@ -159,20 +206,22 @@ class PowershellParity(unittest.TestCase):
     def tearDown(self) -> None:
         shutil.rmtree(self.repo, ignore_errors=True)
 
-    def test_inventory_reuse_same_path(self) -> None:
+    def test_apply_reuse_same_path(self) -> None:
         vf = seed_vibeflow(self.repo)
         seed_phase(vf, "phase-1-lock-bloco", "spec.md", "plan.md")
+        (vf / "implement-wip.md").write_text("# trilha\n", encoding="utf-8")
         process = subprocess.run(
-            ["pwsh", "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo)],
+            [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo), "-Apply"],
             capture_output=True,
             text=True,
             check=False,
         )
         self.assertEqual(0, process.returncode, process.stderr)
-        report = json.loads((vf / "implement-report.json").read_text(encoding="utf-8"))
-        self.assertEqual(".vibeflow/phases/phase-1-lock-bloco", report["alvo"]["path"])
-        self.assertEqual("reuse", report["modo_sugerido"])
-        self.assertFalse((vf / "phases" / "phase-2-lock-bloco").exists())
+        dest = vf / "phases" / "phase-1-lock-bloco" / "implement.md"
+        self.assertTrue(dest.is_file())
+        self.assertEqual("# trilha\n", dest.read_text(encoding="utf-8"))
+        self.assertTrue((vf / "phases" / "phase-1-lock-bloco" / "plan.md").is_file())
+        self.assertFalse((vf / "implement-wip.md").exists())
 
 
 if __name__ == "__main__":

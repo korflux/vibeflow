@@ -75,6 +75,7 @@ Wip = `.vibeflow/spec-wip.md`. Molde: `templates/spec.md`. Status `rascunho`.
 Não pergunte se pode salvar. Não cole o corpo no chat.
 
 1. Preencha o wip. Omita seção N/A. Não invente. Fora real. Comandos só se existem no repo.
+   Sem `FR-00N`, sem mural de user story, sem CSS/paleta: a spec fecha comportamento, não forma.
 2. Apply:
    - reuse/atualizar: `pwsh "<skill>/scripts/spec.ps1" -Apply`
    - criar: `… -Apply -Slug "<frase curta>"`
@@ -109,6 +110,3 @@ Rascunho sem “aprovado” e sem pedido de plan **não** autoriza fatiar.
 Não commita. Avise: commitar `.vibeflow/phases/phase-N-slug/spec.md`. Não commitar `spec-report.json` nem `spec-wip.md`.
 Handoff no arquivo: `vibe-plan`. **Não** dispare a skill.
 
-## Fora (v1)
-
-Plan, todo, código, review, path `docs/`/`specs/`/`fluxline`, `next_n` com interview pendente, Open Questions no `.md`, dump no chat, inventar módulo, mural de user story, FR-00N, CSS/paleta, commit.

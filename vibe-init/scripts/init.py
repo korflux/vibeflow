@@ -21,6 +21,11 @@ from typing import Any
 TARGET_REL = ".vibeflow/REGRAS.md"
 IGNORED_DIRS = {"node_modules", ".git", "dist", "build", ".next", "vendor", "__pycache__"}
 EVIDENCE_WARNINGS: list[str] = []
+MAX_STRUCTURE_ITEMS = 120
+MAX_MIGRATION_DEPTH = 4
+# Estado vivo da run: referências às listas que a matriz alimenta, para que uma falha
+# depois da primeira escrita ainda produza relatório do que já foi feito no disco.
+PARTIAL: dict[str, Any] = {}
 
 
 # Interpreta somente os parâmetros equivalentes ao contrato público do init.ps1.
@@ -285,7 +290,7 @@ def paragraph_evidence(repo: Path) -> dict[str, str] | None:
     return None
 
 
-# Lista dois níveis úteis da árvore sem entrar em diretórios de dependências ou build.
+# Lista dois níveis úteis da árvore, com teto, para o SLOT não virar dump em repo grande.
 def structure(repo: Path) -> list[str]:
     result: list[str] = []
     for entry in sorted(repo.iterdir(), key=lambda item: item.name.casefold()):
@@ -298,6 +303,8 @@ def structure(repo: Path) -> list[str]:
             except OSError:
                 children = []
             result.extend(f"{entry.name}/{child.name}" for child in children if child.name not in IGNORED_DIRS)
+    if len(result) > MAX_STRUCTURE_ITEMS:
+        return result[:MAX_STRUCTURE_ITEMS] + [f"… (+{len(result) - MAX_STRUCTURE_ITEMS} itens omitidos)"]
     return result
 
 
@@ -312,9 +319,9 @@ def has_migrations(repo: Path) -> bool:
     known = ("prisma/migrations", "alembic", "alembic.ini", "drizzle", "knexfile.js", "knexfile.ts", "supabase/migrations")
     if any((repo / path).exists() for path in known):
         return True
-    queue: deque[Path] = deque([repo])
+    queue: deque[tuple[Path, int]] = deque([(repo, 0)])
     while queue:
-        current = queue.popleft()
+        current, depth = queue.popleft()
         try:
             children = current.iterdir()
         except OSError:
@@ -324,7 +331,8 @@ def has_migrations(repo: Path) -> bool:
                 continue
             if child.name == "migrations":
                 return True
-            queue.append(child)
+            if depth + 1 < MAX_MIGRATION_DEPTH:
+                queue.append((child, depth + 1))
     return False
 
 
@@ -423,6 +431,11 @@ def run(args: argparse.Namespace) -> Path:
     merges: list[dict[str, Any]] = []
     conflicts: list[dict[str, str]] = []
     warnings: list[str] = []
+    PARTIAL.clear()
+    PARTIAL.update({
+        "repo": repo, "flow": flow, "inventory": inventory, "olds": olds,
+        "actions": actions, "merges": merges, "conflicts": conflicts, "warnings": warnings,
+    })
 
     # Registra ações em um único formato para manter paridade com o relatório PowerShell.
     def action(operation: str, target: str) -> None:
@@ -442,8 +455,10 @@ def run(args: argparse.Namespace) -> Path:
         action("criar_dir", ".vibeflow")
     if not phases.exists():
         phases.mkdir(parents=True)
-        (phases / ".gitkeep").write_text("", encoding="utf-8")
         action("criar_phases", ".vibeflow/phases")
+    if not (phases / ".gitkeep").exists():
+        (phases / ".gitkeep").write_text("", encoding="utf-8")
+        action("criar_phases", ".vibeflow/phases/.gitkeep")
     add_gitignore_entry(vf / ".gitignore", "init-report.json")
     add_gitignore_entry(vf / ".gitignore", "init-pending.json")
 
@@ -452,24 +467,31 @@ def run(args: argparse.Namespace) -> Path:
     equal_legacy = agents_legacy and claude_legacy and same_bytes(agents_path, claude_path)
     content_state = regras_file_state(live if live.exists() else root_copy)
     need_template = inventory["regras"] not in ("raiz_sozinho", "raiz_e_vibeflow") and content_state in ("ausente", "vazio")
+    # Toda fonte de texto que perde o papel de arquivo editável vira merge, inclusive quando o
+    # REGRAS vem da raiz: sem isso o legado só sobrevive em old/ e some do consolidado.
+    # AGENTS idêntico a CLAUDE entra uma vez só; a IA não precisa ler o mesmo texto duas vezes.
+    legacy_sources = [".vibeflow/old/AGENTS.md"] if agents_legacy else []
+    if claude_legacy and not equal_legacy:
+        legacy_sources.append(".vibeflow/old/CLAUDE.md")
+    live_has_text = live.is_file() and bool((read_text(live) or "").strip())
+    duplicated = inventory["regras"] == "raiz_e_vibeflow" and not same_bytes(root_copy, live)
     merge_pending = False
     if not args.apply_pointers:
-        if need_template or content_state == "vazio" or inventory["regras"] == "ausente":
-            if agents_legacy and claude_legacy and not equal_legacy:
-                merge_pending = True
-                merges.append({"id": "duas_fontes", "sources": [".vibeflow/old/AGENTS.md", ".vibeflow/old/CLAUDE.md"], "target": TARGET_REL})
-            elif agents_legacy or claude_legacy:
-                merge_pending = True
-                sources = ([".vibeflow/old/AGENTS.md"] if agents_legacy else []) + ([".vibeflow/old/CLAUDE.md"] if claude_legacy else [])
-                merges.append({"id": "legado_vs_regras", "sources": sources, "target": TARGET_REL})
-        elif inventory["regras"] in ("template", "preenchido"):
-            sources = ([".vibeflow/old/AGENTS.md"] if agents_legacy else []) + ([".vibeflow/old/CLAUDE.md"] if claude_legacy else [])
-            if sources:
-                merge_pending = True
-                merges.append({"id": "legado_vs_regras", "sources": sources + [".vibeflow/old/REGRAS.md"], "target": TARGET_REL})
-        elif inventory["regras"] == "raiz_e_vibeflow" and not same_bytes(root_copy, live):
-            merge_pending = True
+        if duplicated:
             merges.append({"id": "regras_duplicado", "sources": [".vibeflow/old/REGRAS-raiz.md", ".vibeflow/old/REGRAS.md"], "target": TARGET_REL})
+        if legacy_sources:
+            # Texto que o consolidado já terá nesta run: o vivo, ou o REGRAS da raiz que vira o vivo.
+            if duplicated:
+                existing: list[str] = []
+            elif inventory["regras"] == "raiz_sozinho":
+                existing = [".vibeflow/old/REGRAS-raiz.md"]
+            elif live_has_text and inventory["regras"] in ("template", "preenchido", "raiz_e_vibeflow"):
+                existing = [".vibeflow/old/REGRAS.md"]
+            else:
+                existing = []
+            merge_id = "duas_fontes" if not existing and len(legacy_sources) > 1 else "legado_vs_regras"
+            merges.append({"id": merge_id, "sources": legacy_sources + existing, "target": TARGET_REL})
+        merge_pending = bool(merges)
     if merges:
         action("merge_pendente", TARGET_REL)
 
@@ -481,6 +503,7 @@ def run(args: argparse.Namespace) -> Path:
         elif state == "inesperado":
             conflicts.append({"id": "tipo_inesperado", "peca": name, "detalhe": "não é arquivo nem symlink"})
 
+    needed_sources = {source for merge in merges for source in merge["sources"]}
     old_map: dict[str, str] = {}
     if not args.apply_pointers:
         if agents_legacy or inventory["agents"] in ("arquivo_igual", "ponteiro_texto"):
@@ -489,7 +512,7 @@ def run(args: argparse.Namespace) -> Path:
             old_map[".vibeflow/old/CLAUDE.md"] = save_old(claude_path, "CLAUDE.md")
         if inventory["regras"] in ("raiz_sozinho", "raiz_e_vibeflow"):
             old_map[".vibeflow/old/REGRAS-raiz.md"] = save_old(root_copy, "REGRAS-raiz.md")
-        if merge_pending and inventory["regras"] in ("template", "preenchido", "raiz_e_vibeflow") and live.is_file() and (read_text(live) or "").strip():
+        if ".vibeflow/old/REGRAS.md" in needed_sources and live_has_text:
             old_map[".vibeflow/old/REGRAS.md"] = save_old(live, "REGRAS.md")
         for merge in merges:
             merge["sources"] = [old_map.get(source, source) for source in merge["sources"]]
@@ -603,12 +626,26 @@ def write_report(
     return report_path
 
 
+# Grava o que a run já fez quando ela falha no meio: sem isso a IA fica sem contrato de disco
+# justamente no cenário em que o repositório ficou parcialmente convertido.
+def write_partial_report(error: BaseException) -> None:
+    repo = PARTIAL.get("repo")
+    if not repo or not (repo / ".vibeflow").is_dir() or not PARTIAL["actions"]:
+        return
+    PARTIAL["warnings"].append(f"run interrompida: {error}")
+    write_report(
+        repo, PARTIAL["flow"], PARTIAL["inventory"], PARTIAL["olds"], PARTIAL["actions"],
+        PARTIAL["merges"], PARTIAL["conflicts"], PARTIAL["warnings"], {}, [], False, {}, False, False, None,
+    )
+
+
 # Converte falhas previstas em mensagens curtas, sem stack trace operacional para o usuário.
 def main() -> int:
     try:
         run(parse_args())
         return 0
     except (OSError, RuntimeError, ValueError, json.JSONDecodeError) as error:
+        write_partial_report(error)
         print(str(error), file=sys.stderr)
         return 1
 

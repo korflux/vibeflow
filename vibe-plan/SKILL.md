@@ -80,6 +80,8 @@ UI greenfield / sem DS na spec: uma T* de tokens/kit **antes** das telas. Reuso 
 
 Paralelo: fatias independentes. Sequencial: migration, estado compartilhado. Contrato primeiro, depois lados.
 
+IDs `T1`, `T2`… na ordem de execução. Sem `T001`, `[P]`, `[US1]`, `tasks.md` ou mural de user story.
+
 Não copie a spec. Não invente módulo.
 
 ## 5. Escrever e salvar já
@@ -119,6 +121,3 @@ Rascunho sem “aprovado” e sem pedido da próxima porta **não** autoriza có
 Não commita. Avise: commitar `.vibeflow/phases/phase-N-slug/plan.md`. Não commitar `plan-report.json` nem `plan-wip.md`.
 Handoff no arquivo: `vibe-implement`. **Não** dispare a skill. Zero implementação nesta run.
 
-## Fora (v1)
-
-Código, analyze, review, `todo.md`, `tasks.md`, `checklists/`, `docs/`/`specs/`/`fluxline`, `--slug`/fase nova, Open Questions no `.md`, dump no chat, T001/[P]/[US1], mural de user story, commit.

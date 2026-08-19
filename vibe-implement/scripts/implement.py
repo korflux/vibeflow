@@ -1,32 +1,33 @@
 #!/usr/bin/env python3
-"""Inventaria .vibeflow/phases e aponta a fase a implementar. Não promove wip."""
+"""Inventaria .vibeflow/phases e promove o wip para phase-N-slug/implement.md."""
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import shutil
 import subprocess
 import sys
+import unicodedata
 from pathlib import Path
 from typing import Any
 
 
 PHASE_RE = re.compile(r"^phase-(\d+)-([a-z0-9]+(?:-[a-z0-9]+)*)$")
-CHAIN_FILES = ("interview.md", "spec.md", "plan.md", "analyze.md", "review.md")
+CHAIN_FILES = ("interview.md", "spec.md", "plan.md", "analyze.md", "implement.md", "review.md")
+MAX_SLUG = 48
 
 
-# Interpreta somente as flags públicas do implement.ps1. Qualquer outra é erro.
+# Interpreta somente os parâmetros equivalentes ao contrato público do implement.ps1.
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Inventaria a fase para vibe-implement")
+    parser = argparse.ArgumentParser(description="Inventaria e promove implement para .vibeflow/phases")
     parser.add_argument("--root")
+    parser.add_argument("--apply", action="store_true")
+    parser.add_argument("--slug")
     parser.add_argument("--dir")
-    args, unknown = parser.parse_known_args()
-    if unknown:
-        joined = " ".join(unknown)
-        raise RuntimeError(f"FLAG_DESCONHECIDA: {joined} não existe nesta skill.")
-    return args
+    return parser.parse_args()
 
 
 # Resolve a raiz por parâmetro, Git ou cwd, sem tornar o Git uma dependência obrigatória.
@@ -43,6 +44,15 @@ def repo_root(explicit: str | None) -> Path:
         if result.returncode == 0 and result.stdout.strip():
             return Path(result.stdout.strip()).resolve()
     return Path.cwd().resolve()
+
+
+# Calcula o hash usado para validar a cópia do wip byte a byte.
+def sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 # Lê texto operacional que precisa ser preservado integralmente.
@@ -62,9 +72,11 @@ def add_gitignore_entry(path: Path, entry: str) -> None:
         stream.write(f"{prefix}{entry}\n")
 
 
-# Garante que o relatório não entre no Git sem apagar as entradas das outras skills.
+# Garante que relatório e wip não entrem no Git sem apagar as entradas das outras skills.
 def ensure_gitignore(vf: Path) -> None:
-    add_gitignore_entry(vf / ".gitignore", "implement-report.json")
+    gitignore = vf / ".gitignore"
+    add_gitignore_entry(gitignore, "implement-report.json")
+    add_gitignore_entry(gitignore, "implement-wip.md")
 
 
 # Classifica .vibeflow antes de qualquer escrita.
@@ -83,6 +95,16 @@ def phases_state(path: Path) -> str:
     if not path.is_dir():
         return "inesperado"
     return "ok"
+
+
+# Transforma a frase curta da fase em slug ASCII [a-z0-9-], 2–48 chars.
+def sanitize_slug(raw: str) -> str:
+    decomposed = unicodedata.normalize("NFKD", raw or "")
+    ascii_only = decomposed.encode("ascii", "ignore").decode("ascii")
+    lowered = ascii_only.lower()
+    compact = re.sub(r"[^a-z0-9]+", "-", lowered).strip("-")
+    compact = re.sub(r"-{2,}", "-", compact)
+    return compact[:MAX_SLUG].strip("-")
 
 
 # Monta o objeto de fase a partir de uma pasta que já bateu o padrão.
@@ -118,7 +140,23 @@ def list_phases(phases: Path) -> tuple[list[dict[str, Any]], list[str]]:
     return existing, warnings
 
 
-# Maior n que já tem plan.md: é a fila desta skill sem --dir.
+# Maior n com plan e sem implement: primeira escrita desta skill na fila.
+def find_plan_pendente(existing: list[dict[str, Any]]) -> dict[str, Any] | None:
+    for item in reversed(existing):
+        if "plan.md" in item["files"] and "implement.md" not in item["files"]:
+            return item
+    return None
+
+
+# Maior n que já tem implement.md: vivo atualizável.
+def find_rascunho(existing: list[dict[str, Any]]) -> dict[str, Any] | None:
+    for item in reversed(existing):
+        if "implement.md" in item["files"]:
+            return item
+    return None
+
+
+# Maior n com plan.md: é a fila desta skill sem --dir.
 def find_alvo_com_plan(existing: list[dict[str, Any]]) -> dict[str, Any] | None:
     for item in reversed(existing):
         if "plan.md" in item["files"]:
@@ -126,8 +164,20 @@ def find_alvo_com_plan(existing: list[dict[str, Any]]) -> dict[str, Any] | None:
     return None
 
 
-# Destino: --dir se veio; senão maior n com plan. Sem alvo = não há fila no disco.
-def resolve_alvo(
+# Destino preferido: fase com plan, senão implement avulso, senão criar.
+def resolve_alvo(existing: list[dict[str, Any]]) -> tuple[dict[str, Any] | None, str]:
+    with_plan = find_alvo_com_plan(existing)
+    if with_plan:
+        modo = "atualizar" if "implement.md" in with_plan["files"] else "reuse"
+        return with_plan, modo
+    draft = find_rascunho(existing)
+    if draft:
+        return draft, "atualizar"
+    return None, "criar"
+
+
+# Destino: --dir se veio; senão o alvo do inventário.
+def resolve_alvo_com_dir(
     existing: list[dict[str, Any]],
     dir_arg: str | None,
     phases: Path,
@@ -139,11 +189,20 @@ def resolve_alvo(
                 f"FASE_AUSENTE: .vibeflow/phases/{dest.name} não é uma pasta de fase."
             )
         found = next((item for item in existing if item["dir"] == dest.name), None)
-        return (found if found is not None else phase_item(dest)), "reuse"
-    found = find_alvo_com_plan(existing)
-    if found:
-        return found, "reuse"
-    return None, "criar"
+        item = found if found is not None else phase_item(dest)
+        modo = "atualizar" if "implement.md" in item["files"] else "reuse"
+        return item, modo
+    return resolve_alvo(existing)
+
+
+# Cópia binária conferida. Não apaga pasta que já tinha outros artefatos.
+def promote_wip(wip: Path, dest_file: Path, dest_dir: Path, created_dir: bool) -> None:
+    dest_file.write_bytes(wip.read_bytes())
+    if dest_file.stat().st_size != wip.stat().st_size or sha256(dest_file) != sha256(wip):
+        dest_file.unlink(missing_ok=True)
+        if created_dir and dest_dir.exists() and not any(dest_dir.iterdir()):
+            dest_dir.rmdir()
+        raise RuntimeError("COPY_HASH_MISMATCH: a cópia do wip não bateu com o original.")
 
 
 # Monta o JSON que a skill lê; stdout só o path do relatório.
@@ -158,11 +217,12 @@ def write_report(vf: Path, payload: dict[str, Any]) -> Path:
     return report_path
 
 
-# Inventaria o disco. Não escreve plan/spec e não promove wip.
+# Inventaria o disco e opcionalmente promove o wip para implement.md.
 def run(args: argparse.Namespace) -> Path:
     repo = repo_root(args.root)
     vf = repo / ".vibeflow"
     phases = vf / "phases"
+    wip = vf / "implement-wip.md"
     actions: list[dict[str, str]] = []
 
     vf_state = vibeflow_state(vf)
@@ -183,7 +243,63 @@ def run(args: argparse.Namespace) -> Path:
     ensure_gitignore(vf)
     existing, warnings = list_phases(phases)
     next_n = (existing[-1]["n"] + 1) if existing else 1
-    alvo, modo_sugerido = resolve_alvo(existing, args.dir, phases)
+    pending = find_plan_pendente(existing)
+    draft = find_rascunho(existing)
+    alvo, modo_sugerido = resolve_alvo_com_dir(existing, args.dir, phases)
+    created: dict[str, Any] | None = None
+    modo: str | None = None
+
+    if args.apply:
+        if not wip.is_file() or wip.stat().st_size == 0:
+            raise RuntimeError("WIP_AUSENTE: falta .vibeflow/implement-wip.md preenchido.")
+
+        dest_dir: Path
+        created_dir = False
+        if args.dir:
+            dest_dir = phases / Path(args.dir).name
+            if not dest_dir.is_dir() or not PHASE_RE.fullmatch(dest_dir.name):
+                raise RuntimeError(
+                    f"FASE_AUSENTE: .vibeflow/phases/{dest_dir.name} não é uma pasta de fase."
+                )
+            modo = "atualizar" if (dest_dir / "implement.md").is_file() else "reuse"
+        elif alvo:
+            dest_dir = repo / alvo["path"]
+            modo = modo_sugerido
+        else:
+            if not (args.slug or "").strip():
+                raise RuntimeError(
+                    "IMPLEMENT_SEM_ALVO: sem fase alvo; passe --slug para abrir uma pasta nova."
+                )
+            slug = sanitize_slug(args.slug or "")
+            if len(slug) < 2:
+                raise RuntimeError("SLUG_INVALIDO: a frase curta não gerou um slug utilizável.")
+            dest_dir = phases / f"phase-{next_n}-{slug}"
+            if dest_dir.exists():
+                raise RuntimeError(f"FASE_EXISTE: .vibeflow/phases/{dest_dir.name} já existe.")
+            dest_dir.mkdir(parents=True)
+            created_dir = True
+            modo = "criar"
+            actions.append({"op": "criar_fase", "alvo": f".vibeflow/phases/{dest_dir.name}"})
+
+        dest_file = dest_dir / "implement.md"
+        rel = f".vibeflow/phases/{dest_dir.name}"
+        try:
+            promote_wip(wip, dest_file, dest_dir, created_dir)
+        except Exception:
+            if created_dir:
+                dest_file.unlink(missing_ok=True)
+                if dest_dir.exists() and not any(dest_dir.iterdir()):
+                    dest_dir.rmdir()
+            raise
+        wip.unlink()
+        actions.append({"op": "promover_wip", "alvo": f"{rel}/implement.md"})
+        existing, extra_warnings = list_phases(phases)
+        warnings.extend(extra_warnings)
+        next_n = (existing[-1]["n"] + 1) if existing else 1
+        pending = find_plan_pendente(existing)
+        draft = find_rascunho(existing)
+        alvo, modo_sugerido = resolve_alvo(existing)
+        created = next((item for item in existing if item["dir"] == dest_dir.name), None)
 
     payload = {
         "root": str(repo),
@@ -191,13 +307,13 @@ def run(args: argparse.Namespace) -> Path:
         "phases": ph_state,
         "next_n": next_n,
         "existing": existing,
-        "plan_pendente": None,
-        "rascunho": None,
+        "plan_pendente": pending,
+        "rascunho": draft,
         "alvo": alvo,
         "modo_sugerido": modo_sugerido,
-        "wip": "ausente",
-        "created": None,
-        "modo": None,
+        "wip": "presente" if wip.is_file() else "ausente",
+        "created": created,
+        "modo": modo,
         "actions": actions,
         "avisos": warnings,
     }

@@ -1,14 +1,15 @@
 # vibe-implement — arquitetura
 
-`/vibe-implement` executa a próxima fatia da fase e **marca o disco que já existe**. Não grava `implement.md`. O script só inventaria. A IA escreve código no app e edita checkboxes em `plan.md` / `spec.md` / `review.md`.
+`/vibe-implement` executa a próxima fatia da fase, marca o disco da cadeia e grava a trilha em `implement.md`. O script inventaria e promove o wip. A IA escreve código, marca checkboxes e preenche o template.
 
 ```
-.vibeflow/phases/phase-<n>-<slug>/plan.md   ← fila (T* + checkpoints)
-.vibeflow/phases/phase-<n>-<slug>/spec.md   ← A*/C* quando a fatia prova
-.vibeflow/phases/phase-<n>-<slug>/review.md ← R* se existir e estiver aberto
+.vibeflow/phases/phase-<n>-<slug>/implement.md   ← trilha da run (prova + feedback)
+.vibeflow/phases/phase-<n>-<slug>/plan.md        ← fila (T* + checkpoints)
+.vibeflow/phases/phase-<n>-<slug>/spec.md        ← A*/C* quando a fatia prova
+.vibeflow/phases/phase-<n>-<slug>/review.md      ← R* se existir e estiver aberto
 ```
 
-Mesma pasta do plan. Esta skill **não** aloca `n` novo. Sem `plan.md`, o script devolve `alvo` nulo; a skill decide se a rota `low`/`medium` segue avulsa ou se manda `/vibe-plan`.
+Mesma pasta do plan. Esta skill **não** aloca `n` novo se já há alvo. Sem `plan.md`, o script devolve `alvo` nulo (ou a fase com `implement.md`, se for avulsa em andamento); a skill decide se a rota `low`/`medium` abre pasta com `--slug` ou se `high+` manda `/vibe-plan`.
 
 ---
 
@@ -16,12 +17,13 @@ Mesma pasta do plan. Esta skill **não** aloca `n` novo. Sem `plan.md`, o script
 
 | Peça | Onde | Faz |
 |---|---|---|
-| Skill | `vibe-implement/SKILL.md` | Gate, TDD, prova visual, marcar disco, modo A/B, Q+RECOMENDO |
-| Scripts | `vibe-implement/scripts/implement.ps1`, `implement.py`, `implement.sh` | Inventário, alvo, gitignore, relatório |
+| Skill | `vibe-implement/SKILL.md` | Gate, TDD, prova visual, marcar disco, wip, modo A/B, Q+RECOMENDO |
+| Scripts | `vibe-implement/scripts/implement.ps1`, `implement.py`, `implement.sh` | Inventário, alvo, `--slug`, promove wip → `implement.md` |
+| Template | `vibe-implement/templates/implement.md` | Esqueleto. Script não preenche prosa |
 | Referências | `vibe-implement/references/chrome-devtools.md`, `definition-of-done.md` | Sob demanda. Script não lê |
 | Relatório | `.vibeflow/implement-report.json` | Contrato script → IA (gitignored) |
-
-Sem template. Sem wip. Sem artefato vivo próprio.
+| Wip | `.vibeflow/implement-wip.md` | Rascunho até o apply (gitignored) |
+| Vivo | `.vibeflow/phases/phase-N-slug/implement.md` | Depois do apply. Commitável |
 
 Install: user-scope, pacote sem `docs/`. Fonte canônica: `vibe-implement/`.
 
@@ -41,13 +43,20 @@ Pasta que bate `^phase-(\d+)-([a-z0-9]+(?:-[a-z0-9]+)*)$`.
 
 | Campo | Significa |
 |---|---|
-| `alvo` | Fase que a IA deve ler. Sem `--dir`: maior `n` que tem `plan.md`. Com `--dir`: essa pasta, se existir |
+| `alvo` | Destino preferido do apply sem `--dir` |
+| `plan_pendente` | Maior `n` com `plan.md` e sem `implement.md` |
+| `rascunho` | Maior `n` com `implement.md` |
 
-`--dir phase-N-slug` força pasta existente e com nome válido. Inexistente ou fora do padrão → `FASE_AUSENTE`. `--dir` **não** exige `plan.md` (rota `low` pode apontar uma fase sem fila).
+Resolução de `alvo` (primeira que existir):
 
-Sem `plan.md` em pasta alguma e sem `--dir` → `alvo` nulo, `modo_sugerido=criar`. O script **não** cria pasta e **não** falha. A skill interpreta.
+1. `--dir` (pasta existente e com nome válido)
+2. maior `n` com `plan.md` (`reuse` se ainda não há `implement.md`, `atualizar` se já há)
+3. maior `n` com `implement.md` (`atualizar`, avulsa em andamento)
+4. `null` (`criar`)
 
-Não existe `--apply` nem `--slug`. Implement não abre fase.
+`--dir` inexistente ou fora do padrão → `FASE_AUSENTE`. `--dir` **não** exige `plan.md` (rota `low` pode apontar uma fase sem fila).
+
+Sem alvo e sem `--slug` no apply → `IMPLEMENT_SEM_ALVO`.
 
 `interview.md`, `analyze.md` e `review.md` são opcionais. O script só lista o que existir.
 
@@ -57,16 +66,20 @@ Não existe `--apply` nem `--slug`. Implement não abre fase.
 
 ```
 [1] SCRIPT inventário → implement-report.json
-[2] IA lê relatório + o que a alvo tiver (interview/spec/plan/analyze/review) + REGRAS.md
+[2] IA lê relatório + o que a alvo tiver + REGRAS.md
 [3] Gate (rota, modo A/B, analyze bloqueado, fila R* vs T*)
 [4] Descobre test runner do repo. RED→GREEN→REFACTOR → verify
-[5] UI web: Chrome DevTools por padrão (ref). Playwright/E2E se T* ou humano mandar
-[6] Prova verde → marca [x] nos vivos da cadeia, na mesma resposta
-[7] Sem prova → [ ] intacto, Q+RECOMENDO
-[8] Modo A: para. Não commita. Não dispara review
+[5] UI web: Chrome DevTools por padrão (ref). E2E se T* ou humano mandar
+[6] Prova verde → marca [x] nos vivos da cadeia
+[7] Wip no template (fatias anteriores copiadas + fatia nova + feedback)
+[8] SCRIPT apply
+[9] Sem prova → [ ] intacto, sem apply, Q+RECOMENDO
+[10] Modo A: para. Não commita. Não dispara review
 ```
 
-Ajuste de checkbox é patch no vivo. Sem apply.
+Checkbox é patch no vivo. `implement.md` só entra por apply.
+
+Fatia nova **não** apaga as anteriores: a IA lê o vivo, escreve o wip completo (histórico + fatia desta run) e o apply substitui o arquivo inteiro.
 
 ---
 
@@ -78,46 +91,46 @@ Zero prosa. Zero interpretação de checkbox ou `# Status:`.
 |---|---|
 | `vibeflow` | `ausente` / `ok` / `inesperado` |
 | `phases` | `ausente` / `ok` / `inesperado` |
-| `next_n` | max n + 1, ou 1 (informativo; apply não existe) |
+| `next_n` | max n + 1, ou 1 |
 | `existing[]` | `{ dir, n, slug, path, files }` |
+| `plan_pendente` | objeto ou `null` |
+| `rascunho` | objeto ou `null` |
 | `alvo` | objeto ou `null` |
-| `modo_sugerido` | `reuse` (há alvo) / `criar` (não há fase com plan e não veio `--dir`) |
-| `actions[]` | ex. `criar_phases` |
+| `modo_sugerido` | `reuse` / `atualizar` / `criar` |
+| `wip` | `ausente` / `presente` |
+| `actions[]` | ex. `criar_phases`, `promover_wip` |
 | `avisos[]` | nomes fora do padrão |
 
-`files` só: `interview.md`, `spec.md`, `plan.md`, `analyze.md`, `review.md`.
-
-`modo_sugerido=criar` significa “não há fase com plan para executar”. O script **não** cria.
-
-Campos das irmãs que não se aplicam ficam fixos no JSON para a IA não achar schema partido:
-
-| Campo | Valor nesta skill |
-|---|---|
-| `wip` | sempre `ausente` |
-| `rascunho` | sempre `null` |
-| `created` | sempre `null` |
-| `modo` | sempre `null` |
-| `plan_pendente` | sempre `null` |
+`files` só: `interview.md`, `spec.md`, `plan.md`, `analyze.md`, `implement.md`, `review.md`.
 
 ---
 
-## 6. Flags e apply
+## 6. Apply
 
 ```
-pwsh "<skill>/scripts/implement.ps1" [-Root <path>] [-Dir "phase-1-slug"]
-bash "<skill>/scripts/implement.sh" [--root <path>] [--dir phase-1-slug]
+pwsh "<skill>/scripts/implement.ps1" -Apply [-Dir "phase-1-slug"] [-Slug "frase"]
+bash "<skill>/scripts/implement.sh" --apply [--dir phase-1-slug] [--slug frase]
 ```
 
 Ordem:
 
-1. Sem `.vibeflow/` → `INIT_AUSENTE`.
-2. `phases/` inesperado → `PHASES_INESPERADO`.
-3. `phases/` ausente → cria + `.gitkeep`.
-4. Garante `.gitignore`: só `implement-report.json`. Não remove entradas das outras skills.
-5. Lista fases. Resolve `alvo` ( `--dir` ou maior n com `plan.md` ).
-6. Grava o relatório. Stdout = path do relatório.
+1. Inventário de novo.
+2. Sem wip → `WIP_AUSENTE`.
+3. Resolve destino:
+   - `--dir` se veio;
+   - senão `alvo` do inventário;
+   - senão cria `phase-<next_n>-<slug>`. Sem slug → `IMPLEMENT_SEM_ALVO`.
+4. `--dir` apontando pasta inexistente ou fora do padrão → `FASE_AUSENTE`.
+5. Destino a criar já existe → `FASE_EXISTE`.
+6. Slug sanitizado se for criar. Inválido → `SLUG_INVALIDO`.
+7. Cria a pasta só se for `criar`.
+8. Cópia binária `implement-wip.md` → `implement.md` (pode sobrescrever o vivo).
+9. Tamanho + SHA-256. Falha: apaga só o `implement.md` **novo** desta run se a pasta foi criada vazia. `COPY_HASH_MISMATCH`. Wip permanece.
+10. Apaga o wip.
+11. Garante `.gitignore`: `implement-report.json`, `implement-wip.md`. Não remove entradas das outras skills.
+12. Relatório com `created` e `modo` (`reuse` / `atualizar` / `criar`).
 
-`--apply`, `--slug`, `-Apply`, `-Slug` **não existem**. Argparse/parameter recusa flag desconhecida (`CODIGO:` no stderr). Sem wip. Sem cópia. Sem escrever `plan.md` / `spec.md`.
+Script não escreve prosa. Não escolhe slug. Não pergunta. Não recusa pasta que já tem `plan.md`: essa é a rota normal.
 
 ---
 
@@ -154,11 +167,11 @@ A IA não varre o repo. Lê este JSON, os `.md` da alvo que o relatório listou,
 
 ---
 
-## 8. Sem artefato vivo
+## 8. Artefato vivo
 
-Progresso = checkbox nos arquivos da cadeia. Dono do `plan.md` continua sendo o plan; implement só marca o que a prova cobriu.
+`implement.md` guarda a lógica da run (fatia → feito → prova → feedback), não só o recap. Uma seção `## Fatia` por T*/R* concluída. Feedback + / − / para a review omitidos quando vazios.
 
-A skill **não** preenche markdown de template. Sem `templates/`.
+O script **não** preenche markdown. A IA copia a forma do template.
 
 ---
 
@@ -171,26 +184,28 @@ A skill **não** preenche markdown de template. Sem `templates/`.
 5. Fase sem plan e outra com plan: `alvo` é a que tem plan.
 6. `--dir` em pasta existente sem plan → `alvo` é essa pasta (sem erro).
 7. `--dir` inexistente ou nome inválido → `FASE_AUSENTE`.
-8. `review.md` na fase entra em `files`.
-9. `.gitignore` ganha `implement-report.json` e preserva `plan-report.json`.
-10. `--apply` / `--slug` → saída ≠ 0 (flag desconhecida). Sem wip criado.
-11. `phases` é arquivo → `PHASES_INESPERADO`.
-12. Paridade pwsh: inventário reuse aponta o mesmo `alvo.path`.
+8. `review.md` e `implement.md` na fase entram em `files`.
+9. `.gitignore` ganha `implement-report.json` e `implement-wip.md`, preserva `plan-report.json`.
+10. `--apply` sem wip → `WIP_AUSENTE`.
+11. `--apply` com wip e alvo com plan → promove `implement.md`, apaga wip, `modo=reuse` ou `atualizar`.
+12. Sem alvo, `--apply --slug` cria `phase-N-slug/implement.md`.
+13. Sem alvo, `--apply` sem slug → `IMPLEMENT_SEM_ALVO`.
+14. `phases` é arquivo → `PHASES_INESPERADO`.
+15. Paridade pwsh: apply reuse grava o mesmo path.
 
-Suíte: `docs/vibe-implement/tests/test-implement.py`.
+Suíte: `docs/vibe-implement/tests/test-implement.py`. Launcher: `docs/vibe-implement/tests/test-implement.sh`.
 
 ---
 
-## 10. Fora (v1)
+## 10. Limites de contrato
 
-- Artefato `implement.md`, wip, `--apply`, `--slug`, `--force`.
-- Path `docs/fluxline/`, `specs/`, `todo.md`, `tasks.md`, `checklists/`.
-- Pasta nova. Inventar `n`.
-- Interpretar checkbox ou Status no script.
-- Criar ignore de stack (`.npmignore`, `.dockerignore`…).
-- Hooks / `extensions.yml` do spec-kit.
-- Adicionar Playwright (ou outra lib de browser) como dependência nova sem o humano pedir.
-- Open Questions no `.md`. Dump do plan no chat. Commit. Disparar review.
+- Um `implement.md` por fase. Fatia nova é seção no mesmo arquivo, via wip completo + apply.
+- Não grava `todo.md`, `tasks.md`, `checklists/` nem path fora de `.vibeflow/phases/phase-N-slug/`.
+- O script não interpreta checkbox nem `# Status`: quem lê o markdown é a IA.
+- Não cria ignore de stack (`.npmignore`, `.dockerignore`…).
+- Não adiciona lib de browser como dependência nova sem o humano pedir.
+
+Backlog e decisões de escopo: [`docs/ESCOPO.md`](../ESCOPO.md).
 
 ---
 

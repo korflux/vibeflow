@@ -134,6 +134,3 @@ Continuar fase já promovida: patch no `interview.md` vivo. Sem apply.
 Não commita. Avise: commitar `.vibeflow/phases/phase-N-slug/interview.md`. Não commitar `interview-report.json` nem `interview-wip.md`.
 Não dispare `vibe-spec`. Handoff é uma linha no artefato.
 
-## Fora (v1)
-
-Outras `vibe-*`, CI, hook, path em `docs/` ou `fluxline`, inventar n/slug, fechar CSS, escolher stack/solução na Fase 1, commit.

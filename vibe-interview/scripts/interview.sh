@@ -31,12 +31,12 @@ if [[ -n "$PYTHON_BIN" ]]; then
   exec "$PYTHON_BIN" "$(dirname "$0")/interview.py" "${args[@]}"
 fi
 
-if command -v pwsh >/dev/null 2>&1; then
+if command -v pwsh >/dev/null 2>&1 && pwsh -NoProfile -Command 'exit [int]($PSVersionTable.PSVersion.Major -lt 7)' >/dev/null 2>&1; then
   args=()
   [[ -n "$ROOT" ]] && args+=(-Root "$ROOT")
   [[ "$APPLY" -eq 1 ]] && args+=(-Apply)
   [[ -n "$SLUG" ]] && args+=(-Slug "$SLUG")
-  exec pwsh -File "$(dirname "$0")/interview.ps1" "${args[@]}"
+  exec pwsh -NoProfile -ExecutionPolicy Bypass -File "$(dirname "$0")/interview.ps1" "${args[@]}"
 fi
 
 echo "interview.sh precisa de Python 3 ou PowerShell 7+." >&2

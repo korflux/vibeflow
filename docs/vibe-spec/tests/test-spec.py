@@ -141,7 +141,16 @@ class PythonContracts(unittest.TestCase):
         self.assertIn("SLUG_INVALIDO", process.stderr)
 
 
-@unittest.skipUnless(shutil.which("pwsh"), "pwsh indisponível")
+
+# Verifica se existe uma versão real de PowerShell 7, única suportada pelo motor gêmeo.
+def powershell7() -> str | None:
+    executable = shutil.which("pwsh")
+    if not executable:
+        return None
+    probe = subprocess.run([executable, "-NoProfile", "-Command", "$PSVersionTable.PSVersion.Major"], capture_output=True, text=True, check=False)
+    return executable if probe.stdout.strip().isdigit() and int(probe.stdout.strip()) >= 7 else None
+
+@unittest.skipUnless(powershell7(), "PowerShell 7 indisponível")
 class PowershellParity(unittest.TestCase):
     """Confere que o apply reuse do PowerShell grava o mesmo path."""
 
@@ -159,7 +168,7 @@ class PowershellParity(unittest.TestCase):
         (phase / "interview.md").write_text("trilha\n", encoding="utf-8")
         (vf / "spec-wip.md").write_text("# spec\n", encoding="utf-8")
         process = subprocess.run(
-            ["pwsh", "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo), "-Apply"],
+            [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo), "-Apply"],
             capture_output=True,
             text=True,
             check=False,

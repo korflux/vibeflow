@@ -189,9 +189,14 @@ Peças independentes seguem em paralelo **exceto** quando o merge de REGRAS aind
 | `ausente` ou `vazio` | sim, um dos dois | o outro não é legado **ou** é igual | old do legado → template + **merge IA** (uma fonte; na prática cola o único texto nas seções certas) → depois legado vira symlink |
 | `ausente` ou `vazio` | sim | sim, **conteúdo diferente** | old dos dois → template → **MERGE** `duas_fontes` (IA une) → só então os dois viram symlink |
 | `template` ou `preenchido` | legado diferente do REGRAS | — | old do legado (+ old do REGRAS se a IA for reescrever) → **MERGE** `legado_vs_regras` |
-| `raiz_sozinho` | — | — | old `REGRAS-raiz.md` → mover para `.vibeflow/REGRAS.md` |
+| `raiz_sozinho` | não | não | old `REGRAS-raiz.md` → mover para `.vibeflow/REGRAS.md` |
+| `raiz_sozinho` | sim | — | old dos dois → mover a raiz para o vivo → **MERGE** `legado_vs_regras` (fontes: legado + `REGRAS-raiz.md`) → só então o legado vira symlink |
 | `raiz_e_vibeflow`, conteúdos iguais | — | — | old da raiz → apagar a raiz (`.vibeflow/` já tem a cópia viva) |
 | `raiz_e_vibeflow`, conteúdos diferentes | — | — | old dos dois → **MERGE** `regras_duplicado` no de `.vibeflow/` → apagar a raiz |
+
+Regra que atravessa a tabela: **toda fonte de texto que perde o papel de arquivo editável entra em `merges[]`**. O critério não é o estado isolado do `REGRAS`, é quantos textos diferentes existem no disco. Um legado somado a `raiz_sozinho` ou a `raiz_e_vibeflow` gera merge próprio, que sai na mesma run que o `regras_duplicado`, cada um com suas fontes. Sem isso o legado sobrevive só em `old/` e some do consolidado, que é perda semântica silenciosa.
+
+`AGENTS.md` byte a byte igual a `CLAUDE.md`: os dois olds são gravados, mas o texto entra **uma vez** em `sources`.
 
 O script **não** mescla prosa. Ele só: old, template se faltar, marca `merges[]` com os paths dos olds. Quem une é a IA.
 
@@ -228,6 +233,9 @@ Depende de REGRAS existir **e** de não haver merge pendente que ainda use este 
 | AGENTS e CLAUDE **iguais** | REPARAR | old dos dois → um merge (texto único) → os dois viram link |
 | AGENTS e CLAUDE **diferentes**, sem REGRAS | REPARAR | old dos dois → IA une tudo no REGRAS → os dois viram link |
 | REGRAS existe + AGENTS arquivo diferente | REPARAR | old do AGENTS (+ REGRAS se for reescrito) → IA une o que o AGENTS tem e o REGRAS ainda não → AGENTS vira link |
+| `REGRAS.md` na raiz + AGENTS arquivo | REPARAR | old dos dois → raiz vira o vivo → merge → só então AGENTS vira link |
+| REGRAS raiz e `.vibeflow/` diferentes + CLAUDE arquivo | REPARAR | dois merges na mesma run: `regras_duplicado` e `legado_vs_regras` |
+| AGENTS e CLAUDE iguais | REPARAR | dois olds, **uma** fonte em `merges[].sources` |
 | AGENTS link quebrado | REPARAR | recria o link |
 | AGENTS link para outro arquivo | REPARAR | pergunta; não come o alvo |
 | AGENTS arquivo = REGRAS | REPARAR | old → vira link |
@@ -278,9 +286,9 @@ Preenche **só** SLOT com evidência + path. Não inventa.
 |---|---|
 | `nome` | `package.json` name → `pyproject.toml` → `go.mod` → nome da pasta |
 | `paragrafo` | 1º parágrafo útil do README (não badge/título) → `description` do manifest → **fica SLOT** (salvo se o merge já trouxe um parágrafo das fontes) |
-| `estrutura` | árvore 1–2 níveis; ignora `node_modules`, `.git`, `dist`, `build`, `.next`, `vendor`, `__pycache__` |
+| `estrutura` | árvore 1–2 níveis; ignora `node_modules`, `.git`, `dist`, `build`, `.next`, `vendor`, `__pycache__`; teto de 120 itens, com uma linha final de omissão |
 | `stack` | manifests presentes |
-| `migrations` | `prisma/migrations`, `alembic`, `drizzle`, `knex`, `django`/`migrations`, `supabase/migrations` — boolean |
+| `migrations` | primeiro os paths conhecidos (`prisma/migrations`, `alembic`, `alembic.ini`, `drizzle`, `knexfile.*`, `supabase/migrations`); depois travessia podada procurando qualquer diretório `migrations`, até 4 níveis — boolean |
 
 Em REPARAR: se a seção já não tem SLOT, o scan não mexe. Merge da IA pode preencher `regras` / `paragrafo` a partir dos olds — aí o SLOT some.
 
@@ -366,7 +374,11 @@ Migration em produção é irreversível no sentido prático. Não gerar, não a
 
 A IA lê: este JSON + `REGRAS.md` atual + **cada path em `merges[].sources`** (pula `ponteiro_texto`). Pode abrir **só** paths que o relatório/SLOT/evidência/humano apontaram para preencher ou corrigir o `REGRAS.md`. Não varre a árvore inteira.
 
+Falha prevista depois da primeira escrita (`SYMLINK_RECUSADO`, `OLD_HASH_MISMATCH`…) grava **relatório parcial** antes de propagar o erro: mesmo schema, com `run interrompida: <erro>` em `avisos` e sem `scan`/`filled`. A IA nunca fica sem contrato de disco num repositório meio convertido.
+
 Quando há merge, o script grava `init-pending.json` com hashes das fontes, hash inicial do alvo e o token exposto no relatório. A finalização exige `-ApplyPointers -MergeToken <apply_token>` ou `init.sh --apply-pointers --merge-token <apply_token>`. O script recusa token inválido, fonte alterada e alvo que ainda tenha o hash inicial. Só depois remove leftovers e converte os legados.
+
+Saída de emergência do `MERGE_PENDENTE`: se o relatório com o token se perdeu (ele é gitignored), apagar `.vibeflow/init-pending.json` e rodar o script de novo. O inventário recomeça, os olds continuam intactos e nenhum ponteiro foi convertido. Não existe `--force`, e a única forma de sair do estado pendente é essa ou a finalização normal.
 
 ---
 
@@ -402,6 +414,10 @@ Quando há merge, o script grava `init-pending.json` com hashes das fontes, hash
 | Old | `.vibeflow/old/` | Cópias intactas |
 | Phases | `.vibeflow/phases/` | Pasta da cadeia; init só cria, não escreve arquivo |
 
+Motor PowerShell exige **PowerShell 7**, declarado com `#Requires -Version 7.0`, e o arquivo é gravado com BOM UTF-8: sem BOM o PowerShell 5.1 lê como ANSI e falha no parser antes de ler o `#Requires`, trocando a mensagem de dependência por erro de sintaxe.
+
+Ganchos exclusivos de teste, sem uso operacional: a flag `--stop-after-old` / `-StopAfterOld`, que interrompe a run logo após os backups, e a variável `VIBE_INIT_TEST_CORRUPT_OLD=1`, que corrompe a cópia para provar `OLD_HASH_MISMATCH`. Não usar em run real.
+
 Install recomendado: user-scope (`<grok-home>/skills/vibe-init`) — só `SKILL.md`, `scripts/`, `templates/`. Fonte canônica da skill: `vibe-init/`. Este doc fica em `docs/vibe-init/` e não vai no install.
 
 Git: commit `REGRAS.md`, os dois symlinks, `.vibeflow/old/` e `.vibeflow/phases/.gitkeep` (pasta vazia não sobrevive no git sem isso). Não commitir `init-report.json` nem `init-pending.json`.
@@ -433,9 +449,17 @@ Windows: `core.symlinks=true` é aviso, não forçado. Sem privilegio de link: f
 19. `.gitignore` existente → preserva regras e inclui os dois arquivos operacionais.
 20. Tipo estrutural inesperado → falha antes de criar ponteiros.
 21. Scan de migrations → não entra em diretórios ignorados.
+22. `REGRAS.md` na raiz + `AGENTS.md` legado → `merges[]` com o legado; o legado **não** vira symlink nesta run.
+23. Duplicado + legado → dois merges, três fontes, nenhuma conversão antes do apply.
+24. `AGENTS.md` = `CLAUDE.md` → dois olds, uma fonte.
+25. `phases/` sem `.gitkeep` → recria o arquivo.
+26. Falha depois do primeiro backup → relatório parcial com `run interrompida` em `avisos`.
+27. Repo com muitos diretórios → `scan.estrutura` truncada no teto, com linha de omissão.
 
-As suítes ficam fora da skill, em `docs/vibe-init/tests/`. `test-init.py` cobre o motor Python e compara o contrato
-essencial com PowerShell quando `pwsh` está disponível.
+As suítes ficam fora da skill, em `docs/vibe-init/tests/`. `test-init.py` é a suíte principal, porque o launcher Unix
+prefere Python 3; `test-init.ps1` cobre os mesmos cenários no motor gêmeo. O teste de paridade só roda quando existe
+PowerShell **7**: um `pwsh` que responde 5.1 é pulado, não aceito como paridade. `test-init.sh` cobre o launcher
+(motor, `--root`, `--stop-after-old`, flag desconhecida, recusa sem motor).
 
 Primeira vez (repo sem `.vibeflow`): o gatilho é o `description` da skill instalada no usuário — o bloco cadeia **não** existe ainda. Depois do init, o roteador vive no `REGRAS.md` (ambiente via symlink). O script atualiza **só** o que está entre os delimitadores.
 
@@ -443,12 +467,14 @@ Primeira vez (repo sem `.vibeflow`): o gatilho é o `description` da skill insta
 
 ---
 
-## 14. Fora (v1)
+## 14. Limites de contrato
 
-- Outras skills `vibe-*`, CI, hook, `--force`.
-- Fallback de copiar REGRAS para AGENTS/CLAUDE na raiz.
-- A IA escolher homolog/produção sozinha, ou inventar regra que não estava em fonte/scan/humano.
-- Spec/plan/todo.
+- Sem fallback de cópia: `AGENTS.md` e `CLAUDE.md` são symlink ou a run falha alto.
+- A IA não escolhe homolog ou produção, e não inventa regra que não veio de fonte, scan ou humano.
+- O script não escreve prosa e não preenche SLOT sem evidência com path.
+- Init não produz artefato da cadeia: cria `.vibeflow/phases/` vazia e para.
+
+Backlog e decisões de escopo: [`docs/ESCOPO.md`](../ESCOPO.md).
 
 ---
 

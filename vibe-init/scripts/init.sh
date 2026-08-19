@@ -37,14 +37,14 @@ if [[ -n "$PYTHON_BIN" ]]; then
   exec "$PYTHON_BIN" "$(dirname "$0")/init.py" "${args[@]}"
 fi
 
-if command -v pwsh >/dev/null 2>&1; then
+if command -v pwsh >/dev/null 2>&1 && pwsh -NoProfile -Command 'exit [int]($PSVersionTable.PSVersion.Major -lt 7)' >/dev/null 2>&1; then
   args=()
   [[ -n "$ROOT" ]] && args+=(-Root "$ROOT")
   [[ "$APPLY_POINTERS" -eq 1 ]] && args+=(-ApplyPointers)
   [[ -n "$MERGE_TOKEN" ]] && args+=(-MergeToken "$MERGE_TOKEN")
   [[ -n "$REDIRECT_POINTER" ]] && args+=(-RedirectPointer "$REDIRECT_POINTER")
   [[ "$STOP_AFTER_OLD" -eq 1 ]] && args+=(-StopAfterOld)
-  exec pwsh -File "$(dirname "$0")/init.ps1" "${args[@]}"
+  exec pwsh -NoProfile -ExecutionPolicy Bypass -File "$(dirname "$0")/init.ps1" "${args[@]}"
 fi
 
 echo "init.sh precisa de Python 3 ou PowerShell 7+." >&2

@@ -6,7 +6,7 @@
 .vibeflow/phases/phase-<n>-<slug>/review.md
 ```
 
-Mesma pasta do plan quando a cadeia existe. Re-review = o mesmo arquivo. Sem plan, apply só cria fase nova se veio `--slug` (review avulsa).
+Mesma pasta do plan quando a cadeia existe. Etapa nova = o mesmo arquivo. Sem plan, apply só cria fase nova se veio `--slug` (review avulsa).
 
 ---
 
@@ -52,7 +52,7 @@ Resolução de `alvo` (primeira que existir):
 
 `--dir phase-N-slug` força pasta existente e com nome válido. Inexistente → `FASE_AUSENTE`. `--dir` **não** exige `plan.md` (review avulsa apontada para uma pasta já criada).
 
-Não pisa `interview.md` / `spec.md` / `plan.md` / `analyze.md`.
+Não pisa `interview.md` / `spec.md` / `plan.md` / `analyze.md` / `implement.md`. Lê `implement.md` se o inventário listar.
 
 ---
 
@@ -61,12 +61,11 @@ Não pisa `interview.md` / `spec.md` / `plan.md` / `analyze.md`.
 ```
 [1] SCRIPT inventário → review-report.json
 [2] IA lê relatório + vivos da alvo + REGRAS.md + diff apontado
-[3] Gate (alvo/diff, T* abertas vs “pronto da feature”, first-pass/re-review)
-[4] Testes → cobertura A*/C* × código → cinco eixos
-[5] Wip no template
-[6] SCRIPT apply
-[7] Humano lê o arquivo. Request changes → handoff implement (não dispara)
-[8] Re-review edita o vivo. Sem apply, salvo re-run que promove wip por cima
+[3] Gate (alvo/diff, T* abertas vs “pronto da feature”, etapa 1 vs etapa N)
+[4] Testes → cobertura A*/C* × código (se há spec) → eixos; visual/segurança só se o diff pedir
+[5] Etapa 1: wip no template + apply. Etapa N: patch no vivo (acrescenta ### Etapa N)
+[6] Humano lê o arquivo. Request changes → handoff implement (não dispara)
+[7] Etapa seguinte no mesmo arquivo. Não apaga etapa antiga. Não renumerar R* fechados
 ```
 
 ---
@@ -89,7 +88,7 @@ Zero prosa. Zero interpretação de checkbox, Status ou diff.
 | `actions[]` | ex. `criar_phases`, `promover_wip`, `criar_fase` |
 | `avisos[]` | nomes fora do padrão |
 
-`files` só: `interview.md`, `spec.md`, `plan.md`, `analyze.md`, `review.md`.
+`files` só: `interview.md`, `spec.md`, `plan.md`, `analyze.md`, `implement.md`, `review.md`.
 
 `modo_sugerido=criar` = não há pasta com plan nem review. Apply **só** cria se veio `--slug`.
 
@@ -164,7 +163,11 @@ Template: `vibe-review/templates/review.md`.
 
 Status: `rascunho` | `request-changes` | `aprovado` | `aprovado-com-defer`.
 
-Seções (omitir N/A): Contexto, Cobertura, Checklist de correções (`R*`), Notas, Verificação conferida, DoD, Veredito, Handoff, Re-review.
+Seções fixas: Contexto, Checklist de correções (`R*`), Veredito vigente, Handoff, Etapas.
+
+Seções que abrem só se a etapa precisar: Cobertura (há spec), Visual (diff toca UI), Segurança (diff toca input/auth/segredo/upload/pagamento/LLM/dado pessoal), DoD, Notas.
+
+`## Re-review` no rodapé não existe. Cada run acrescenta `### Etapa N` em `## Etapas`. O veredito vigente é o da última etapa.
 
 Sem Open Questions. `R*` bloqueante sem evidência (path) = defeito. Sem editar as fontes da cadeia.
 
@@ -181,20 +184,22 @@ Sem Open Questions. `R*` bloqueante sem evidência (path) = defeito. Sem editar 
 7. Rascunho existente: apply sobrescreve `review.md`.
 8. `.gitignore` ganha as duas entradas e preserva `plan-report.json`.
 9. `phases` é arquivo → `PHASES_INESPERADO`.
-10. Paridade pwsh: apply reuse grava o mesmo path.
+10. `implement.md` na fase entra em `files`.
+11. Paridade pwsh: apply reuse grava o mesmo path.
 
-Suíte: `docs/vibe-review/tests/test-review.py`.
+Suíte: `docs/vibe-review/tests/test-review.py`. Launcher: `docs/vibe-review/tests/test-review.sh`.
 
 ---
 
-## 10. Fora (v1)
+## 10. Limites de contrato
 
-- Editar source, testes, lockfile, `interview.md`, `spec.md`, `plan.md`, `analyze.md`.
-- Anexar T* no plan. `tasks.md`. Path `docs/fluxline/`, `specs/`.
-- `--force`. Hooks / `extensions.yml`.
-- Pasta `security/` com classes. `security-map`, shipping, CI, ADR.
-- Playwright como default visual.
-- Open Questions no `.md`. Dump no chat. Commit. Disparar implement.
+- Não edita source, teste, lockfile, `interview.md`, `spec.md`, `plan.md` nem `analyze.md`. Remédio aponta `vibe-implement`.
+- Não anexa T* no plan. Sem `tasks.md`, `docs/`, `specs/`.
+- Um `review.md` por fase. Etapa nova é `### Etapa N` no vivo, não segundo arquivo.
+- Prova visual default é Chrome DevTools; E2E só quando o repo já tem ou o humano pede. Seção Visual some se o diff não toca UI.
+- Sem catálogo fixo de classes de segurança: a seção só abre se o diff toca a superfície listada na skill.
+
+Backlog e decisões de escopo: [`docs/ESCOPO.md`](../ESCOPO.md).
 
 ---
 
