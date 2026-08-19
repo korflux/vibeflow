@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Inventaria .vibeflow/phases e promove o wip para phase-N-slug/plan.md."""
+"""Inventaria .vibeflow/phases e promove o wip para phase-N-slug/review.md."""
 
 from __future__ import annotations
 
@@ -10,20 +10,23 @@ import re
 import shutil
 import subprocess
 import sys
+import unicodedata
 from pathlib import Path
 from typing import Any
 
 
 PHASE_RE = re.compile(r"^phase-(\d+)-([a-z0-9]+(?:-[a-z0-9]+)*)$")
 CHAIN_FILES = ("interview.md", "spec.md", "plan.md", "analyze.md", "review.md")
+MAX_SLUG = 48
 
 
-# Interpreta somente os parâmetros equivalentes ao contrato público do plan.ps1.
+# Interpreta somente os parâmetros equivalentes ao contrato público do review.ps1.
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Inventaria e promove plan para .vibeflow/phases")
+    parser = argparse.ArgumentParser(description="Inventaria e promove review para .vibeflow/phases")
     parser.add_argument("--root")
     parser.add_argument("--apply", action="store_true")
     parser.add_argument("--dir")
+    parser.add_argument("--slug")
     return parser.parse_args()
 
 
@@ -72,8 +75,8 @@ def add_gitignore_entry(path: Path, entry: str) -> None:
 # Garante que relatório e wip não entrem no Git sem apagar as entradas das outras skills.
 def ensure_gitignore(vf: Path) -> None:
     gitignore = vf / ".gitignore"
-    add_gitignore_entry(gitignore, "plan-report.json")
-    add_gitignore_entry(gitignore, "plan-wip.md")
+    add_gitignore_entry(gitignore, "review-report.json")
+    add_gitignore_entry(gitignore, "review-wip.md")
 
 
 # Classifica .vibeflow antes de qualquer escrita.
@@ -92,6 +95,16 @@ def phases_state(path: Path) -> str:
     if not path.is_dir():
         return "inesperado"
     return "ok"
+
+
+# Transforma a frase curta da fase em slug ASCII [a-z0-9-], 2–48 chars.
+def sanitize_slug(raw: str) -> str:
+    decomposed = unicodedata.normalize("NFKD", raw or "")
+    ascii_only = decomposed.encode("ascii", "ignore").decode("ascii")
+    lowered = ascii_only.lower()
+    compact = re.sub(r"[^a-z0-9]+", "-", lowered).strip("-")
+    compact = re.sub(r"-{2,}", "-", compact)
+    return compact[:MAX_SLUG].strip("-")
 
 
 # Lista pastas que batem o padrão phase-N-slug e ignora o restante.
@@ -123,27 +136,28 @@ def list_phases(phases: Path) -> tuple[list[dict[str, Any]], list[str]]:
     return existing, warnings
 
 
-# Maior n com spec e sem plan: o plan deve reusar esta pasta.
-def find_spec_pendente(existing: list[dict[str, Any]]) -> dict[str, Any] | None:
+# Maior n com plan e sem review: a review da cadeia reusa esta pasta.
+def find_plan_pendente(existing: list[dict[str, Any]]) -> dict[str, Any] | None:
     for item in reversed(existing):
-        if "spec.md" in item["files"] and "plan.md" not in item["files"]:
+        files = item["files"]
+        if "plan.md" in files and "review.md" not in files:
             return item
     return None
 
 
-# Maior n com plan e sem analyze: rascunho ainda atualizável.
+# Maior n que já tem review.md: rascunho ou re-run ainda atualizável.
 def find_rascunho(existing: list[dict[str, Any]]) -> dict[str, Any] | None:
     for item in reversed(existing):
-        if "plan.md" in item["files"] and "analyze.md" not in item["files"]:
+        if "review.md" in item["files"]:
             return item
     return None
 
 
-# Destino preferido: spec pendente, senão rascunho. Sem alvo = não há o que gravar.
+# Destino preferido: plan sem review, senão rascunho. Sem alvo = avulsa ou REVIEW_SEM_ALVO.
 def resolve_alvo(
     existing: list[dict[str, Any]],
 ) -> tuple[dict[str, Any] | None, str]:
-    pending = find_spec_pendente(existing)
+    pending = find_plan_pendente(existing)
     if pending:
         return pending, "reuse"
     draft = find_rascunho(existing)
@@ -152,7 +166,7 @@ def resolve_alvo(
     return None, "criar"
 
 
-# Cópia binária conferida. Não apaga pasta que já tinha spec ou interview.
+# Cópia binária conferida. Só apaga o review.md se esta run o criou.
 def promote_wip(wip: Path, dest_file: Path) -> None:
     existed = dest_file.exists()
     dest_file.write_bytes(wip.read_bytes())
@@ -164,18 +178,22 @@ def promote_wip(wip: Path, dest_file: Path) -> None:
 
 # Monta o JSON que a skill lê; stdout só o path do relatório.
 def write_report(vf: Path, payload: dict[str, Any]) -> Path:
-    report_path = vf / "plan-report.json"
-    report_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8", newline="\n")
+    report_path = vf / "review-report.json"
+    report_path.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+        newline="\n",
+    )
     print(report_path)
     return report_path
 
 
-# Inventaria o disco e opcionalmente promove o wip para plan.md.
+# Inventaria o disco e opcionalmente promove o wip para review.md.
 def run(args: argparse.Namespace) -> Path:
     repo = repo_root(args.root)
     vf = repo / ".vibeflow"
     phases = vf / "phases"
-    wip = vf / "plan-wip.md"
+    wip = vf / "review-wip.md"
     actions: list[dict[str, str]] = []
 
     vf_state = vibeflow_state(vf)
@@ -196,7 +214,7 @@ def run(args: argparse.Namespace) -> Path:
     ensure_gitignore(vf)
     existing, warnings = list_phases(phases)
     next_n = (existing[-1]["n"] + 1) if existing else 1
-    pending = find_spec_pendente(existing)
+    pending = find_plan_pendente(existing)
     draft = find_rascunho(existing)
     alvo, modo_sugerido = resolve_alvo(existing)
     created: dict[str, Any] | None = None
@@ -204,35 +222,52 @@ def run(args: argparse.Namespace) -> Path:
 
     if args.apply:
         if not wip.is_file() or wip.stat().st_size == 0:
-            raise RuntimeError("WIP_AUSENTE: falta .vibeflow/plan-wip.md preenchido.")
+            raise RuntimeError("WIP_AUSENTE: falta .vibeflow/review-wip.md preenchido.")
 
+        dest_dir: Path
+        created_dir = False
         if args.dir:
             dest_dir = phases / Path(args.dir).name
             if not dest_dir.is_dir() or not PHASE_RE.fullmatch(dest_dir.name):
-                raise RuntimeError(f"FASE_AUSENTE: .vibeflow/phases/{dest_dir.name} não é uma pasta de fase.")
-            modo = "atualizar" if (dest_dir / "plan.md").is_file() else "reuse"
+                raise RuntimeError(
+                    f"FASE_AUSENTE: .vibeflow/phases/{dest_dir.name} não é uma pasta de fase."
+                )
+            modo = "atualizar" if (dest_dir / "review.md").is_file() else "reuse"
         elif alvo:
             dest_dir = repo / alvo["path"]
             modo = modo_sugerido
         else:
-            raise RuntimeError("PLAN_SEM_SPEC: sem spec.md numa fase. Rode /vibe-spec primeiro.")
+            if not (args.slug or "").strip():
+                raise RuntimeError(
+                    "REVIEW_SEM_ALVO: sem fase alvo; passe --slug para review avulsa."
+                )
+            slug = sanitize_slug(args.slug or "")
+            if len(slug) < 2:
+                raise RuntimeError("SLUG_INVALIDO: a frase curta não gerou um slug utilizável.")
+            dest_dir = phases / f"phase-{next_n}-{slug}"
+            if dest_dir.exists():
+                raise RuntimeError(f"FASE_EXISTE: .vibeflow/phases/{dest_dir.name} já existe.")
+            dest_dir.mkdir(parents=True)
+            created_dir = True
+            modo = "criar"
+            actions.append({"op": "criar_fase", "alvo": f".vibeflow/phases/{dest_dir.name}"})
 
-        if not (dest_dir / "spec.md").is_file():
-            raise RuntimeError(f"PLAN_SEM_SPEC: {dest_dir.name} não tem spec.md. Rode /vibe-spec primeiro.")
-        if (dest_dir / "analyze.md").is_file():
-            raise RuntimeError(
-                f"PLAN_JA_ANALISADO: {dest_dir.name} já tem analyze.md. Não pise. Pedido novo = outra fase."
-            )
-
-        dest_file = dest_dir / "plan.md"
+        dest_file = dest_dir / "review.md"
         rel = f".vibeflow/phases/{dest_dir.name}"
-        promote_wip(wip, dest_file)
+        try:
+            promote_wip(wip, dest_file)
+        except Exception:
+            if created_dir:
+                dest_file.unlink(missing_ok=True)
+                if dest_dir.exists() and not any(dest_dir.iterdir()):
+                    dest_dir.rmdir()
+            raise
         wip.unlink()
-        actions.append({"op": "promover_wip", "alvo": f"{rel}/plan.md"})
+        actions.append({"op": "promover_wip", "alvo": f"{rel}/review.md"})
         existing, extra_warnings = list_phases(phases)
         warnings.extend(extra_warnings)
         next_n = (existing[-1]["n"] + 1) if existing else 1
-        pending = find_spec_pendente(existing)
+        pending = find_plan_pendente(existing)
         draft = find_rascunho(existing)
         alvo, modo_sugerido = resolve_alvo(existing)
         created = next((item for item in existing if item["dir"] == dest_dir.name), None)
@@ -243,7 +278,7 @@ def run(args: argparse.Namespace) -> Path:
         "phases": ph_state,
         "next_n": next_n,
         "existing": existing,
-        "spec_pendente": pending,
+        "plan_pendente": pending,
         "rascunho": draft,
         "alvo": alvo,
         "modo_sugerido": modo_sugerido,

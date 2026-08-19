@@ -1,14 +1,13 @@
-# vibe-interview/scripts/interview.ps1
-# Inventário de .vibeflow/phases → promove interview-wip.md para phase-N-slug/interview.md.
+# vibe-analyze/scripts/analyze.ps1
+# Inventário de .vibeflow/phases → promove analyze-wip.md para phase-N-slug/analyze.md.
 param(
     [string]$Root,
     [switch]$Apply,
-    [string]$Slug
+    [string]$Dir
 )
 
 $ErrorActionPreference = 'Stop'
 $script:ChainFiles = @('interview.md', 'spec.md', 'plan.md', 'analyze.md', 'review.md')
-$script:MaxSlug = 48
 
 # Resolve a raiz por parâmetro, Git ou cwd sem exigir que Git esteja instalado.
 function Get-RepoRoot {
@@ -25,12 +24,6 @@ function Get-Sha256File([string]$Path) {
     return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
 }
 
-# Lê texto operacional que precisa ser preservado integralmente.
-function Read-Utf8File([string]$Path) {
-    if (-not (Test-Path -LiteralPath $Path)) { return $null }
-    return [System.IO.File]::ReadAllText($Path)
-}
-
 # Acrescenta exclusões operacionais preservando regras existentes e evitando duplicação.
 function Add-GitignoreEntry([string]$Path, [string]$Entry) {
     $body = ''
@@ -45,30 +38,11 @@ function Add-GitignoreEntry([string]$Path, [string]$Entry) {
     [System.IO.File]::AppendAllText($Path, "$prefix$Entry`n")
 }
 
-# Garante que relatório e wip não entrem no Git sem apagar as entradas do init.
-function Assert-InterviewGitignore([string]$Vf) {
+# Garante que relatório e wip não entrem no Git sem apagar as entradas das outras skills.
+function Assert-AnalyzeGitignore([string]$Vf) {
     $gi = Join-Path $Vf '.gitignore'
-    Add-GitignoreEntry $gi 'interview-report.json'
-    Add-GitignoreEntry $gi 'interview-wip.md'
-}
-
-# Transforma a frase curta da fase em slug ASCII [a-z0-9-], 2–48 chars.
-function ConvertTo-Slug([string]$Raw) {
-    if ([string]::IsNullOrWhiteSpace($Raw)) { return '' }
-    $formD = $Raw.Normalize([Text.NormalizationForm]::FormD)
-    $chars = foreach ($ch in $formD.ToCharArray()) {
-        $cat = [Globalization.CharUnicodeInfo]::GetUnicodeCategory($ch)
-        if ($cat -ne [Globalization.UnicodeCategory]::NonSpacingMark) { $ch }
-    }
-    $ascii = -join $chars
-    $ascii = $ascii.Normalize([Text.NormalizationForm]::FormC).ToLowerInvariant()
-    $compact = [regex]::Replace($ascii, '[^a-z0-9]+', '-')
-    $compact = $compact.Trim('-')
-    $compact = [regex]::Replace($compact, '-{2,}', '-')
-    if ($compact.Length -gt $script:MaxSlug) {
-        $compact = $compact.Substring(0, $script:MaxSlug).Trim('-')
-    }
-    return $compact
+    Add-GitignoreEntry $gi 'analyze-report.json'
+    Add-GitignoreEntry $gi 'analyze-wip.md'
 }
 
 # Lista pastas que batem o padrão phase-N-slug e ignora o restante.
@@ -104,17 +78,36 @@ function Get-PhaseList([string]$Phases) {
     return @{ existing = $sorted; warnings = @($warnings) }
 }
 
-# Fase de maior n com interview e sem spec: entrevista ainda não entregue à spec.
-function Get-Aberta($Existing) {
+# Maior n com spec+plan e sem analyze: o analyze deve reusar esta pasta.
+function Get-PlanPendente($Existing) {
     foreach ($item in ($Existing | Sort-Object n -Descending)) {
-        if ($item.files -contains 'interview.md' -and $item.files -notcontains 'spec.md') {
+        if ($item.files -contains 'spec.md' -and $item.files -contains 'plan.md' -and $item.files -notcontains 'analyze.md') {
             return $item
         }
     }
     return $null
 }
 
-# Converte o objeto da fase para PSCustomObject (hashtable enumeraria no Add do relatório).
+# Maior n que já tem analyze.md: rascunho ainda atualizável.
+function Get-Rascunho($Existing) {
+    foreach ($item in ($Existing | Sort-Object n -Descending)) {
+        if ($item.files -contains 'analyze.md') {
+            return $item
+        }
+    }
+    return $null
+}
+
+# Destino preferido: plan pendente, senão rascunho. Sem alvo = não há o que gravar.
+function Get-Alvo($Existing) {
+    $pending = Get-PlanPendente $Existing
+    if ($null -ne $pending) { return @{ item = $pending; modo = 'reuse' } }
+    $draft = Get-Rascunho $Existing
+    if ($null -ne $draft) { return @{ item = $draft; modo = 'atualizar' } }
+    return @{ item = $null; modo = 'criar' }
+}
+
+# Converte o objeto da fase para PSCustomObject (hashtable enumeraria no JSON).
 function ConvertTo-PhaseMap($Item) {
     if ($null -eq $Item) { return $null }
     return [pscustomobject]@{
@@ -127,20 +120,20 @@ function ConvertTo-PhaseMap($Item) {
 }
 
 # Monta o JSON que a skill lê; stdout só o path do relatório.
-function Write-InterviewReport([string]$Vf, [hashtable]$Payload) {
-    $reportPath = Join-Path $Vf 'interview-report.json'
+function Write-AnalyzeReport([string]$Vf, [hashtable]$Payload) {
+    $reportPath = Join-Path $Vf 'analyze-report.json'
     $json = [string](ConvertTo-Json -InputObject $Payload -Depth 8)
     $utf8 = New-Object System.Text.UTF8Encoding $false
     [System.IO.File]::WriteAllText($reportPath, $json, $utf8)
     Write-Output $reportPath
 }
 
-# Inventaria o disco, cria phases/ se faltar, e opcionalmente promove o wip.
-function Invoke-Interview {
+# Inventaria o disco e opcionalmente promove o wip para analyze.md.
+function Invoke-Analyze {
     $repo = Get-RepoRoot
     $vf = Join-Path $repo '.vibeflow'
     $phases = Join-Path $vf 'phases'
-    $wip = Join-Path $vf 'interview-wip.md'
+    $wip = Join-Path $vf 'analyze-wip.md'
     $actions = New-Object System.Collections.Generic.List[object]
 
     if (-not (Test-Path -LiteralPath $vf)) {
@@ -165,88 +158,104 @@ function Invoke-Interview {
         $phState = 'ok'
     }
 
-    Assert-InterviewGitignore $vf
+    Assert-AnalyzeGitignore $vf
     $listed = Get-PhaseList $phases
     $existing = @($listed.existing)
     $warnings = New-Object System.Collections.Generic.List[string]
     foreach ($w in $listed.warnings) { $warnings.Add($w) }
     $nextN = 1
     if ($existing.Count -gt 0) { $nextN = [int]$existing[-1].n + 1 }
+    $resolved = Get-Alvo $existing
+    $alvoItem = $resolved.item
+    $modoSugerido = $resolved.modo
     $created = $null
+    $modo = $null
 
     if ($Apply) {
         if (-not (Test-Path -LiteralPath $wip) -or (Get-Item -LiteralPath $wip).Length -eq 0) {
-            throw 'WIP_AUSENTE: falta .vibeflow/interview-wip.md preenchido.'
+            throw 'WIP_AUSENTE: falta .vibeflow/analyze-wip.md preenchido.'
         }
-        $clean = ConvertTo-Slug $Slug
-        if ($clean.Length -lt 2) {
-            throw 'SLUG_INVALIDO: a frase curta não gerou um slug utilizável.'
-        }
-        $destDir = Join-Path $phases "phase-$nextN-$clean"
-        $destFile = Join-Path $destDir 'interview.md'
-        $rel = ".vibeflow/phases/phase-$nextN-$clean"
-        if (Test-Path -LiteralPath $destDir) {
-            throw "FASE_EXISTE: $rel já existe."
-        }
-        New-Item -ItemType Directory -Path $destDir -Force | Out-Null
-        try {
-            Copy-Item -LiteralPath $wip -Destination $destFile -Force
-            $srcHash = Get-Sha256File $wip
-            $dstHash = Get-Sha256File $destFile
-            $srcLen = (Get-Item -LiteralPath $wip).Length
-            $dstLen = (Get-Item -LiteralPath $destFile).Length
-            if ($srcHash -ne $dstHash -or $srcLen -ne $dstLen) {
-                Remove-Item -LiteralPath $destFile -Force
-                Remove-Item -LiteralPath $destDir -Force
-                throw 'COPY_HASH_MISMATCH: a cópia do wip não bateu com o original.'
+
+        if (-not [string]::IsNullOrWhiteSpace($Dir)) {
+            $destDir = Join-Path $phases ([System.IO.Path]::GetFileName($Dir))
+            $destName = [System.IO.Path]::GetFileName($destDir)
+            if (-not (Test-Path -LiteralPath $destDir) -or -not (Get-Item -LiteralPath $destDir).PSIsContainer) {
+                throw "FASE_AUSENTE: .vibeflow/phases/$destName não é uma pasta de fase."
             }
-        } catch {
-            if (Test-Path -LiteralPath $destFile) { Remove-Item -LiteralPath $destFile -Force }
-            if ((Test-Path -LiteralPath $destDir) -and -not (Get-ChildItem -LiteralPath $destDir -Force)) {
-                Remove-Item -LiteralPath $destDir -Force
+            if (-not [regex]::IsMatch($destName, '^phase-(\d+)-([a-z0-9]+(?:-[a-z0-9]+)*)$')) {
+                throw "FASE_AUSENTE: $destName não é uma pasta de fase."
             }
-            throw
+            $modo = if (Test-Path -LiteralPath (Join-Path $destDir 'analyze.md')) { 'atualizar' } else { 'reuse' }
+        } elseif ($null -ne $alvoItem) {
+            $destDir = Join-Path $repo $alvoItem.path
+            $modo = $modoSugerido
+        } else {
+            throw 'ANALYZE_SEM_PLAN: sem plan.md numa fase. Rode /vibe-plan primeiro.'
+        }
+
+        $destName = [System.IO.Path]::GetFileName($destDir)
+        if (-not (Test-Path -LiteralPath (Join-Path $destDir 'plan.md'))) {
+            throw "ANALYZE_SEM_PLAN: $destName não tem plan.md. Rode /vibe-plan primeiro."
+        }
+        if (-not (Test-Path -LiteralPath (Join-Path $destDir 'spec.md'))) {
+            throw "ANALYZE_SEM_SPEC: $destName não tem spec.md. Rode /vibe-spec primeiro."
+        }
+
+        $destFile = Join-Path $destDir 'analyze.md'
+        $rel = ".vibeflow/phases/$destName"
+        $existed = Test-Path -LiteralPath $destFile
+        Copy-Item -LiteralPath $wip -Destination $destFile -Force
+        $srcHash = Get-Sha256File $wip
+        $dstHash = Get-Sha256File $destFile
+        $srcLen = (Get-Item -LiteralPath $wip).Length
+        $dstLen = (Get-Item -LiteralPath $destFile).Length
+        if ($srcHash -ne $dstHash -or $srcLen -ne $dstLen) {
+            if (-not $existed) { Remove-Item -LiteralPath $destFile -Force }
+            throw 'COPY_HASH_MISMATCH: a cópia do wip não bateu com o original.'
         }
         Remove-Item -LiteralPath $wip -Force
-        $actions.Add([pscustomobject]@{ op = 'promover_wip'; alvo = "$rel/interview.md" })
-        $created = [pscustomobject]@{
-            dir   = "phase-$nextN-$clean"
-            n     = $nextN
-            slug  = $clean
-            path  = $rel
-            files = @('interview.md')
-        }
+        $actions.Add([pscustomobject]@{ op = 'promover_wip'; alvo = "$rel/analyze.md" })
         $listed = Get-PhaseList $phases
         $existing = @($listed.existing)
         foreach ($w in $listed.warnings) { $warnings.Add($w) }
         $nextN = 1
         if ($existing.Count -gt 0) { $nextN = [int]$existing[-1].n + 1 }
+        $resolved = Get-Alvo $existing
+        $alvoItem = $resolved.item
+        $modoSugerido = $resolved.modo
+        foreach ($item in $existing) {
+            if ($item.dir -eq $destName) { $created = $item; break }
+        }
     }
-
-    $wipState = 'ausente'
-    if (Test-Path -LiteralPath $wip) { $wipState = 'presente' }
 
     $mapped = New-Object System.Collections.Generic.List[object]
     foreach ($item in @($existing)) {
         if ($null -ne $item) { [void]$mapped.Add((ConvertTo-PhaseMap $item)) }
     }
+    $wipState = 'ausente'
+    if (Test-Path -LiteralPath $wip) { $wipState = 'presente' }
+
     $payload = @{
-        root     = "$repo"
-        vibeflow = 'ok'
-        phases   = "$phState"
-        next_n   = [int]$nextN
-        existing = $mapped.ToArray()
-        aberta   = ConvertTo-PhaseMap (Get-Aberta $existing)
-        wip      = "$wipState"
-        created  = $created
-        actions  = $actions.ToArray()
-        avisos   = $warnings.ToArray()
+        root               = "$repo"
+        vibeflow           = 'ok'
+        phases             = "$phState"
+        next_n             = [int]$nextN
+        existing           = $mapped.ToArray()
+        plan_pendente      = ConvertTo-PhaseMap (Get-PlanPendente $existing)
+        rascunho           = ConvertTo-PhaseMap (Get-Rascunho $existing)
+        alvo               = ConvertTo-PhaseMap $alvoItem
+        modo_sugerido      = "$modoSugerido"
+        wip                = "$wipState"
+        created            = ConvertTo-PhaseMap $created
+        modo               = $modo
+        actions            = $actions.ToArray()
+        avisos             = $warnings.ToArray()
     }
-    Write-InterviewReport $vf $payload
+    Write-AnalyzeReport $vf $payload
 }
 
 try {
-    Invoke-Interview
+    Invoke-Analyze
 } catch {
     [Console]::Error.WriteLine($_.Exception.Message)
     exit 1

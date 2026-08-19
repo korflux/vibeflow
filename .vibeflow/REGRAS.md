@@ -77,7 +77,7 @@ docs/vibe-<nome>/
 
 ## Regras deste repo
 
-Estas regras existem para a próxima `vibe-*` nascer igual às que já estão prontas (`vibe-init`, `vibe-interview`, `vibe-spec`, `vibe-plan`). Contrato específico de uma skill vive em `docs/vibe-<nome>/ARQUITETURA.md`. Aqui vive só o que se repete.
+Estas regras existem para a próxima `vibe-*` nascer igual às que já estão prontas (`vibe-init`, `vibe-interview`, `vibe-spec`, `vibe-plan`, `vibe-analyze`, `vibe-implement`, `vibe-review`). Contrato específico de uma skill vive em `docs/vibe-<nome>/ARQUITETURA.md`. Aqui vive só o que se repete.
 
 ### 1. Pacote `vibe-<nome>`
 

@@ -16,7 +16,7 @@ from typing import Any
 
 
 PHASE_RE = re.compile(r"^phase-(\d+)-([a-z0-9]+(?:-[a-z0-9]+)*)$")
-CHAIN_FILES = ("interview.md", "spec.md", "plan.md", "analyze.md")
+CHAIN_FILES = ("interview.md", "spec.md", "plan.md", "analyze.md", "review.md")
 MAX_SLUG = 48
 
 
