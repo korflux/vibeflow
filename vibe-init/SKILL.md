@@ -17,18 +17,18 @@ Fonte viva das regras: **sempre** `.vibeflow/REGRAS.md`. `AGENTS.md` / `CLAUDE.m
 Primeira vez (repo sem `.vibeflow`): este `description` dispara o init — o roteador da cadeia só existe no `REGRAS.md` **depois**.
 Depois do init: preserve o bloco `<!-- VIBEFLOW:CADEIA -->`; o script o atualiza. Não é regra do usuário nem entra em merge.
 
-No repo vibeflow, leia `docs/vibe-init/ARQUITETURA.md` **só** se o inventário tiver estado ou merge que este arquivo não cobre. No install isolado, este `SKILL.md` basta.
-
 ## 0. Script primeiro
 
 1. Resolva o diretório desta skill (pasta deste `SKILL.md`).
 2. No cwd do repo do usuário:
    - Windows: `pwsh "<skill>/scripts/init.ps1"`
    - Unix: `bash "<skill>/scripts/init.sh"`
+     - O launcher usa Python 3; se indisponível, usa PowerShell 7. Sem um deles, pare e informe a dependência.
 3. Leia `.vibeflow/init-report.json` + `.vibeflow/REGRAS.md` atual + **cada** path em `merges[].sources` (ignore fonte `ponteiro_texto`: é path de checkout, não regra).
 4. Leitura dirigida para preencher/corrigir `REGRAS.md`: só o que o relatório, SLOTs, evidência ou o humano apontaram (README, manifest, path citado). Não abrir a árvore inteira nem `node_modules` / `.git` / `dist`.
 
 Se o script parar com `SYMLINK_RECUSADO`: mostre Developer Mode / admin. Não copie `REGRAS.md` para a raiz — a cópia diverge na próxima edição e deixa de ser uma fonte.
+Se parar com `MERGE_PENDENTE`, `MERGE_TOKEN_INVALIDO`, `MERGE_SOURCE_ALTERADA` ou `MERGE_NAO_APLICADO`: não contorne. Releia o relatório e as fontes apontadas; preserve os arquivos legados até o consolidado estar gravado.
 Se `inventory` trouxer `ponteiro_texto`: checkout Windows/`core.symlinks=false`. Avise; o script tenta restaurar o symlink. Não mergeie essa string — é o alvo do Git, não uma regra.
 
 Old verificado **antes** de substituir qualquer arquivo do usuário: um crash no meio sem old apaga o original.
@@ -66,7 +66,7 @@ política oferecida: semver (legado não tinha)
    - [ ] nenhum parágrafo é só o path `.vibeflow/REGRAS.md`
    - [ ] só fechou SLOT que o humano respondeu
    - [ ] mapa de origem já foi mostrado
-7. Só então: `pwsh "<skill>/scripts/init.ps1" -ApplyPointers` (Unix: `init.sh --apply-pointers`).
+7. Leia `apply_token` do relatório. Só então: `pwsh "<skill>/scripts/init.ps1" -ApplyPointers -MergeToken "<apply_token>"` (Unix: `init.sh --apply-pointers --merge-token "<apply_token>"`). O script recusa fonte alterada ou consolidado ainda igual ao inventariado.
 
 ## 3. Conflitos (um por vez)
 
@@ -100,7 +100,7 @@ Migration em produção é irreversível no sentido prático. Não gerar, não a
 
 ## 5. Fechar
 
-Não commita. Avise: commitar `REGRAS.md`, os dois symlinks, `.vibeflow/old/` (se existir) e `.vibeflow/phases/.gitkeep`. Não commitar `init-report.json`.
+Não commita. Avise: commitar `REGRAS.md`, os dois symlinks, `.vibeflow/old/` (se existir) e `.vibeflow/phases/.gitkeep`. Não commitar `init-report.json` nem `init-pending.json`.
 Windows: `core.symlinks=true` é aviso no relatório, não forçado.
 
 ## Fora (v1)

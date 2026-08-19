@@ -1,44 +1,63 @@
-# vibe-init/scripts/test-init.ps1
+# docs/vibe-init/tests/test-init.ps1
 # Contratos de docs/vibe-init/ARQUITETURA.md §13 — sem framework.
 $ErrorActionPreference = 'Stop'
-$init = Join-Path $PSScriptRoot 'init.ps1'
+$skillDir = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..\..\..\vibe-init')).Path
+$init = Join-Path $skillDir 'scripts\init.ps1'
 $fail = 0
 $pass = 0
 
+# Registra um contrato aprovado sem interromper a suíte.
 function Ok([string]$Name) { $script:pass++; Write-Host "PASS $Name" }
+# Registra uma falha com evidência e permite que os demais contratos sejam executados.
 function Bad([string]$Name, [string]$Why) { $script:fail++; Write-Host "FAIL $Name — $Why" }
+# Converte uma condição observável no resultado padronizado da suíte.
 function Assert([bool]$Cond, [string]$Name, [string]$Why) {
     if ($Cond) { Ok $Name } else { Bad $Name $Why }
 }
 
+# Cria uma raiz descartável por cenário sem compartilhar estado entre testes.
 function New-Sandbox {
     $d = Join-Path $env:TEMP ("vibe-init-" + [guid]::NewGuid().ToString('n'))
     New-Item -ItemType Directory -Path $d | Out-Null
     return $d
 }
 
+# Executa a entrada PowerShell no repositório isolado informado.
 function Invoke-Init([string]$Repo) {
     & $init -Root $Repo | Out-Null
 }
 
+# Desserializa o contrato produzido para as asserções do cenário.
 function Read-Report([string]$Repo) {
     Get-Content -LiteralPath (Join-Path $Repo '.vibeflow\init-report.json') -Raw | ConvertFrom-Json
 }
 
+# Simula o merge semântico da IA e usa o token emitido para finalizar os ponteiros.
+function Complete-Merge([string]$Repo, $Report, [string]$Text) {
+    $target = Join-Path $Repo '.vibeflow\REGRAS.md'
+    $body = Get-Content -LiteralPath $target -Raw
+    [System.IO.File]::WriteAllText($target, "$body`n$Text`n")
+    & $init -Root $Repo -ApplyPointers -MergeToken $Report.apply_token | Out-Null
+}
+
+# Confirma que o item final é um symlink real, não uma cópia ou ponteiro textual.
 function Test-IsLink([string]$Path) {
     $i = Get-Item -LiteralPath $Path -Force -ErrorAction SilentlyContinue
     return [bool]($i -and ($i.LinkType -eq 'SymbolicLink' -or $i.Attributes.ToString() -match 'ReparsePoint'))
 }
 
+# Calcula hash para detectar qualquer reescrita não autorizada do conteúdo vivo.
 function Get-Sha([string]$Path) {
     (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
 }
 
+# Lê o bloco canônico usado para montar fixtures preenchidas.
 function Get-CadeiaSnippet {
-    $t = Get-Content (Join-Path $PSScriptRoot '..\templates\REGRAS.md') -Raw
+    $t = Get-Content (Join-Path $skillDir 'templates\REGRAS.md') -Raw
     return [regex]::Match($t, '(?s)<!-- VIBEFLOW:CADEIA start -->.*?<!-- VIBEFLOW:CADEIA end -->').Value
 }
 
+# Produz uma fixture saudável sem SLOT para testar idempotência.
 function New-RegrasPreenchido([string]$Projeto) {
     return "# Regras do projeto`n`n$(Get-CadeiaSnippet)`n`n## Projeto`n$Projeto`n`n## Ambiente`nhomolog`n`n## Versão (semver)`n- x`n`n## Git`n- y`n`n## Estrutura`n- src`n`n## Regras deste repo`nnada`n"
 }
@@ -84,7 +103,7 @@ $s = New-Sandbox
 try {
     $vf = Join-Path $s '.vibeflow'
     New-Item -ItemType Directory -Path $vf | Out-Null
-    Copy-Item (Join-Path $PSScriptRoot '..\templates\REGRAS.md') (Join-Path $vf 'REGRAS.md')
+    Copy-Item (Join-Path $skillDir 'templates\REGRAS.md') (Join-Path $vf 'REGRAS.md')
     Invoke-Init $s
     $r = Read-Report $s
     $ok = (Test-Path (Join-Path $vf 'phases')) -and ($r.flow -eq 'reparar')
@@ -118,7 +137,7 @@ try {
     $aindaArquivo = -not (Test-IsLink (Join-Path $s 'AGENTS.md'))
     $oldIgual = (Get-Content $old -Raw) -eq $orig
     $temMerge = @($r.merges).Count -gt 0
-    & $init -Root $s -ApplyPointers | Out-Null
+    Complete-Merge $s $r 'regra legado agents'
     $virou = Test-IsLink (Join-Path $s 'AGENTS.md')
     Assert ($aindaArquivo -and $oldIgual -and $temMerge -and $virou) '5-legado-agents' "arquivo=$aindaArquivo oldIgual=$oldIgual merge=$temMerge link=$virou"
 } catch { Bad '5-legado-agents' "$_" }
@@ -138,18 +157,23 @@ try {
     Assert $ok '6-duas-fontes' "merge=$($r.merges[0].id)"
 } catch { Bad '6-duas-fontes' "$_" }
 
-# 7. Segunda run: old já existe, AGENTS ainda arquivo → timestamp; first old intacto
+# 7. Segunda migração: old já existe → fonte versionada correta; first old intacto
 $s = New-Sandbox
 try {
     [System.IO.File]::WriteAllText((Join-Path $s 'AGENTS.md'), "v1`n")
     Invoke-Init $s
+    $r1 = Read-Report $s
     $first = Get-Content (Join-Path $s '.vibeflow\old\AGENTS.md') -Raw
+    Complete-Merge $s $r1 'v1'
+    Remove-Item -LiteralPath (Join-Path $s 'AGENTS.md') -Force
     [System.IO.File]::WriteAllText((Join-Path $s 'AGENTS.md'), "v2`n")
-    Start-Sleep -Seconds 1
     Invoke-Init $s
+    $r2 = Read-Report $s
     $firstDepois = Get-Content (Join-Path $s '.vibeflow\old\AGENTS.md') -Raw
     $stamped = @(Get-ChildItem (Join-Path $s '.vibeflow\old') -Filter 'AGENTS.md.*')
-    Assert (($first -eq $firstDepois) -and ($first -eq "v1`n") -and ($stamped.Count -ge 1)) '7-old-timestamp' "stamped=$($stamped.Count) first=$firstDepois"
+    $mergeSource = [string]$r2.merges[0].sources[0]
+    $sourceBody = Get-Content -LiteralPath (Join-Path $s $mergeSource) -Raw
+    Assert (($first -eq $firstDepois) -and ($first -eq "v1`n") -and ($stamped.Count -ge 1) -and ($sourceBody -eq "v2`n")) '7-old-timestamp' "stamped=$($stamped.Count) source=$mergeSource"
 } catch { Bad '7-old-timestamp' "$_" }
 
 # 8. AGENTS arquivo = REGRAS → old + vira symlink
@@ -290,6 +314,61 @@ try {
         ($body -match 'App do time\.')
     Assert $ok '16-cadeia-refresh' 'bloco não atualizou ou comeu o usuário'
 } catch { Bad '16-cadeia-refresh' "$_" }
+
+# 17. ApplyPointers sem alteração do consolidado deve preservar o legado.
+$s = New-Sandbox
+try {
+    [System.IO.File]::WriteAllText((Join-Path $s 'AGENTS.md'), "regra ainda nao unida`n")
+    Invoke-Init $s
+    $r = Read-Report $s
+    $threw = $false
+    try { & $init -Root $s -ApplyPointers -MergeToken $r.apply_token | Out-Null } catch { $threw = $_ -match 'MERGE_NAO_APLICADO' }
+    $ok = $threw -and -not (Test-IsLink (Join-Path $s 'AGENTS.md')) -and (Test-Path (Join-Path $s '.vibeflow\init-pending.json'))
+    Assert $ok '17-apply-sem-merge' "threw=$threw link=$(Test-IsLink (Join-Path $s 'AGENTS.md'))"
+} catch { Bad '17-apply-sem-merge' "$_" }
+
+# 18. Merge de REGRAS duplicado deve remover a cópia da raiz somente após confirmação.
+$s = New-Sandbox
+try {
+    New-Item -ItemType Directory -Path (Join-Path $s '.vibeflow') | Out-Null
+    [System.IO.File]::WriteAllText((Join-Path $s '.vibeflow\REGRAS.md'), "regra viva`n")
+    [System.IO.File]::WriteAllText((Join-Path $s 'REGRAS.md'), "regra raiz`n")
+    Invoke-Init $s
+    $r = Read-Report $s
+    Complete-Merge $s $r "regra raiz"
+    $ok = -not (Test-Path -LiteralPath (Join-Path $s 'REGRAS.md')) -and
+        -not (Test-Path -LiteralPath (Join-Path $s '.vibeflow\init-pending.json'))
+    Assert $ok '18-regras-duplicado-finaliza' 'REGRAS.md da raiz ou estado pendente permaneceu'
+} catch { Bad '18-regras-duplicado-finaliza' "$_" }
+
+# 19. .gitignore preexistente deve ser preservado e receber os dois artefatos operacionais.
+$s = New-Sandbox
+try {
+    New-Item -ItemType Directory -Path (Join-Path $s '.vibeflow') | Out-Null
+    [System.IO.File]::WriteAllText((Join-Path $s '.vibeflow\.gitignore'), "custom.log`n")
+    Invoke-Init $s
+    $body = Get-Content -LiteralPath (Join-Path $s '.vibeflow\.gitignore') -Raw
+    $ok = ($body -match '(?m)^custom\.log$') -and ($body -match '(?m)^init-report\.json$') -and ($body -match '(?m)^init-pending\.json$')
+    Assert $ok '19-gitignore-preserva' $body
+} catch { Bad '19-gitignore-preserva' "$_" }
+
+# 20. Tipos estruturais inesperados devem falhar antes de criar qualquer arquivo auxiliar.
+$s = New-Sandbox
+try {
+    [System.IO.File]::WriteAllText((Join-Path $s '.vibeflow'), 'arquivo, nao pasta')
+    $threw = $false
+    try { Invoke-Init $s } catch { $threw = $_ -match 'TIPO_INESPERADO' }
+    Assert ($threw -and -not (Test-Path (Join-Path $s 'AGENTS.md'))) '20-tipo-infra' "threw=$threw"
+} catch { Bad '20-tipo-infra' "$_" }
+
+# 21. Scan de migrations não deve entrar em árvores explicitamente ignoradas.
+$s = New-Sandbox
+try {
+    New-Item -ItemType Directory -Path (Join-Path $s 'node_modules\pkg\migrations') -Force | Out-Null
+    Invoke-Init $s
+    $r = Read-Report $s
+    Assert (-not $r.migrations_detectadas) '21-migrations-poda' 'detectou migration dentro de node_modules'
+} catch { Bad '21-migrations-poda' "$_" }
 
 Write-Host ""
 Write-Host "pass=$pass fail=$fail"

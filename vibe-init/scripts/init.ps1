@@ -4,30 +4,39 @@
 param(
     [string]$Root,
     [switch]$ApplyPointers,
+    [string]$MergeToken,
     [ValidateSet('AGENTS', 'CLAUDE')]
     [string]$RedirectPointer,
     [switch]$StopAfterOld
 )
 
 $ErrorActionPreference = 'Stop'
+$script:EvidenceWarnings = New-Object System.Collections.Generic.List[string]
 
 # --- paths e bytes -----------------------------------------------------------
 
+# Resolve a raiz por parâmetro, Git ou cwd sem exigir que Git esteja instalado.
 function Get-RepoRoot {
     if ($Root) { return (Resolve-Path -LiteralPath $Root).Path }
-    $git = & git rev-parse --show-toplevel 2>$null
-    if ($LASTEXITCODE -eq 0 -and $git) { return $git.Trim() }
+    # Usa o Git somente quando instalado; repositórios sem Git continuam suportados pelo cwd.
+    if (Get-Command git -ErrorAction SilentlyContinue) {
+        $git = & git rev-parse --show-toplevel 2>$null
+        if ($LASTEXITCODE -eq 0 -and $git) { return $git.Trim() }
+    }
     return (Get-Location).Path
 }
 
+# Localiza template e recursos a partir do diretório estável do próprio script.
 function Get-SkillDir {
     return (Split-Path -Parent $PSScriptRoot)
 }
 
+# Calcula o hash usado para validar backups e fontes de merge.
 function Get-Sha256File([string]$Path) {
     return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
 }
 
+# Compara tamanho e SHA-256 sem normalizar conteúdo do usuário.
 function Test-SameBytes([string]$A, [string]$B) {
     if (-not (Test-Path -LiteralPath $A) -or -not (Test-Path -LiteralPath $B)) { return $false }
     $ia = Get-Item -LiteralPath $A -Force
@@ -36,15 +45,28 @@ function Test-SameBytes([string]$A, [string]$B) {
     return (Get-Sha256File $A) -eq (Get-Sha256File $B)
 }
 
+# Obtém inclusive symlinks quebrados e itens ocultos sem transformar ausência em exceção.
 function Get-FsItem([string]$Path) {
     return Get-Item -LiteralPath $Path -Force -ErrorAction SilentlyContinue
 }
 
+# Reconhece symlinks pelas propriedades disponíveis nas versões suportadas do PowerShell.
 function Test-IsSymlink($Item) {
     if (-not $Item) { return $false }
     return $Item.Attributes.ToString() -match 'ReparsePoint' -or $Item.LinkType -eq 'SymbolicLink'
 }
 
+# Compara caminhos conforme a semântica do sistema, sensível a caixa em Unix.
+function Test-SamePath([string]$A, [string]$B) {
+    $comparison = if ($IsWindows -or $env:OS -match 'Windows') {
+        [StringComparison]::OrdinalIgnoreCase
+    } else {
+        [StringComparison]::Ordinal
+    }
+    return [string]::Equals($A, $B, $comparison)
+}
+
+# Normaliza o alvo exposto pelo PowerShell para uma única string comparável.
 function Get-LinkTargetString($Item) {
     $t = $Item.Target
     if ($null -eq $t) { return $null }
@@ -52,6 +74,7 @@ function Get-LinkTargetString($Item) {
     return [string]$t
 }
 
+# Resolve alvos absolutos ou relativos sem exigir que o destino exista.
 function Resolve-MaybeRelative([string]$BaseDir, [string]$Target) {
     if ([string]::IsNullOrWhiteSpace($Target)) { return $null }
     if ([System.IO.Path]::IsPathRooted($Target)) {
@@ -60,16 +83,30 @@ function Resolve-MaybeRelative([string]$BaseDir, [string]$Target) {
     return [System.IO.Path]::GetFullPath((Join-Path $BaseDir $Target))
 }
 
+# Lê conteúdo operacional integral que deve ser preservado byte a byte no backup.
 function Get-Text([string]$Path) {
     if (-not (Test-Path -LiteralPath $Path)) { return $null }
     return [System.IO.File]::ReadAllText($Path)
 }
 
+# Lê somente evidências pequenas; arquivos do projeto não podem consumir memória sem limite no scan.
+function Get-EvidenceText([string]$Path, [int64]$MaxBytes = 1048576) {
+    $item = Get-FsItem $Path
+    if (-not $item -or $item.PSIsContainer) { return $null }
+    if ($item.Length -gt $MaxBytes) {
+        [void]$script:EvidenceWarnings.Add("evidência ignorada por tamanho: $Path")
+        return $null
+    }
+    return [System.IO.File]::ReadAllText($Path)
+}
+
+# Distingue arquivos vazios de fontes legadas com conteúdo aproveitável.
 function Test-WhitespaceOnly([string]$Path) {
     $t = Get-Text $Path
     return [string]::IsNullOrWhiteSpace($t)
 }
 
+# Extrai os SLOTs que ainda exigem evidência ou resposta humana.
 function Get-OpenSlots([string]$Text) {
     if ($null -eq $Text) { return @() }
     return [regex]::Matches($Text, '<!--\s*SLOT:(\w+)\s*-->') | ForEach-Object { $_.Groups[1].Value }
@@ -81,13 +118,16 @@ function Test-IsPointerText([string]$Path) {
     if ($null -eq $t) { return $false }
     $t = $t.Trim().Trim([char]0xFEFF)
     $norm = ($t -replace '\\', '/' -replace '^\./', '').Trim()
-    return [string]::Equals($norm, '.vibeflow/REGRAS.md', [StringComparison]::OrdinalIgnoreCase)
+    return Test-SamePath $norm '.vibeflow/REGRAS.md'
 }
 
 # --- inventário (zero escrita) -----------------------------------------------
 
+# Classifica a pasta principal antes de qualquer alteração no disco.
 function Get-VibeflowState([string]$Vf) {
-    if (-not (Test-Path -LiteralPath $Vf)) { return 'ausente' }
+    $item = Get-FsItem $Vf
+    if (-not $item) { return 'ausente' }
+    if (-not $item.PSIsContainer) { return 'inesperado' }
     $regras = Join-Path $Vf 'REGRAS.md'
     if (Test-Path -LiteralPath $regras) { return 'com_regras' }
     $kids = @(Get-ChildItem -LiteralPath $Vf -Force -ErrorAction SilentlyContinue)
@@ -95,14 +135,18 @@ function Get-VibeflowState([string]$Vf) {
     return 'sem_regras'
 }
 
+# Classifica um arquivo de regras sem interpretar semanticamente sua prosa.
 function Get-RegrasFileState([string]$Path) {
-    if (-not (Test-Path -LiteralPath $Path)) { return 'ausente' }
+    $item = Get-FsItem $Path
+    if (-not $item) { return 'ausente' }
+    if ($item.PSIsContainer) { return 'inesperado' }
     if (Test-WhitespaceOnly $Path) { return 'vazio' }
     $slots = @(Get-OpenSlots (Get-Text $Path))
     if ($slots.Count -gt 0) { return 'template' }
     return 'preenchido'
 }
 
+# Resume a relação entre a fonte viva e uma possível cópia na raiz.
 function Get-RegrasState([string]$Repo, [string]$VfRegras, [string]$RootRegras) {
     $hasVf = Test-Path -LiteralPath $VfRegras
     $hasRoot = Test-Path -LiteralPath $RootRegras
@@ -111,6 +155,7 @@ function Get-RegrasState([string]$Repo, [string]$VfRegras, [string]$RootRegras) 
     return (Get-RegrasFileState $VfRegras)
 }
 
+# Classifica um ponteiro considerando links quebrados, cópias e conteúdo legado.
 function Get-PointerState([string]$Repo, [string]$Name, [string]$VfRegras) {
     $path = Join-Path $Repo $Name
     $item = Get-FsItem $path
@@ -122,7 +167,7 @@ function Get-PointerState([string]$Repo, [string]$Name, [string]$VfRegras) {
         if (-not $resolved -or -not (Test-Path -LiteralPath $resolved)) { return 'symlink_quebrado' }
         if (Test-Path -LiteralPath $VfRegras) {
             $want = (Get-Item -LiteralPath $VfRegras).FullName
-            if ([string]::Equals($resolved, $want, [StringComparison]::OrdinalIgnoreCase)) {
+            if (Test-SamePath $resolved $want) {
                 return 'symlink_ok'
             }
         }
@@ -138,13 +183,21 @@ function Get-PointerState([string]$Repo, [string]$Name, [string]$VfRegras) {
 
 # --- old (nunca sobrescreve; sem verify não segue) ---------------------------
 
+# Escolhe um destino de backup único sem depender apenas da precisão do relógio.
 function New-OldDest([string]$OldDir, [string]$Name) {
     $dest = Join-Path $OldDir $Name
     if (-not (Test-Path -LiteralPath $dest)) { return $dest }
     $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
-    return (Join-Path $OldDir "$Name.$stamp")
+    $candidate = Join-Path $OldDir "$Name.$stamp"
+    $suffix = 1
+    while (Test-Path -LiteralPath $candidate) {
+        $candidate = Join-Path $OldDir "$Name.$stamp.$suffix"
+        $suffix++
+    }
+    return $candidate
 }
 
+# Copia e valida o old antes que o original possa ser substituído.
 function Copy-Verified([string]$From, [string]$To) {
     $dir = Split-Path -Parent $To
     if (-not (Test-Path -LiteralPath $dir)) {
@@ -164,39 +217,59 @@ function Copy-Verified([string]$From, [string]$To) {
 # --- symlink: cria o link primeiro; só então tira o original -----------------
 
 function New-RelSymlink([string]$LinkPath, [string]$TargetRel) {
-    $tmp = "$LinkPath.__vibe_symlink__"
-    if (Test-Path -LiteralPath $tmp) { Remove-Item -LiteralPath $tmp -Force }
+    $tmp = "$LinkPath.__vibe_symlink__$([guid]::NewGuid().ToString('n'))"
     try {
         New-Item -ItemType SymbolicLink -Path $tmp -Target $TargetRel -ErrorAction Stop | Out-Null
     } catch {
         throw "SYMLINK_RECUSADO: o OS recusou criar o link '$LinkPath' -> '$TargetRel'. Ative o Developer Mode (Configurações → Sistema → Para desenvolvedores) ou rode como administrador. Sem cópia na raiz — o original permanece."
     }
-    if (Test-Path -LiteralPath $LinkPath) {
-        Remove-Item -LiteralPath $LinkPath -Force
+    try {
+        if (Get-FsItem $LinkPath) {
+            Remove-Item -LiteralPath $LinkPath -Force
+        }
+        Rename-Item -LiteralPath $tmp -NewName (Split-Path -Leaf $LinkPath)
+    } finally {
+        # Remove somente o temporário desta execução se a troca não foi concluída.
+        if (Get-FsItem $tmp) { Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue }
     }
-    Rename-Item -LiteralPath $tmp -NewName (Split-Path -Leaf $LinkPath)
+}
+
+# Garante uma regra operacional sem sobrescrever as exclusões já mantidas pelo projeto.
+function Add-GitIgnoreEntry([string]$Path, [string]$Entry) {
+    $body = if (Test-Path -LiteralPath $Path) { Get-Text $Path } else { '' }
+    $present = @($body -split '\r?\n') | Where-Object { $_.Trim() -eq $Entry }
+    if ($present.Count -gt 0) { return $false }
+    $prefix = if ($body -and -not $body.EndsWith("`n")) { "`n" } else { '' }
+    [System.IO.File]::AppendAllText($Path, "$prefix$Entry`n", (New-Object System.Text.UTF8Encoding $false))
+    return $true
 }
 
 # --- scan: só SLOT aberto + evidência ----------------------------------------
 
+# Extrai um nome factual de manifests conhecidos ou do diretório do projeto.
 function Get-ProjectName([string]$Repo) {
     $pkg = Join-Path $Repo 'package.json'
     if (Test-Path -LiteralPath $pkg) {
         try {
-            $n = (Get-Content -LiteralPath $pkg -Raw | ConvertFrom-Json).name
+            $raw = Get-EvidenceText $pkg
+            if (-not $raw) { throw 'manifest excede o limite de leitura' }
+            $n = ($raw | ConvertFrom-Json).name
             if ($n) { return @{ value = [string]$n; from = 'package.json' } }
         } catch {}
     }
     $py = Join-Path $Repo 'pyproject.toml'
     if (Test-Path -LiteralPath $py) {
-        $raw = Get-Text $py
-        $m = [regex]::Match($raw, '(?ms)\[project\].*?^name\s*=\s*["'']([^"'']+)["'']')
-        if ($m.Success) { return @{ value = $m.Groups[1].Value; from = 'pyproject.toml' } }
+        $raw = Get-EvidenceText $py
+        if ($raw) {
+            $m = [regex]::Match($raw, '(?ms)\[project\].*?^name\s*=\s*["'']([^"'']+)["'']')
+            if ($m.Success) { return @{ value = $m.Groups[1].Value; from = 'pyproject.toml' } }
+        }
     }
     $go = Join-Path $Repo 'go.mod'
     if (Test-Path -LiteralPath $go) {
-        $m = [regex]::Match((Get-Text $go), '(?m)^module\s+(\S+)')
-        if ($m.Success) {
+        $raw = Get-EvidenceText $go
+        $m = if ($raw) { [regex]::Match($raw, '(?m)^module\s+(\S+)') } else { $null }
+        if ($m -and $m.Success) {
             $mod = $m.Groups[1].Value
             $leaf = ($mod -split '/')[-1]
             return @{ value = $leaf; from = 'go.mod' }
@@ -205,6 +278,7 @@ function Get-ProjectName([string]$Repo) {
     return @{ value = (Split-Path -Leaf $Repo); from = 'pasta' }
 }
 
+# Seleciona o primeiro parágrafo útil, ignorando títulos, badges e imagens iniciais.
 function Get-UsefulParagraph([string]$Text) {
     if ([string]::IsNullOrWhiteSpace($Text)) { return $null }
     $buf = New-Object System.Collections.Generic.List[string]
@@ -224,30 +298,36 @@ function Get-UsefulParagraph([string]$Text) {
     return $null
 }
 
+# Localiza uma descrição factual sem ultrapassar o limite de leitura de evidências.
 function Get-ParagrafoEvidence([string]$Repo) {
     foreach ($name in @('README.md', 'README.MD', 'readme.md')) {
         $p = Join-Path $Repo $name
         if (Test-Path -LiteralPath $p) {
-            $para = Get-UsefulParagraph (Get-Text $p)
+            $para = Get-UsefulParagraph (Get-EvidenceText $p)
             if ($para) { return @{ text = $para; from = $name } }
         }
     }
     $pkg = Join-Path $Repo 'package.json'
     if (Test-Path -LiteralPath $pkg) {
         try {
-            $d = (Get-Content -LiteralPath $pkg -Raw | ConvertFrom-Json).description
+            $raw = Get-EvidenceText $pkg
+            if (-not $raw) { throw 'manifest excede o limite de leitura' }
+            $d = ($raw | ConvertFrom-Json).description
             if ($d) { return @{ text = [string]$d; from = 'package.json' } }
         } catch {}
     }
     $py = Join-Path $Repo 'pyproject.toml'
     if (Test-Path -LiteralPath $py) {
-        $raw = Get-Text $py
-        $m = [regex]::Match($raw, '(?ms)\[project\].*?^description\s*=\s*["'']([^"'']+)["'']')
-        if ($m.Success) { return @{ text = $m.Groups[1].Value; from = 'pyproject.toml' } }
+        $raw = Get-EvidenceText $py
+        if ($raw) {
+            $m = [regex]::Match($raw, '(?ms)\[project\].*?^description\s*=\s*["'']([^"'']+)["'']')
+            if ($m.Success) { return @{ text = $m.Groups[1].Value; from = 'pyproject.toml' } }
+        }
     }
     return $null
 }
 
+# Lista dois níveis úteis sem entrar em diretórios de dependências ou build.
 function Get-Estrutura([string]$Repo) {
     $ignore = @('node_modules', '.git', 'dist', 'build', '.next', 'vendor', '__pycache__')
     $out = New-Object System.Collections.Generic.List[string]
@@ -263,6 +343,7 @@ function Get-Estrutura([string]$Repo) {
     return @($out)
 }
 
+# Identifica a stack apenas pela presença de manifests conhecidos.
 function Get-Stack([string]$Repo) {
     $names = @(
         'package.json', 'pyproject.toml', 'go.mod', 'Cargo.toml', 'composer.json',
@@ -271,6 +352,7 @@ function Get-Stack([string]$Repo) {
     return @($names | Where-Object { Test-Path -LiteralPath (Join-Path $Repo $_) })
 }
 
+# Detecta migrations conhecidas e nomes convencionais com travessia podada.
 function Test-Migrations([string]$Repo) {
     $hits = @(
         'prisma/migrations', 'alembic', 'alembic.ini', 'drizzle',
@@ -279,12 +361,22 @@ function Test-Migrations([string]$Repo) {
     foreach ($h in $hits) {
         if (Test-Path -LiteralPath (Join-Path $Repo $h)) { return $true }
     }
-    $django = Get-ChildItem -LiteralPath $Repo -Recurse -Directory -Filter 'migrations' -ErrorAction SilentlyContinue |
-        Where-Object { $_.FullName -notmatch 'node_modules|\\.git|vendor' } |
-        Select-Object -First 1
-    return [bool]$django
+    # Percorre diretórios com poda real; filtrar depois de -Recurse ainda entraria em árvores enormes.
+    $ignore = @('node_modules', '.git', 'vendor', 'dist', 'build', '.next', '__pycache__')
+    $queue = New-Object 'System.Collections.Generic.Queue[string]'
+    $queue.Enqueue($Repo)
+    while ($queue.Count -gt 0) {
+        $current = $queue.Dequeue()
+        foreach ($dir in @(Get-ChildItem -LiteralPath $current -Directory -Force -ErrorAction SilentlyContinue)) {
+            if ($ignore -contains $dir.Name -or (Test-IsSymlink $dir)) { continue }
+            if ($dir.Name -eq 'migrations') { return $true }
+            $queue.Enqueue($dir.FullName)
+        }
+    }
+    return $false
 }
 
+# Extrai do template o único bloco controlado integralmente pela skill.
 function Get-CadeiaBlock([string]$TemplatePath) {
     $t = Get-Text $TemplatePath
     $m = [regex]::Match($t, '(?s)<!-- VIBEFLOW:CADEIA start -->.*?<!-- VIBEFLOW:CADEIA end -->')
@@ -305,6 +397,7 @@ function Set-CadeiaBlock([string]$Content, [string]$Block) {
     return $Block + "`n`n" + $Content
 }
 
+# Preenche somente um SLOT explicitamente respaldado por evidência.
 function Set-Slot([string]$Content, [string]$Slot, [string]$Value, [string]$Evidencia) {
     $pattern = "(?m)^<!--\s*SLOT:$([regex]::Escape($Slot))\s*-->\s*\r?\n(?:<!--\s*evidência:[^\n]*-->\s*\r?\n)?"
     $repl = $Value.TrimEnd() + "`n"
@@ -312,8 +405,81 @@ function Set-Slot([string]$Content, [string]$Slot, [string]$Value, [string]$Evid
     return [regex]::Replace($Content, $pattern, { $repl }, 1)
 }
 
+# Converte um caminho absoluto do repositório para o formato portátil usado no relatório.
+function Get-RepoRelativePath([string]$Repo, [string]$Path) {
+    return $Path.Substring($Repo.Length).TrimStart('\', '/').Replace('\', '/')
+}
+
+# Persiste a autorização verificável necessária para finalizar um merge em outra execução.
+function Write-PendingMerge([string]$Path, [string]$Repo, [string]$TargetPath, $Merges) {
+    $sources = New-Object System.Collections.Generic.List[object]
+    foreach ($source in @($Merges | ForEach-Object { $_.sources } | Select-Object -Unique)) {
+        $absolute = Join-Path $Repo $source
+        if (-not (Test-Path -LiteralPath $absolute -PathType Leaf)) {
+            throw "MERGE_SOURCE_AUSENTE: fonte de merge não encontrada: $source"
+        }
+        [void]$sources.Add([ordered]@{ path = $source; sha256 = Get-Sha256File $absolute })
+    }
+    $pending = [ordered]@{
+        version               = 1
+        token                 = [guid]::NewGuid().ToString('n')
+        target                = Get-RepoRelativePath $Repo $TargetPath
+        target_sha256_inicial = Get-Sha256File $TargetPath
+        sources               = $sources
+        remove_regras_raiz    = [bool](@($Merges | Where-Object { $_.id -eq 'regras_duplicado' }).Count -gt 0)
+    }
+    $json = $pending | ConvertTo-Json -Depth 10
+    [System.IO.File]::WriteAllText($Path, $json, (New-Object System.Text.UTF8Encoding $false))
+    return $pending
+}
+
+# Valida token, imutabilidade das fontes e alteração do consolidado antes de trocar ponteiros.
+function Confirm-PendingMerge([string]$Path, [string]$Repo, [string]$Token) {
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        throw 'APPLY_SEM_MERGE: não existe merge pendente para finalizar.'
+    }
+    $pending = Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json
+    if (-not $Token -or -not [string]::Equals([string]$pending.token, $Token, [StringComparison]::Ordinal)) {
+        throw 'MERGE_TOKEN_INVALIDO: use o apply_token do init-report.json atual.'
+    }
+    foreach ($source in @($pending.sources)) {
+        $absolute = Join-Path $Repo $source.path
+        if (-not (Test-Path -LiteralPath $absolute -PathType Leaf) -or
+            (Get-Sha256File $absolute) -ne $source.sha256) {
+            throw "MERGE_SOURCE_ALTERADA: a fonte '$($source.path)' mudou desde o inventário. Execute o init novamente após resolver o estado pendente."
+        }
+    }
+    $target = Join-Path $Repo $pending.target
+    if (-not (Test-Path -LiteralPath $target -PathType Leaf)) {
+        throw "MERGE_TARGET_AUSENTE: consolidado não encontrado: $($pending.target)"
+    }
+    if ((Get-Sha256File $target) -eq $pending.target_sha256_inicial) {
+        throw 'MERGE_NAO_APLICADO: o consolidado não mudou desde o inventário; os ponteiros foram preservados.'
+    }
+    return $pending
+}
+
+# Interrompe antes da primeira escrita quando caminhos estruturais possuem tipos incompatíveis.
+function Assert-InfrastructureTypes([string]$Vf, [string]$VfRegras, [string]$RootRegras, [string]$Phases) {
+    $vfItem = Get-FsItem $Vf
+    if ($vfItem -and -not $vfItem.PSIsContainer) {
+        throw 'TIPO_INESPERADO: .vibeflow existe, mas não é um diretório.'
+    }
+    foreach ($path in @($VfRegras, $RootRegras)) {
+        $item = Get-FsItem $path
+        if ($item -and $item.PSIsContainer) {
+            throw "TIPO_INESPERADO: '$path' existe, mas não é um arquivo."
+        }
+    }
+    $phasesItem = Get-FsItem $Phases
+    if ($phasesItem -and -not $phasesItem.PSIsContainer) {
+        throw 'TIPO_INESPERADO: .vibeflow/phases existe, mas não é um diretório.'
+    }
+}
+
 # --- fluxo -------------------------------------------------------------------
 
+# Executa a matriz determinística e coordena inventário, backup, scan e ponteiros.
 function Invoke-VibeInit {
     $repo = Get-RepoRoot
     $skill = Get-SkillDir
@@ -327,7 +493,17 @@ function Invoke-VibeInit {
     $rootRegras = Join-Path $repo 'REGRAS.md'
     $oldDir = Join-Path $vf 'old'
     $phases = Join-Path $vf 'phases'
+    $pendingPath = Join-Path $vf 'init-pending.json'
     $targetRel = '.vibeflow/REGRAS.md'
+
+    Assert-InfrastructureTypes $vf $vfRegras $rootRegras $phases
+
+    $confirmedPending = $null
+    if ($ApplyPointers) {
+        $confirmedPending = Confirm-PendingMerge $pendingPath $repo $MergeToken
+    } elseif (Test-Path -LiteralPath $pendingPath) {
+        throw 'MERGE_PENDENTE: finalize o consolidado e execute -ApplyPointers com o apply_token do relatório atual.'
+    }
 
     $inventory = [ordered]@{
         vibeflow = Get-VibeflowState $vf
@@ -349,10 +525,12 @@ function Invoke-VibeInit {
     $conflicts = New-Object System.Collections.Generic.List[object]
     $avisos = New-Object System.Collections.Generic.List[string]
 
+    # Registra ações em um formato único para o relatório consumido pela IA.
     function Add-Action([string]$Op, [string]$Alvo) {
         [void]$actions.Add([ordered]@{ op = $Op; alvo = $Alvo })
     }
 
+    # Salva uma fonte e devolve o destino real, inclusive quando recebeu sufixo de colisão.
     function Save-Old([string]$FromPath, [string]$OldName) {
         if (-not (Test-Path -LiteralPath $FromPath)) { return $null }
         if (-not (Test-Path -LiteralPath $oldDir)) {
@@ -386,9 +564,8 @@ function Invoke-VibeInit {
         Add-Action 'criar_phases' '.vibeflow/phases'
     }
     $gi = Join-Path $vf '.gitignore'
-    if (-not (Test-Path -LiteralPath $gi)) {
-        [System.IO.File]::WriteAllText($gi, "init-report.json`n")
-    }
+    [void](Add-GitIgnoreEntry $gi 'init-report.json')
+    [void](Add-GitIgnoreEntry $gi 'init-pending.json')
 
     $agentsPath = Join-Path $repo 'AGENTS.md'
     $claudePath = Join-Path $repo 'CLAUDE.md'
@@ -479,17 +656,27 @@ function Invoke-VibeInit {
     }
 
     # b. old de toda peça que esta run vai mexer (original permanece até o symlink)
-    if ($agentsLegado -or $inventory.agents -in @('arquivo_igual', 'ponteiro_texto')) { [void](Save-Old $agentsPath 'AGENTS.md') }
-    if ($claudeLegado -or $inventory.claude -in @('arquivo_igual', 'ponteiro_texto')) { [void](Save-Old $claudePath 'CLAUDE.md') }
-    if ($inventory.regras -eq 'raiz_sozinho' -or $inventory.regras -eq 'raiz_e_vibeflow') {
-        [void](Save-Old $rootRegras 'REGRAS-raiz.md')
-    }
-    if ($mergePending -and ($inventory.regras -in @('template', 'preenchido', 'raiz_e_vibeflow')) -and (Test-Path -LiteralPath $vfRegras) -and -not (Test-WhitespaceOnly $vfRegras)) {
-        [void](Save-Old $vfRegras 'REGRAS.md')
+    $oldSourceMap = @{}
+    if (-not $ApplyPointers) {
+        if ($agentsLegado -or $inventory.agents -in @('arquivo_igual', 'ponteiro_texto')) {
+            $oldSourceMap['.vibeflow/old/AGENTS.md'] = Get-RepoRelativePath $repo (Save-Old $agentsPath 'AGENTS.md')
+        }
+        if ($claudeLegado -or $inventory.claude -in @('arquivo_igual', 'ponteiro_texto')) {
+            $oldSourceMap['.vibeflow/old/CLAUDE.md'] = Get-RepoRelativePath $repo (Save-Old $claudePath 'CLAUDE.md')
+        }
+        if ($inventory.regras -eq 'raiz_sozinho' -or $inventory.regras -eq 'raiz_e_vibeflow') {
+            $oldSourceMap['.vibeflow/old/REGRAS-raiz.md'] = Get-RepoRelativePath $repo (Save-Old $rootRegras 'REGRAS-raiz.md')
+        }
+        if ($mergePending -and ($inventory.regras -in @('template', 'preenchido', 'raiz_e_vibeflow')) -and (Test-Path -LiteralPath $vfRegras) -and -not (Test-WhitespaceOnly $vfRegras)) {
+            $oldSourceMap['.vibeflow/old/REGRAS.md'] = Get-RepoRelativePath $repo (Save-Old $vfRegras 'REGRAS.md')
+        }
+        foreach ($merge in $merges) {
+            $merge.sources = @($merge.sources | ForEach-Object { if ($oldSourceMap.ContainsKey($_)) { $oldSourceMap[$_] } else { $_ } })
+        }
     }
 
     if ($StopAfterOld) {
-        Write-Report $repo $flow $inventory $olds $actions $merges $conflicts $avisos @{} @() $false @{} $false $false
+        Write-Report $repo $flow $inventory $olds $actions $merges $conflicts $avisos @{} @() $false @{} $false $false $null
         return
     }
 
@@ -511,9 +698,9 @@ function Invoke-VibeInit {
     }
 
     # d. ponteiros — não viram symlink se o merge ainda usa o arquivo como fonte
+    # Converte uma peça independentemente, preservando fontes ainda necessárias ao merge.
     function Convert-Pointer([string]$Name, [string]$State) {
         $path = Join-Path $repo $Name
-        $key = $Name.ToLower()
         if ($State -eq 'inesperado') { return }
         if ($State -eq 'symlink_ok') { return }
         if ($State -eq 'symlink_outro' -and $RedirectPointer -ne ($Name -replace '\.md$', '')) { return }
@@ -541,7 +728,6 @@ function Invoke-VibeInit {
             return
         }
         if ($State -eq 'symlink_quebrado' -or ($State -eq 'symlink_outro' -and $RedirectPointer)) {
-            Remove-Item -LiteralPath $path -Force
             New-RelSymlink $path $targetRel
             Add-Action 'symlink_recriar' $Name
             return
@@ -563,6 +749,11 @@ function Invoke-VibeInit {
         Add-Action 'apagar_raiz' 'REGRAS.md'
     }
 
+    if ($ApplyPointers -and $confirmedPending.remove_regras_raiz -and (Test-Path -LiteralPath $rootRegras -PathType Leaf)) {
+        Remove-Item -LiteralPath $rootRegras -Force
+        Add-Action 'apagar_raiz' 'REGRAS.md'
+    }
+
     # scan: só SLOT ainda aberto
     $filled = [ordered]@{}
     $nome = Get-ProjectName $repo
@@ -571,6 +762,9 @@ function Invoke-VibeInit {
     $stack = @(Get-Stack $repo)
     $mig = Test-Migrations $repo
     $evidPara = Get-ParagrafoEvidence $repo
+    foreach ($warning in @($script:EvidenceWarnings | Select-Object -Unique)) {
+        [void]$avisos.Add($warning)
+    }
     $scan = [ordered]@{
         estrutura           = $estrutura
         stack               = $stack
@@ -612,19 +806,29 @@ function Invoke-VibeInit {
     $syAgents = (Get-PointerState $repo 'AGENTS.md' $vfRegras) -eq 'symlink_ok'
     $syClaude = (Get-PointerState $repo 'CLAUDE.md' $vfRegras) -eq 'symlink_ok'
 
-    if ($IsWindows -or $env:OS -match 'Windows') {
+    if (($IsWindows -or $env:OS -match 'Windows') -and (Get-Command git -ErrorAction SilentlyContinue)) {
         $cs = & git -C $repo config --get core.symlinks 2>$null
         if ($cs -and $cs.Trim() -ne 'true') {
             [void]$avisos.Add('git core.symlinks não é true (aviso; não forçado)')
         }
     }
 
-    Write-Report $repo $flow $inventory $olds $actions $merges $conflicts $avisos $filled $slotsAbertos $mig $scan $syAgents $syClaude
+    $applyToken = $null
+    if (-not $ApplyPointers -and $merges.Count -gt 0) {
+        $pending = Write-PendingMerge $pendingPath $repo $vfRegras $merges
+        $applyToken = $pending.token
+    }
+    if ($ApplyPointers -and (Test-Path -LiteralPath $pendingPath)) {
+        Remove-Item -LiteralPath $pendingPath -Force
+    }
+
+    Write-Report $repo $flow $inventory $olds $actions $merges $conflicts $avisos $filled $slotsAbertos $mig $scan $syAgents $syClaude $applyToken
 }
 
+# Serializa o contrato entre o script determinístico e a IA que conclui o conteúdo semântico.
 function Write-Report(
     $repo, $flow, $inventory, $olds, $actions, $merges, $conflicts, $avisos,
-    $filled, $slotsAbertos, $mig, $scan, $syAgents, $syClaude
+    $filled, $slotsAbertos, $mig, $scan, $syAgents, $syClaude, $applyToken
 ) {
     $vf = Join-Path $repo '.vibeflow'
     if (-not (Test-Path -LiteralPath $vf)) { New-Item -ItemType Directory -Path $vf -Force | Out-Null }
@@ -642,6 +846,7 @@ function Write-Report(
         symlink_ok            = [ordered]@{ agents = [bool]$syAgents; claude = [bool]$syClaude }
         scan                  = $scan
         avisos                = @($avisos)
+        apply_token           = $applyToken
     }
     $jsonPath = Join-Path $vf 'init-report.json'
     $json = $report | ConvertTo-Json -Depth 10

@@ -331,7 +331,7 @@ Migration em produção é irreversível no sentido prático. Não gerar, não a
 
 ## 10. Pacote de contexto (o que a IA lê)
 
-`.vibeflow/init-report.json` (gitignored):
+`.vibeflow/init-report.json` (gitignored, assim como `init-pending.json`):
 
 ```json
 {
@@ -359,11 +359,14 @@ Migration em produção é irreversível no sentido prático. Não gerar, não a
   "migrations_detectadas": true,
   "symlink_ok": { "agents": true, "claude": true },
   "scan": { "estrutura": ["src"], "stack": ["package.json"], "evidencia_paragrafo": { "from": "README.md", "text": "…" } },
-  "avisos": []
+  "avisos": [],
+  "apply_token": "token quando houver merge | null"
 }
 ```
 
 A IA lê: este JSON + `REGRAS.md` atual + **cada path em `merges[].sources`** (pula `ponteiro_texto`). Pode abrir **só** paths que o relatório/SLOT/evidência/humano apontaram para preencher ou corrigir o `REGRAS.md`. Não varre a árvore inteira.
+
+Quando há merge, o script grava `init-pending.json` com hashes das fontes, hash inicial do alvo e o token exposto no relatório. A finalização exige `-ApplyPointers -MergeToken <apply_token>` ou `init.sh --apply-pointers --merge-token <apply_token>`. O script recusa token inválido, fonte alterada e alvo que ainda tenha o hash inicial. Só depois remove leftovers e converte os legados.
 
 ---
 
@@ -393,7 +396,7 @@ A IA lê: este JSON + `REGRAS.md` atual + **cada path em `merges[].sources`** (p
 | Peça | Onde | Faz |
 |---|---|---|
 | Skill | `vibe-init/SKILL.md` | Orquestra, merge, perguntas, patch de SLOT, dispara symlink pós-merge |
-| Script | `vibe-init/scripts/init.ps1` (+ `init.sh`) | Inventário → old → matriz → scan → JSON; symlink só com merge já fechado |
+| Scripts | `vibe-init/scripts/init.ps1`, `init.py` e `init.sh` | PowerShell e Python implementam o mesmo contrato; o launcher Unix prefere Python 3 e usa pwsh como fallback |
 | Template | `vibe-init/templates/REGRAS.md` | Esqueleto + política + SLOTs |
 | Relatório | `.vibeflow/init-report.json` | Contrato script → IA |
 | Old | `.vibeflow/old/` | Cópias intactas |
@@ -401,7 +404,7 @@ A IA lê: este JSON + `REGRAS.md` atual + **cada path em `merges[].sources`** (p
 
 Install recomendado: user-scope (`<grok-home>/skills/vibe-init`) — só `SKILL.md`, `scripts/`, `templates/`. Fonte canônica da skill: `vibe-init/`. Este doc fica em `docs/vibe-init/` e não vai no install.
 
-Git: commit `REGRAS.md`, os dois symlinks, `.vibeflow/old/` e `.vibeflow/phases/.gitkeep` (pasta vazia não sobrevive no git sem isso). Não commitir `init-report.json`.  
+Git: commit `REGRAS.md`, os dois symlinks, `.vibeflow/old/` e `.vibeflow/phases/.gitkeep` (pasta vazia não sobrevive no git sem isso). Não commitir `init-report.json` nem `init-pending.json`.
 Windows: `core.symlinks=true` é aviso, não forçado. Sem privilegio de link: falha alto; original fica (old já está).
 
 ---
@@ -425,6 +428,14 @@ Windows: `core.symlinks=true` é aviso, não forçado. Sem privilegio de link: f
 14. Só `AGENTS.md` com esse path, sem REGRAS → sem merge; a string do path **não** entra no vivo.
 15. REGRAS sem bloco `VIBEFLOW:CADEIA` → `cadeia_upsert`; texto do usuário permanece.
 16. Bloco cadeia desatualizado → conteúdo vira o do template; resto intacto.
+17. `ApplyPointers` sem alteração do consolidado → falha e preserva os legados.
+18. REGRAS duplicado → após merge confirmado, remove a cópia da raiz.
+19. `.gitignore` existente → preserva regras e inclui os dois arquivos operacionais.
+20. Tipo estrutural inesperado → falha antes de criar ponteiros.
+21. Scan de migrations → não entra em diretórios ignorados.
+
+As suítes ficam fora da skill, em `docs/vibe-init/tests/`. `test-init.py` cobre o motor Python e compara o contrato
+essencial com PowerShell quando `pwsh` está disponível.
 
 Primeira vez (repo sem `.vibeflow`): o gatilho é o `description` da skill instalada no usuário — o bloco cadeia **não** existe ainda. Depois do init, o roteador vive no `REGRAS.md` (ambiente via symlink). O script atualiza **só** o que está entre os delimitadores.
 
