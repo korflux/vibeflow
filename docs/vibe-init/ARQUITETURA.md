@@ -418,7 +418,7 @@ Motor PowerShell exige **PowerShell 7**, declarado com `#Requires -Version 7.0`,
 
 Ganchos exclusivos de teste, sem uso operacional: a flag `--stop-after-old` / `-StopAfterOld`, que interrompe a run logo após os backups, e a variável `VIBE_INIT_TEST_CORRUPT_OLD=1`, que corrompe a cópia para provar `OLD_HASH_MISMATCH`. Não usar em run real.
 
-Install recomendado: user-scope (`<grok-home>/skills/vibe-init`) — só `SKILL.md`, `scripts/`, `templates/`. Fonte canônica da skill: `vibe-init/`. Este doc fica em `docs/vibe-init/` e não vai no install.
+Install: `npx skills` ou marketplace (README). Pacote sem `docs/`. Fonte canônica: `vibe-init/`.
 
 Git: commit `REGRAS.md`, os dois symlinks, `.vibeflow/old/` e `.vibeflow/phases/.gitkeep` (pasta vazia não sobrevive no git sem isso). Não commitir `init-report.json` nem `init-pending.json`.
 Windows: `core.symlinks=true` é aviso, não forçado. Sem privilegio de link: falha alto; original fica (old já está).

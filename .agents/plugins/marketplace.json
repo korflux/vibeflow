@@ -1,0 +1,22 @@
+{
+  "name": "vibeflow",
+  "interface": {
+    "displayName": "vibeflow"
+  },
+  "plugins": [
+    {
+      "name": "vibeflow",
+      "version": "1.0.0",
+      "description": "Cadeia de skills para inicializar e conduzir o trabalho de agentes num repo.",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

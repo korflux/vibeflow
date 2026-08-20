@@ -29,6 +29,9 @@ jobs:
             python "docs/vibe-${skill}/tests/test-${skill}.py" -v
             echo "::endgroup::"
           done
+          echo "::group::distribuicao"
+          python "docs/tests/test-distribuicao.py" -v
+          echo "::endgroup::"
 
       - name: Paridade essencial do init (PowerShell)
         shell: pwsh

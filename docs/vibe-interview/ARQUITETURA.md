@@ -22,7 +22,7 @@
 | Wip | `.vibeflow/interview-wip.md` | Trilha da sessão até o sim (gitignored) |
 | Vivo | `.vibeflow/phases/phase-N-slug/interview.md` | Depois do sim. Commitável |
 
-Install recomendado: user-scope (`<grok-home>/skills/vibe-interview`) — `SKILL.md`, `scripts/`, `templates/`, `references/`. Fonte canônica: `vibe-interview/`. Este doc fica em `docs/vibe-interview/` e não vai no install.
+Install: `npx skills` ou marketplace (README). Pacote sem `docs/`. Fonte canônica: `vibe-interview/`.
 
 ---
 

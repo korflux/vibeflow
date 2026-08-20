@@ -22,7 +22,7 @@ Mesma pasta do plan quando a cadeia existe. Etapa nova = o mesmo arquivo. Sem pl
 | Wip | `.vibeflow/review-wip.md` | Rascunho até o apply (gitignored) |
 | Vivo | `.vibeflow/phases/phase-N-slug/review.md` | Depois do apply. Commitável |
 
-Install: user-scope, pacote sem `docs/`. Fonte canônica: `vibe-review/`.
+Install: `npx skills` ou marketplace (README). Pacote sem `docs/`. Fonte canônica: `vibe-review/`.
 
 ---
 

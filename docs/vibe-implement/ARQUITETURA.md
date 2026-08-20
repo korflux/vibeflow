@@ -25,7 +25,7 @@ Mesma pasta do plan. Esta skill **não** aloca `n` novo se já há alvo. Sem `pl
 | Wip | `.vibeflow/implement-wip.md` | Rascunho até o apply (gitignored) |
 | Vivo | `.vibeflow/phases/phase-N-slug/implement.md` | Depois do apply. Commitável |
 
-Install: user-scope, pacote sem `docs/`. Fonte canônica: `vibe-implement/`.
+Install: `npx skills` ou marketplace (README). Pacote sem `docs/`. Fonte canônica: `vibe-implement/`.
 
 ---
 

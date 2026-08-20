@@ -21,7 +21,7 @@ Mesma pasta da spec. Esta skill **não** aloca `n` novo. Sem spec na pasta, não
 | Wip | `.vibeflow/plan-wip.md` | Rascunho até o apply (gitignored) |
 | Vivo | `.vibeflow/phases/phase-N-slug/plan.md` | Depois do apply. Commitável |
 
-Install: user-scope, pacote sem `docs/`. Fonte canônica: `vibe-plan/`. Sem `references/` no v1.
+Install: `npx skills` ou marketplace (README). Pacote sem `docs/`. Fonte canônica: `vibe-plan/`. Sem `references/` no v1.
 
 ---
 

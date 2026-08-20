@@ -18,7 +18,7 @@ Nenhuma skill dispara a seguinte. O handoff é uma linha no artefato.
 
 ## 2. Infra feita
 
-- [x] **CI.** `.github/workflows/contrato.yml` roda as suítes `docs/vibe-*/tests/` (Python + `test-init.ps1` + `test-*.sh`) e o gitleaks em todo push e PR. Sem lockfile neste repo, não há job de CVE/SCA até existir dependência pinada.
+- [x] **CI.** `.github/workflows/contrato.yml` roda as suítes `docs/vibe-*/tests/` (Python + `test-init.ps1` + `test-*.sh`), `docs/tests/test-distribuicao.py` e o gitleaks em todo push e PR. Sem lockfile neste repo, não há job de CVE/SCA até existir dependência pinada.
 - [x] **Teste do launcher `.sh`.** `docs/vibe-*/tests/test-<nome>.sh` + harness em `docs/tests/launcher-harness.sh`.
 
 ## 3. Entrou nesta rodada
@@ -116,6 +116,11 @@ Contrato: `docs/vibe-review/ARQUITETURA.md` e `templates/review.md` antes de mud
 
 - [x] Relatório da implement ganha `fila` (`elegiveis` / `bloqueadas`). Skill pergunta só se houver 2+ T* prontas.
 - [x] Plan congela `concluída`, `Deps` reais e Verificação como comando. Checkpoint = suite do grupo; fluxo extra só se o caminho atravessa T*.
+
+### 3.4 Distribuição Codex, Claude, Grok e Antigravity
+
+- [x] CLI `npx skills add korflux/vibeflow` (projeto ou `-g` global) para `grok`, `claude-code`, `codex`, `antigravity`.
+- [x] Manifests nativos: `.claude-plugin/`, `.codex-plugin/`, `.agents/plugins/`, `.grok-plugin/`, `plugin.json` (Antigravity). Pasta `skills/` aponta para `vibe-<nome>/`. Sem aliases `/spec` `/plan`.
 
 ## 4. Limites de contrato
 

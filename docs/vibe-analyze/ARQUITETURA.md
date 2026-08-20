@@ -22,7 +22,7 @@ Mesma pasta do plan. Esta skill **não** aloca `n` novo. Sem `plan.md` (e `spec.
 | Wip | `.vibeflow/analyze-wip.md` | Rascunho até o apply (gitignored) |
 | Vivo | `.vibeflow/phases/phase-N-slug/analyze.md` | Depois do apply. Commitável |
 
-Install: user-scope, pacote sem `docs/`. Fonte canônica: `vibe-analyze/`.
+Install: `npx skills` ou marketplace (README). Pacote sem `docs/`. Fonte canônica: `vibe-analyze/`.
 
 ---
 

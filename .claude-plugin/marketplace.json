@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "vibeflow",
+  "description": "Cadeia de skills para inicializar e conduzir o trabalho de agentes num repo.",
+  "owner": {
+    "name": "Marco Kormoczi",
+    "url": "https://github.com/korflux"
+  },
+  "plugins": [
+    {
+      "name": "vibeflow",
+      "version": "1.0.0",
+      "source": "./",
+      "description": "Cadeia vibe-init, interview, spec, plan, analyze, implement e review.",
+      "homepage": "https://github.com/korflux/vibeflow",
+      "license": "MIT",
+      "keywords": ["skills", "agents", "spec", "plan", "review"],
+      "skills": [
+        "./vibe-init",
+        "./vibe-interview",
+        "./vibe-spec",
+        "./vibe-plan",
+        "./vibe-analyze",
+        "./vibe-implement",
+        "./vibe-review"
+      ]
+    }
+  ]
+}

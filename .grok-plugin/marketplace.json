@@ -1,0 +1,20 @@
+{
+  "name": "vibeflow",
+  "description": "Cadeia de skills para inicializar e conduzir o trabalho de agentes num repo.",
+  "owner": {
+    "name": "Marco Kormoczi",
+    "url": "https://github.com/korflux"
+  },
+  "plugins": [
+    {
+      "name": "vibeflow",
+      "version": "1.0.0",
+      "description": "Cadeia vibe-init, interview, spec, plan, analyze, implement e review.",
+      "category": "productivity",
+      "source": {
+        "type": "local",
+        "path": "./"
+      }
+    }
+  ]
+}

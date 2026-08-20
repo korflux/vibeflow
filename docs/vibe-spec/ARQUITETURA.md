@@ -22,7 +22,7 @@ Mesma pasta da interview quando ela existir. Esta skill **não** aloca `n` novo 
 | Wip | `.vibeflow/spec-wip.md` | Rascunho até o apply (gitignored) |
 | Vivo | `.vibeflow/phases/phase-N-slug/spec.md` | Depois do apply. Commitável |
 
-Install: user-scope, pacote sem `docs/`. Fonte canônica: `vibe-spec/`.
+Install: `npx skills` ou marketplace (README). Pacote sem `docs/`. Fonte canônica: `vibe-spec/`.
 
 ---
 

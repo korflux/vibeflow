@@ -45,9 +45,15 @@ Este repo não tem banco, migration nem tráfego de usuário. Skills aqui mudam 
 .vibeflow/old/               backups do init, se houver
 AGENTS.md                    symlink → .vibeflow/REGRAS.md
 CLAUDE.md                    symlink → .vibeflow/REGRAS.md
-vibe-<nome>/                 pacote instalável da skill
+vibe-<nome>/                 pacote canônico da skill
+skills/vibe-<nome>           symlink → ../vibe-<nome> (descoberta do CLI e plugins)
+.claude-plugin/              marketplace Claude
+.codex-plugin/               plugin Codex
+.agents/plugins/             marketplace Codex
+.grok-plugin/                marketplace Grok
+plugin.json                  plugin Antigravity (raiz)
 docs/vibe-<nome>/            arquitetura, análise, testes (não instala)
-README.md
+README.md                    install (npx skills e marketplaces)
 ```
 
 Pacote de uma skill pronta:
@@ -82,7 +88,7 @@ Estas regras existem para a próxima `vibe-*` nascer igual às que já estão pr
 ### 1. Pacote `vibe-<nome>`
 
 - Nome: `vibe-` + verbo curto (`init`, `interview`, `spec`, `plan`, `analyze`, `implement`, `review`). Minúsculas, hífen, sem pontuação.
-- Fonte canônica no git: `vibe-<nome>/` na raiz deste repo. Install recomendado: user-scope `<grok-home>/skills/vibe-<nome>` (cópia do pacote, sem `docs/`).
+- Fonte canônica no git: `vibe-<nome>/` na raiz deste repo. `skills/vibe-<nome>` é symlink para esse pacote. Install: `npx skills add korflux/vibeflow` (projeto ou `-g`) nos agentes `grok`, `claude-code`, `codex`, `antigravity`, ou o marketplace nativo no `README.md`. Pacote sem `docs/`.
 - Pasta vazia de skill futura fica só com `.gitkeep` até existir `SKILL.md`.
 - Não criar skill “por via das dúvidas”. Só quando o contrato de disco e o fluxo da IA estiverem claros o bastante para escrever `ARQUITETURA.md`.
 
