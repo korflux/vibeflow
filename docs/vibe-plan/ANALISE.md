@@ -46,7 +46,8 @@ Um arquivo. Overview + ordem + riscos + **corpo das T\*** + conferência. A buil
 | Paralelo vs sequencial | Fluxline + marker `[P]` do tasks | Seção, sem `[P] [US1]` no ID |
 | Grava já; chat = path + resumo | Fluxline / spec | Igual à spec |
 | Conferência curta da spec | Checklist (idéia) | Seção no plan, não `checklists/` |
-| Comandos reais do repo | Fluxline | Verificação da T* |
+| Comandos reais do repo | Fluxline | Verificação da T*; só manual recusa |
+| Linhas `concluída` + `Deps` estáveis | Pedido (fila elegível) | Template congelado; parser mora na implement |
 | Ler REGRAS.md | Constitution do spec-kit | Sem tabela Constitution Check |
 
 ---
@@ -62,7 +63,8 @@ Um arquivo. Overview + ordem + riscos + **corpo das T\*** + conferência. A buil
 | Fases Setup / Foundational / Polish obrigatórias | Só existem se **bloquearem** fatia. Senão, fatia vertical |
 | Formato `T001 [P] [US1]` | Barulho. `T1` + Deps + seção Paralelização |
 | Mural de user stories como eixo | Spec não tem US. Eixo = fatia de valor / A* |
-| Testes “opcionais” do tasks | Toda T* tem verificação. Sem T010 de contrato se a spec não pediu |
+| Testes “opcionais” do tasks | Toda T* tem verificação **comando**. Sem T010 de contrato se a spec não pediu |
+| Verificação só “passo manual” / leitura | A implement não marca sem RED-GREEN; o plan não oferece essa fuga |
 | `checklists/ux.md` CHK001… | Qualidade da spec é job da spec. Plan só confere cobertura A*/C* |
 | Pointer DoD da build | `vibe-implement` ainda não existe. Aceite da T* + C* da spec |
 | Hooks, extensions.yml | Outro produto |

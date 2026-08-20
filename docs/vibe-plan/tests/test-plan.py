@@ -175,5 +175,23 @@ class PowershellParity(unittest.TestCase):
         self.assertFalse((vf / "plan-wip.md").exists())
 
 
+class TemplateContracts(unittest.TestCase):
+    """Trava as linhas que a implement parseia e a Verificação como comando."""
+
+    def test_template_freezes_concluida_deps_and_command(self) -> None:
+        template = (SKILL_DIR / "templates" / "plan.md").read_text(encoding="utf-8")
+        self.assertIn("- [ ] T1 concluída", template)
+        self.assertIn("- **Deps:** nenhuma", template)
+        self.assertIn("comando do repo", template)
+        self.assertNotIn("passo manual", template)
+        self.assertIn("omitir se o caminho não atravessa T*", template)
+
+    def test_skill_requires_real_deps_and_command_verification(self) -> None:
+        skill = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("Deps reais", skill)
+        self.assertIn("Verificação só manual", skill)
+        self.assertIn("fluxo extra", skill)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -74,6 +74,12 @@ Quebre se: >1 sessão focada; aceite >3 bullets; 2+ subsistemas independentes; �
 
 Cada T*: o quê, `Spec: A*/C*`, aceite testável, verificação (comando do repo), deps, arquivos prováveis, size.
 
+Verificação só manual recusa: Q ou volte a fatiar. Pelo menos um comando do repo (já existe ou topado na spec). Leitura de arquivo não conta.
+
+Deps reais. Fatias independentes: `Deps: nenhuma` nas duas. Ordem de id não substitui Deps.
+
+Checkpoint: suite das T* do grupo; fluxo extra só se o caminho observável atravessa mais de uma T*; senão omita o segundo bullet.
+
 Ordem: deps primeiro; alto risco cedo; checkpoint a cada 2–3 T*.
 
 UI greenfield / sem DS na spec: uma T* de tokens/kit **antes** das telas. Reuso de DS → não crie essa T*.

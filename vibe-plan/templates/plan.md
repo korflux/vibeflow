@@ -15,8 +15,8 @@
 
 ### Checkpoint: após T1–T2
 
-- [ ] Testes da fatia passam
-- [ ] Fluxo central da fatia ok
+- [ ] `<comando da suite do grupo>`
+- [ ] <fluxo do grupo — omitir se o caminho não atravessa T*>
 
 ### Fase 2: <nome>
 
@@ -44,15 +44,15 @@
 - **Aceite:**
   - [ ] <condição testável>
 - **Verificação:**
-  - [ ] <comando do repo ou passo manual>
+  - [ ] `<comando do repo>`
 - **Deps:** nenhuma
 - **Arquivos:** `path/…`
 - **Size:** low \| medium \| high
 
 ### Checkpoint: após T1–T2
 
-- [ ] Testes da fatia passam
-- [ ] Fluxo central da fatia ok
+- [ ] `<comando da suite do grupo>`
+- [ ] <fluxo do grupo — omitir se o caminho não atravessa T*>
 
 ## Conferência
 

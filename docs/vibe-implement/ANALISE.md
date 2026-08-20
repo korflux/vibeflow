@@ -30,7 +30,7 @@ Pedido: **uma** skill. Executa a fila do `plan.md`, marca o disco e deixa trilha
 .vibeflow/phases/phase-N-slug/implement.md
 ```
 
-A IA lê a fase, executa a próxima T* (ou R*), prova, marca, escreve o wip (histórico + fatia nova). O script promove bytes.
+A IA lê a fase e o `fila` do relatório, executa a T* (ou R*) elegível, prova, marca, escreve o wip (histórico + fatia nova). O script promove bytes.
 
 | Entra | De onde | Como |
 |---|---|---|
@@ -56,7 +56,7 @@ A IA lê a fase, executa a próxima T* (ou R*), prova, marca, escreve o wip (his
 | Run completa como default | Modo A |
 | Commit | Irmãs não commitam |
 | Disparar review | Handoff é linha |
-| Script lendo Status/checkbox | Semântica é da IA |
+| Script lendo Status, aceite ou prosa | Semântica é da IA; a fila usa só duas linhas congeladas |
 | Apagar fatia anterior no apply | O wip traz o histórico; o script só copia bytes |
 
 ---
@@ -67,7 +67,7 @@ A IA lê a fase, executa a próxima T* (ou R*), prova, marca, escreve o wip (his
 [1] Script inventário → implement-report.json
 [2] IA lê relatório + vivos da alvo + REGRAS.md
 [3] high+ sem plan → para. max sem analyze → /vibe-analyze
-[4] Fila: R* abertos primeiro, senão próxima T*
+[4] Fila: R* abertos primeiro, senão `fila.elegiveis` do relatório (Q se 2+)
 [5] Test runner. RED→GREEN→REFACTOR. UI: DevTools
 [6] Verde → [x] + wip (fatias antigas + fatia nova + feedback)
 [7] Apply promove. Vermelho → [ ] + Q, sem apply
@@ -82,3 +82,4 @@ A IA lê a fase, executa a próxima T* (ou R*), prova, marca, escreve o wip (his
 - Rota é declaração da IA. Script não conhece `low`/`max`.
 - `review.md` pode não existir. Inventário lista se houver.
 - A review lê `implement.md` quando o arquivo existir (a porta da review ainda mapeia o checklist vivo).
+- `fila` no relatório é acréscimo (minor). A skill antiga que ignora o campo continua; a nova não monta a fila no feeling se o campo veio preenchido.

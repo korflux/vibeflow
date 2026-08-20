@@ -112,6 +112,11 @@ Status do arquivo: `rascunho` na primeira passagem; `request-changes` enquanto h
 
 Contrato: `docs/vibe-review/ARQUITETURA.md` e `templates/review.md` antes de mudar a skill.
 
+### 3.3 Fila elegível e prova em três andares
+
+- [x] Relatório da implement ganha `fila` (`elegiveis` / `bloqueadas`). Skill pergunta só se houver 2+ T* prontas.
+- [x] Plan congela `concluída`, `Deps` reais e Verificação como comando. Checkpoint = suite do grupo; fluxo extra só se o caminho atravessa T*.
+
 ## 4. Limites de contrato
 
 Não são backlog. Mudá-los quebra o disco.
@@ -136,4 +141,5 @@ Não são backlog. Mudá-los quebra o disco.
 | Editar `interview.md`, `spec.md`, `plan.md` na analyze | `vibe-analyze`, invariante do topo |
 | Editar source, teste ou lockfile na review | `vibe-review`, invariante do topo e passo "Julgar" |
 | Marcar `[x]` sem prova, pular verificação visual em silêncio | `vibe-implement`, invariante do topo e gate |
+| Verificação só manual / leitura como prova da T* | `vibe-plan` (fatiar) e `vibe-implement` (ciclo) |
 | Open Questions dentro do artefato, dump do artefato no chat | invariante do topo de cada skill que grava |

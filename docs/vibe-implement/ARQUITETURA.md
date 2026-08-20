@@ -1,6 +1,6 @@
 # vibe-implement — arquitetura
 
-`/vibe-implement` executa a próxima fatia da fase, marca o disco da cadeia e grava a trilha em `implement.md`. O script inventaria e promove o wip. A IA escreve código, marca checkboxes e preenche o template.
+`/vibe-implement` executa a fatia elegível da fase, marca o disco da cadeia e grava a trilha em `implement.md`. O script inventaria, projeta `fila` e promove o wip. A IA escreve código, marca checkboxes e preenche o template.
 
 ```
 .vibeflow/phases/phase-<n>-<slug>/implement.md   ← trilha da run (prova + feedback)
@@ -18,7 +18,7 @@ Mesma pasta do plan. Esta skill **não** aloca `n` novo se já há alvo. Sem `pl
 | Peça | Onde | Faz |
 |---|---|---|
 | Skill | `vibe-implement/SKILL.md` | Gate, TDD, prova visual, marcar disco, wip, modo A/B, Q+RECOMENDO |
-| Scripts | `vibe-implement/scripts/implement.ps1`, `implement.py`, `implement.sh` | Inventário, alvo, `--slug`, promove wip → `implement.md` |
+| Scripts | `vibe-implement/scripts/implement.ps1`, `implement.py`, `implement.sh` | Inventário, alvo, `fila` do plan, `--slug`, promove wip → `implement.md` |
 | Template | `vibe-implement/templates/implement.md` | Esqueleto. Script não preenche prosa |
 | Referências | `vibe-implement/references/chrome-devtools.md`, `definition-of-done.md` | Sob demanda. Script não lê |
 | Relatório | `.vibeflow/implement-report.json` | Contrato script → IA (gitignored) |
@@ -67,7 +67,7 @@ Sem alvo e sem `--slug` no apply → `IMPLEMENT_SEM_ALVO`.
 ```
 [1] SCRIPT inventário → implement-report.json
 [2] IA lê relatório + o que a alvo tiver + REGRAS.md
-[3] Gate (rota, modo A/B, analyze bloqueado, fila R* vs T*)
+[3] Gate (rota, modo A/B, analyze bloqueado, R* vs `fila` do relatório)
 [4] Descobre test runner do repo. RED→GREEN→REFACTOR → verify
 [5] UI web: Chrome DevTools por padrão (ref). E2E se T* ou humano mandar
 [6] Prova verde → marca [x] nos vivos da cadeia
@@ -85,7 +85,7 @@ Fatia nova **não** apaga as anteriores: a IA lê o vivo, escreve o wip completo
 
 ## 5. Inventário
 
-Zero prosa. Zero interpretação de checkbox ou `# Status:`.
+Zero prosa. Não interpreta `# Status:`, aceite, verificação, checkpoint nem prosa da T*. Lê só três âncoras no `plan.md` da alvo: `### T{n}:`, `- [ ] T{n} concluída` / `[x]` / `[X]`, `- **Deps:**`.
 
 | Campo | Significa |
 |---|---|
@@ -100,8 +100,22 @@ Zero prosa. Zero interpretação de checkbox ou `# Status:`.
 | `wip` | `ausente` / `presente` |
 | `actions[]` | ex. `criar_phases`, `promover_wip` |
 | `avisos[]` | nomes fora do padrão |
+| `fila` | objeto da fila ou `null` (sem `plan.md` na alvo) |
 
 `files` só: `interview.md`, `spec.md`, `plan.md`, `analyze.md`, `implement.md`, `review.md`.
+
+`fila` quando não é `null`:
+
+| Campo | Significa |
+|---|---|
+| `parse` | `ok` / `parcial` / `ausente` (nenhum `### T{n}:`) |
+| `concluidas` | T* com `[x]` / `[X]` na linha `concluída`, ordem numérica |
+| `abertas` | T* com `[ ]` na linha `concluída` |
+| `elegiveis` | abertas cujas deps estão em `concluidas` |
+| `bloqueadas` | `{ id, deps }` — `deps` = ids ainda não concluídos, ou a lista declarada se a dep não existe |
+| `avisos` | linha `concluída` faltando, T* duplicada, dep inexistente |
+
+Sem linha `concluída` a T* some das listas e `parse` vira `parcial`. Deps ausente ou `nenhuma` = `[]`. Parse falho não derruba o inventário.
 
 ---
 
@@ -159,7 +173,15 @@ Script não escreve prosa. Não escolhe slug. Não pergunta. Não recusa pasta q
   "created": null,
   "modo": null,
   "actions": [],
-  "avisos": []
+  "avisos": [],
+  "fila": {
+    "parse": "ok",
+    "concluidas": ["T1"],
+    "abertas": ["T2"],
+    "elegiveis": ["T2"],
+    "bloqueadas": [],
+    "avisos": []
+  }
 }
 ```
 
@@ -191,7 +213,13 @@ O script **não** preenche markdown. A IA copia a forma do template.
 12. Sem alvo, `--apply --slug` cria `phase-N-slug/implement.md`.
 13. Sem alvo, `--apply` sem slug → `IMPLEMENT_SEM_ALVO`.
 14. `phases` é arquivo → `PHASES_INESPERADO`.
-15. Paridade pwsh: apply reuse grava o mesmo path.
+15. Paridade pwsh: apply reuse grava o mesmo path; `fila` de duas T* (uma bloqueada por dep) bate com o Python.
+16. Sem `plan.md` na alvo → `fila` nulo.
+17. Uma T* `[x]` e a seguinte aberta com essa dep → só a aberta em `elegiveis`.
+18. Duas T* abertas com `Deps: nenhuma` → as duas em `elegiveis`.
+19. T* com dep aberta → `bloqueadas` com essa dep; não entra em `elegiveis`.
+20. Sem linha `T{n} concluída` → T* omitida, `parse=parcial`, aviso.
+21. `plan.md` sem `### T{n}:` → `parse=ausente`, listas vazias.
 
 Suíte: `docs/vibe-implement/tests/test-implement.py`. Launcher: `docs/vibe-implement/tests/test-implement.sh`.
 
@@ -201,7 +229,7 @@ Suíte: `docs/vibe-implement/tests/test-implement.py`. Launcher: `docs/vibe-impl
 
 - Um `implement.md` por fase. Fatia nova é seção no mesmo arquivo, via wip completo + apply.
 - Não grava `todo.md`, `tasks.md`, `checklists/` nem path fora de `.vibeflow/phases/phase-N-slug/`.
-- O script não interpreta checkbox nem `# Status`: quem lê o markdown é a IA.
+- O script não interpreta `# Status:`, aceite, verificação nem prosa. A fila no relatório sai só de `### T{n}:`, da linha `concluída` e de `Deps`.
 - Não cria ignore de stack (`.npmignore`, `.dockerignore`…).
 - Não adiciona lib de browser como dependência nova sem o humano pedir.
 

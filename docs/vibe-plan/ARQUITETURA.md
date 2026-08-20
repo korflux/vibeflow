@@ -167,7 +167,7 @@ Seções (omitir a que não se aplica):
 - Ordem (fases + checkpoints; índice, não recópia o corpo)
 - Riscos
 - Paralelização
-- Tasks (corpo T1…; aceite, verificação, deps, Spec: A*/C*)
+- Tasks (corpo T1…; aceite; Verificação = comando do repo; `Deps`; linha `T{n} concluída`; Spec: A*/C*)
 - Conferência (cobertura da spec, não fila da build)
 - Handoff (`vibe-implement`)
 
@@ -187,6 +187,7 @@ Sem Open Questions. Sem `todo.md`. Sem `checklists/`. Sem T001/[P]/[US1].
 8. `.gitignore` ganha as duas entradas e preserva `spec-report.json`.
 9. `phases` é arquivo → `PHASES_INESPERADO`.
 10. Paridade pwsh: apply reuse grava o mesmo path.
+11. Template congela `- [ ] T1 concluída`, `- **Deps:**`, Verificação como `comando do repo` (sem “passo manual”), checkpoint com omitir fluxo se não atravessa T*.
 
 Suíte: `docs/vibe-plan/tests/test-plan.py`. Launcher: `docs/vibe-plan/tests/test-plan.sh`.
 
@@ -198,6 +199,8 @@ Suíte: `docs/vibe-plan/tests/test-plan.py`. Launcher: `docs/vibe-plan/tests/tes
 - Sem `next_n`, sem `--slug`, sem pasta nova: plan entra na pasta da spec.
 - Não pisa pasta com `analyze.md`. Não apaga `spec.md`.
 - IDs `T1`, `T2`… Sem `T001`, `[P]`, `[US1]`.
+- Linhas congeladas por T* (`concluída`, `Deps`) são contrato da implement. Este script **não** as parseia.
+- Verificação da T* é comando. Só manual não fecha o fatiamento.
 - Zero código nesta porta.
 
 Backlog e decisões de escopo: [`docs/ESCOPO.md`](../ESCOPO.md).

@@ -18,6 +18,10 @@ from typing import Any
 PHASE_RE = re.compile(r"^phase-(\d+)-([a-z0-9]+(?:-[a-z0-9]+)*)$")
 CHAIN_FILES = ("interview.md", "spec.md", "plan.md", "analyze.md", "implement.md", "review.md")
 MAX_SLUG = 48
+TASK_HEADING_RE = re.compile(r"^### T(\d+):")
+DONE_LINE_RE = re.compile(r"^- \[([ xX])\] T(\d+) concluída\s*$")
+DEPS_LINE_RE = re.compile(r"^- \*\*Deps:\*\*\s*(.*)$")
+DEP_ID_RE = re.compile(r"T(\d+)")
 
 
 # Interpreta somente os parâmetros equivalentes ao contrato público do implement.ps1.
@@ -176,6 +180,123 @@ def resolve_alvo(existing: list[dict[str, Any]]) -> tuple[dict[str, Any] | None,
     return None, "criar"
 
 
+# Quebra o plan em seções T* só pelos headings ### T{n}:; o resto da prosa não inicia tarefa.
+def split_task_sections(text: str) -> list[tuple[str, list[str]]]:
+    sections: list[tuple[str, list[str]]] = []
+    current_id: str | None = None
+    current_lines: list[str] = []
+    for line in text.splitlines():
+        heading = TASK_HEADING_RE.match(line)
+        if heading:
+            if current_id is not None:
+                sections.append((current_id, current_lines))
+            current_id = f"T{heading.group(1)}"
+            current_lines = []
+            continue
+        if current_id is not None:
+            current_lines.append(line)
+    if current_id is not None:
+        sections.append((current_id, current_lines))
+    return sections
+
+
+# Extrai ids T* da linha Deps. "nenhuma", vazio ou ausência viram lista vazia.
+def parse_deps_value(raw: str | None) -> list[str]:
+    text = (raw or "").strip()
+    if text == "" or text.lower() == "nenhuma":
+        return []
+    found: list[str] = []
+    seen: set[str] = set()
+    for match in DEP_ID_RE.finditer(text):
+        token = f"T{match.group(1)}"
+        if token not in seen:
+            seen.add(token)
+            found.append(token)
+    return found
+
+
+# n numérico de T12 → 12, para ordenar a fila sem ordem lexicográfica.
+def task_n(tid: str) -> int:
+    return int(tid[1:])
+
+
+# Lê só concluída + Deps. Não interpreta Status, aceite, checkpoint nem prosa.
+def parse_plan_fila(text: str) -> dict[str, Any]:
+    empty: dict[str, Any] = {
+        "parse": "ausente",
+        "concluidas": [],
+        "abertas": [],
+        "elegiveis": [],
+        "bloqueadas": [],
+        "avisos": [],
+    }
+    sections = split_task_sections(text)
+    if not sections:
+        return empty
+
+    avisos: list[str] = []
+    parsed: list[dict[str, Any]] = []
+    seen_ids: set[str] = set()
+    for tid, lines in sections:
+        if tid in seen_ids:
+            avisos.append(f"T* duplicada ignorada: {tid}")
+            continue
+        seen_ids.add(tid)
+        done: bool | None = None
+        deps_raw: str | None = None
+        for line in lines:
+            stripped = line.strip()
+            if done is None:
+                done_match = DONE_LINE_RE.match(stripped)
+                if done_match and f"T{done_match.group(2)}" == tid:
+                    done = done_match.group(1) != " "
+            if deps_raw is None:
+                deps_match = DEPS_LINE_RE.match(stripped)
+                if deps_match:
+                    deps_raw = deps_match.group(1)
+        if done is None:
+            avisos.append(f"sem linha concluída: {tid}")
+            continue
+        parsed.append({"id": tid, "done": done, "deps": parse_deps_value(deps_raw)})
+
+    known_ids = {item["id"] for item in parsed}
+    concluidas = sorted((item["id"] for item in parsed if item["done"]), key=task_n)
+    abertas = sorted((item["id"] for item in parsed if not item["done"]), key=task_n)
+    done_set = set(concluidas)
+    elegiveis: list[str] = []
+    bloqueadas: list[dict[str, Any]] = []
+    for item in sorted((row for row in parsed if not row["done"]), key=lambda row: task_n(row["id"])):
+        phantom = [dep for dep in item["deps"] if dep not in known_ids]
+        unmet = [dep for dep in item["deps"] if dep not in done_set]
+        if phantom:
+            avisos.append(f"dep inexistente em {item['id']}: {', '.join(phantom)}")
+            bloqueadas.append({"id": item["id"], "deps": item["deps"]})
+            continue
+        if unmet:
+            bloqueadas.append({"id": item["id"], "deps": unmet})
+        else:
+            elegiveis.append(item["id"])
+
+    return {
+        "parse": "parcial" if avisos else "ok",
+        "concluidas": concluidas,
+        "abertas": abertas,
+        "elegiveis": elegiveis,
+        "bloqueadas": bloqueadas,
+        "avisos": avisos,
+    }
+
+
+# Projeta a fila do plan da alvo. Sem plan.md, a skill avulsa não recebe fila.
+def fila_from_alvo(repo: Path, alvo: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not alvo or "plan.md" not in alvo["files"]:
+        return None
+    body = read_text(repo / alvo["path"] / "plan.md")
+    if body is None:
+        return None
+    return parse_plan_fila(body)
+
+
 # Destino: --dir se veio; senão o alvo do inventário.
 def resolve_alvo_com_dir(
     existing: list[dict[str, Any]],
@@ -316,6 +437,7 @@ def run(args: argparse.Namespace) -> Path:
         "modo": modo,
         "actions": actions,
         "avisos": warnings,
+        "fila": fila_from_alvo(repo, alvo),
     }
     return write_report(vf, payload)
 

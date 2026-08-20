@@ -47,6 +47,23 @@ def seed_phase(vf: Path, name: str, *files: str) -> Path:
     return phase
 
 
+# Plan mínimo com as duas linhas congeladas por T* (concluída + Deps).
+def plan_tasks(*tasks: tuple[str, str, str]) -> str:
+    chunks = ["# Plan: fixture\n"]
+    for tid, mark, deps in tasks:
+        chunks.append(
+            f"### {tid}: fixture {tid}\n\n"
+            f"- [{mark}] {tid} concluída\n"
+            f"- **Deps:** {deps}\n"
+        )
+    return "\n".join(chunks)
+
+
+# Troca o corpo do plan.md da fase já criada.
+def write_plan(phase: Path, body: str) -> None:
+    (phase / "plan.md").write_text(body, encoding="utf-8")
+
+
 class PythonContracts(unittest.TestCase):
     """Verifica inventário, alvo com plan, apply do wip e gitignore."""
 
@@ -185,6 +202,94 @@ class PythonContracts(unittest.TestCase):
         self.assertNotEqual(0, process.returncode)
         self.assertIn("PHASES_INESPERADO", process.stderr)
 
+    def test_fila_null_without_plan(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        seed_phase(vf, "phase-1-so-spec", "spec.md")
+        _, report = invoke(self.repo, "--dir", "phase-1-so-spec")
+        self.assertIsNone(report["fila"])
+
+    def test_fila_null_when_alvo_ausente(self) -> None:
+        seed_vibeflow(self.repo)
+        _, report = invoke(self.repo)
+        self.assertIsNone(report["alvo"])
+        self.assertIsNone(report["fila"])
+
+    def test_fila_one_eligible(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        phase = seed_phase(vf, "phase-1-a", "plan.md")
+        write_plan(phase, plan_tasks(("T1", "x", "nenhuma"), ("T2", " ", "T1")))
+        _, report = invoke(self.repo)
+        fila = report["fila"]
+        self.assertEqual("ok", fila["parse"])
+        self.assertEqual(["T1"], fila["concluidas"])
+        self.assertEqual(["T2"], fila["abertas"])
+        self.assertEqual(["T2"], fila["elegiveis"])
+        self.assertEqual([], fila["bloqueadas"])
+        self.assertEqual([], fila["avisos"])
+
+    def test_fila_two_eligible(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        phase = seed_phase(vf, "phase-1-a", "plan.md")
+        write_plan(phase, plan_tasks(("T1", " ", "nenhuma"), ("T4", " ", "nenhuma")))
+        _, report = invoke(self.repo)
+        fila = report["fila"]
+        self.assertEqual("ok", fila["parse"])
+        self.assertEqual(["T1", "T4"], fila["abertas"])
+        self.assertEqual(["T1", "T4"], fila["elegiveis"])
+        self.assertEqual([], fila["concluidas"])
+        self.assertEqual([], fila["bloqueadas"])
+
+    def test_fila_dep_blocks(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        phase = seed_phase(vf, "phase-1-a", "plan.md")
+        write_plan(phase, plan_tasks(("T1", " ", "nenhuma"), ("T2", " ", "T1")))
+        _, report = invoke(self.repo)
+        fila = report["fila"]
+        self.assertEqual("ok", fila["parse"])
+        self.assertEqual(["T1"], fila["elegiveis"])
+        self.assertEqual([{"id": "T2", "deps": ["T1"]}], fila["bloqueadas"])
+        self.assertEqual(["T1", "T2"], fila["abertas"])
+
+    def test_fila_missing_concluida_is_parcial(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        phase = seed_phase(vf, "phase-1-a", "plan.md")
+        write_plan(
+            phase,
+            "### T1: sem checkbox\n\n- **Deps:** nenhuma\n\n### T2: ok\n\n- [ ] T2 concluída\n- **Deps:** nenhuma\n",
+        )
+        _, report = invoke(self.repo)
+        fila = report["fila"]
+        self.assertEqual("parcial", fila["parse"])
+        self.assertEqual(["T2"], fila["elegiveis"])
+        self.assertNotIn("T1", fila["abertas"])
+        self.assertNotIn("T1", fila["elegiveis"])
+        self.assertTrue(any("T1" in aviso for aviso in fila["avisos"]))
+
+    def test_fila_ausente_without_task_headings(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        seed_phase(vf, "phase-1-a", "plan.md")
+        _, report = invoke(self.repo)
+        fila = report["fila"]
+        self.assertEqual("ausente", fila["parse"])
+        self.assertEqual([], fila["elegiveis"])
+        self.assertEqual([], fila["avisos"])
+
+
+class SkillContracts(unittest.TestCase):
+    """Trava no disco as frases que a skill precisa para ler fila e recusar sem RED-GREEN."""
+
+    def test_skill_reads_fila_from_report(self) -> None:
+        text = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("fila.elegiveis", text)
+        self.assertIn("não monta a fila varrendo", text)
+        self.assertIn("2+ elegíveis", text)
+
+    def test_skill_refuses_without_red_green(self) -> None:
+        skill = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
+        dod = (SKILL_DIR / "references" / "definition-of-done.md").read_text(encoding="utf-8")
+        self.assertIn("Sem RED-GREEN", skill)
+        self.assertIn("Não rebaixe", dod)
+
 
 # Verifica se existe uma versão real de PowerShell 7, única suportada pelo motor gêmeo.
 def powershell7() -> str | None:
@@ -222,6 +327,24 @@ class PowershellParity(unittest.TestCase):
         self.assertEqual("# trilha\n", dest.read_text(encoding="utf-8"))
         self.assertTrue((vf / "phases" / "phase-1-lock-bloco" / "plan.md").is_file())
         self.assertFalse((vf / "implement-wip.md").exists())
+
+    def test_fila_parity_dep_blocks(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        phase = seed_phase(vf, "phase-1-a", "plan.md")
+        write_plan(phase, plan_tasks(("T1", " ", "nenhuma"), ("T2", " ", "T1")))
+        _, py_report = invoke(self.repo)
+        process = subprocess.run(
+            [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(0, process.returncode, process.stderr)
+        ps_report = json.loads((vf / "implement-report.json").read_text(encoding="utf-8"))
+        self.assertEqual(py_report["fila"]["elegiveis"], ps_report["fila"]["elegiveis"])
+        self.assertEqual(py_report["fila"]["bloqueadas"], ps_report["fila"]["bloqueadas"])
+        self.assertEqual(["T1"], ps_report["fila"]["elegiveis"])
+        self.assertEqual([{"id": "T2", "deps": ["T1"]}], ps_report["fila"]["bloqueadas"])
 
 
 if __name__ == "__main__":

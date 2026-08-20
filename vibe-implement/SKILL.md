@@ -1,7 +1,7 @@
 ---
 name: vibe-implement
 description: >
-  Executa a próxima fatia da fase com prova, marca [x] no plan/spec/review e
+  Executa a fatia elegível da fase com prova, marca [x] no plan/spec/review e
   grava .vibeflow/phases/phase-N-slug/implement.md. Use when the user runs
   /vibe-implement, pede implementar, código, build, faz a T*, pode seguir, ou
   a rota é low/medium/high/xhigh/max com código de comportamento — mesmo que
@@ -12,6 +12,7 @@ description: >
 
 Não invente `n` se há plan. Sem prova, sem `[x]` e sem apply. Sem `todo.md` nem `tasks.md`.
 Sem `.vibeflow/`: `/vibe-init`. Open Questions no markdown = defeito. Não commita.
+Se o relatório trouxe `fila`, não monta a fila varrendo o plan.
 
 ## 0. Script primeiro
 
@@ -19,7 +20,7 @@ Sem `.vibeflow/`: `/vibe-init`. Open Questions no markdown = defeito. Não commi
 2. No cwd do repo:
    - Windows: `pwsh "<skill>/scripts/implement.ps1"`
    - Unix: `bash "<skill>/scripts/implement.sh"` (Python 3, senão pwsh 7)
-3. Leia `.vibeflow/implement-report.json`. Se `alvo`, leia o que `files` listar nessa pasta. Leia `.vibeflow/REGRAS.md`. Paths só os citados. Não varrer a árvore.
+3. Leia `.vibeflow/implement-report.json`. Se `alvo`, leia o que `files` listar nessa pasta. A escolha da T* sai de `fila` / `fila.elegiveis` no JSON. Leia `.vibeflow/REGRAS.md`. Paths só os citados. Não varrer a árvore.
 
 `INIT_AUSENTE` → init. `IMPLEMENT_SEM_ALVO` / `FASE_AUSENTE` / `WIP_AUSENTE` / `SLUG_INVALIDO` / `PHASES_INESPERADO` → não contorne.
 
@@ -33,10 +34,10 @@ Apply:
 ROUTE · modo A/B · alvo · fila · plan · wip
 
 ```
-ROUTE: high · modo: A · alvo: phase-1-lock-bloco · fila: T2 · plan: sim · wip: ausente
+ROUTE: high · modo: A · alvo: phase-1-lock-bloco · fila: T2|T4 elegíveis · plan: sim · wip: ausente
 ```
 
-`modo_sugerido=criar` = não há fase com `plan.md` nem `implement.md`. Não invente pasta. `high+` para e manda `/vibe-plan`. `low`/`medium` avulso usa `--slug` no apply.
+`modo_sugerido=criar` = não há fase com `plan.md` nem `implement.md`. Não invente pasta. `high+` para e manda `/vibe-plan`. `low`/`medium` avulso usa `--slug` no apply. `fila` nulo = avulsa. `parse=ausente` = plan sem T*.
 
 ## 2. Gate
 
@@ -50,7 +51,14 @@ Declare `ROUTE: low|medium|high|xhigh|max` e modo A ou B. Default = **A**.
 | Analyze veredito `bloqueado` | **Para.** Mostre os F* CRITICAL. Não flipa |
 | Plan/analyze `# Status: rascunho` e o humano pediu **esta** skill | Flip para `aprovado` (1 linha) e siga, se o veredito não for `bloqueado` |
 | `low`/`medium` claro sem plan | Avulso: prova mínima; pasta só no apply com `--slug` se ainda não houver alvo |
-| `review.md` com R* Critical/Required em `[ ]` | Fila = R* primeiro |
+| `review.md` com R* Critical/Required em `[ ]` | Fila = R* primeiro. Q só se houver mais de um |
+| `fila` com 2+ elegíveis e o humano não nomeou T* | **Para.** Q. Recomenda a de menor `n`. Sem código |
+| `fila` com 1 elegível | Executa essa. Sem Q de escolha |
+| `fila` com 0 elegíveis e 0 abertas | Handoff `vibe-review`. Não dispara |
+| `fila` com 0 elegíveis e `bloqueadas` | Mostra as deps. Sem Q “qual T*” |
+| Humano nomeou T* elegível | Executa essa. Sem Q |
+| Humano nomeou T* bloqueada | Mostra deps. Sem código |
+| Verificação da T* só manual, sem comando | **Para.** Q (automatizar / humano valida / volta plan) |
 | Intenção/sucesso/fora frouxos | Devolve interview/spec |
 | Travou ferramenta, teste ou visual | **Para.** Q+RECOMENDO. Não pule em silêncio. Sem apply |
 
@@ -66,12 +74,13 @@ Modo B só se o humano pediu: `auto`, “faz o todo”, “não para”, “run 
 ## 3. Ciclo da fatia
 
 1. Descubra o test runner do **repo** (manifest, wrapper, CI). Não assuma `npm test`.
-2. `RED → GREEN → REFACTOR` (bug: teste que reproduz, depois o fix). Teste que passa de primeira não prova.
-3. Verify: teste da fatia, suite relevante, build/typecheck/lint se existirem.
+2. `RED → GREEN → REFACTOR` (bug: teste que reproduz, depois o fix). Teste que passa de primeira não prova. Sem comando na Verificação da T* → Q, sem `[x]`. Sem RED-GREEN, sem `[x]` e sem apply.
+3. Verify: comando da Verificação da T* + suite relevante da fatia, build/typecheck/lint se existirem.
 4. UI web user-visible: leia `references/chrome-devtools.md`. Default = Chrome DevTools (screenshot + leitura da IA). E2E do repo se a T* já manda ou o humano pediu. Sem nenhuma prova de browser possível → Q (ligar MCP / E2E do repo / humano valida). Não adicione lib de browser sem pedido.
-5. DoD: `references/definition-of-done.md` no que couber. Aceite da T* **e** DoD.
-6. Verde → marque disco **na mesma resposta**, sem perguntar, e grave o wip (§5).
-7. Vermelho → deixe `[ ]`, sem apply, reporte.
+5. DoD: `references/definition-of-done.md` no que couber. Aceite da T* **e** DoD. Não rebaixe a barra de teste.
+6. Ao fechar o checkpoint do grupo: reroda os comandos das T* do grupo. Teste de fluxo extra só se o caminho atravessa mais de uma T*.
+7. Verde → marque disco **na mesma resposta**, sem perguntar, e grave o wip (§5).
+8. Vermelho → deixe `[ ]`, sem apply, reporte.
 
 ## 4. Marcar (disco manda)
 
@@ -112,9 +121,9 @@ Leia o arquivo. Não reimprimo o implement aqui.
 
 ## 6. Modos
 
-**A (default):** uma fase até o próximo checkpoint, ou uma T*/R* se não houver agrupamento. Para. Espera ok.
+**A (default):** a T* escolhida (ou a única elegível) e, no mesmo checkpoint, só outras já elegíveis daquele grupo. Para. Espera ok.
 
-**B:** percorre a fila. Para em checkpoint vermelho ou bloqueio. Marca e aplica o wip a cada item (histórico acumula no mesmo `implement.md`).
+**B:** percorre `fila.elegiveis` recalculando depois de cada item, sem Q a cada T*. Para em checkpoint vermelho ou bloqueio. Marca e aplica o wip a cada item (histórico acumula no mesmo `implement.md`).
 
 Fila zerada (T* da run, ou R* bloqueantes) → handoff `vibe-review`. **Não** dispare.
 

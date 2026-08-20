@@ -170,6 +170,140 @@ function Get-ImplementAlvoComDir($Existing, [string]$Phases) {
     return Get-ImplementAlvo $Existing
 }
 
+# Extrai ids T* da linha Deps. "nenhuma", vazio ou ausência viram lista vazia. Sempre List, para não iterar caractere.
+function ConvertFrom-DepsValue([string]$Raw) {
+    $found = New-Object System.Collections.Generic.List[string]
+    $text = if ($null -eq $Raw) { '' } else { $Raw.Trim() }
+    if ($text -eq '' -or $text.ToLowerInvariant() -eq 'nenhuma') { return $found }
+    $seen = New-Object 'System.Collections.Generic.HashSet[string]'
+    foreach ($m in [regex]::Matches($text, 'T(\d+)')) {
+        $token = "T$($m.Groups[1].Value)"
+        if ($seen.Add($token)) { [void]$found.Add($token) }
+    }
+    return $found
+}
+
+# Lê só concluída + Deps. Não interpreta Status, aceite, checkpoint nem prosa.
+function ConvertFrom-PlanFila([string]$Text) {
+    $avisos = New-Object System.Collections.Generic.List[string]
+    $headingRe = [regex]'^### T(\d+):'
+    $doneRe = [regex]'^- \[([ xX])\] T(\d+) concluída\s*$'
+    $depsRe = [regex]'^- \*\*Deps:\*\*\s*(.*)$'
+    $sections = New-Object System.Collections.Generic.List[object]
+    $currentId = $null
+    $currentLines = New-Object System.Collections.Generic.List[string]
+    foreach ($line in ($Text -split '\r?\n')) {
+        $head = $headingRe.Match($line)
+        if ($head.Success) {
+            if ($null -ne $currentId) {
+                $sections.Add([pscustomobject]@{ id = $currentId; lines = @($currentLines) })
+            }
+            $currentId = "T$($head.Groups[1].Value)"
+            $currentLines = New-Object System.Collections.Generic.List[string]
+            continue
+        }
+        if ($null -ne $currentId) { [void]$currentLines.Add($line) }
+    }
+    if ($null -ne $currentId) {
+        $sections.Add([pscustomobject]@{ id = $currentId; lines = @($currentLines) })
+    }
+    if ($sections.Count -eq 0) {
+        return [pscustomobject]@{
+            parse      = 'ausente'
+            concluidas = [string[]]@()
+            abertas    = [string[]]@()
+            elegiveis  = [string[]]@()
+            bloqueadas = @()
+            avisos     = [string[]]@()
+        }
+    }
+
+    $parsed = New-Object System.Collections.Generic.List[object]
+    $seenIds = New-Object 'System.Collections.Generic.HashSet[string]'
+    foreach ($sec in $sections) {
+        $tid = [string]$sec.id
+        if (-not $seenIds.Add($tid)) {
+            $avisos.Add("T* duplicada ignorada: $tid")
+            continue
+        }
+        $done = $null
+        $depsRaw = $null
+        foreach ($rawLine in @($sec.lines)) {
+            $stripped = $rawLine.Trim()
+            if ($null -eq $done) {
+                $dm = $doneRe.Match($stripped)
+                if ($dm.Success -and ("T$($dm.Groups[2].Value)" -eq $tid)) {
+                    $done = $dm.Groups[1].Value -ne ' '
+                }
+            }
+            if ($null -eq $depsRaw) {
+                $depM = $depsRe.Match($stripped)
+                if ($depM.Success) { $depsRaw = $depM.Groups[1].Value }
+            }
+        }
+        if ($null -eq $done) {
+            $avisos.Add("sem linha concluída: $tid")
+            continue
+        }
+        $depIds = New-Object System.Collections.Generic.List[string]
+        foreach ($dep in (ConvertFrom-DepsValue $depsRaw)) { [void]$depIds.Add([string]$dep) }
+        $parsed.Add([pscustomobject]@{
+            id   = $tid
+            n    = [int]($tid.Substring(1))
+            done = [bool]$done
+            deps = $depIds
+        })
+    }
+
+    $known = New-Object 'System.Collections.Generic.HashSet[string]'
+    foreach ($item in $parsed) { [void]$known.Add([string]$item.id) }
+    $concluidas = @($parsed | Where-Object { $_.done } | Sort-Object n | ForEach-Object { [string]$_.id })
+    $abertas = @($parsed | Where-Object { -not $_.done } | Sort-Object n | ForEach-Object { [string]$_.id })
+    $doneSet = New-Object 'System.Collections.Generic.HashSet[string]'
+    foreach ($cid in $concluidas) { [void]$doneSet.Add([string]$cid) }
+    $elegiveis = New-Object System.Collections.Generic.List[string]
+    $bloqueadas = New-Object System.Collections.Generic.List[object]
+    foreach ($item in ($parsed | Where-Object { -not $_.done } | Sort-Object n)) {
+        $phantom = New-Object System.Collections.Generic.List[string]
+        $unmet = New-Object System.Collections.Generic.List[string]
+        foreach ($dep in $item.deps) {
+            $depId = [string]$dep
+            if (-not $known.Contains($depId)) { [void]$phantom.Add($depId) }
+            if (-not $doneSet.Contains($depId)) { [void]$unmet.Add($depId) }
+        }
+        if ($phantom.Count -gt 0) {
+            $avisos.Add("dep inexistente em $($item.id): $($phantom -join ', ')")
+            $bloqueadas.Add([pscustomobject]@{ id = [string]$item.id; deps = $item.deps.ToArray() })
+            continue
+        }
+        if ($unmet.Count -gt 0) {
+            $bloqueadas.Add([pscustomobject]@{ id = [string]$item.id; deps = $unmet.ToArray() })
+        } else {
+            [void]$elegiveis.Add([string]$item.id)
+        }
+    }
+    $parse = if ($avisos.Count -gt 0) { 'parcial' } else { 'ok' }
+    return [pscustomobject]@{
+        parse      = $parse
+        concluidas = $concluidas
+        abertas    = $abertas
+        elegiveis  = $elegiveis.ToArray()
+        bloqueadas = $bloqueadas.ToArray()
+        avisos     = $avisos.ToArray()
+    }
+}
+
+# Projeta a fila do plan da alvo. Sem plan.md, a skill avulsa não recebe fila.
+function Get-FilaFromAlvo([string]$Repo, $Alvo) {
+    if ($null -eq $Alvo) { return $null }
+    $files = @($Alvo.files)
+    if ($files -notcontains 'plan.md') { return $null }
+    $path = Join-Path (Join-Path $Repo ([string]$Alvo.path)) 'plan.md'
+    if (-not (Test-Path -LiteralPath $path)) { return $null }
+    $text = [System.IO.File]::ReadAllText($path)
+    return ConvertFrom-PlanFila $text
+}
+
 # Monta o JSON que a skill lê; stdout só o path do relatório.
 function Write-ImplementReport([string]$Vf, [hashtable]$Payload) {
     $reportPath = Join-Path $Vf 'implement-report.json'
@@ -321,6 +455,7 @@ function Invoke-Implement {
         modo           = $modo
         actions        = $actions.ToArray()
         avisos         = $warnings.ToArray()
+        fila           = (Get-FilaFromAlvo $repo $alvoItem)
     }
     Write-ImplementReport $vf $payload
 }
