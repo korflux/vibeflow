@@ -162,12 +162,10 @@ PR contra `main`. Mudança de contrato (path, schema do relatório, flag públic
 
 ## Créditos
 
-Minhas referências
-
 - [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills)
+- [dietrichgebert/ponytail](https://github.com/dietrichgebert/ponytail)
 - [github/spec-kit](https://github.com/github/spec-kit)
 - [mattpocock/skills](https://github.com/mattpocock/skills)
-- [ponytail](https://github.com/korflux/ponytail) (skill e padrão para registro de limitações conscientes)
 
 ## Autor
 
