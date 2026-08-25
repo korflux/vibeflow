@@ -44,20 +44,36 @@ assert "$( [ "$last_rc" -ne 0 ] && grep -q ANALYZE_SEM_PLAN "$last_err" && [ ! -
   "3-dir-sem-plan" "rc=$last_rc err=$(cat "$last_err")"
 rm -rf "$s"
 
-# 4. Flag desconhecida para no launcher.
+# 4. --mvp promove após os três predecessores sem criar phase.
+s=$(new_sandbox)
+seed_vibeflow "$s"
+mkdir -p "$s/.vibeflow/mvp"
+printf 'i\n' >"$s/.vibeflow/mvp/interview.md"
+printf 's\n' >"$s/.vibeflow/mvp/spec.md"
+printf 'p\n' >"$s/.vibeflow/mvp/plan.md"
+printf '# MVP\n' >"$s/.vibeflow/analyze-wip.md"
+root=$(native_root "$s")
+run_sh bash "$LAUNCHER" --root "$root" --apply --mvp
+dest="$s/.vibeflow/mvp/analyze.md"
+phase_count=$(find "$s/.vibeflow/phases" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')
+assert "$( [ "$last_rc" -eq 0 ] && [ -f "$dest" ] && [ "$phase_count" = 0 ] && echo 1 || echo 0 )" \
+  "4-apply-mvp" "rc=$last_rc phases=$phase_count dest=$dest err=$(cat "$last_err")"
+rm -rf "$s"
+
+# 5. Flag desconhecida para no launcher.
 s=$(new_sandbox)
 root=$(native_root "$s")
 run_sh bash "$LAUNCHER" --root "$root" --force
 assert "$( [ "$last_rc" -eq 2 ] && grep -q 'uso: analyze.sh' "$last_err" && echo 1 || echo 0 )" \
-  "4-flag-desconhecida" "rc=$last_rc err=$(cat "$last_err")"
+  "5-flag-desconhecida" "rc=$last_rc err=$(cat "$last_err")"
 rm -rf "$s"
 
-# 5. Sem motor: recusa explícita.
+# 6. Sem motor: recusa explícita.
 s=$(new_sandbox)
 root=$(native_root "$s")
 run_without_motors bash "$LAUNCHER" --root "$root"
 assert "$( [ "$last_rc" -eq 1 ] && grep -q 'precisa de Python 3 ou PowerShell' "$last_err" && echo 1 || echo 0 )" \
-  "5-sem-motor" "rc=$last_rc err=$(cat "$last_err")"
+  "6-sem-motor" "rc=$last_rc err=$(cat "$last_err")"
 rm -rf "$s"
 
 finish

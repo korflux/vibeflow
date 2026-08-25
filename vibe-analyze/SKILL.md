@@ -1,111 +1,126 @@
 ---
 name: vibe-analyze
 description: >
-  Cruza interview, spec e plan da mesma fase e grava o relatório em .vibeflow/phases/phase-N-slug/analyze.md. Use when the user runs /vibe-analyze, pede análise cruzada, consistência, cobertura, gaps, contradição entre artefatos, clarify depois do plan, ou a rota é max com plan em disco — mesmo que não diga vibe-analyze.
+  Cruza interview, spec e plan do mesmo alvo e grava em `.vibeflow/phases/phase-N-slug/analyze.md` ou `.vibeflow/mvp/analyze.md`. Use when the user runs /vibe-analyze, pede análise cruzada, consistência, cobertura, gaps, contradição entre artefatos, clarify depois do plan, ou a rota é max com plan em disco, mesmo que não diga vibe-analyze.
 ---
 
 # vibe-analyze
 
-Não invente `n`. Sem plan na pasta, não há analyze. Sem `.vibeflow/`: `/vibe-init`.
-Não edite `interview.md`, `spec.md` nem `plan.md`. Open Questions no disco = defeito.
+Não invente `n`, slug ou path. Sem plan no alvo, não há analyze. Sem `.vibeflow/`, pare e mande `/vibe-init`.
+Erros óbvios e lacunas determinísticas identificados no cruzamento devem ser corrigidos diretamente nos artefatos (`spec.md` ou `plan.md`). Ambiguidades reais de negócio ou arquitetura devem ser esclarecidas com o usuário via chat.
+Não atualize decisões vigentes nem `REGRAS.md`. No MVP, conflito crítico sem `substitui` explícito bloqueia a implementação.
 
-## 0. Script primeiro
+## 0. Entender e usar o script
 
-1. Resolva o diretório desta skill.
+1. Resolva o diretório desta skill e leia o motor que vai executar: `scripts/analyze.ps1` no Windows ou `scripts/analyze.py` no fluxo Unix. Entenda alvo, predecessores, recusas e promoção atômica temporária antes de chamá-lo. Se encontrar defeito, corrija o motor e prove o contrato antes de continuar.
 2. No cwd do repo:
-   - Windows: `pwsh "<skill>/scripts/analyze.ps1"`
-   - Unix: `bash "<skill>/scripts/analyze.sh"` (Python 3, senão pwsh 7)
-3. Leia `.vibeflow/analyze-report.json`. Se `alvo`, leia `spec.md` e `plan.md` (obrigatórios), `interview.md` se houver, `analyze.md` se rascunho. Leia `.vibeflow/REGRAS.md`. Paths só os citados.
+   - Windows: `pwsh "<skill>/scripts/analyze.ps1"`.
+   - Unix: `bash "<skill>/scripts/analyze.sh"`.
+   - Alvo MVP: acrescente `-Mvp` ou `--mvp`.
+3. Leia `.vibeflow/analyze-report.json` como evidência operacional. Abra `spec.md` e `plan.md` (obrigatórios), `interview.md` se houver, `analyze.md` se rascunho. Leia `.vibeflow/REGRAS.md` e os arquivos de código necessários de forma direcionada.
 
-`INIT_AUSENTE` → init. `ANALYZE_SEM_PLAN` → `/vibe-plan`. `ANALYZE_SEM_SPEC` / `FASE_AUSENTE` → não contorne.
+Erros determinísticos previstos: `INIT_AUSENTE` exige `/vibe-init`. `ANALYZE_SEM_PLAN` exige plan. `ANALYZE_SEM_SPEC`, `ANALYZE_SEM_INTERVIEW`, `MVP_INESPERADO`, `MODO_INVALIDO` e `FASE_AUSENTE` exigem diagnosticar a causa e não devem ser contornados.
 
-## 1. Abrir (5 linhas)
+## 1. Abrir
 
-modo · alvo · plan · interview · wip
+Declare em cerca de cinco linhas: rota, modo, alvo, plan, interview e wip.
 
-```
+```text
 modo: reuse · alvo: phase-1-lock-bloco · plan: sim · interview: sim · wip: ausente
 ```
 
-`modo_sugerido=criar` = não há pasta com plan. Não invente fase.
+- `modo_sugerido=criar`: não há pasta com plan. Não invente fase; mande `/vibe-plan`.
+- No MVP, interview, spec e plan são obrigatórios no alvo especial e o plan precisa estar aprovado.
 
 ## 2. Gate
 
-| | Ação |
+| Sinal | Ação |
 |---|---|
-| Typo / uma linha óbvia | **Não** usar |
-| Sem `plan.md` na alvo | **Para.** Mande `/vibe-plan` |
-| Destino sem `spec.md` | **Para.** Não contorne `ANALYZE_SEM_SPEC` |
-| Plan `# Status: rascunho` e o humano pediu **esta** skill | Flip o plan para `aprovado` (1 linha no chat) e siga |
-| Plan rascunho **sem** pedido de analyze | **Para.** Peça leitura do plan |
-| Intenção/sucesso/fora frouxos de verdade | Devolve interview/spec. Não “complete” no chute |
-| Buraco pontual que só o humano fecha | Q+RECOMENDO, uma por vez, máx. 5 no total da run |
+| Typo ou uma linha óbvia | Não usar analyze |
+| Sem `plan.md` no alvo | Parar. Encaminhar para `/vibe-plan` |
+| Destino sem `spec.md` | Parar. Não contornar `ANALYZE_SEM_SPEC` |
+| Plan `# Status: rascunho` e o humano pediu analyze | Alterar o plan para `aprovado` diretamente no arquivo (1 linha no chat) e seguir |
+| Plan rascunho sem pedido de analyze | Parar. Pedir leitura do plan |
+| Intenção, sucesso ou limites frouxos de verdade | Devolver para `vibe-interview` ou `vibe-spec`. Não "completar" no chute |
+| Dúvida de arquitetura ou regra aberta | Perguntar diretamente ao usuário via chat (Q + RECOMENDO) |
 
-```
-Q: <decisão que muda o veredito>
-RECOMENDO: <opção> — <1 linha>
+```text
+Q: <decisão ou clarificação necessária>
+RECOMENDO: <opção>, <1 linha explicando motivo e impacto>
 (ok / outra?)
 ```
 
-## 3. Varredura (antes de gravar)
+## 3. Varredura, Correção e Auditoria de Qualidade
 
-Leia `references/coverage.md`. Mapa interno. Não despeje a taxonomia no chat.
+Leia `references/coverage.md` como mapa interno. Não copie a taxonomia no chat.
 
-Cruze, nesta ordem:
+Audite, cruze e resolva:
 
-1. **Interview → spec** (se `interview.md` existir): Resultado (o quê, sucesso, fora) contra Objetivo, A*/C*, Fora.
-2. **Spec → plan:** cada A*/C* tem T* com `Spec:` apontando; cada T* aponta A*/C* ou é infra justificada.
-3. **Plan → spec:** T* que inventa comportamento, path ou módulo que a spec não topou.
-4. **REGRAS.md:** choque com MUST / Never / política do repo = `CRITICAL`.
-5. Passes em `coverage.md`: duplicação, ambiguidade, furo, cobertura, inconsistência.
+1. **Interview → spec:** Resultado da interview (o quê, sucesso, fora) contra Objetivo, A*/C* e Fora da spec.
+2. **Spec → plan:** Cada A*/C* possui T* correspondente no campo `Spec:`; cada T* referencia A*/C* ou é infraestrutura justificada.
+3. **Plan → spec:** Nenhuma T* inventa comportamento, caminhos ou módulos fora do escopo aprovado.
+4. **Qualidade dos Testes e Executabilidade:**
+   - A T1 do plan estabelece um *Smoke Test / Walking Skeleton* real validando a subida/ponto de entrada do sistema? Se faltar, corrija diretamente no `plan.md` inserindo o teste na T1.
+   - As tasks possuem comandos reais de teste no repositório? Se houver verificação puramente manual sem comando, converta para comando executável real no `plan.md`.
+   - Ferramentas essenciais (`gitleaks`, MCP `chrome-devtools`) foram validadas ou possuem task de setup? Se faltar, adicione a task de setup necessária no `plan.md`.
+5. **Decisões Críticas (MVP):** Cruze cada ID entre interview, spec e plan. Se houver divergência sem declaração de `substitui` ou ID órfão, ajuste a consistência nos artefatos ou pergunte ao usuário se for mudança intencional.
+6. **Conformidade com REGRAS.md:** Violação de regras mandatórias (segurança, auth, dados, segredos, CSP) = aplicar patch corretivo imediato nos artefatos.
+7. **Passes de Consistência:** Duplicação, ambiguidade de adjetivos, furos de aceite e inconsistências de termos = aplicar correção direta.
 
-Gravidade: `CRITICAL` (bloqueia implement) · `HIGH` · `MEDIUM` · `LOW`.
-IDs: `F1`, `F2`… na ordem da tabela. Teto 50; o resto é overflow nas Métricas.
-Achado sem evidência (arquivo + trecho ou id A*/T*) não entra.
+Para cada ajuste aplicado diretamente em `spec.md` ou `plan.md`, registre a entrada na seção **Achados e Resoluções** do `analyze.md`.
+Gravidade: `CRITICAL` · `HIGH` · `MEDIUM` · `LOW`. IDs: `F1`, `F2`... na ordem da tabela.
 
-## 4. Clarificar (só se o disco não fecha)
+## 4. Clarificações
 
-Clarify do spec-kit vira **chat**, não patch na spec. Máx. 5 perguntas na run. Uma por vez. Resposta vai para **Clarificações** no `analyze.md`.
+Quando houver ambiguidade que não seja um erro óbvio e dependa de decisão humana:
+- Pergunte diretamente no chat (Q + RECOMENDO), uma por vez.
+- Aplique a resposta do usuário no arquivo correspondente (`spec.md` ou `plan.md`).
+- Registre o resumo da pergunta e resposta na seção **Clarificações com o Usuário** do `analyze.md`.
+- Não há limite arbitrário de perguntas; pergunte o que for estritamente necessário para eliminar ambiguidades.
 
-Não pergunte estilo, stack “tanto faz”, nem o que a spec/plan já fecharam. Se a resposta exige mudar spec ou plan: grave o F* com remédio `volta vibe-spec` ou `volta vibe-plan`. Esta skill não aplica o remédio.
+## 5. Escrever e Salvar
 
-Zero pergunta válida → siga. Não invente Q para preencher cota.
+Wip: `.vibeflow/analyze-wip.md`. Molde: `templates/analyze.md`. Status inicial: `rascunho`.
+Não pergunte se pode salvar e não cole o corpo do documento no chat.
 
-## 5. Escrever e salvar já
+1. Preencha o wip certificando a cobertura, os achados corrigidos e a consistência final.
+   Veredito: `limpo` quando todas as correções forem aplicadas e o plano estiver validado para execução; `bloqueado` apenas se restar conflito crítico não resolvido.
+2. Execute o apply:
+   - Modo phase:
+     `pwsh "<skill>/scripts/analyze.ps1" -Apply`
+     `bash "<skill>/scripts/analyze.sh" --apply`
+   - Modo MVP:
+     `pwsh "<skill>/scripts/analyze.ps1" -Apply -Mvp`
+     `bash "<skill>/scripts/analyze.sh" --apply --mvp`
+3. Responda no chat apenas:
 
-Wip = `.vibeflow/analyze-wip.md`. Molde: `templates/analyze.md`. Status `rascunho`.
-Não pergunte se pode salvar. Não cole o corpo no chat.
-
-1. Preencha o wip. Omita seção N/A. Veredito: `bloqueado` se algum `CRITICAL` aberto; senão `limpo`.
-2. `pwsh "<skill>/scripts/analyze.ps1" -Apply` (Unix: `analyze.sh --apply`). `--dir` só se o relatório não acertar a pasta.
-3. Chat, **só**:
-
-```
-Analyze gravado: .vibeflow/phases/phase-N-slug/analyze.md
+```text
+Analyze gravado: <created.path>/analyze.md
 
 - Veredito: limpo | bloqueado
 - Cobertura: <A*/C* com T* / total>
-- CRITICAL/HIGH: <F1… ou nenhum>
-- Handoff: vibe-implement | volta vibe-spec | volta vibe-plan | volta vibe-interview
+- Qualidade de testes: <smoke test na T1 e comandos de teste validados>
+- Correções aplicadas: <F1... no spec.md / plan.md ou nenhuma necessária>
+- Handoff: vibe-implement
 
-Leia o arquivo. Ok: **aprovado** (ou “pode ir pro implement”).
-Ajuste: diga o que mudar. Não reimprimo o analyze aqui.
+Arquivo disponível em <created.path>/analyze.md. Responda "aprovado" para confirmar, "pode ir pro implement" (ou "pode ir para a próxima fase") para avançar imediatamente, ou indique os ajustes desejados.
 ```
 
-## 6. Ajuste ou aprovação
+## 6. Ajuste ou Aprovação
 
 | Resposta | Ação |
 |---|---|
-| aprovado / “pode ir pro implement” / pede código | `# Status: aprovado` no vivo **só se** veredito `limpo`; §7 |
-| pedido de alteração | Patch **só** no arquivo; ≤5 bullets; re-peça leitura |
-| “parece bom” sem pedir implement | “Aprovado no arquivo, ou quer ajustar?” |
-| veredito `bloqueado` e pede implement | Recuse. Mostre os F* CRITICAL e o handoff `volta` |
-| spec/plan/intenção quebrou | Devolve a skill dona. Não force implement |
+| Aprovado (sem pedir implementação) | `# Status: aprovado` no vivo **apenas se** veredito `limpo`; parar e aguardar próximo comando |
+| "Pode ir pro implement" / "pode ir para a próxima fase" / pede código | `# Status: aprovado` no vivo **apenas se** veredito `limpo`; iniciar imediatamente `vibe-implement` |
+| Pedido de alteração | Patch direto no arquivo vivo; até 5 bullets no chat; solicitar nova conferência |
+| "Parece bom" sem pedir implementação | Perguntar: "Aprovado no arquivo ou deseja algum ajuste?" |
+| Veredito `bloqueado` e usuário pede implementação | Recusar. Exibir os achados bloqueantes pendentes |
+| Spec, plan ou intenção quebrou | Devolver para a skill responsável. Não forçar implementação |
 
-Rascunho sem “aprovado” e sem pedido da próxima porta **não** autoriza código.
+Rascunho sem "aprovado" e sem pedido da próxima porta não autoriza iniciar o código.
 
 ## 7. Fechar
 
-Não commita. Avise: commitar `.vibeflow/phases/phase-N-slug/analyze.md`. Não commitar `analyze-report.json` nem `analyze-wip.md`.
-Handoff no arquivo. **Não** dispare a skill. Zero implementação e zero patch nas fontes nesta run.
-
+Não commite no git. Não dispare a próxima skill a menos que o usuário tenha pedido explicitamente para avançar (§6).
+Informe que os arquivos `analyze.md`, `plan.md` e `spec.md` atualizados entram no git e que `analyze-report.json` e `analyze-wip.md` ficam de fora.
+Handoff registrado no arquivo: `vibe-implement`. Zero implementação nesta execução.

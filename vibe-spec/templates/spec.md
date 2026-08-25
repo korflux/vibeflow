@@ -1,5 +1,5 @@
 # Spec: <frase curta>
-# Pasta: phase-<n>-<slug>
+# Alvo: <phase-<n>-<slug> ou mvp>
 # Status: rascunho
 
 ## Objetivo
@@ -15,6 +15,14 @@
 ## Suposições e decisões
 
 1. … — (produto / segurança / processo / escopo; já fechado)
+
+## Decisões críticas
+
+<!-- Omitir fora do MVP e quando a phase não cria nem substitui decisão crítica. -->
+
+| ID | Ação | Decisão | Motivo e impacto | Fonte anterior |
+|---|---|---|---|---|
+| <DOMINIO-01> | <mantém, cria ou substitui> | <opção fechada> | <por que e o que determina> | <interview MVP ou decisão vigente; N/A se cria> |
 
 ## Escopo e comportamento
 
@@ -116,5 +124,6 @@ path/arquivo    # papel na entrega
 ## Handoff
 
 vibe-plan
+<!-- No MVP, acrescentar: rota: max -->
 
 - [ ] Aprovação humana (leu o arquivo e confirmou)

@@ -55,20 +55,34 @@ assert "$( [ "$last_rc" -eq 0 ] && [ -f "$dest" ] && echo 1 || echo 0 )" \
   "4-apply-slug" "rc=$last_rc dest=$dest err=$(cat "$last_err")"
 rm -rf "$s"
 
-# 5. Sem motor: recusa explícita.
+# 5. --mvp respeita analyze aprovado e promove no alvo especial.
+s=$(new_sandbox)
+seed_vibeflow "$s"
+mkdir -p "$s/.vibeflow/mvp"
+printf '### T1: fixture\n\n- [ ] T1 concluída\n- **Deps:** nenhuma\n' >"$s/.vibeflow/mvp/plan.md"
+printf '# Analyze\n# Status: aprovado\n\n## Veredito\n\nlimpo\n' >"$s/.vibeflow/mvp/analyze.md"
+printf '# MVP\n' >"$s/.vibeflow/implement-wip.md"
+root=$(native_root "$s")
+run_sh bash "$LAUNCHER" --root "$root" --apply --mvp
+dest="$s/.vibeflow/mvp/implement.md"
+assert "$( [ "$last_rc" -eq 0 ] && [ -f "$dest" ] && echo 1 || echo 0 )" \
+  "5-apply-mvp" "rc=$last_rc dest=$dest err=$(cat "$last_err")"
+rm -rf "$s"
+
+# 6. Sem motor: recusa explícita.
 s=$(new_sandbox)
 root=$(native_root "$s")
 run_without_motors bash "$LAUNCHER" --root "$root"
 assert "$( [ "$last_rc" -eq 1 ] && grep -q 'precisa de Python 3 ou PowerShell' "$last_err" && echo 1 || echo 0 )" \
-  "5-sem-motor" "rc=$last_rc err=$(cat "$last_err")"
+  "6-sem-motor" "rc=$last_rc err=$(cat "$last_err")"
 rm -rf "$s"
 
-# 6. Flag desconhecida para no launcher.
+# 7. Flag desconhecida para no launcher.
 s=$(new_sandbox)
 root=$(native_root "$s")
 run_sh bash "$LAUNCHER" --root "$root" --force
 assert "$( [ "$last_rc" -eq 2 ] && grep -q 'uso: implement.sh' "$last_err" && echo 1 || echo 0 )" \
-  "6-flag-desconhecida" "rc=$last_rc err=$(cat "$last_err")"
+  "7-flag-desconhecida" "rc=$last_rc err=$(cat "$last_err")"
 rm -rf "$s"
 
 finish

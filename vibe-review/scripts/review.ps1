@@ -1,14 +1,17 @@
-﻿#Requires -Version 7.0
+#Requires -Version 7.0
 # vibe-review/scripts/review.ps1
 # Inventário de .vibeflow/phases → promove review-wip.md para phase-N-slug/review.md.
 param(
     [string]$Root,
     [switch]$Apply,
     [string]$Dir,
-    [string]$Slug
+    [string]$Slug,
+    [switch]$Mvp
 )
 
 $ErrorActionPreference = 'Stop'
+$script:DirWasBound = $PSBoundParameters.ContainsKey('Dir')
+$script:SlugWasBound = $PSBoundParameters.ContainsKey('Slug')
 $script:ChainFiles = @('interview.md', 'spec.md', 'plan.md', 'analyze.md', 'implement.md', 'review.md')
 $script:MaxSlug = 48
 
@@ -89,6 +92,7 @@ function Get-PhaseList([string]$Phases) {
             if (Test-Path -LiteralPath (Join-Path $_.FullName $name)) { [void]$files.Add($name) }
         }
         $existing.Add([pscustomobject]@{
+            kind  = 'phase'
             dir   = $_.Name
             n     = [int]$m.Groups[1].Value
             slug  = $m.Groups[2].Value
@@ -98,6 +102,19 @@ function Get-PhaseList([string]$Phases) {
     }
     $sorted = @($existing | Sort-Object n)
     return @{ existing = $sorted; warnings = @($warnings) }
+}
+
+# Representa o alvo MVP sem inferir a rota a partir dos artefatos existentes.
+function Get-MvpMap([string]$Vf) {
+    $mvpPath = Join-Path $Vf 'mvp'
+    if (-not (Test-Path -LiteralPath $mvpPath)) { return $null }
+    $item = Get-Item -LiteralPath $mvpPath -Force
+    if (-not $item.PSIsContainer) { throw 'MVP_INESPERADO: .vibeflow/mvp existe, mas não é um diretório.' }
+    $files = New-Object System.Collections.Generic.List[string]
+    foreach ($name in $script:ChainFiles) {
+        if (Test-Path -LiteralPath (Join-Path $mvpPath $name) -PathType Leaf) { [void]$files.Add($name) }
+    }
+    return [pscustomobject]@{ kind = 'mvp'; dir = 'mvp'; path = '.vibeflow/mvp'; files = @($files) }
 }
 
 # Maior n com plan e sem review: a review da cadeia reusa esta pasta.
@@ -131,6 +148,7 @@ function Get-Alvo($Existing) {
 function ConvertTo-PhaseMap($Item) {
     if ($null -eq $Item) { return $null }
     return [pscustomobject]@{
+        kind  = 'phase'
         dir   = [string]$Item.dir
         n     = [int]$Item.n
         slug  = [string]$Item.slug
@@ -150,6 +168,10 @@ function Write-ReviewReport([string]$Vf, [hashtable]$Payload) {
 
 # Inventaria o disco e opcionalmente promove o wip para review.md.
 function Invoke-Review {
+    if ($Mvp -and ($script:DirWasBound -or $script:SlugWasBound)) {
+        throw 'MODO_INVALIDO: o alvo MVP não aceita -Slug nem -Dir.'
+    }
+
     $repo = Get-RepoRoot
     $vf = Join-Path $repo '.vibeflow'
     $phases = Join-Path $vf 'phases'
@@ -188,6 +210,19 @@ function Invoke-Review {
     $resolved = Get-Alvo $existing
     $alvoItem = $resolved.item
     $modoSugerido = $resolved.modo
+    $mvpMap = Get-MvpMap $vf
+    if ($Mvp) {
+        $required = New-Object System.Collections.Generic.List[string]
+        foreach ($name in @('interview.md', 'spec.md', 'plan.md', 'analyze.md')) {
+            if ($null -eq $mvpMap -or $mvpMap.files -notcontains $name) { [void]$required.Add($name) }
+        }
+        if ($required.Count -gt 0) {
+            throw "REVIEW_CADEIA_INCOMPLETA: faltam em .vibeflow/mvp: $($required -join ', ')."
+        }
+        $alvoItem = $mvpMap
+
+        $modoSugerido = if ($mvpMap.files -contains 'review.md') { 'atualizar' } else { 'reuse' }
+    }
     $created = $null
     $modo = $null
 
@@ -197,7 +232,10 @@ function Invoke-Review {
         }
 
         $createdDir = $false
-        if (-not [string]::IsNullOrWhiteSpace($Dir)) {
+        if ($Mvp) {
+            $destDir = Join-Path $vf 'mvp'
+            $modo = $modoSugerido
+        } elseif (-not [string]::IsNullOrWhiteSpace($Dir)) {
             $destDir = Join-Path $phases ([System.IO.Path]::GetFileName($Dir))
             $destName = [System.IO.Path]::GetFileName($destDir)
             if (-not (Test-Path -LiteralPath $destDir) -or -not (Get-Item -LiteralPath $destDir).PSIsContainer) {
@@ -230,24 +268,21 @@ function Invoke-Review {
 
         $destName = [System.IO.Path]::GetFileName($destDir)
         $destFile = Join-Path $destDir 'review.md'
-        $rel = ".vibeflow/phases/$destName"
-        $existed = Test-Path -LiteralPath $destFile
+        $rel = if ($Mvp) { '.vibeflow/mvp' } else { ".vibeflow/phases/$destName" }
+        $tempFile = Join-Path $destDir ('.review-' + [System.IO.Path]::GetRandomFileName())
         try {
-            Copy-Item -LiteralPath $wip -Destination $destFile -Force
+            Copy-Item -LiteralPath $wip -Destination $tempFile
             $srcHash = Get-Sha256File $wip
-            $dstHash = Get-Sha256File $destFile
+            $dstHash = Get-Sha256File $tempFile
             $srcLen = (Get-Item -LiteralPath $wip).Length
-            $dstLen = (Get-Item -LiteralPath $destFile).Length
+            $dstLen = (Get-Item -LiteralPath $tempFile).Length
             if ($srcHash -ne $dstHash -or $srcLen -ne $dstLen) {
-                if (-not $existed) { Remove-Item -LiteralPath $destFile -Force }
-                if ($createdDir -and (Test-Path -LiteralPath $destDir) -and -not (Get-ChildItem -LiteralPath $destDir -Force)) {
-                    Remove-Item -LiteralPath $destDir -Force
-                }
                 throw 'COPY_HASH_MISMATCH: a cópia do wip não bateu com o original.'
             }
+            [System.IO.File]::Move($tempFile, $destFile, $true)
         } catch {
+            if (Test-Path -LiteralPath $tempFile) { Remove-Item -LiteralPath $tempFile -Force }
             if ($createdDir) {
-                if (Test-Path -LiteralPath $destFile) { Remove-Item -LiteralPath $destFile -Force }
                 if ((Test-Path -LiteralPath $destDir) -and -not (Get-ChildItem -LiteralPath $destDir -Force)) {
                     Remove-Item -LiteralPath $destDir -Force
                 }
@@ -256,16 +291,23 @@ function Invoke-Review {
         }
         Remove-Item -LiteralPath $wip -Force
         $actions.Add([pscustomobject]@{ op = 'promover_wip'; alvo = "$rel/review.md" })
-        $listed = Get-PhaseList $phases
-        $existing = @($listed.existing)
-        foreach ($w in $listed.warnings) { $warnings.Add($w) }
-        $nextN = 1
-        if ($existing.Count -gt 0) { $nextN = [int]$existing[-1].n + 1 }
-        $resolved = Get-Alvo $existing
-        $alvoItem = $resolved.item
-        $modoSugerido = $resolved.modo
-        foreach ($item in $existing) {
-            if ($item.dir -eq $destName) { $created = $item; break }
+        if ($Mvp) {
+            $mvpMap = Get-MvpMap $vf
+            $alvoItem = $mvpMap
+            $modoSugerido = 'atualizar'
+            $created = $mvpMap
+        } else {
+            $listed = Get-PhaseList $phases
+            $existing = @($listed.existing)
+            foreach ($w in $listed.warnings) { $warnings.Add($w) }
+            $nextN = 1
+            if ($existing.Count -gt 0) { $nextN = [int]$existing[-1].n + 1 }
+            $resolved = Get-Alvo $existing
+            $alvoItem = $resolved.item
+            $modoSugerido = $resolved.modo
+            foreach ($item in $existing) {
+                if ($item.dir -eq $destName) { $created = $item; break }
+            }
         }
     }
 
@@ -278,16 +320,18 @@ function Invoke-Review {
 
     $payload = @{
         root               = "$repo"
+        rota               = $(if ($Mvp) { 'mvp' } else { 'phase' })
         vibeflow           = 'ok'
         phases             = "$phState"
         next_n             = [int]$nextN
         existing           = $mapped.ToArray()
         plan_pendente      = ConvertTo-PhaseMap (Get-PlanPendente $existing)
         rascunho           = ConvertTo-PhaseMap (Get-Rascunho $existing)
-        alvo               = ConvertTo-PhaseMap $alvoItem
+        alvo               = $(if ($Mvp) { $alvoItem } else { ConvertTo-PhaseMap $alvoItem })
+        mvp                = $mvpMap
         modo_sugerido      = "$modoSugerido"
         wip                = "$wipState"
-        created            = ConvertTo-PhaseMap $created
+        created            = $(if ($Mvp) { $created } else { ConvertTo-PhaseMap $created })
         modo               = $modo
         actions            = $actions.ToArray()
         avisos             = $warnings.ToArray()

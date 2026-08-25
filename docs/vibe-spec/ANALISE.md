@@ -1,10 +1,10 @@
-# vibe-spec — mapeamento e fluxo
+# vibe-spec, mapeamento e fluxo
 
 Fontes:
 
 - [fluxline-spec](https://github.com/korflux/fluxline/blob/main/skills/fluxline-spec/SKILL.md)
 - [spec-kit specify](https://github.com/github/spec-kit/blob/main/templates/commands/specify.md) + [spec-template.md](https://github.com/github/spec-kit/blob/main/templates/spec-template.md)
-- [spec-kit plan-template.md](https://github.com/github/spec-kit/blob/main/templates/plan-template.md) (link que você mandou; é **plan**, não spec)
+- [spec-kit plan-template.md](https://github.com/github/spec-kit/blob/main/templates/plan-template.md) (link de referência, focado em plan)
 
 Comparado com `.vibeflow/REGRAS.md` e com `vibe-interview`.
 
@@ -82,18 +82,25 @@ As duas “skills de spec” não descrevem o mesmo artefato. Spec-kit parte o t
 ## Fluxo de uma run
 
 ```
-[1] Script inventário → spec-report.json
-[2] IA lê relatório + interview.md da alvo (se houver) + spec.md se rascunho
-    + REGRAS.md; paths só se citados
-[3] CONFIDENCE. <80% e buraco de intenção → pare, mande interview
-[4] Seams/buracos: Q+RECOMENDO no chat, uma a uma
-[5] Escreve spec-wip.md no molde do template (Status: rascunho)
-[6] Script apply → phase-N-slug/spec.md
-    reuse se já há pasta alvo; criar só sem alvo + slug
-[7] Chat: path + resumo 4 linhas + “leia o arquivo”
-[8] Ajuste = patch no vivo. Aprovado ou “pode ir pro plan” = Status aprovado
-[9] Fecha. Não commita. Não dispara plan
+[1] IA compreende o motor spec, parâmetros e invariantes de segurança
+[2] Script executa inventário mecânico → spec-report.json
+[3] IA analisa o relatório como evidência, lê interview.md da alvo (se houver), spec.md se rascunho, REGRAS.md e caminhos necessários
+[4] IA avalia CONFIDENCE (<80% e intenção incompleta: encaminha para interview)
+[5] IA fecha dúvidas pontuais de desenho no chat via Q + RECOMENDO
+[6] IA escreve spec-wip.md conforme templates/spec.md (Status: rascunho)
+[7] Script apply promove com validação atômica → phase-N-slug/spec.md ou mvp/spec.md
+[8] Chat: path + resumo 4 linhas + “leia o arquivo”
+[9] Ajuste = patch no vivo. Aprovado ou “pode ir pro plan” = Status: aprovado
+[10] IA fecha a run sem commit automático e sem auto-invoke da próxima skill
 ```
+
+## Extensão para MVP
+
+A rota MVP reutiliza a espinha acima, mas fixa o alvo em `.vibeflow/mvp/` e exige a interview completa antes da spec. A IA seleciona `--mvp`; o script apenas valida o predecessor e promove o wip. Nenhum `next_n`, slug ou escolha automática participa dessa rota.
+
+A spec não repete toda a descoberta. Ela transforma o baseline em comportamento e aceite implementáveis, mantendo os IDs críticos. Cada linha declara `mantém`, `cria` ou `substitui`, o que torna contradições detectáveis pelo analyze e impede que cronologia implícita escolha a decisão vigente.
+
+Decisões da spec MVP continuam históricas. `REGRAS.md` só recebe a versão compacta depois de implementação, review aprovada e confirmação humana.
 
 ---
 
@@ -103,3 +110,4 @@ As duas “skills de spec” não descrevem o mesmo artefato. Spec-kit parte o t
 - A*/C* ficam na spec para a build marcar depois. Plan aponta, não copia.
 - `plan.md` na mesma pasta trava overwrite: spec daquele pedido já foi fatiada. Pedido novo = pasta nova.
 - v1 não cria `research.md` nem contratos OpenAPI. Isso, se existir, é outra skill.
+- O MVP usa a mesma template, com seções críticas omitíveis no modo phase.

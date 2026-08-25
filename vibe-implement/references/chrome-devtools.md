@@ -1,38 +1,33 @@
-# Prova visual no browser
+# Prova visual no browser com MCP Server chrome-devtools
 
-Abrir **só** se a fatia muda o que o usuário vê no browser. Não carregar no boot de T* sem UI.
+Abrir **apenas** se a fatia alterar ou criar interface web visual no navegador. Não carregar para tasks sem UI.
 
-## Default
+## Uso das Ferramentas MCP chrome-devtools
 
-MCP `chrome-devtools` do host.
+A validação de interface é executada diretamente pela IA através do **MCP Server `chrome-devtools`**:
 
-1. Subir (ou achar) a URL do fluxo da fatia. Sem servidor/URL → para e pergunta.
-2. `navigate_page` até o estado a provar.
-3. `take_snapshot` (árvore de a11y) para achar o controle. Interagir pelo uid do snapshot fresco.
-4. `take_screenshot` do alvo (página, dialog ou trecho).
-5. **Ler** a imagem: layout, copy, vazio/erro, elemento coberto, contraste óbvio. Print sem leitura não conta.
-6. No fechamento: URL, o que clicou, path do print se gravou, ok/falhas visuais.
+1. Identifique ou suba o servidor local da aplicação. Sem URL funcional, pare e pergunte via chat.
+2. Execute a ferramenta MCP `navigate_page` para acessar a URL da rota a ser testada.
+3. Use `take_snapshot` (árvore de acessibilidade) para inspecionar elementos do DOM e interagir através do `uid` correspondente (`click`, `fill`, etc.).
+4. Chame `take_screenshot` na página ou componente renderizado.
+5. Inspecione factualmente a imagem capturada: validar renderização, texto, layout, estados de erro/vazio, contraste e ausência de elementos quebrados ou sobrepostos.
+6. Registre na prova da fatia: URL testada, ações executadas e leitura visual do screenshot.
 
-Pixel baseline não é default.
+## Testes E2E do Repositório (Playwright / Cypress)
 
-## Playwright / E2E do repo
+Usar testes E2E locais quando:
+- A verificação da task (`T*`) já especificar comando E2E existente no repositório.
+- O usuário solicitar explicitamente.
+- O MCP `chrome-devtools` estiver indisponível no ambiente.
 
-Usar quando:
+Execute o comando de teste do repositório. Não instale novas bibliotecas de navegador sem solicitação explícita.
 
-- a verificação da T* já é esse comando, ou
-- o humano pediu, ou
-- o DevTools não está ligado e o humano escolheu essa opção na Q.
+## Sem prova de navegador possível
 
-Rode o comando do repo. Leia o artefato visual se houver (screenshot do teste). Não instale Playwright (nem outra lib de browser) sem o humano pedir.
+Se a task exigir validação de UI e não houver MCP `chrome-devtools` ativo nem comando E2E no repositório, não feche a task apenas com teste unitário. Pergunte via chat:
 
-Se a T* manda E2E **e** o DevTools está disponível: rode o comando da T*; o DevTools cobre a leitura visual se o E2E não gerar evidência inspecionável.
-
-## Sem prova de browser
-
-Não feche a T* com “unit passou”. Q:
-
-```
-Q: sem MCP chrome-devtools e sem E2E no repo para esta tela
-RECOMENDO: ligar o MCP / rodar o E2E que já existe / você valida e reporta
+```text
+Q: Interface criada sem MCP chrome-devtools e sem suíte E2E no repositório
+RECOMENDO: Ativar o MCP chrome-devtools no ambiente, ou executar comando E2E do repo, ou validação manual pelo usuário
 (ok / outra?)
 ```

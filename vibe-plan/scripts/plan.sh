@@ -5,13 +5,15 @@ set -euo pipefail
 ROOT=""
 APPLY=0
 DIR=""
+MVP=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --root) ROOT="$2"; shift 2 ;;
     --apply) APPLY=1; shift ;;
     --dir) DIR="$2"; shift 2 ;;
-    *) echo "uso: plan.sh [--root DIR] [--apply [--dir PASTA]]" >&2; exit 2 ;;
+    --mvp) MVP=1; shift ;;
+    *) echo "uso: plan.sh [--root DIR] [--apply] [--dir PASTA] [--mvp]" >&2; exit 2 ;;
   esac
 done
 
@@ -28,6 +30,7 @@ if [[ -n "$PYTHON_BIN" ]]; then
   [[ -n "$ROOT" ]] && args+=(--root "$ROOT")
   [[ "$APPLY" -eq 1 ]] && args+=(--apply)
   [[ -n "$DIR" ]] && args+=(--dir "$DIR")
+  [[ "$MVP" -eq 1 ]] && args+=(--mvp)
   exec "$PYTHON_BIN" "$(dirname "$0")/plan.py" "${args[@]}"
 fi
 
@@ -36,6 +39,7 @@ if command -v pwsh >/dev/null 2>&1 && pwsh -NoProfile -Command 'exit [int]($PSVe
   [[ -n "$ROOT" ]] && args+=(-Root "$ROOT")
   [[ "$APPLY" -eq 1 ]] && args+=(-Apply)
   [[ -n "$DIR" ]] && args+=(-Dir "$DIR")
+  [[ "$MVP" -eq 1 ]] && args+=(-Mvp)
   exec pwsh -NoProfile -ExecutionPolicy Bypass -File "$(dirname "$0")/plan.ps1" "${args[@]}"
 fi
 

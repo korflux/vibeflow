@@ -13,6 +13,7 @@ Convenção: `[x]` já existe no repositório hoje. `[ ]` entra, ainda não cons
 - [x] `vibe-analyze` — cruza interview, spec e plan.
 - [x] `vibe-implement` — executa a fatia com prova.
 - [x] `vibe-review` — julga o patch e grava o veredito.
+- [ ] **Rota MVP.** Projeto novo usa baseline único em `.vibeflow/mvp/` e percorre interview, spec, plan, analyze, implement e review. Pivôs posteriores voltam às phases.
 
 Nenhuma skill dispara a seguinte. O handoff é uma linha no artefato.
 
@@ -129,7 +130,7 @@ Não são backlog. Mudá-los quebra o disco.
 | Limite | Por quê |
 |---|---|
 | `AGENTS.md` e `CLAUDE.md` nunca são cópia de `REGRAS.md` | Cópia diverge na primeira edição e deixa de existir fonte única. Sem symlink, o init falha alto. |
-| Artefato da cadeia só em `.vibeflow/phases/phase-N-slug/` | `docs/`, `specs/` e path de outro produto foram o defeito que originou a regra. |
+| Artefato da cadeia só em `.vibeflow/phases/phase-N-slug/`, salvo o baseline único `.vibeflow/mvp/` | `docs/`, `specs/` e paths de outro produto continuam proibidos; a exceção MVP é fixa, explícita e não versionada. |
 | Segunda fonte de regras fora de `.vibeflow/REGRAS.md` | Mesma razão. |
 | A IA não escolhe `n`, slug nem path | Disco decide, script calcula. |
 | A IA não escolhe homolog ou produção | Só o humano sabe, e a resposta muda o bloco de migrations. |

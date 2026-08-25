@@ -1,5 +1,5 @@
 # Analyze: <frase curta>
-# Pasta: phase-<n>-<slug>
+# Alvo: <phase-<n>-<slug> ou mvp>
 # Status: rascunho
 # Plan: plan.md (mesma pasta)
 
@@ -7,64 +7,72 @@
 
 | Arquivo | Estado |
 |---|---|
-| interview.md | presente \| ausente |
+| interview.md | presente | ausente |
 | spec.md | presente |
 | plan.md | presente |
 | REGRAS.md | lido |
 
-## Cobertura
+## Cobertura e Rastreabilidade
 
 | Chave | Origem | T* | Notas |
 |---|---|---|---|
-| A1 | spec.md | T1 | … |
-| C1 | spec.md | T2 | … |
+| A1 | spec.md | T1 | ... |
+| C1 | spec.md | T2 | ... |
 
 <!-- interview Resultado.Sucesso vira linha se interview.md existir -->
 
-## Achados
+## Achados e Resoluções
 
-| ID | Categoria | Gravidade | Onde | Resumo | Remédio |
+| ID | Categoria | Gravidade | Onde | Problema | Resolução Aplicada |
 |---|---|---|---|---|---|
-| F1 | cobertura | HIGH | spec.md A3 / plan.md | A3 sem T* | volta vibe-plan |
+| F1 | cobertura | HIGH | plan.md | A3 sem T* correspondente | Patch aplicado em plan.md adicionando T3 |
 
 ### F1: <resumo curto>
 
-- **Gravidade:** CRITICAL \| HIGH \| MEDIUM \| LOW
-- **Categoria:** duplicacao \| ambiguidade \| furo \| constituicao \| cobertura \| inconsistencia
-- **Onde:** `spec.md` A3; `plan.md` T1
-- **Evidência:** <trecho ou id; sem isso o F* não existe>
-- **Remédio:** volta vibe-spec \| volta vibe-plan \| volta vibe-interview \| nenhum
+- **Gravidade:** CRITICAL | HIGH | MEDIUM | LOW
+- **Categoria:** duplicacao | ambiguidade | furo | constituicao | cobertura | inconsistencia | qualidade_teste | decisao
+- **Onde:** `spec.md` ou `plan.md`
+- **Evidência:** <trecho ou ID afetado>
+- **Resolução:** <ação corretiva aplicada diretamente no arquivo ou decisão do usuário>
 
-## Clarificações
+## Decisões críticas
 
-<!-- omitir se esta run não fez Q -->
+<!-- Omitir fora do MVP e quando a phase não cria nem substitui decisões. -->
 
-- Q: … → A: …
+| ID | Interview | Spec | Plan | Estado |
+|---|---|---|---|---|
+| <DOMINIO-01> | <opção> | <mantém, cria ou substitui: opção> | <T* responsável> | consistente |
+
+## Clarificações com o Usuário
+
+<!-- Omitir se não foram necessárias perguntas adicionais -->
+
+- Q: ... -> A: ... (aplicado em <arquivo>)
 
 ## Constituição
 
-<!-- omitir se zero choque com REGRAS.md -->
+<!-- Omitir se zero choque com REGRAS.md -->
 
-- F*: <qual regra> — <o que o artefato diz>
+- Regra: <qual regra> -> Resolução: <ajuste aplicado para conformidade>
 
 ## Métricas
 
 - A*/C* na spec:
 - T* no plan:
-- Cobertura (A*/C* com ≥1 T*):
-- Achados: CRITICAL / HIGH / MEDIUM / LOW
-- Overflow além de 50: <n ou 0>
+- Cobertura (A*/C* com >= 1 T*):
+- Qualidade de Testes: T1 smoke test ok, comandos executáveis ok, ferramentas essenciais ok
+- Achados corrigidos / resolvidos:
+- Achados bloqueantes pendentes: 0
 
 ## Veredito
 
-limpo \| bloqueado
+limpo | bloqueado
 
-<!-- bloqueado se algum CRITICAL aberto -->
+<!-- limpo quando todas as inconsistências foram corrigidas e o plano está pronto para execução -->
 
 ## Handoff
 
 vibe-implement
-
-<!-- se bloqueado: volta vibe-spec | volta vibe-plan | volta vibe-interview -->
+<!-- No MVP, acrescentar: rota: max -->
 
 - [ ] Aprovação humana (leu o arquivo e confirmou)

@@ -5,11 +5,14 @@ param(
     [string]$Root,
     [switch]$Apply,
     [string]$Slug,
-    [string]$Dir
+    [string]$Dir,
+    [switch]$Mvp
 )
 
 $ErrorActionPreference = 'Stop'
-$script:ChainFiles = @('interview.md', 'spec.md', 'plan.md', 'analyze.md', 'review.md')
+$script:SlugWasBound = $PSBoundParameters.ContainsKey('Slug')
+$script:DirWasBound = $PSBoundParameters.ContainsKey('Dir')
+$script:ChainFiles = @('interview.md', 'spec.md', 'plan.md', 'analyze.md', 'implement.md', 'review.md')
 $script:MaxSlug = 48
 
 # Resolve a raiz por parâmetro, Git ou cwd sem exigir que Git esteja instalado.
@@ -95,6 +98,7 @@ function Get-PhaseList([string]$Phases) {
             if (Test-Path -LiteralPath (Join-Path $_.FullName $name)) { [void]$files.Add($name) }
         }
         $existing.Add([pscustomobject]@{
+            kind  = 'phase'
             dir   = $_.Name
             n     = [int]$m.Groups[1].Value
             slug  = $m.Groups[2].Value
@@ -104,6 +108,26 @@ function Get-PhaseList([string]$Phases) {
     }
     $sorted = @($existing | Sort-Object n)
     return @{ existing = $sorted; warnings = @($warnings) }
+}
+
+# Representa o alvo MVP sem inferir a rota a partir do conteúdo do projeto.
+function Get-MvpMap([string]$Vf) {
+    $mvpPath = Join-Path $Vf 'mvp'
+    if (-not (Test-Path -LiteralPath $mvpPath)) { return $null }
+    $item = Get-Item -LiteralPath $mvpPath -Force
+    if (-not $item.PSIsContainer) {
+        throw 'MVP_INESPERADO: .vibeflow/mvp existe, mas não é um diretório.'
+    }
+    $files = New-Object System.Collections.Generic.List[string]
+    foreach ($name in $script:ChainFiles) {
+        if (Test-Path -LiteralPath (Join-Path $mvpPath $name) -PathType Leaf) { [void]$files.Add($name) }
+    }
+    return [pscustomobject]@{
+        kind  = 'mvp'
+        dir   = 'mvp'
+        path  = '.vibeflow/mvp'
+        files = @($files)
+    }
 }
 
 # Maior n com interview e sem spec: a spec deve reusar esta pasta.
@@ -139,6 +163,7 @@ function Get-Alvo($Existing) {
 function ConvertTo-PhaseMap($Item) {
     if ($null -eq $Item) { return $null }
     return [pscustomobject]@{
+        kind  = 'phase'
         dir   = [string]$Item.dir
         n     = [int]$Item.n
         slug  = [string]$Item.slug
@@ -158,6 +183,10 @@ function Write-SpecReport([string]$Vf, [hashtable]$Payload) {
 
 # Inventaria o disco e opcionalmente promove o wip para spec.md.
 function Invoke-Spec {
+    if ($Mvp -and ($script:SlugWasBound -or $script:DirWasBound)) {
+        throw 'MODO_INVALIDO: o alvo MVP não aceita -Slug nem -Dir.'
+    }
+
     $repo = Get-RepoRoot
     $vf = Join-Path $repo '.vibeflow'
     $phases = Join-Path $vf 'phases'
@@ -196,6 +225,10 @@ function Invoke-Spec {
     $resolved = Get-Alvo $existing
     $alvoItem = $resolved.item
     $modoSugerido = $resolved.modo
+    $mvpMap = Get-MvpMap $vf
+    if ($Mvp -and ($null -eq $mvpMap -or $mvpMap.files -notcontains 'interview.md')) {
+        throw 'MVP_INTERVIEW_AUSENTE: falta .vibeflow/mvp/interview.md.'
+    }
     $created = $null
     $modo = $null
 
@@ -205,7 +238,10 @@ function Invoke-Spec {
         }
 
         $createdDir = $false
-        if (-not [string]::IsNullOrWhiteSpace($Dir)) {
+        if ($Mvp) {
+            $destDir = Join-Path $vf 'mvp'
+            $modo = if (Test-Path -LiteralPath (Join-Path $destDir 'spec.md') -PathType Leaf) { 'atualizar' } else { 'reuse' }
+        } elseif (-not [string]::IsNullOrWhiteSpace($Dir)) {
             $destDir = Join-Path $phases ([System.IO.Path]::GetFileName($Dir))
             if (-not (Test-Path -LiteralPath $destDir) -or -not (Get-Item -LiteralPath $destDir).PSIsContainer) {
                 throw "FASE_AUSENTE: .vibeflow/phases/$([System.IO.Path]::GetFileName($Dir)) não existe."
@@ -237,30 +273,28 @@ function Invoke-Spec {
 
         $destFile = Join-Path $destDir 'spec.md'
         $destName = [System.IO.Path]::GetFileName($destDir)
-        $rel = ".vibeflow/phases/$destName"
+        $rel = if ($Mvp) { '.vibeflow/mvp' } else { ".vibeflow/phases/$destName" }
         if (Test-Path -LiteralPath (Join-Path $destDir 'plan.md')) {
             if ($createdDir -and -not (Get-ChildItem -LiteralPath $destDir -Force)) {
                 Remove-Item -LiteralPath $destDir -Force
             }
-            throw "SPEC_JA_PLANEJADA: $destName já tem plan.md. Não pise. Pedido novo = outra fase."
+            throw "SPEC_JA_PLANEJADA: $destName já tem plan.md. Não pise. Pedido novo = outra phase."
         }
 
+        $tempFile = Join-Path $destDir ('.spec-' + [System.IO.Path]::GetRandomFileName())
         try {
-            Copy-Item -LiteralPath $wip -Destination $destFile -Force
+            Copy-Item -LiteralPath $wip -Destination $tempFile
             $srcHash = Get-Sha256File $wip
-            $dstHash = Get-Sha256File $destFile
+            $dstHash = Get-Sha256File $tempFile
             $srcLen = (Get-Item -LiteralPath $wip).Length
-            $dstLen = (Get-Item -LiteralPath $destFile).Length
+            $dstLen = (Get-Item -LiteralPath $tempFile).Length
             if ($srcHash -ne $dstHash -or $srcLen -ne $dstLen) {
-                Remove-Item -LiteralPath $destFile -Force
-                if ($createdDir -and -not (Get-ChildItem -LiteralPath $destDir -Force)) {
-                    Remove-Item -LiteralPath $destDir -Force
-                }
                 throw 'COPY_HASH_MISMATCH: a cópia do wip não bateu com o original.'
             }
+            [System.IO.File]::Move($tempFile, $destFile, $true)
         } catch {
+            if (Test-Path -LiteralPath $tempFile) { Remove-Item -LiteralPath $tempFile -Force }
             if ($createdDir) {
-                if (Test-Path -LiteralPath $destFile) { Remove-Item -LiteralPath $destFile -Force }
                 if ((Test-Path -LiteralPath $destDir) -and -not (Get-ChildItem -LiteralPath $destDir -Force)) {
                     Remove-Item -LiteralPath $destDir -Force
                 }
@@ -269,16 +303,21 @@ function Invoke-Spec {
         }
         Remove-Item -LiteralPath $wip -Force
         $actions.Add([pscustomobject]@{ op = 'promover_wip'; alvo = "$rel/spec.md" })
-        $listed = Get-PhaseList $phases
-        $existing = @($listed.existing)
-        foreach ($w in $listed.warnings) { $warnings.Add($w) }
-        $nextN = 1
-        if ($existing.Count -gt 0) { $nextN = [int]$existing[-1].n + 1 }
-        $resolved = Get-Alvo $existing
-        $alvoItem = $resolved.item
-        $modoSugerido = $resolved.modo
-        foreach ($item in $existing) {
-            if ($item.dir -eq $destName) { $created = $item; break }
+        if ($Mvp) {
+            $mvpMap = Get-MvpMap $vf
+            $created = $mvpMap
+        } else {
+            $listed = Get-PhaseList $phases
+            $existing = @($listed.existing)
+            foreach ($w in $listed.warnings) { $warnings.Add($w) }
+            $nextN = 1
+            if ($existing.Count -gt 0) { $nextN = [int]$existing[-1].n + 1 }
+            $resolved = Get-Alvo $existing
+            $alvoItem = $resolved.item
+            $modoSugerido = $resolved.modo
+            foreach ($item in $existing) {
+                if ($item.dir -eq $destName) { $created = $item; break }
+            }
         }
     }
 
@@ -291,16 +330,18 @@ function Invoke-Spec {
 
     $payload = @{
         root                = "$repo"
+        rota                = $(if ($Mvp) { 'mvp' } else { 'phase' })
         vibeflow            = 'ok'
         phases              = "$phState"
         next_n              = [int]$nextN
         existing            = $mapped.ToArray()
         interview_pendente  = ConvertTo-PhaseMap (Get-InterviewPendente $existing)
         rascunho            = ConvertTo-PhaseMap (Get-Rascunho $existing)
-        alvo                = ConvertTo-PhaseMap $alvoItem
-        modo_sugerido       = "$modoSugerido"
+        alvo                = $(if ($Mvp) { $mvpMap } else { ConvertTo-PhaseMap $alvoItem })
+        mvp                 = $mvpMap
+        modo_sugerido       = $(if ($Mvp -and $mvpMap.files -contains 'spec.md') { 'atualizar' } elseif ($Mvp) { 'reuse' } else { "$modoSugerido" })
         wip                 = "$wipState"
-        created             = ConvertTo-PhaseMap $created
+        created             = $(if ($Mvp) { $created } else { ConvertTo-PhaseMap $created })
         modo                = $modo
         actions             = $actions.ToArray()
         avisos              = $warnings.ToArray()

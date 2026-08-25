@@ -1,129 +1,139 @@
 ---
 name: vibe-plan
 description: >
-  Fatia a spec em tasks verificáveis e grava .vibeflow/phases/phase-N-slug/plan.md.
+  Fatia a spec em tasks verificáveis e grava em `.vibeflow/phases/phase-N-slug/plan.md` ou `.vibeflow/mvp/plan.md`.
   Use when the user runs /vibe-plan, pede plan, fatiar a spec, criar tasks,
-  todo, ordem de execução, ou a rota é high/xhigh/max com spec em disco —
+  todo, ordem de execução, ou a rota é high/xhigh/max com spec em disco,
   mesmo que não diga vibe-plan.
 ---
 
 # vibe-plan
 
-Não invente `n`. Sem spec na pasta, não há plan. Sem `.vibeflow/`: `/vibe-init`.
-Um arquivo. Não escreva código. Open Questions no disco = defeito.
+Não invente `n`, slug ou path. Sem spec aprovada no alvo, não há plan. Sem `.vibeflow/`, pare e mande `/vibe-init`.
+Um único arquivo. Não escreva código nesta skill. Open Questions no arquivo é defeito.
+No MVP, preserve a ação e os IDs das decisões críticas nas tasks que as implementam.
 
-## 0. Script primeiro
 
-1. Resolva o diretório desta skill.
+## 0. Entender e usar o script
+
+1. Resolva o diretório desta skill e leia o motor que vai executar: `scripts/plan.ps1` no Windows ou `scripts/plan.py` no fluxo Unix. Entenda seleção de alvo, recusas e promoção atômica temporária antes de chamá-lo. Se encontrar defeito, corrija o motor e prove o contrato antes de continuar.
 2. No cwd do repo:
-   - Windows: `pwsh "<skill>/scripts/plan.ps1"`
-   - Unix: `bash "<skill>/scripts/plan.sh"` (Python 3, senão pwsh 7)
-3. Leia `.vibeflow/plan-report.json`. Se `alvo`, leia `spec.md` (obrigatório), `interview.md` se houver, `plan.md` se rascunho. Leia `.vibeflow/REGRAS.md`. Paths só os que a spec citou.
+   - Windows: `pwsh "<skill>/scripts/plan.ps1"`.
+   - Unix: `bash "<skill>/scripts/plan.sh"`.
+   - Alvo MVP: acrescente `-Mvp` ou `--mvp`.
+3. Leia `.vibeflow/plan-report.json` como evidência operacional. Abra `spec.md` (obrigatório), `interview.md` se houver e `plan.md` se rascunho. Leia `.vibeflow/REGRAS.md` e os caminhos do projeto necessários para desenhar a ordem de execução.
 
-`INIT_AUSENTE` → init. `PLAN_SEM_SPEC` → `/vibe-spec`. `PLAN_JA_ANALISADO` / `FASE_AUSENTE` → não contorne.
+Erros determinísticos previstos: `INIT_AUSENTE` exige `/vibe-init`. `PLAN_SEM_SPEC` exige spec prévia. `MVP_INESPERADO`, `MODO_INVALIDO`, `PLAN_JA_ANALISADO` e `FASE_AUSENTE` exigem diagnosticar a causa e não devem ser contornados.
 
-## 1. Abrir (5 linhas)
+## 1. Abrir
 
-modo · alvo · spec · status-spec · wip
+Declare em cerca de cinco linhas: rota, modo, alvo, spec, status da spec e wip.
 
-```
+```text
 modo: reuse · alvo: phase-1-lock-bloco · spec: sim · spec-status: aprovado · wip: ausente
 ```
 
-`modo_sugerido=criar` = não há pasta com spec. Não invente fase.
+- `modo_sugerido=criar`: não há pasta com spec. Não invente fase; mande `/vibe-spec`.
+- `rota=mvp`: alvo fixo `.vibeflow/mvp`, sem `--dir`; a spec precisa estar aprovada e declarar as decisões críticas.
 
 ## 2. Gate
 
-| | Ação |
+| Sinal | Ação |
 |---|---|
-| Typo / uma linha óbvia | **Não** usar |
-| Sem `spec.md` na alvo | **Para.** Mande `/vibe-spec` |
-| Spec `# Status: rascunho` e o humano pediu **esta** skill / o plan | Flip a spec para `aprovado` (1 linha no chat) e siga |
-| Spec rascunho **sem** pedido de plan | **Para.** Peça leitura da spec |
-| Intenção/sucesso/fora frouxos | Devolve interview/spec. Não complete no chute |
-| Buraco pontual de ordem | Q+RECOMENDO, uma por vez |
-| `analyze.md` na alvo | Não pisa |
+| Typo ou uma linha óbvia | Não usar plan |
+| Sem `spec.md` no alvo | Parar. Encaminhar para `/vibe-spec` |
+| Spec `# Status: rascunho` e o humano pediu o plan | Alterar a spec para `aprovado` diretamente no arquivo (1 linha no chat) e seguir |
+| Spec rascunho sem pedido de plan | Parar. Pedir leitura e aprovação da spec |
+| Intenção, sucesso ou limites frouxos | Devolver para `vibe-interview` ou `vibe-spec`. Não completar no chute |
+| Dúvida pontual de ordem técnica | Resolver via chat (Q + RECOMENDO) |
+| `analyze.md` já existente no alvo | Não sobrescrever. Pedido novo exige outra fase |
 
-```
+```text
 Q: <decisão que trava o fatiamento>
-RECOMENDO: <opção> — <1 linha>
+RECOMENDO: <opção>, <1 linha explicando o porquê e impacto>
 (ok / outra?)
 ```
 
-## 3. Conferência (antes de fatiar)
+## 3. Conferência de Pré-requisitos e Ferramentas
 
-A spec aguenta? Se faltar, Q+RECOMENDO ou devolve spec. Não crie `checklists/`.
+Antes de fatiar, audite a spec e o ambiente:
 
-- A*/C* observáveis, não adjetivo
-- Fora real
-- UI user-visible → direção visual fechada
-- Paths/comandos da spec existem ou foram topados
+
+1. **Spec sólida:** A*/C* observáveis, limites claros de Fora, direção visual definida se houver UI, caminhos existentes ou acordados.
+2. **Validação de Ferramentas de Teste e Suporte:**
+   - **Gitleaks:** Se o repositório/CI prevê varredura de segredos ou verificação de credenciais, verificar se o executável `gitleaks` está disponível no ambiente. Se ausente, o plano DEVE alocar uma task inicial (ex.: T1 de setup) para instalar/configurar o gitleaks.
+   - **MCP chrome-devtools:** Se a entrega envolver frontend, interface web, renderização DOM ou testes de ponta a ponta em navegador, verificar se o MCP `chrome-devtools` está disponível. Se ausente, alocar uma task inicial para instalação/configuração do MCP.
+   - Outras dependências críticas de teste e execução devem ser identificadas previamente para garantir que os comandos de verificação sejam executáveis.
+3. **Decisões críticas (MVP):** Toda decisão da spec possui ação explícita e as tasks correspondentes citam seus IDs.
 
 ## 4. Fatiar
 
-Fatia **vertical** (um caminho usável), não horizontal (DB inteiro → API inteira → UI).
+Fatia **vertical** (um caminho usável de ponta a ponta), nunca horizontal (ex.: criar todas as tabelas, depois toda a API, depois toda a UI).
 
 | Size | Files | Ação |
 |---|---|---|
 | low | 1 | Uma T* |
-| medium | 1–2 | Uma T* |
-| high | 3–5 | Uma T* |
-| xhigh / max | 5+ ou risco alto | Quebrar agora |
+| medium | 1 a 2 | Uma T* |
+| high | 3 a 5 | Uma T* |
+| xhigh / max | 5+ ou alto risco | Quebrar obrigatoriamente |
 
-Quebre se: >1 sessão focada; aceite >3 bullets; 2+ subsistemas independentes; “e” no título.
+Quebre se: mais de uma sessão focada; aceite com mais de 3 bullets; múltiplos subsistemas independentes; "e" no título.
 
-Cada T*: o quê, `Spec: A*/C*`, aceite testável, verificação (comando do repo), deps, arquivos prováveis, size.
+### Regras das Tasks:
 
-Verificação só manual recusa: Q ou volte a fatiar. Pelo menos um comando do repo (já existe ou topado na spec). Leitura de arquivo não conta.
+1. **Walking Skeleton / Smoke Test Inicial:** A primeira task funcional (T1 ou logo após o setup de ferramentas) deve validar o ponto de entrada real (subir a aplicação, executar `--help` no CLI ou rodar o bootstrap inicial).
+2. **Estrutura de cada T\*:** Título com verbo + outcome, `Spec: A*/C*`, aceite testável, verificação com comando real do repo, dependências explícitas (`Deps`), arquivos prováveis e `Size`.
+3. **Decisões Críticas:** Quando a task implementar ou substituir decisão crítica, adicionar `Decisões: <ID> (<ação>)`.
+4. **Comandos de Verificação Reais:** Toda task exige pelo menos um comando de teste executável no repositório. Teste apenas manual recusa o aceite; leitura de arquivo não conta como verificação.
+5. **Dependências (`Deps`):** Declarar apenas dependências reais de execução. Fatias independentes usam `Deps: nenhuma`.
+6. **Checkpoints:** A cada 2 ou 3 tasks, definir checkpoint com a suíte de testes do grupo e fluxo integrado observável.
+7. **UI Greenfield:** Criar uma task de tokens/kit antes das telas caso não haja Design System já existente.
+8. **Banco de Dados e Migrations:** Alocar migrations e schemas dentro das respectivas fatias verticais (`T*`) que os consom, com comandos executáveis de migration e seed mínimo para testes. Migrations devem ser não destrutivas (padrão expand/contract).
 
-Deps reais. Fatias independentes: `Deps: nenhuma` nas duas. Ordem de id não substitui Deps.
+IDs estáveis: `T1`, `T2`, `T3`... em ordem sequencial. Sem prefixos arbitrários como `T001`, `[P]` ou `[US1]`.
 
-Checkpoint: suite das T* do grupo; fluxo extra só se o caminho observável atravessa mais de uma T*; senão omita o segundo bullet.
+## 5. Escrever e Salvar
 
-Ordem: deps primeiro; alto risco cedo; checkpoint a cada 2–3 T*.
+Wip: `.vibeflow/plan-wip.md`. Molde: `templates/plan.md`. Status inicial: `rascunho`.
+Não pergunte se pode salvar e não cole o corpo do documento no chat.
 
-UI greenfield / sem DS na spec: uma T* de tokens/kit **antes** das telas. Reuso de DS → não crie essa T*.
+1. Preencha o wip. Omita seções não aplicáveis.
+2. Execute o apply:
+   - Modo phase:
+     `pwsh "<skill>/scripts/plan.ps1" -Apply`
+     `bash "<skill>/scripts/plan.sh" --apply`
+   - Modo MVP:
+     `pwsh "<skill>/scripts/plan.ps1" -Apply -Mvp`
+     `bash "<skill>/scripts/plan.sh" --apply --mvp`
+3. Responda no chat apenas:
 
-Paralelo: fatias independentes. Sequencial: migration, estado compartilhado. Contrato primeiro, depois lados.
-
-IDs `T1`, `T2`… na ordem de execução. Sem `T001`, `[P]`, `[US1]`, `tasks.md` ou mural de user story.
-
-Não copie a spec. Não invente módulo.
-
-## 5. Escrever e salvar já
-
-Wip = `.vibeflow/plan-wip.md`. Molde: `templates/plan.md`. Status `rascunho`.
-Não pergunte se pode salvar. Não cole o corpo no chat.
-
-1. Preencha o wip. Omita seção N/A.
-2. `pwsh "<skill>/scripts/plan.ps1" -Apply` (Unix: `plan.sh --apply`). `--dir` só se o relatório não acertar a pasta.
-3. Chat, **só**:
-
-```
-Plan gravado: .vibeflow/phases/phase-N-slug/plan.md
+```text
+Plan gravado: <created.path>/plan.md
 
 - Overview: <1 linha>
-- Ordem: Fase 1 … → Fase 2 … (N tasks, checkpoints em …)
-- Riscos altos: <0–2 linhas ou nenhum>
-- Primeira T*: <título>
+- Ordem: Fase 1 ... → Fase 2 ... (N tasks, checkpoints em ...)
+- Ferramentas essenciais: <gitleaks / chrome-devtools validados ou task de setup alocada>
+- Primeira T*: <título do smoke test / walking skeleton>
 
-Leia o arquivo. Ok: **aprovado** (ou “pode ir pro implement”).
-Ajuste: diga o que mudar. Não reimprimo o plan aqui.
+Arquivo disponível em <created.path>/plan.md. Responda "aprovado" para confirmar, "pode ir pro implement" (ou "pode ir para a próxima fase") para avançar imediatamente, ou indique os ajustes desejados.
 ```
 
-## 6. Ajuste ou aprovação
+## 6. Ajuste ou Aprovação
 
 | Resposta | Ação |
 |---|---|
-| aprovado / “pode ir pro implement” / pede código / `vibe-implement` | `# Status: aprovado` no vivo; §7 |
-| pedido de alteração | Patch **só** no arquivo; ≤5 bullets; re-peça leitura |
-| “parece bom” sem pedir implement | “Aprovado no arquivo, ou quer ajustar?” |
-| spec/intenção quebrou | Devolve spec/interview. Não force implement |
+| Aprovado (sem pedir próxima porta) | Alterar `# Status: aprovado` diretamente no vivo; parar e aguardar próximo comando |
+| "Pode ir pro implement" / "pode ir para a próxima fase" / pede código / `vibe-implement` | Alterar `# Status: aprovado` no vivo; iniciar imediatamente `vibe-implement` (ou `vibe-analyze` se rota MVP) |
+| Pedido de alteração | Patch direto no arquivo vivo; até 5 bullets no chat; solicitar nova conferência |
+| "Parece bom" sem pedir implementação | Perguntar: "Aprovado no arquivo ou deseja algum ajuste?" |
+| Spec ou intenção quebrou | Devolver para `vibe-spec` ou `vibe-interview`. Não forçar implementação |
 
-Rascunho sem “aprovado” e sem pedido da próxima porta **não** autoriza código.
+Rascunho sem "aprovado" e sem pedido da próxima porta não autoriza iniciar o código.
 
 ## 7. Fechar
 
-Não commita. Avise: commitar `.vibeflow/phases/phase-N-slug/plan.md`. Não commitar `plan-report.json` nem `plan-wip.md`.
-Handoff no arquivo: `vibe-implement`. **Não** dispare a skill. Zero implementação nesta run.
+Não commite no git. Não dispare a próxima skill a menos que o usuário tenha pedido explicitamente para avançar (§6).
+Informe que o arquivo `plan.md` entra no git e que `plan-report.json` e `plan-wip.md` ficam de fora.
+Handoff normal: `vibe-implement`. Handoff MVP: `vibe-analyze` (pois o modo max exige análise antes do código).
+Zero código nesta execução.
 

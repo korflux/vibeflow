@@ -6,6 +6,7 @@ ROOT=""
 APPLY=0
 SLUG=""
 DIR=""
+MVP=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -13,7 +14,8 @@ while [[ $# -gt 0 ]]; do
     --apply) APPLY=1; shift ;;
     --slug) SLUG="$2"; shift 2 ;;
     --dir) DIR="$2"; shift 2 ;;
-    *) echo "uso: review.sh [--root DIR] [--apply [--dir PASTA] [--slug SLUG]]" >&2; exit 2 ;;
+    --mvp) MVP=1; shift ;;
+    *) echo "uso: review.sh [--root DIR] [--apply] [--dir PASTA] [--slug SLUG] [--mvp]" >&2; exit 2 ;;
   esac
 done
 
@@ -31,6 +33,7 @@ if [[ -n "$PYTHON_BIN" ]]; then
   [[ "$APPLY" -eq 1 ]] && args+=(--apply)
   [[ -n "$SLUG" ]] && args+=(--slug "$SLUG")
   [[ -n "$DIR" ]] && args+=(--dir "$DIR")
+  [[ "$MVP" -eq 1 ]] && args+=(--mvp)
   exec "$PYTHON_BIN" "$(dirname "$0")/review.py" "${args[@]}"
 fi
 
@@ -40,6 +43,7 @@ if command -v pwsh >/dev/null 2>&1 && pwsh -NoProfile -Command 'exit [int]($PSVe
   [[ "$APPLY" -eq 1 ]] && args+=(-Apply)
   [[ -n "$SLUG" ]] && args+=(-Slug "$SLUG")
   [[ -n "$DIR" ]] && args+=(-Dir "$DIR")
+  [[ "$MVP" -eq 1 ]] && args+=(-Mvp)
   exec pwsh -NoProfile -ExecutionPolicy Bypass -File "$(dirname "$0")/review.ps1" "${args[@]}"
 fi
 

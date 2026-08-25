@@ -133,6 +133,36 @@ class PythonContracts(unittest.TestCase):
         self.assertNotEqual(0, process.returncode)
         self.assertIn("PHASES_INESPERADO", process.stderr)
 
+    def test_mvp_requires_complete_predecessors(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        mvp = vf / "mvp"
+        mvp.mkdir()
+        (mvp / "spec.md").write_text("s\n", encoding="utf-8")
+        (mvp / "plan.md").write_text("p\n", encoding="utf-8")
+        process, _ = invoke(self.repo, "--mvp", check=False)
+        self.assertNotEqual(0, process.returncode)
+        self.assertIn("ANALYZE_SEM_INTERVIEW", process.stderr)
+
+    def test_mvp_apply_reuses_special_target(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        mvp = vf / "mvp"
+        mvp.mkdir()
+        for name in ("interview.md", "spec.md", "plan.md"):
+            (mvp / name).write_text(f"{name}\n", encoding="utf-8")
+        (vf / "analyze-wip.md").write_bytes(b"# analyze MVP\n\x00")
+        _, report = invoke(self.repo, "--apply", "--mvp")
+        self.assertEqual(b"# analyze MVP\n\x00", (mvp / "analyze.md").read_bytes())
+        self.assertFalse((vf / "analyze-wip.md").exists())
+        self.assertEqual("mvp", report["rota"])
+        self.assertEqual("mvp", report["created"]["kind"])
+        self.assertEqual([], [item.name for item in (vf / "phases").iterdir() if item.is_dir()])
+
+    def test_mvp_rejects_dir(self) -> None:
+        seed_vibeflow(self.repo)
+        process, _ = invoke(self.repo, "--mvp", "--dir", "phase-1-x", check=False)
+        self.assertNotEqual(0, process.returncode)
+        self.assertIn("MODO_INVALIDO", process.stderr)
+
 
 
 # Verifica se existe uma versão real de PowerShell 7, única suportada pelo motor gêmeo.
@@ -173,6 +203,42 @@ class PowershellParity(unittest.TestCase):
         self.assertEqual("# analyze\n", dest.read_text(encoding="utf-8"))
         self.assertTrue((phase / "plan.md").is_file())
         self.assertFalse((vf / "analyze-wip.md").exists())
+
+    def test_mvp_apply_same_path(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        mvp = vf / "mvp"
+        mvp.mkdir()
+        for name in ("interview.md", "spec.md", "plan.md"):
+            (mvp / name).write_text(f"{name}\n", encoding="utf-8")
+        (vf / "analyze-wip.md").write_text("# MVP\n", encoding="utf-8")
+        process = subprocess.run(
+            [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo), "-Apply", "-Mvp"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(0, process.returncode, process.stderr)
+        self.assertEqual("# MVP\n", (mvp / "analyze.md").read_text(encoding="utf-8"))
+        report = json.loads((vf / "analyze-report.json").read_text(encoding="utf-8"))
+        self.assertEqual("mvp", report["created"]["kind"])
+
+
+class TemplateContracts(unittest.TestCase):
+    """Trava os contratos de varredura cruzada e qualidade de testes."""
+
+    def test_skill_requires_quality_and_decisions(self) -> None:
+        skill = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("smoke test", skill.lower())
+        self.assertIn("gitleaks", skill.lower())
+        self.assertIn("chrome-devtools", skill.lower())
+        self.assertIn("substitui", skill.lower())
+        self.assertIn("CRITICAL", skill)
+
+    def test_coverage_reference_includes_quality_and_decisions(self) -> None:
+        coverage = (SKILL_DIR / "references" / "coverage.md").read_text(encoding="utf-8")
+        self.assertIn("qualidade_teste", coverage)
+        self.assertIn("decisao", coverage)
+        self.assertIn("smoke test", coverage.lower())
 
 
 if __name__ == "__main__":

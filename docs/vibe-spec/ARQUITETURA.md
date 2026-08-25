@@ -1,12 +1,13 @@
-# vibe-spec — arquitetura
+# vibe-spec, arquitetura
 
-`/vibe-spec` grava o **decidido** em disco para o plan não inventar comportamento. O script inventaria e promove o wip. A IA fecha seams no chat e escreve o markdown.
+`/vibe-spec` grava o **decidido** em disco para o plan não inventar comportamento. A IA pilota a run, entende o motor, escolhe a rota e fecha seams; o script inventaria evidências e promove bytes de forma determinística e verificada.
 
 ```
 .vibeflow/phases/phase-<n>-<slug>/spec.md
+.vibeflow/mvp/spec.md
 ```
 
-Mesma pasta da interview quando ela existir. Esta skill **não** aloca `n` novo se já há alvo. `next_n` só na abertura de pedido sem fase.
+O alvo phase mantém o contrato atual. O alvo MVP é explícito, exige `.vibeflow/mvp/interview.md`, não usa `n`, slug ou dir e nunca cria phase.
 
 ---
 
@@ -14,13 +15,14 @@ Mesma pasta da interview quando ela existir. Esta skill **não** aloca `n` novo 
 
 | Peça | Onde | Faz |
 |---|---|---|
-| Skill | `vibe-spec/SKILL.md` | Gate, Q+RECOMENDO, texto da spec, aprovação, handoff |
-| Scripts | `vibe-spec/scripts/spec.ps1`, `spec.py`, `spec.sh` | Inventário, alvo, promove wip → `spec.md` |
-| Template | `vibe-spec/templates/spec.md` | Esqueleto. Script não preenche prosa |
-| Referência | `vibe-spec/references/ui-visual-direction.md` | Só se UI user-visible |
-| Relatório | `.vibeflow/spec-report.json` | Contrato script → IA (gitignored) |
-| Wip | `.vibeflow/spec-wip.md` | Rascunho até o apply (gitignored) |
-| Vivo | `.vibeflow/phases/phase-N-slug/spec.md` | Depois do apply. Commitável |
+| IA | Piloto | Entende o motor, conduz o gate, fecha seams pontuais, audita resultados e decide a semântica |
+| Skill | `vibe-spec/SKILL.md` | Orienta a IA com invariantes, gates, critério de aprovação e handoff |
+| Scripts | `vibe-spec/scripts/spec.ps1`, `spec.py`, `spec.sh` | Ferramenta determinística: inventário mecânico, resolução de alvo e promoção atômica do wip |
+| Template | `vibe-spec/templates/spec.md` | Esqueleto do artefato. O script não preenche prosa |
+| Referência | `vibe-spec/references/ui-visual-direction.md` | Guia de direção visual consultado apenas se houver UI |
+| Relatório | `.vibeflow/spec-report.json` | Evidência operacional estruturada (gitignored) |
+| Wip | `.vibeflow/spec-wip.md` | Rascunho temporário até o apply (gitignored) |
+| Vivo | `.vibeflow/phases/phase-N-slug/spec.md` ou `.vibeflow/mvp/spec.md` | Artefato permanente pós-apply. Commitável |
 
 Install: `npx skills` ou marketplace (README). Pacote sem `docs/`. Fonte canônica: `vibe-spec/`.
 
@@ -38,7 +40,7 @@ Sem `.vibeflow/` → `INIT_AUSENTE`. `/vibe-init` primeiro.
 
 Pasta que bate `^phase-(\d+)-([a-z0-9]+(?:-[a-z0-9]+)*)$`.
 
-O relatório expõe três ponteiros:
+O relatório expõe três ponteiros como evidência:
 
 | Campo | Significa |
 |---|---|
@@ -60,17 +62,34 @@ Resolução de `alvo` (primeira que existir):
 
 ## 4. Fluxo
 
+A IA inicia entendendo o pedido, os arquivos relevantes do projeto e o motor que executará.
+
+### 4.1 Alvo MVP
+
+`--mvp` no Python/launcher e `-Mvp` no PowerShell selecionam `.vibeflow/mvp/`. A flag representa decisão semântica da IA; o script não tenta detectar um MVP por conta própria.
+
+- `mvp` ausente ou arquivo: `MVP_INTERVIEW_AUSENTE` ou `MVP_INESPERADO`.
+- `mvp/interview.md` ausente: `MVP_INTERVIEW_AUSENTE`.
+- `mvp/plan.md` presente: `SPEC_JA_PLANEJADA`.
+- `--mvp` combinado com slug ou dir: `MODO_INVALIDO`.
+- Apply grava `mvp/spec.md` com substituição temporária verificada, confere tamanho e SHA-256 e remove o wip apenas no sucesso.
+- O relatório acrescenta `rota: "mvp"`, `mvp.kind: "mvp"` e `alvo` apontando o objeto MVP. Objetos phase recebem `kind: "phase"`.
+
+No artefato MVP, decisões críticas preservam IDs da interview e declaram `mantém`, `cria` ou `substitui`. A spec não altera `REGRAS.md`; publicação só ocorre depois da review humana aprovada.
+
 ```
-[1] SCRIPT inventário → spec-report.json
-[2] IA lê relatório + interview.md da alvo (se houver) + spec.md se rascunho
-[3] Gate + seams no chat
-[4] Wip completo (template)
-[5] SCRIPT apply
-[6] Humano lê o arquivo → ajuste ou aprovado
-[7] Fecha. Não commita. Não dispara plan
+[1] IA entende o motor, seus parâmetros e invariantes
+[2] SCRIPT executa inventário → spec-report.json
+[3] IA audita relatório, lê interview.md da alvo (se houver), spec.md se rascunho, REGRAS.md e caminhos necessários
+[4] IA valida Gate e resolve dúvidas pontuais de desenho via chat (Q + RECOMENDO)
+[5] IA grava spec-wip.md conforme templates/spec.md (Status: rascunho)
+[6] SCRIPT apply promove wip → spec.md com verificação atômica de integridade
+[7] Humano lê o arquivo vivo → solicitação de ajuste ou aprovação
+[8] IA fecha a run. Não commita. Não dispara plan automaticamente
 ```
 
-Depois do spec.md existir, ajuste e flip de Status editam o vivo. Sem apply de novo.
+Depois do `spec.md` existir, ajuste e flip de Status editam o vivo diretamente. Sem apply de novo.
+
 
 ---
 
@@ -92,7 +111,7 @@ Zero prosa.
 | `actions[]` | ex. `criar_phases` |
 | `avisos[]` | nomes fora do padrão |
 
-`files` só: `interview.md`, `spec.md`, `plan.md`, `analyze.md`.
+`files` só: `interview.md`, `spec.md`, `plan.md`, `analyze.md`, `implement.md`, `review.md`.
 
 ---
 
@@ -122,7 +141,14 @@ Ordem:
 12. Garante `.gitignore`: `spec-report.json`, `spec-wip.md`. Não remove entradas das outras skills.
 13. Relatório com `created` e `modo` (`reuse` / `atualizar` / `criar`).
 
-Script não escreve prosa. Não escolhe slug. Não pergunta.
+Modo MVP:
+
+```text
+pwsh "<skill>/scripts/spec.ps1" -Apply -Mvp
+bash "<skill>/scripts/spec.sh" --apply --mvp
+```
+
+Script não escreve prosa, não escolhe rota ou slug e não pergunta.
 
 ---
 
@@ -155,9 +181,7 @@ Script não escreve prosa. Não escolhe slug. Não pergunta.
 }
 ```
 
-Depois do apply, `created` é a fase com `spec.md` em `files`. `modo` é o que rodou.
-
-A IA não varre o repo. Lê este JSON, `interview.md` / `spec.md` da alvo, `REGRAS.md`, paths citados.
+O relatório serve como evidência operacional. A IA lê o JSON, `interview.md` e/ou `spec.md` do alvo, `REGRAS.md` e os arquivos do código necessários de forma direcionada, sem varredura cega da árvore.
 
 ---
 
@@ -204,10 +228,11 @@ Suíte: `docs/vibe-spec/tests/test-spec.py`. Launcher: `docs/vibe-spec/tests/tes
 
 ## 10. Limites de contrato
 
-- Grava um arquivo só: `.vibeflow/phases/phase-N-slug/spec.md`. Sem `docs/`, `specs/`, sem branch `###-feature`.
+- Grava um arquivo só no alvo explícito: `.vibeflow/phases/phase-N-slug/spec.md` ou `.vibeflow/mvp/spec.md`. Sem `docs/`, `specs/`, sem branch `###-feature`.
 - `next_n` é proibido enquanto houver `interview_pendente`.
 - Não apaga `interview.md`. Não pisa pasta com `plan.md`.
 - Fecha comportamento e aceite, não forma: sem `FR-00N`, mural de user story ou CSS/paleta.
+- No MVP, exige interview anterior, preserva IDs críticos e nunca atualiza decisões vigentes.
 
 Backlog e decisões de escopo: [`docs/ESCOPO.md`](../ESCOPO.md).
 

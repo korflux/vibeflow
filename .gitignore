@@ -3,4 +3,8 @@
 *.log
 Thumbs.db
 .DS_Store
-.vibeflow/init-report.json
+__pycache__/
+*.pyc
+.vibeflow/*-report.json
+.vibeflow/*-pending.json
+.vibeflow/*-wip.md

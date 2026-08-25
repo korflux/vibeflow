@@ -59,6 +59,9 @@ class PythonContracts(unittest.TestCase):
         seed_vibeflow(self.repo)
         _, report = invoke(self.repo)
         self.assertEqual(1, report["next_n"])
+        self.assertEqual("phase", report["modo"])
+        self.assertIsNone(report["mvp"])
+        self.assertIsNone(report["alvo"])
         self.assertTrue((self.repo / ".vibeflow" / "phases" / ".gitkeep").is_file())
         self.assertEqual("criar_phases", report["actions"][0]["op"])
 
@@ -97,6 +100,7 @@ class PythonContracts(unittest.TestCase):
         self.assertEqual("# trilha\n", dest.read_text(encoding="utf-8"))
         self.assertFalse((vf / "interview-wip.md").exists())
         self.assertEqual("phase-1-dashboard-standup", report["created"]["dir"])
+        self.assertEqual("phase", report["created"]["kind"])
         self.assertEqual(2, report["next_n"])
         self.assertEqual("phase-1-dashboard-standup", report["aberta"]["dir"])
 
@@ -154,6 +158,44 @@ class PythonContracts(unittest.TestCase):
         self.assertNotEqual(0, process.returncode)
         self.assertIn("PHASES_INESPERADO", process.stderr)
 
+    def test_mvp_apply_promotes_without_creating_phase(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        source = b"# MVP\n\x00trilha\n"
+        (vf / "interview-wip.md").write_bytes(source)
+        _, report = invoke(self.repo, "--apply", "--mvp")
+        dest = vf / "mvp" / "interview.md"
+        self.assertEqual(source, dest.read_bytes())
+        self.assertFalse((vf / "interview-wip.md").exists())
+        self.assertEqual("mvp", report["modo"])
+        self.assertEqual("mvp", report["created"]["kind"])
+        self.assertEqual(".vibeflow/mvp", report["alvo"]["path"])
+        self.assertEqual([], [item.name for item in (vf / "phases").iterdir() if item.is_dir()])
+
+    def test_mvp_second_apply_refuses_overwrite_and_preserves_wip(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        (vf / "interview-wip.md").write_text("primeiro\n", encoding="utf-8")
+        invoke(self.repo, "--apply", "--mvp")
+        original = (vf / "mvp" / "interview.md").read_bytes()
+        (vf / "interview-wip.md").write_text("segundo\n", encoding="utf-8")
+        process, _ = invoke(self.repo, "--apply", "--mvp", check=False)
+        self.assertNotEqual(0, process.returncode)
+        self.assertIn("MVP_EXISTE", process.stderr)
+        self.assertEqual(original, (vf / "mvp" / "interview.md").read_bytes())
+        self.assertEqual("segundo\n", (vf / "interview-wip.md").read_text(encoding="utf-8"))
+
+    def test_mvp_path_as_file_is_unexpected(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        (vf / "mvp").write_text("não é pasta", encoding="utf-8")
+        process, _ = invoke(self.repo, "--mvp", check=False)
+        self.assertNotEqual(0, process.returncode)
+        self.assertIn("MVP_INESPERADO", process.stderr)
+
+    def test_mvp_rejects_slug(self) -> None:
+        seed_vibeflow(self.repo)
+        process, _ = invoke(self.repo, "--mvp", "--slug", "produto", check=False)
+        self.assertNotEqual(0, process.returncode)
+        self.assertIn("MODO_INVALIDO", process.stderr)
+
 
 
 # Verifica se existe uma versão real de PowerShell 7, única suportada pelo motor gêmeo.
@@ -197,6 +239,29 @@ class PowershellParity(unittest.TestCase):
         self.assertTrue(dest.is_file())
         self.assertEqual("# trilha\n", dest.read_text(encoding="utf-8"))
         self.assertFalse((vf / "interview-wip.md").exists())
+
+    def test_mvp_apply_same_path(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        (vf / "interview-wip.md").write_text("# MVP\n", encoding="utf-8")
+        process = subprocess.run(
+            [powershell7(),
+                "-File",
+                str(POWERSHELL_SCRIPT),
+                "-Root",
+                str(self.repo),
+                "-Apply",
+                "-Mvp",
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(0, process.returncode, process.stderr)
+        dest = vf / "mvp" / "interview.md"
+        self.assertEqual("# MVP\n", dest.read_text(encoding="utf-8"))
+        self.assertFalse((vf / "interview-wip.md").exists())
+        report = json.loads((vf / "interview-report.json").read_text(encoding="utf-8"))
+        self.assertEqual("mvp", report["created"]["kind"])
 
 
 if __name__ == "__main__":

@@ -6,10 +6,12 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import unicodedata
 from pathlib import Path
 from typing import Any
@@ -27,6 +29,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--apply", action="store_true")
     parser.add_argument("--dir")
     parser.add_argument("--slug")
+    parser.add_argument("--mvp", action="store_true")
     return parser.parse_args()
 
 
@@ -125,6 +128,7 @@ def list_phases(phases: Path) -> tuple[list[dict[str, Any]], list[str]]:
         files = [name for name in CHAIN_FILES if (child / name).is_file()]
         existing.append(
             {
+                "kind": "phase",
                 "dir": child.name,
                 "n": int(match.group(1)),
                 "slug": match.group(2),
@@ -134,6 +138,21 @@ def list_phases(phases: Path) -> tuple[list[dict[str, Any]], list[str]]:
         )
     existing.sort(key=lambda item: item["n"])
     return existing, warnings
+
+
+# Representa o alvo MVP sem inferir a rota a partir dos artefatos existentes.
+def get_mvp(vf: Path) -> dict[str, Any] | None:
+    mvp = vf / "mvp"
+    if not mvp.exists():
+        return None
+    if not mvp.is_dir():
+        raise RuntimeError("MVP_INESPERADO: .vibeflow/mvp existe, mas não é um diretório.")
+    return {
+        "kind": "mvp",
+        "dir": "mvp",
+        "path": ".vibeflow/mvp",
+        "files": [name for name in CHAIN_FILES if (mvp / name).is_file()],
+    }
 
 
 # Maior n com plan e sem review: a review da cadeia reusa esta pasta.
@@ -166,14 +185,20 @@ def resolve_alvo(
     return None, "criar"
 
 
-# Cópia binária conferida. Só apaga o review.md se esta run o criou.
+# Substitui a review somente depois de conferir uma cópia temporária, preservando etapas anteriores.
 def promote_wip(wip: Path, dest_file: Path) -> None:
-    existed = dest_file.exists()
-    dest_file.write_bytes(wip.read_bytes())
-    if dest_file.stat().st_size != wip.stat().st_size or sha256(dest_file) != sha256(wip):
-        if not existed:
-            dest_file.unlink(missing_ok=True)
-        raise RuntimeError("COPY_HASH_MISMATCH: a cópia do wip não bateu com o original.")
+    temp_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(dir=dest_file.parent, prefix=".review-", suffix=".tmp", delete=False) as stream:
+            temp_path = Path(stream.name)
+            stream.write(wip.read_bytes())
+        if temp_path.stat().st_size != wip.stat().st_size or sha256(temp_path) != sha256(wip):
+            raise RuntimeError("COPY_HASH_MISMATCH: a cópia do wip não bateu com o original.")
+        os.replace(temp_path, dest_file)
+    except Exception:
+        if temp_path:
+            temp_path.unlink(missing_ok=True)
+        raise
 
 
 # Monta o JSON que a skill lê; stdout só o path do relatório.
@@ -190,6 +215,9 @@ def write_report(vf: Path, payload: dict[str, Any]) -> Path:
 
 # Inventaria o disco e opcionalmente promove o wip para review.md.
 def run(args: argparse.Namespace) -> Path:
+    if args.mvp and (args.slug is not None or args.dir is not None):
+        raise RuntimeError("MODO_INVALIDO: o alvo MVP não aceita --slug nem --dir.")
+
     repo = repo_root(args.root)
     vf = repo / ".vibeflow"
     phases = vf / "phases"
@@ -217,6 +245,14 @@ def run(args: argparse.Namespace) -> Path:
     pending = find_plan_pendente(existing)
     draft = find_rascunho(existing)
     alvo, modo_sugerido = resolve_alvo(existing)
+    mvp = get_mvp(vf)
+    if args.mvp:
+        required = [name for name in ("interview.md", "spec.md", "plan.md", "analyze.md") if mvp is None or name not in mvp["files"]]
+        if required:
+            raise RuntimeError(f"REVIEW_CADEIA_INCOMPLETA: faltam em .vibeflow/mvp: {', '.join(required)}.")
+        alvo = mvp
+
+        modo_sugerido = "atualizar" if "review.md" in mvp["files"] else "reuse"
     created: dict[str, Any] | None = None
     modo: str | None = None
 
@@ -226,7 +262,10 @@ def run(args: argparse.Namespace) -> Path:
 
         dest_dir: Path
         created_dir = False
-        if args.dir:
+        if args.mvp:
+            dest_dir = vf / "mvp"
+            modo = modo_sugerido
+        elif args.dir:
             dest_dir = phases / Path(args.dir).name
             if not dest_dir.is_dir() or not PHASE_RE.fullmatch(dest_dir.name):
                 raise RuntimeError(
@@ -253,7 +292,7 @@ def run(args: argparse.Namespace) -> Path:
             actions.append({"op": "criar_fase", "alvo": f".vibeflow/phases/{dest_dir.name}"})
 
         dest_file = dest_dir / "review.md"
-        rel = f".vibeflow/phases/{dest_dir.name}"
+        rel = ".vibeflow/mvp" if args.mvp else f".vibeflow/phases/{dest_dir.name}"
         try:
             promote_wip(wip, dest_file)
         except Exception:
@@ -264,16 +303,23 @@ def run(args: argparse.Namespace) -> Path:
             raise
         wip.unlink()
         actions.append({"op": "promover_wip", "alvo": f"{rel}/review.md"})
-        existing, extra_warnings = list_phases(phases)
-        warnings.extend(extra_warnings)
-        next_n = (existing[-1]["n"] + 1) if existing else 1
-        pending = find_plan_pendente(existing)
-        draft = find_rascunho(existing)
-        alvo, modo_sugerido = resolve_alvo(existing)
-        created = next((item for item in existing if item["dir"] == dest_dir.name), None)
+        if args.mvp:
+            mvp = get_mvp(vf)
+            alvo = mvp
+            modo_sugerido = "atualizar"
+            created = mvp
+        else:
+            existing, extra_warnings = list_phases(phases)
+            warnings.extend(extra_warnings)
+            next_n = (existing[-1]["n"] + 1) if existing else 1
+            pending = find_plan_pendente(existing)
+            draft = find_rascunho(existing)
+            alvo, modo_sugerido = resolve_alvo(existing)
+            created = next((item for item in existing if item["dir"] == dest_dir.name), None)
 
     payload = {
         "root": str(repo),
+        "rota": "mvp" if args.mvp else "phase",
         "vibeflow": vf_state,
         "phases": ph_state,
         "next_n": next_n,
@@ -281,6 +327,7 @@ def run(args: argparse.Namespace) -> Path:
         "plan_pendente": pending,
         "rascunho": draft,
         "alvo": alvo,
+        "mvp": mvp,
         "modo_sugerido": modo_sugerido,
         "wip": "presente" if wip.is_file() else "ausente",
         "created": created,

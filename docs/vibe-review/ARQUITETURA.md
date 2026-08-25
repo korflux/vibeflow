@@ -1,9 +1,10 @@
-# vibe-review — arquitetura
+# vibe-review, arquitetura
 
-`/vibe-review` julga o patch e a cobertura pós-código e grava **um** veredito. O script inventaria e promove o wip. A IA não edita source da app nem `interview.md` / `spec.md` / `plan.md` / `analyze.md`.
+`/vibe-review` julga o patch e a cobertura pós-código e grava **um** veredito. A IA entende o motor e julga; o script inventaria e promove bytes. A review não edita source da app nem artefatos anteriores.
 
 ```
 .vibeflow/phases/phase-<n>-<slug>/review.md
+.vibeflow/mvp/review.md
 ```
 
 Mesma pasta do plan quando a cadeia existe. Etapa nova = o mesmo arquivo. Sem plan, apply só cria fase nova se veio `--slug` (review avulsa).
@@ -14,13 +15,13 @@ Mesma pasta do plan quando a cadeia existe. Etapa nova = o mesmo arquivo. Sem pl
 
 | Peça | Onde | Faz |
 |---|---|---|
-| Skill | `vibe-review/SKILL.md` | Gate, eixos, passe cobertura, wip, handoff |
+| Skill | `vibe-review/SKILL.md` | Gate, eixos, passe cobertura, auditoria de provas no `plan.md`, wip, handoff |
 | Scripts | `vibe-review/scripts/review.ps1`, `review.py`, `review.sh` | Inventário, alvo, `--slug`, promove wip → `review.md` |
 | Template | `vibe-review/templates/review.md` | Esqueleto. Script não preenche prosa |
 | Referências | `references/definition-of-done.md` (pointer), `ui-visual-quality.md`, `security-and-hardening.md` | Sob demanda |
 | Relatório | `.vibeflow/review-report.json` | Contrato script → IA (gitignored) |
 | Wip | `.vibeflow/review-wip.md` | Rascunho até o apply (gitignored) |
-| Vivo | `.vibeflow/phases/phase-N-slug/review.md` | Depois do apply. Commitável |
+| Vivo | `.vibeflow/phases/phase-N-slug/review.md` ou `.vibeflow/mvp/review.md` | Depois do apply. Commitável |
 
 Install: `npx skills` ou marketplace (README). Pacote sem `docs/`. Fonte canônica: `vibe-review/`.
 
@@ -52,11 +53,20 @@ Resolução de `alvo` (primeira que existir):
 
 `--dir phase-N-slug` força pasta existente e com nome válido. Inexistente → `FASE_AUSENTE`. `--dir` **não** exige `plan.md` (review avulsa apontada para uma pasta já criada).
 
-Não pisa `interview.md` / `spec.md` / `plan.md` / `analyze.md` / `implement.md`. Lê `implement.md` se o inventário listar.
+Não pisa `interview.md` / `spec.md` / `plan.md` / `analyze.md`. Lê as provas anotadas no `plan.md` vivo.
 
 ---
 
 ## 4. Fluxo
+
+### 4.1 Alvo MVP
+
+`--mvp` ou `-Mvp` fixa o alvo em `.vibeflow/mvp/` e recusa slug ou dir com `MODO_INVALIDO`. O motor exige `interview.md`, `spec.md`, `plan.md` e `analyze.md`; ausência gera `REVIEW_CADEIA_INCOMPLETA`.
+
+Apply promove somente `review-wip.md` para `mvp/review.md`, com tamanho e SHA-256, e acrescenta `rota`, `mvp` e `kind` ao relatório. O motor não recebe flag de sync e `REGRAS.md` deve permanecer byte a byte idêntico em sucesso ou falha.
+
+Depois de Approve sem bloqueios e confirmação humana, a IA, não o motor, atualiza por ID a seção compacta `## Decisões vigentes` em `REGRAS.md`. Review rascunho, Request changes ou Approve ainda não confirmado não altera regras.
+
 
 ```
 [1] SCRIPT inventário → review-report.json
@@ -121,6 +131,8 @@ Ordem:
 12. Relatório com `created` e `modo` (`reuse` / `atualizar` / `criar`).
 
 Script não escreve prosa. Não julga diff. Não pergunta. Não toca source da app.
+
+Modo MVP: `review.py --apply --mvp`, `review.ps1 -Apply -Mvp` ou `review.sh --apply --mvp`.
 
 ---
 
@@ -195,9 +207,10 @@ Suíte: `docs/vibe-review/tests/test-review.py`. Launcher: `docs/vibe-review/tes
 
 - Não edita source, teste, lockfile, `interview.md`, `spec.md`, `plan.md` nem `analyze.md`. Remédio aponta `vibe-implement`.
 - Não anexa T* no plan. Sem `tasks.md`, `docs/`, `specs/`.
-- Um `review.md` por fase. Etapa nova é `### Etapa N` no vivo, não segundo arquivo.
+- Um `review.md` por alvo. Etapa nova é `### Etapa N` no vivo, não segundo arquivo.
 - Prova visual default é Chrome DevTools; E2E só quando o repo já tem ou o humano pede. Seção Visual some se o diff não toca UI.
 - Sem catálogo fixo de classes de segurança: a seção só abre se o diff toca a superfície listada na skill.
+- O motor nunca edita `REGRAS.md`; a sincronização semântica pós-aprovação é patch mínimo da IA.
 
 Backlog e decisões de escopo: [`docs/ESCOPO.md`](../ESCOPO.md).
 

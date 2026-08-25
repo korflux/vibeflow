@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Contratos do launcher vibe-interview/scripts/interview.sh: motor e --apply/--slug.
+# Contratos do launcher vibe-interview/scripts/interview.sh: motor e alvos phase/MVP.
 set -u
 set -o pipefail
 
@@ -48,12 +48,24 @@ assert "$( [ "$last_rc" -eq 2 ] && grep -q 'uso: interview.sh' "$last_err" && ec
   "4-flag-desconhecida" "rc=$last_rc err=$(cat "$last_err")"
 rm -rf "$s"
 
-# 5. Sem motor: recusa explícita.
+# 5. --mvp chega no motor e não cria phase-N.
+s=$(new_sandbox)
+seed_vibeflow "$s"
+printf '# MVP\n' >"$s/.vibeflow/interview-wip.md"
+root=$(native_root "$s")
+run_sh bash "$LAUNCHER" --root "$root" --apply --mvp
+dest="$s/.vibeflow/mvp/interview.md"
+phase_count=$(find "$s/.vibeflow/phases" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')
+assert "$( [ "$last_rc" -eq 0 ] && [ -f "$dest" ] && [ "$phase_count" = 0 ] && echo 1 || echo 0 )" \
+  "5-apply-mvp" "rc=$last_rc phases=$phase_count dest=$dest err=$(cat "$last_err")"
+rm -rf "$s"
+
+# 6. Sem motor: recusa explícita.
 s=$(new_sandbox)
 root=$(native_root "$s")
 run_without_motors bash "$LAUNCHER" --root "$root"
 assert "$( [ "$last_rc" -eq 1 ] && grep -q 'precisa de Python 3 ou PowerShell' "$last_err" && echo 1 || echo 0 )" \
-  "5-sem-motor" "rc=$last_rc err=$(cat "$last_err")"
+  "6-sem-motor" "rc=$last_rc err=$(cat "$last_err")"
 rm -rf "$s"
 
 finish

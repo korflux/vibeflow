@@ -4,11 +4,13 @@
 param(
     [string]$Root,
     [switch]$Apply,
-    [string]$Dir
+    [string]$Dir,
+    [switch]$Mvp
 )
 
 $ErrorActionPreference = 'Stop'
-$script:ChainFiles = @('interview.md', 'spec.md', 'plan.md', 'analyze.md', 'review.md')
+$script:DirWasBound = $PSBoundParameters.ContainsKey('Dir')
+$script:ChainFiles = @('interview.md', 'spec.md', 'plan.md', 'analyze.md', 'implement.md', 'review.md')
 
 # Resolve a raiz por parâmetro, Git ou cwd sem exigir que Git esteja instalado.
 function Get-RepoRoot {
@@ -68,6 +70,7 @@ function Get-PhaseList([string]$Phases) {
             if (Test-Path -LiteralPath (Join-Path $_.FullName $name)) { [void]$files.Add($name) }
         }
         $existing.Add([pscustomobject]@{
+            kind  = 'phase'
             dir   = $_.Name
             n     = [int]$m.Groups[1].Value
             slug  = $m.Groups[2].Value
@@ -77,6 +80,19 @@ function Get-PhaseList([string]$Phases) {
     }
     $sorted = @($existing | Sort-Object n)
     return @{ existing = $sorted; warnings = @($warnings) }
+}
+
+# Representa o alvo MVP sem inferir a rota a partir dos artefatos existentes.
+function Get-MvpMap([string]$Vf) {
+    $mvpPath = Join-Path $Vf 'mvp'
+    if (-not (Test-Path -LiteralPath $mvpPath)) { return $null }
+    $item = Get-Item -LiteralPath $mvpPath -Force
+    if (-not $item.PSIsContainer) { throw 'MVP_INESPERADO: .vibeflow/mvp existe, mas não é um diretório.' }
+    $files = New-Object System.Collections.Generic.List[string]
+    foreach ($name in $script:ChainFiles) {
+        if (Test-Path -LiteralPath (Join-Path $mvpPath $name) -PathType Leaf) { [void]$files.Add($name) }
+    }
+    return [pscustomobject]@{ kind = 'mvp'; dir = 'mvp'; path = '.vibeflow/mvp'; files = @($files) }
 }
 
 # Maior n com spec+plan e sem analyze: o analyze deve reusar esta pasta.
@@ -112,6 +128,7 @@ function Get-Alvo($Existing) {
 function ConvertTo-PhaseMap($Item) {
     if ($null -eq $Item) { return $null }
     return [pscustomobject]@{
+        kind  = 'phase'
         dir   = [string]$Item.dir
         n     = [int]$Item.n
         slug  = [string]$Item.slug
@@ -131,6 +148,8 @@ function Write-AnalyzeReport([string]$Vf, [hashtable]$Payload) {
 
 # Inventaria o disco e opcionalmente promove o wip para analyze.md.
 function Invoke-Analyze {
+    if ($Mvp -and $script:DirWasBound) { throw 'MODO_INVALIDO: o alvo MVP não aceita -Dir.' }
+
     $repo = Get-RepoRoot
     $vf = Join-Path $repo '.vibeflow'
     $phases = Join-Path $vf 'phases'
@@ -169,6 +188,18 @@ function Invoke-Analyze {
     $resolved = Get-Alvo $existing
     $alvoItem = $resolved.item
     $modoSugerido = $resolved.modo
+    $mvpMap = Get-MvpMap $vf
+    if ($Mvp) {
+        if ($null -eq $mvpMap -or $mvpMap.files -notcontains 'plan.md') {
+            throw 'ANALYZE_SEM_PLAN: falta .vibeflow/mvp/plan.md. Rode /vibe-plan primeiro.'
+        }
+        if ($mvpMap.files -notcontains 'spec.md') {
+            throw 'ANALYZE_SEM_SPEC: falta .vibeflow/mvp/spec.md. Rode /vibe-spec primeiro.'
+        }
+        if ($mvpMap.files -notcontains 'interview.md') {
+            throw 'ANALYZE_SEM_INTERVIEW: falta .vibeflow/mvp/interview.md.'
+        }
+    }
     $created = $null
     $modo = $null
 
@@ -177,7 +208,10 @@ function Invoke-Analyze {
             throw 'WIP_AUSENTE: falta .vibeflow/analyze-wip.md preenchido.'
         }
 
-        if (-not [string]::IsNullOrWhiteSpace($Dir)) {
+        if ($Mvp) {
+            $destDir = Join-Path $vf 'mvp'
+            $modo = if (Test-Path -LiteralPath (Join-Path $destDir 'analyze.md') -PathType Leaf) { 'atualizar' } else { 'reuse' }
+        } elseif (-not [string]::IsNullOrWhiteSpace($Dir)) {
             $destDir = Join-Path $phases ([System.IO.Path]::GetFileName($Dir))
             $destName = [System.IO.Path]::GetFileName($destDir)
             if (-not (Test-Path -LiteralPath $destDir) -or -not (Get-Item -LiteralPath $destDir).PSIsContainer) {
@@ -203,29 +237,39 @@ function Invoke-Analyze {
         }
 
         $destFile = Join-Path $destDir 'analyze.md'
-        $rel = ".vibeflow/phases/$destName"
-        $existed = Test-Path -LiteralPath $destFile
-        Copy-Item -LiteralPath $wip -Destination $destFile -Force
-        $srcHash = Get-Sha256File $wip
-        $dstHash = Get-Sha256File $destFile
-        $srcLen = (Get-Item -LiteralPath $wip).Length
-        $dstLen = (Get-Item -LiteralPath $destFile).Length
-        if ($srcHash -ne $dstHash -or $srcLen -ne $dstLen) {
-            if (-not $existed) { Remove-Item -LiteralPath $destFile -Force }
-            throw 'COPY_HASH_MISMATCH: a cópia do wip não bateu com o original.'
+        $rel = if ($Mvp) { '.vibeflow/mvp' } else { ".vibeflow/phases/$destName" }
+        $tempFile = Join-Path $destDir ('.analyze-' + [System.IO.Path]::GetRandomFileName())
+        try {
+            Copy-Item -LiteralPath $wip -Destination $tempFile
+            $srcHash = Get-Sha256File $wip
+            $dstHash = Get-Sha256File $tempFile
+            $srcLen = (Get-Item -LiteralPath $wip).Length
+            $dstLen = (Get-Item -LiteralPath $tempFile).Length
+            if ($srcHash -ne $dstHash -or $srcLen -ne $dstLen) {
+                throw 'COPY_HASH_MISMATCH: a cópia do wip não bateu com o original.'
+            }
+            [System.IO.File]::Move($tempFile, $destFile, $true)
+        } catch {
+            if (Test-Path -LiteralPath $tempFile) { Remove-Item -LiteralPath $tempFile -Force }
+            throw
         }
         Remove-Item -LiteralPath $wip -Force
         $actions.Add([pscustomobject]@{ op = 'promover_wip'; alvo = "$rel/analyze.md" })
-        $listed = Get-PhaseList $phases
-        $existing = @($listed.existing)
-        foreach ($w in $listed.warnings) { $warnings.Add($w) }
-        $nextN = 1
-        if ($existing.Count -gt 0) { $nextN = [int]$existing[-1].n + 1 }
-        $resolved = Get-Alvo $existing
-        $alvoItem = $resolved.item
-        $modoSugerido = $resolved.modo
-        foreach ($item in $existing) {
-            if ($item.dir -eq $destName) { $created = $item; break }
+        if ($Mvp) {
+            $mvpMap = Get-MvpMap $vf
+            $created = $mvpMap
+        } else {
+            $listed = Get-PhaseList $phases
+            $existing = @($listed.existing)
+            foreach ($w in $listed.warnings) { $warnings.Add($w) }
+            $nextN = 1
+            if ($existing.Count -gt 0) { $nextN = [int]$existing[-1].n + 1 }
+            $resolved = Get-Alvo $existing
+            $alvoItem = $resolved.item
+            $modoSugerido = $resolved.modo
+            foreach ($item in $existing) {
+                if ($item.dir -eq $destName) { $created = $item; break }
+            }
         }
     }
 
@@ -238,16 +282,18 @@ function Invoke-Analyze {
 
     $payload = @{
         root               = "$repo"
+        rota               = $(if ($Mvp) { 'mvp' } else { 'phase' })
         vibeflow           = 'ok'
         phases             = "$phState"
         next_n             = [int]$nextN
         existing           = $mapped.ToArray()
         plan_pendente      = ConvertTo-PhaseMap (Get-PlanPendente $existing)
         rascunho           = ConvertTo-PhaseMap (Get-Rascunho $existing)
-        alvo               = ConvertTo-PhaseMap $alvoItem
-        modo_sugerido      = "$modoSugerido"
+        alvo               = $(if ($Mvp) { $mvpMap } else { ConvertTo-PhaseMap $alvoItem })
+        mvp                = $mvpMap
+        modo_sugerido      = $(if ($Mvp -and $mvpMap.files -contains 'analyze.md') { 'atualizar' } elseif ($Mvp) { 'reuse' } else { "$modoSugerido" })
         wip                = "$wipState"
-        created            = ConvertTo-PhaseMap $created
+        created            = $(if ($Mvp) { $created } else { ConvertTo-PhaseMap $created })
         modo               = $modo
         actions            = $actions.ToArray()
         avisos             = $warnings.ToArray()

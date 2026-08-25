@@ -1,9 +1,10 @@
-# vibe-analyze — arquitetura
+# vibe-analyze, arquitetura
 
-`/vibe-analyze` cruza interview, spec e plan da **mesma** pasta e grava **um** relatório. O script inventaria e promove o wip. A IA não edita `interview.md`, `spec.md` nem `plan.md`.
+`/vibe-analyze` cruza interview, spec e plan do **mesmo alvo**, corrige inconsistências óbvias nos artefatos, esclarece ambiguidades reais com o usuário e grava **um** relatório de certificação de consistência. A IA pilota a análise semântica e a resolução de qualidade (consistência, decisões críticas, smoke test na T1, comandos executáveis de teste e ferramentas essenciais); o script inventaria evidências e promove bytes de forma determinística e verificada.
 
 ```
 .vibeflow/phases/phase-<n>-<slug>/analyze.md
+.vibeflow/mvp/analyze.md
 ```
 
 Mesma pasta do plan. Esta skill **não** aloca `n` novo. Sem `plan.md` (e `spec.md`) na pasta, não há analyze.
@@ -14,13 +15,14 @@ Mesma pasta do plan. Esta skill **não** aloca `n` novo. Sem `plan.md` (e `spec.
 
 | Peça | Onde | Faz |
 |---|---|---|
-| Skill | `vibe-analyze/SKILL.md` | Gate, varredura cruzada, até 5 Q, veredito, handoff |
-| Scripts | `vibe-analyze/scripts/analyze.ps1`, `analyze.py`, `analyze.sh` | Inventário, alvo, promove wip → `analyze.md` |
-| Template | `vibe-analyze/templates/analyze.md` | Esqueleto. Script não preenche prosa |
-| Referência | `vibe-analyze/references/coverage.md` | Taxonomia e passes. Abrir só na varredura |
-| Relatório | `.vibeflow/analyze-report.json` | Contrato script → IA (gitignored) |
-| Wip | `.vibeflow/analyze-wip.md` | Rascunho até o apply (gitignored) |
-| Vivo | `.vibeflow/phases/phase-N-slug/analyze.md` | Depois do apply. Commitável |
+| IA | Piloto | Entende o motor, cruza interview, spec e plan, corrige erros óbvios nos artefatos, esclarece ambiguidades com o usuário, define veredito limpo e handoff para implementação |
+| Skill | `vibe-analyze/SKILL.md` | Orienta a IA com regras de varredura cruzada, resolução de achados, critérios de certificação e handoff |
+| Scripts | `vibe-analyze/scripts/analyze.ps1`, `analyze.py`, `analyze.sh` | Ferramenta determinística: inventário mecânico, validação de predecessores e promoção atômica do wip |
+| Template | `vibe-analyze/templates/analyze.md` | Esqueleto do artefato. O script não preenche prosa |
+| Referência | `vibe-analyze/references/coverage.md` | Taxonomia de passes e severidades. Abrir só na varredura |
+| Relatório | `.vibeflow/analyze-report.json` | Evidência operacional estruturada (gitignored) |
+| Wip | `.vibeflow/analyze-wip.md` | Rascunho temporário até o apply (gitignored) |
+| Vivo | `.vibeflow/phases/phase-N-slug/analyze.md` ou `.vibeflow/mvp/analyze.md` | Artefato permanente pós-apply. Commitável |
 
 Install: `npx skills` ou marketplace (README). Pacote sem `docs/`. Fonte canônica: `vibe-analyze/`.
 
@@ -38,6 +40,8 @@ Sem `.vibeflow/` → `INIT_AUSENTE`. `/vibe-init` primeiro.
 
 Pasta que bate `^phase-(\d+)-([a-z0-9]+(?:-[a-z0-9]+)*)$`.
 
+O relatório expõe os ponteiros como evidência:
+
 | Campo | Significa |
 |---|---|
 | `alvo` | Destino preferido do apply sem `--dir` |
@@ -52,7 +56,7 @@ Resolução de `alvo` (primeira que existir):
 
 `--dir phase-N-slug` força o destino. A pasta tem de existir **e** ter `spec.md` **e** `plan.md`.
 
-`interview.md` é opcional. Ausência vira aviso no relatório da skill (artefato), não erro do script.
+`interview.md` é opcional no modo phase. Ausência vira aviso no relatório da skill (artefato), não erro do script.
 
 Não existe modo `criar` de fase. Analyze não abre pasta.
 
@@ -60,18 +64,31 @@ Não existe modo `criar` de fase. Analyze não abre pasta.
 
 ## 4. Fluxo
 
+A IA inicia compreendendo a spec, o plan, o histórico de interview, o ambiente e o motor determinístico.
+
+### 4.1 Alvo MVP
+
+`--mvp` ou `-Mvp` fixa o alvo em `.vibeflow/mvp/` e exige `interview.md`, `spec.md` e `plan.md`. Ausências geram `ANALYZE_SEM_INTERVIEW`, `ANALYZE_SEM_SPEC` ou `ANALYZE_SEM_PLAN`. `--dir` combinado gera `MODO_INVALIDO`.
+
+Apply promove `analyze-wip.md` para `mvp/analyze.md`, sem criar `phase-N`, com verificação atômica de tamanho e SHA-256.
+
+A análise MVP cruza IDs críticos nos três artefatos. Se houver divergência sem declaração de `substitui`, alinha a consistência ou esclarece com o usuário. Analyze nunca publica decisões em `REGRAS.md`.
+
 ```
-[1] SCRIPT inventário → analyze-report.json
-[2] IA lê relatório + spec.md + plan.md da alvo (+ interview.md se houver) + REGRAS.md
-[3] Gate + flip do plan se rascunho + pedido de analyze
-[4] Mapa interno (references/coverage.md). Até 5 Q só se o disco não fecha
-[5] Wip com achados + cobertura + veredito
-[6] SCRIPT apply
-[7] Humano lê o arquivo → ajuste ou aprovado
-[8] Fecha. Não commita. Não dispara implement. Não pisa interview/spec/plan
+[1] IA entende o motor de analyze, suas entradas e invariantes de segurança
+[2] SCRIPT executa inventário → analyze-report.json
+[3] IA audita o relatório, lê spec.md, plan.md, interview.md (se houver) e REGRAS.md
+[4] IA executa a varredura cruzada (references/coverage.md), corrigindo erros óbvios diretamente em spec.md / plan.md
+[5] Perguntas diretas no chat para clarificar ambiguidades reais com o usuário, aplicando as respostas nos artefatos
+[6] IA redige analyze-wip.md com cobertura, correções aplicadas e veredito limpo
+[7] SCRIPT apply promove wip → analyze.md com verificação atômica de integridade
+[8] Humano lê o arquivo vivo → solicitação de ajuste ou aprovação
+[9] IA fecha a run com handoff para vibe-implement. Não commita. Não inicia código nesta run
 ```
 
-Depois do `analyze.md` existir, ajuste e flip de Status editam o vivo. Sem apply de novo, salvo re-run que promove wip por cima do rascunho.
+Depois do `analyze.md` existir, ajuste e flip de Status editam o vivo diretamente.
+
+
 
 ---
 
@@ -93,7 +110,7 @@ Zero prosa.
 | `actions[]` | ex. `criar_phases` |
 | `avisos[]` | nomes fora do padrão |
 
-`files` só: `interview.md`, `spec.md`, `plan.md`, `analyze.md`.
+`files` só: `interview.md`, `spec.md`, `plan.md`, `analyze.md`, `implement.md`, `review.md`.
 
 `modo_sugerido=criar` no inventário significa “não há pasta para gravar”. O apply **não** cria.
 
@@ -121,6 +138,8 @@ Ordem:
 11. Relatório com `created` e `modo` (`reuse` / `atualizar`).
 
 Sem `--slug`. Script não escreve prosa. Não pergunta. Não toca `interview.md` / `spec.md` / `plan.md`.
+
+Modo MVP: `analyze.py --apply --mvp`, `analyze.ps1 -Apply -Mvp` ou `analyze.sh --apply --mvp`.
 
 ---
 
@@ -152,8 +171,7 @@ Sem `--slug`. Script não escreve prosa. Não pergunta. Não toca `interview.md`
   "avisos": []
 }
 ```
-
-A IA não varre o repo. Lê este JSON, `spec.md` / `plan.md` / `interview.md` / `analyze.md` da alvo, `REGRAS.md`. Paths só os que esses arquivos citaram.
+O relatório serve como evidência operacional. A IA lê o JSON, `spec.md`, `plan.md`, `interview.md` (se houver), `analyze.md`, `REGRAS.md` e os arquivos de código necessários de forma direcionada, sem varredura cega da árvore.
 
 ---
 
@@ -201,10 +219,12 @@ Suíte: `docs/vibe-analyze/tests/test-analyze.py`. Launcher: `docs/vibe-analyze/
 
 ## 10. Limites de contrato
 
-- Grava um arquivo só: `.vibeflow/phases/phase-N-slug/analyze.md`. Sem `tasks.md`, `checklists/`, `docs/`, `specs/`.
-- Não edita `interview.md`, `spec.md` nem `plan.md`. Achado vira `F*` com remédio, não patch na fonte.
+- Grava um arquivo só no alvo explícito phase ou MVP. Sem `tasks.md`, `checklists/`, `docs/`, `specs/`.
+- Aplica patches corretivos diretamente em `spec.md` ou `plan.md` para sanar lacunas e inconsistências óbvias identificadas no cruzamento.
 - Sem `next_n`, sem `--slug`, sem pasta nova: analyze entra na pasta do plan.
 - Veredito e gravidade são semântica da skill; o script não os interpreta.
+- No MVP, interview é obrigatória e decisões críticas inconsistentes são resolvidas antes do veredito limpo.
+
 
 Backlog e decisões de escopo: [`docs/ESCOPO.md`](../ESCOPO.md).
 

@@ -1,56 +1,53 @@
 ---
 name: vibe-implement
 description: >
-  Executa a fatia elegível da fase com prova, marca [x] no plan/spec/review e
-  grava .vibeflow/phases/phase-N-slug/implement.md. Use when the user runs
-  /vibe-implement, pede implementar, código, build, faz a T*, pode seguir, ou
-  a rota é low/medium/high/xhigh/max com código de comportamento — mesmo que
-  não diga vibe-implement.
+  Executa a fatia elegível da fase com prova, registra a execução e marca [x] diretamente no plan.md
+  (e spec/review). Use when the user runs /vibe-implement, pede implementar, código, build, faz a T*,
+  pode seguir, ou a rota é low/medium/high/xhigh/max com código de comportamento, mesmo que não diga vibe-implement.
 ---
 
 # vibe-implement
 
-Não invente `n` se há plan. Sem prova, sem `[x]` e sem apply. Sem `todo.md` nem `tasks.md`.
+Não invente `n` se há plan. Sem prova e sem teste verde, sem `[x]` no `plan.md`. Sem `todo.md` nem `tasks.md`.
 Sem `.vibeflow/`: `/vibe-init`. Open Questions no markdown = defeito. Não commita.
-Se o relatório trouxe `fila`, não monta a fila varrendo o plan.
+Proibido pular tasks ou desistir de erros. Diagnostique a causa raiz de qualquer falha no código e re-teste.
+Comentários semânticos obrigatórios em todas as funções criadas ou alteradas.
+As provas de execução e arquivos modificados são registrados diretamente sob cada task no `plan.md` vivo.
+No MVP, não execute código sem analyze `aprovado` e `limpo`; a fila vem somente de `.vibeflow/mvp/plan.md`.
 
-## 0. Script primeiro
+## 0. Entender e usar o script
 
-1. Resolva o diretório desta skill.
+1. Resolva o diretório desta skill e leia o motor que vai executar (`scripts/implement.ps1` no Windows ou `scripts/implement.py` no Unix). Ele realiza inventário determinístico e projeta a fila de dependências.
 2. No cwd do repo:
    - Windows: `pwsh "<skill>/scripts/implement.ps1"`
    - Unix: `bash "<skill>/scripts/implement.sh"` (Python 3, senão pwsh 7)
-3. Leia `.vibeflow/implement-report.json`. Se `alvo`, leia o que `files` listar nessa pasta. A escolha da T* sai de `fila` / `fila.elegiveis` no JSON. Leia `.vibeflow/REGRAS.md`. Paths só os citados. Não varrer a árvore.
+   - Alvo MVP: acrescente `-Mvp` ou `--mvp`.
+3. Leia `.vibeflow/implement-report.json`. A escolha da T* sai de `fila.elegiveis` no JSON. Leia `.vibeflow/REGRAS.md`. Paths só os citados. Não varrer a árvore.
 
-`INIT_AUSENTE` → init. `IMPLEMENT_SEM_ALVO` / `FASE_AUSENTE` / `WIP_AUSENTE` / `SLUG_INVALIDO` / `PHASES_INESPERADO` → não contorne.
-
-Apply:
-- reuse/atualizar: `pwsh "<skill>/scripts/implement.ps1" -Apply` (`--dir` se o alvo errar)
-- avulsa `low`/`medium` sem pasta: `… -Apply -Slug "<frase curta>"`
-- Unix: `implement.sh --apply` / `--apply --slug "…"`
+`INIT_AUSENTE` exige init. `IMPLEMENT_SEM_ALVO`, `IMPLEMENT_SEM_PLAN`, `IMPLEMENT_ANALYZE_AUSENTE`, `IMPLEMENT_ANALYZE_RASCUNHO`, `IMPLEMENT_ANALYZE_BLOQUEADO`, `MVP_INESPERADO`, `MODO_INVALIDO`, `FASE_AUSENTE` e `PHASES_INESPERADO` não são contornados.
 
 ## 1. Abrir (5 linhas)
 
-ROUTE · modo A/B · alvo · fila · plan · wip
+ROUTE · modo A/B · alvo · fila · plan · analyze
 
-```
-ROUTE: high · modo: A · alvo: phase-1-lock-bloco · fila: T2|T4 elegíveis · plan: sim · wip: ausente
+```text
+ROUTE: high · modo: A · alvo: phase-1-lock-bloco · fila: T2|T4 elegíveis · plan: sim
 ```
 
-`modo_sugerido=criar` = não há fase com `plan.md` nem `implement.md`. Não invente pasta. `high+` para e manda `/vibe-plan`. `low`/`medium` avulso usa `--slug` no apply. `fila` nulo = avulsa. `parse=ausente` = plan sem T*.
+`modo_sugerido=criar` = não há fase com `plan.md`. Não invente pasta. `high+` para e manda `/vibe-plan`. `fila` nulo = avulsa. `parse=ausente` = plan sem T*.
 
 ## 2. Gate
 
 Declare `ROUTE: low|medium|high|xhigh|max` e modo A ou B. Default = **A**.
 
-| | Ação |
+| Sinal | Ação |
 |---|---|
 | Typo / rename / uma linha sem runtime | **Não** usar |
 | `high+` sem `plan.md` | **Para.** `/vibe-plan` |
 | `max` sem `analyze.md` | **Para.** `/vibe-analyze` |
-| Analyze veredito `bloqueado` | **Para.** Mostre os F* CRITICAL. Não flipa |
+| Analyze ausente, rascunho ou veredito `bloqueado` no MVP | **Para.** Não flipa nem executa. Volta ao analyze |
 | Plan/analyze `# Status: rascunho` e o humano pediu **esta** skill | Flip para `aprovado` (1 linha) e siga, se o veredito não for `bloqueado` |
-| `low`/`medium` claro sem plan | Avulso: prova mínima; pasta só no apply com `--slug` se ainda não houver alvo |
+| `low`/`medium` claro sem plan | Avulso: prova mínima no código/teste |
 | `review.md` com R* Critical/Required em `[ ]` | Fila = R* primeiro. Q só se houver mais de um |
 | `fila` com 2+ elegíveis e o humano não nomeou T* | **Para.** Q. Recomenda a de menor `n`. Sem código |
 | `fila` com 1 elegível | Executa essa. Sem Q de escolha |
@@ -60,11 +57,11 @@ Declare `ROUTE: low|medium|high|xhigh|max` e modo A ou B. Default = **A**.
 | Humano nomeou T* bloqueada | Mostra deps. Sem código |
 | Verificação da T* só manual, sem comando | **Para.** Q (automatizar / humano valida / volta plan) |
 | Intenção/sucesso/fora frouxos | Devolve interview/spec |
-| Travou ferramenta, teste ou visual | **Para.** Q+RECOMENDO. Não pule em silêncio. Sem apply |
+| Bloqueio externo intransponível | **Para.** Q + RECOMENDO. Não pule em silêncio |
 
-```
+```text
 Q: <o que trava>
-RECOMENDO: <opção> — <1 linha>
+RECOMENDO: <opção>, <1 linha explicando motivo e impacto>
 (ok / outra?)
 ```
 
@@ -73,61 +70,79 @@ Modo B só se o humano pediu: `auto`, “faz o todo”, “não para”, “run 
 
 ## 3. Ciclo da fatia
 
-1. Descubra o test runner do **repo** (manifest, wrapper, CI). Não assuma `npm test`.
-2. `RED → GREEN → REFACTOR` (bug: teste que reproduz, depois o fix). Teste que passa de primeira não prova. Sem comando na Verificação da T* → Q, sem `[x]`. Sem RED-GREEN, sem `[x]` e sem apply.
-3. Verify: comando da Verificação da T* + suite relevante da fatia, build/typecheck/lint se existirem.
-4. UI web user-visible: leia `references/chrome-devtools.md`. Default = Chrome DevTools (screenshot + leitura da IA). E2E do repo se a T* já manda ou o humano pediu. Sem nenhuma prova de browser possível → Q (ligar MCP / E2E do repo / humano valida). Não adicione lib de browser sem pedido.
-5. DoD: `references/definition-of-done.md` no que couber. Aceite da T* **e** DoD. Não rebaixe a barra de teste.
-6. Ao fechar o checkpoint do grupo: reroda os comandos das T* do grupo. Teste de fluxo extra só se o caminho atravessa mais de uma T*.
-7. Verde → marque disco **na mesma resposta**, sem perguntar, e grave o wip (§5).
-8. Vermelho → deixe `[ ]`, sem apply, reporte.
+Execute cada task seguindo rigorosamente as 6 etapas:
 
-## 4. Marcar (disco manda)
+1. **Reconhecer (O que já existe?):**
+   Inspecione o repositório antes de escrever código novo. Reutilize helpers, utilitários, componentes visuais, types e módulos existentes da standard library ou do projeto. Não reescreva o que já existe.
+2. **Codar:**
+   Implemente a solução de forma direta, enxuta e estritamente focada nos requisitos da task (`T*`). Deixe comentários semânticos em todas as funções.
+3. **Testar (Comando real do repo ou MCP Server chrome-devtools):**
+   - Execute o comando real de teste do repositório associado à task.
+   - Na primeira task funcional (T1), valide obrigatoriamente o *Smoke Test / Walking Skeleton* no ponto de entrada real da aplicação.
+   - Se a task tocar interface visual web, execute a validação através das ferramentas do **MCP Server `chrome-devtools`** (`navigate_page`, `take_snapshot`, `click`, `take_screenshot` com leitura factual da imagem capturada), conforme `references/chrome-devtools.md`.
+   - **Diagnóstico e Correção sem Desistência:** Se o teste falhar, NUNCA pule nem desista da task. Pare, analise a causa raiz no log de erro, aplique a correção no código e execute o teste novamente até ficar verde. Apenas impedimentos externos intransponíveis geram parada com `Q + RECOMENDO`.
+4. **Simplificar (Refactor):**
+   Com o teste verde, revise o código recém-escrito. Remova duplicações, enxugue verbosidade e garanta que o código seja o mínimo necessário sem cortar o que importa.
+5. **Re-testar (Garantia de Regressão Zero):**
+   Rerode a suíte de testes da fatia após a simplificação para comprovar que nenhuma limpeza quebrou a funcionalidade.
+6. **Entregar e Atualizar plan.md:**
+   Aplique o patch diretamente no `plan.md` vivo (e `spec.md`/`review.md` conforme §4).
 
+Critérios adicionais:
+- DoD: `references/definition-of-done.md` no que couber.
+- Banco de dados: Se a fatia tocar banco de dados ou dinheiro, siga `references/database-and-migrations.md` (DECIMAL/NUMERIC para valores monetários, queries parametrizadas obrigatórias, sem N+1, índices em FKs, transações ACID curtas).
+- Ao fechar o checkpoint do grupo: rerode os comandos de todas as tasks do grupo.
+- Sem teste verde executável, sem marcação de conclusão no disco.
+
+## 4. Marcar e Registrar no plan.md
+
+Após a aprovação do teste da task, a IA aplica o patch diretamente no `plan.md` vivo sob a seção da task `### T{n}:`:
+
+```markdown
+### T1: Ponto de entrada e Smoke Test
+- [x] T1 concluída
+- **Spec:** A1
+- **Deps:** nenhuma
+- **Verificação:** `npm test -- --grep "smoke"`
+- **Prova:** `npm test` -> 1 passing (115ms)
+- **Arquivos:** `src/index.ts`, `tests/smoke.test.ts`
+- **Decisões:** AUTH-01 (implementada)
+```
+
+Outros arquivos marcados:
 | Arquivo | O que marcar |
 |---|---|
-| `plan.md` | `- [x] T{n} concluída` + aceite + verificação da T*; checkpoint da fase se fechou o grupo |
 | `spec.md` | `A*` / `C*` **só** os que a fatia provou |
 | `review.md` | `R*` Critical/Required que o fix provou |
 | `interview.md` | **Não** |
 
-Chat: ids + paths + comandos/provas. Sem reimprimir o plan.
+No MVP, certifique-se de registrar quais IDs críticos foram implementados. Não publique essas decisões em `REGRAS.md`; isso pertence ao pós-review aprovado.
 
-## 5. Escrever e salvar já
+## 5. Resposta no Chat
 
-Wip = `.vibeflow/implement-wip.md`. Molde: `templates/implement.md`.
+Responda no chat apenas:
 
-Se já existe `implement.md` na alvo: leia o vivo e copie as fatias anteriores no wip. Acrescente **uma** `## Fatia` nova. Não apague histórico.
-
-Omita `Feedback +`, `Feedback −` e `Para a review` se vazios. Sem prova, não grave wip.
-
-Não pergunte se pode salvar. Não cole o corpo no chat.
-
-1. Preencha o wip.
-2. Apply (§0).
-3. Chat, **só**:
-
-```
-Implement gravado: .vibeflow/phases/phase-N-slug/implement.md
+```text
+Implementação registrada: <alvo>/plan.md
 
 - Fatia: <T* | R* | avulsa>
-- Marcado: <ids>
-- Prova: <comando>
-- Feedback: <+ / − / nenhum>
+- Marcado: <T* / A* / C*>
+- Prova: <comando> -> <resultado>
+- Arquivos: <paths alterados>
 - Handoff: vibe-review | próxima T* | Q
 
-Leia o arquivo. Não reimprimo o implement aqui.
+Fatia concluída e registrada em <alvo>/plan.md.
 ```
 
 ## 6. Modos
 
-**A (default):** a T* escolhida (ou a única elegível) e, no mesmo checkpoint, só outras já elegíveis daquele grupo. Para. Espera ok.
+**A (default):** a T* escolhida (ou a única elegível) e, no mesmo checkpoint, só outras já elegíveis daquele grupo. Para. Se o usuário disser apenas "aprovado" ou "ok", permanece parado aguardando a próxima instrução. Se o usuário disser "pode seguir", "segue" ou "pode ir para a próxima fase", avança imediatamente para a próxima task elegível do plano ou para `vibe-review` se a fila estiver concluída.
 
-**B:** percorre `fila.elegiveis` recalculando depois de cada item, sem Q a cada T*. Para em checkpoint vermelho ou bloqueio. Marca e aplica o wip a cada item (histórico acumula no mesmo `implement.md`).
+**B:** percorre `fila.elegiveis` recalculando depois de cada item, sem Q a cada T*. Para em checkpoint vermelho ou bloqueio. Atualiza o `plan.md` a cada item.
 
-Fila zerada (T* da run, ou R* bloqueantes) → handoff `vibe-review`. **Não** dispare.
+Fila zerada (T* da run, ou R* bloqueantes) → handoff `vibe-review`. Se o usuário autorizar avançar para a review, inicia `vibe-review` diretamente.
 
 ## 7. Fechar
 
-Não commita. Avise o que entra no git (código + vivos da fase, inclusive `implement.md`). Fora: `implement-report.json`, `implement-wip.md`.
+Não commita no git. Avise o que entra no git (código + vivos do alvo: `plan.md`, `spec.md`). Fora: `implement-report.json`.
 Handoff no chat e no arquivo. Não invente work extra.

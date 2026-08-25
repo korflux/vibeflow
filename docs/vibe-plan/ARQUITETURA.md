@@ -1,12 +1,13 @@
-# vibe-plan — arquitetura
+# vibe-plan, arquitetura
 
-`/vibe-plan` fatia a spec em tasks verificáveis e grava **um** arquivo. O script inventaria e promove o wip. A IA não escreve código.
+`/vibe-plan` fatia a spec em tasks verificáveis e grava **um** arquivo. A IA pilota a run, valida pré-requisitos e ferramentas essenciais de teste (`gitleaks`, MCPs como `chrome-devtools`), define a ordem técnica e o smoke test inicial; o script inventaria evidências e promove bytes de forma determinística e verificada.
 
 ```
 .vibeflow/phases/phase-<n>-<slug>/plan.md
+.vibeflow/mvp/plan.md
 ```
 
-Mesma pasta da spec. Esta skill **não** aloca `n` novo. Sem spec na pasta, não há plan.
+Mesmo alvo da spec. A rota MVP é explícita e não usa `n` ou `--dir`. Sem spec no alvo, não há plan.
 
 ---
 
@@ -14,12 +15,13 @@ Mesma pasta da spec. Esta skill **não** aloca `n` novo. Sem spec na pasta, não
 
 | Peça | Onde | Faz |
 |---|---|---|
-| Skill | `vibe-plan/SKILL.md` | Gate, Q+RECOMENDO, fatiamento, aprovação, handoff |
-| Scripts | `vibe-plan/scripts/plan.ps1`, `plan.py`, `plan.sh` | Inventário, alvo, promove wip → `plan.md` |
-| Template | `vibe-plan/templates/plan.md` | Esqueleto. Script não preenche prosa |
-| Relatório | `.vibeflow/plan-report.json` | Contrato script → IA (gitignored) |
-| Wip | `.vibeflow/plan-wip.md` | Rascunho até o apply (gitignored) |
-| Vivo | `.vibeflow/phases/phase-N-slug/plan.md` | Depois do apply. Commitável |
+| IA | Piloto | Entende o motor, valida ferramentas de teste (`gitleaks`, `chrome-devtools`), define walking skeleton / smoke test, fatia em tasks verticais e fecha a ordem técnica |
+| Skill | `vibe-plan/SKILL.md` | Orienta a IA com regras de fatiamento, gates, conferência de ferramentas e handoff |
+| Scripts | `vibe-plan/scripts/plan.ps1`, `plan.py`, `plan.sh` | Ferramenta determinística: inventário mecânico, resolução de alvo e promoção atômica do wip |
+| Template | `vibe-plan/templates/plan.md` | Esqueleto do artefato. O script não preenche prosa |
+| Relatório | `.vibeflow/plan-report.json` | Evidência operacional estruturada (gitignored) |
+| Wip | `.vibeflow/plan-wip.md` | Rascunho temporário até o apply (gitignored) |
+| Vivo | `.vibeflow/phases/phase-N-slug/plan.md` ou `.vibeflow/mvp/plan.md` | Artefato permanente pós-apply. Commitável |
 
 Install: `npx skills` ou marketplace (README). Pacote sem `docs/`. Fonte canônica: `vibe-plan/`. Sem `references/` no v1.
 
@@ -36,6 +38,8 @@ Sem `.vibeflow/` → `INIT_AUSENTE`. `/vibe-init` primeiro.
 ## 3. Alvo do plan
 
 Pasta que bate `^phase-(\d+)-([a-z0-9]+(?:-[a-z0-9]+)*)$`.
+
+O relatório expõe os ponteiros como evidência:
 
 | Campo | Significa |
 |---|---|
@@ -59,17 +63,33 @@ Não existe modo `criar`. Plan não abre fase.
 
 ## 4. Fluxo
 
+A IA inicia compreendendo a spec aprovada, os arquivos do codebase, a disponibilidade das ferramentas necessárias (`gitleaks`, `chrome-devtools`) e o motor determinístico.
+
+### 4.1 Alvo MVP
+
+`--mvp` ou `-Mvp` fixa o alvo em `.vibeflow/mvp/`. A IA escolhe a rota; o script não infere intenção.
+
+- Exige `mvp/spec.md`; ausência gera `PLAN_SEM_SPEC`.
+- Recusa `--dir` com `MODO_INVALIDO`.
+- Recusa `mvp/analyze.md` existente com `PLAN_JA_ANALISADO`.
+- Apply promove `plan-wip.md` para `mvp/plan.md`, com verificação atômica de tamanho e SHA-256, sem criar `phase-N`.
+- Relatório acrescenta `rota`, `mvp`, `alvo.kind` e objetos phase com `kind: phase`.
+
+O artefato MVP preserva IDs e ações críticas da spec nas tasks correspondentes. O handoff é `vibe-analyze`, nunca implementação direta.
+
 ```
-[1] SCRIPT inventário → plan-report.json
-[2] IA lê relatório + spec.md da alvo (+ interview.md se houver)
-[3] Gate + flip da spec se rascunho + pedido de plan
-[4] Conferência + fatiamento no wip
-[5] SCRIPT apply
-[6] Humano lê o arquivo → ajuste ou aprovado
-[7] Fecha. Não commita. Não dispara implement
+[1] IA entende o motor de plan, suas entradas e proteções determinísticas
+[2] SCRIPT executa inventário → plan-report.json
+[3] IA audita o relatório, lê spec.md, interview.md (se houver), REGRAS.md e verifica dependências no host (gitleaks, chrome-devtools)
+[4] IA valida Gate e confere viabilidade da spec
+[5] IA realiza o fatiamento vertical no wip garantindo smoke test / walking skeleton na T1
+[6] SCRIPT apply promove wip → plan.md com verificação atômica de integridade
+[7] Humano lê o arquivo vivo → solicitação de ajuste ou aprovação
+[8] IA fecha a run. Não commita. Não dispara implementação automaticamente
 ```
 
-Depois do `plan.md` existir, ajuste e flip de Status editam o vivo. Sem apply de novo.
+Depois do `plan.md` existir, ajuste e flip de Status editam o vivo diretamente. Sem apply de novo.
+
 
 ---
 
@@ -91,7 +111,7 @@ Zero prosa.
 | `actions[]` | ex. `criar_phases` |
 | `avisos[]` | nomes fora do padrão |
 
-`files` só: `interview.md`, `spec.md`, `plan.md`, `analyze.md`.
+`files` só: `interview.md`, `spec.md`, `plan.md`, `analyze.md`, `implement.md`, `review.md`.
 
 `modo_sugerido=criar` no inventário significa “não há pasta para gravar”. O apply **não** cria.
 
@@ -120,6 +140,8 @@ Ordem:
 
 Sem `--slug`. Script não escreve prosa. Não pergunta.
 
+Modo MVP: `plan.py --apply --mvp`, `plan.ps1 -Apply -Mvp` ou `plan.sh --apply --mvp`.
+
 ---
 
 ## 7. Relatório
@@ -146,12 +168,11 @@ Sem `--slug`. Script não escreve prosa. Não pergunta.
   "wip": "ausente",
   "created": null,
   "modo": null,
-  "actions": [],
   "avisos": []
 }
 ```
 
-A IA não varre o repo. Lê este JSON, `spec.md` / `plan.md` / `interview.md` da alvo, `REGRAS.md`, paths citados na spec.
+O relatório serve como evidência operacional. A IA lê o JSON, `spec.md`, `plan.md` e `interview.md` (se houver), `REGRAS.md` e os arquivos do código necessários de forma direcionada, sem varredura cega da árvore.
 
 ---
 
@@ -195,13 +216,14 @@ Suíte: `docs/vibe-plan/tests/test-plan.py`. Launcher: `docs/vibe-plan/tests/tes
 
 ## 10. Limites de contrato
 
-- Grava um arquivo só: `.vibeflow/phases/phase-N-slug/plan.md`. Sem `todo.md`, `tasks.md`, `checklists/`, `docs/`, `specs/`.
+- Grava um arquivo só no alvo explícito phase ou MVP. Sem `todo.md`, `tasks.md`, `checklists/`, `docs/`, `specs/`.
 - Sem `next_n`, sem `--slug`, sem pasta nova: plan entra na pasta da spec.
 - Não pisa pasta com `analyze.md`. Não apaga `spec.md`.
 - IDs `T1`, `T2`… Sem `T001`, `[P]`, `[US1]`.
 - Linhas congeladas por T* (`concluída`, `Deps`) são contrato da implement. Este script **não** as parseia.
 - Verificação da T* é comando. Só manual não fecha o fatiamento.
 - Zero código nesta porta.
+- No MVP, exige spec, preserva IDs críticos e encaminha para analyze.
 
 Backlog e decisões de escopo: [`docs/ESCOPO.md`](../ESCOPO.md).
 

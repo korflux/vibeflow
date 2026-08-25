@@ -1,12 +1,13 @@
-# vibe-implement — arquitetura
+# vibe-implement, arquitetura
 
-`/vibe-implement` executa a fatia elegível da fase, marca o disco da cadeia e grava a trilha em `implement.md`. O script inventaria, projeta `fila` e promove o wip. A IA escreve código, marca checkboxes e preenche o template.
+`/vibe-implement` executa a fatia elegível do alvo, marca o disco da cadeia e grava a trilha em `implement.md`. A IA pilota a inspeção de código existente, implementação, testes com comandos reais do repositório ou MCP Server `chrome-devtools`, simplificação do código e diagnóstico de erros; o script inventaria, projeta `fila`, aplica o gate MVP e promove bytes.
 
 ```
 .vibeflow/phases/phase-<n>-<slug>/implement.md   ← trilha da run (prova + feedback)
 .vibeflow/phases/phase-<n>-<slug>/plan.md        ← fila (T* + checkpoints)
 .vibeflow/phases/phase-<n>-<slug>/spec.md        ← A*/C* quando a fatia prova
 .vibeflow/phases/phase-<n>-<slug>/review.md      ← R* se existir e estiver aberto
+.vibeflow/mvp/implement.md                       ← histórico acumulativo do MVP
 ```
 
 Mesma pasta do plan. Esta skill **não** aloca `n` novo se já há alvo. Sem `plan.md`, o script devolve `alvo` nulo (ou a fase com `implement.md`, se for avulsa em andamento); a skill decide se a rota `low`/`medium` abre pasta com `--slug` ou se `high+` manda `/vibe-plan`.
@@ -17,13 +18,14 @@ Mesma pasta do plan. Esta skill **não** aloca `n` novo se já há alvo. Sem `pl
 
 | Peça | Onde | Faz |
 |---|---|---|
-| Skill | `vibe-implement/SKILL.md` | Gate, TDD, prova visual, marcar disco, wip, modo A/B, Q+RECOMENDO |
+| IA | Piloto | Executa o ciclo de 6 passos (reconhecer, codar, testar, simplificar, re-testar, entregar), diagnostica erros sem pular tarefas, valida via MCP Server `chrome-devtools` e marca o disco |
+| Skill | `vibe-implement/SKILL.md` | Gate, ciclo de fatiamento vertical, prova visual, marcação do disco, wip, modo A/B, Q+RECOMENDO |
 | Scripts | `vibe-implement/scripts/implement.ps1`, `implement.py`, `implement.sh` | Inventário, alvo, `fila` do plan, `--slug`, promove wip → `implement.md` |
 | Template | `vibe-implement/templates/implement.md` | Esqueleto. Script não preenche prosa |
 | Referências | `vibe-implement/references/chrome-devtools.md`, `definition-of-done.md` | Sob demanda. Script não lê |
 | Relatório | `.vibeflow/implement-report.json` | Contrato script → IA (gitignored) |
 | Wip | `.vibeflow/implement-wip.md` | Rascunho até o apply (gitignored) |
-| Vivo | `.vibeflow/phases/phase-N-slug/implement.md` | Depois do apply. Commitável |
+| Vivo | `.vibeflow/phases/phase-N-slug/implement.md` ou `.vibeflow/mvp/implement.md` | Depois do apply. Commitável |
 
 Install: `npx skills` ou marketplace (README). Pacote sem `docs/`. Fonte canônica: `vibe-implement/`.
 
@@ -58,28 +60,41 @@ Resolução de `alvo` (primeira que existir):
 
 Sem alvo e sem `--slug` no apply → `IMPLEMENT_SEM_ALVO`.
 
-`interview.md`, `analyze.md` e `review.md` são opcionais. O script só lista o que existir.
+`interview.md`, `analyze.md` e `review.md` são opcionais no modo phase. No MVP, `plan.md` e `analyze.md` aprovado com veredito limpo são obrigatórios.
 
 ---
 
 ## 4. Fluxo
 
+### 4.1 Alvo MVP
+
+`--mvp` ou `-Mvp` fixa o alvo em `.vibeflow/mvp/` e recusa slug ou dir com `MODO_INVALIDO`. Sem plan, `IMPLEMENT_SEM_PLAN`.
+
+O relatório inclui `analyze_gate` com `status`, `veredito` e `pronto`. Apply recusa analyze ausente, não aprovado ou não limpo com erros específicos. A `fila` é calculada somente de `.vibeflow/mvp/plan.md`; phases existentes não participam da seleção.
+
+Apply promove o wip completo para `mvp/implement.md`. A IA preserva as fatias anteriores no wip; o motor substitui somente após conferir tamanho e SHA-256. Não cria `phase-N` nem publica decisões em `REGRAS.md`.
+
 ```
 [1] SCRIPT inventário → implement-report.json
 [2] IA lê relatório + o que a alvo tiver + REGRAS.md
-[3] Gate (rota, modo A/B, analyze bloqueado, R* vs `fila` do relatório)
-[4] Descobre test runner do repo. RED→GREEN→REFACTOR → verify
-[5] UI web: Chrome DevTools por padrão (ref). E2E se T* ou humano mandar
-[6] Prova verde → marca [x] nos vivos da cadeia
-[7] Wip no template (fatias anteriores copiadas + fatia nova + feedback)
-[8] SCRIPT apply
-[9] Sem prova → [ ] intacto, sem apply, Q+RECOMENDO
-[10] Modo A: para. Não commita. Não dispara review
+[3] Gate (rota, modo A/B, analyze bloqueado, R* vs fila do relatório)
+[4] Execução do ciclo de 6 passos:
+    a. Reconhecer o código existente para reutilização
+    b. Codar a solução enxuta e focada
+    c. Testar com comando real do repo (ou MCP Server chrome-devtools para UI)
+    d. Simplificar o código recém-escrito (refactor)
+    e. Re-testar para garantir regressão zero
+    f. Entregar, gravar prova e marcar [x] nos vivos
+[5] Wip no template (fatias anteriores copiadas + fatia nova + feedback)
+[6] SCRIPT apply promove wip → implement.md
+[7] Se teste falhar: diagnostica causa raiz, corrige no código e retesta (não desiste nem pula)
+[8] Modo A: para. Não commita. Não dispara review
 ```
 
 Checkbox é patch no vivo. `implement.md` só entra por apply.
 
 Fatia nova **não** apaga as anteriores: a IA lê o vivo, escreve o wip completo (histórico + fatia desta run) e o apply substitui o arquivo inteiro.
+
 
 ---
 
@@ -227,9 +242,9 @@ Suíte: `docs/vibe-implement/tests/test-implement.py`. Launcher: `docs/vibe-impl
 
 ## 10. Limites de contrato
 
-- Um `implement.md` por fase. Fatia nova é seção no mesmo arquivo, via wip completo + apply.
+- Um `implement.md` por alvo. Fatia nova é seção no mesmo arquivo, via wip completo + apply.
 - Não grava `todo.md`, `tasks.md`, `checklists/` nem path fora de `.vibeflow/phases/phase-N-slug/`.
-- O script não interpreta `# Status:`, aceite, verificação nem prosa. A fila no relatório sai só de `### T{n}:`, da linha `concluída` e de `Deps`.
+- O script não interpreta aceite, verificação nem prosa. A fila sai só de `### T{n}:`, da linha `concluída` e de `Deps`. Exceção deliberada no MVP: lê apenas `# Status:` e `## Veredito` do analyze para o gate de segurança.
 - Não cria ignore de stack (`.npmignore`, `.dockerignore`…).
 - Não adiciona lib de browser como dependência nova sem o humano pedir.
 

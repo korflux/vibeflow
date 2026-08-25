@@ -6,17 +6,19 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import unicodedata
 from pathlib import Path
 from typing import Any
 
 
 PHASE_RE = re.compile(r"^phase-(\d+)-([a-z0-9]+(?:-[a-z0-9]+)*)$")
-CHAIN_FILES = ("interview.md", "spec.md", "plan.md", "analyze.md", "review.md")
+CHAIN_FILES = ("interview.md", "spec.md", "plan.md", "analyze.md", "implement.md", "review.md")
 MAX_SLUG = 48
 
 
@@ -27,6 +29,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--apply", action="store_true")
     parser.add_argument("--slug")
     parser.add_argument("--dir")
+    parser.add_argument("--mvp", action="store_true")
     return parser.parse_args()
 
 
@@ -125,6 +128,7 @@ def list_phases(phases: Path) -> tuple[list[dict[str, Any]], list[str]]:
         files = [name for name in CHAIN_FILES if (child / name).is_file()]
         existing.append(
             {
+                "kind": "phase",
                 "dir": child.name,
                 "n": int(match.group(1)),
                 "slug": match.group(2),
@@ -134,6 +138,21 @@ def list_phases(phases: Path) -> tuple[list[dict[str, Any]], list[str]]:
         )
     existing.sort(key=lambda item: item["n"])
     return existing, warnings
+
+
+# Representa o alvo MVP sem inferir a rota a partir do conteúdo do projeto.
+def get_mvp(vf: Path) -> dict[str, Any] | None:
+    mvp = vf / "mvp"
+    if not mvp.exists():
+        return None
+    if not mvp.is_dir():
+        raise RuntimeError("MVP_INESPERADO: .vibeflow/mvp existe, mas não é um diretório.")
+    return {
+        "kind": "mvp",
+        "dir": "mvp",
+        "path": ".vibeflow/mvp",
+        "files": [name for name in CHAIN_FILES if (mvp / name).is_file()],
+    }
 
 
 # Maior n com interview e sem spec: a spec deve reusar esta pasta.
@@ -165,14 +184,22 @@ def resolve_alvo(
     return None, "criar"
 
 
-# Cópia binária conferida. Não apaga pasta que já tinha outros artefatos.
+# Grava por arquivo temporário conferido para preservar uma spec anterior se a cópia falhar.
 def promote_wip(wip: Path, dest_file: Path, dest_dir: Path, created_dir: bool) -> None:
-    dest_file.write_bytes(wip.read_bytes())
-    if dest_file.stat().st_size != wip.stat().st_size or sha256(dest_file) != sha256(wip):
-        dest_file.unlink(missing_ok=True)
+    temp_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(dir=dest_dir, prefix=".spec-", suffix=".tmp", delete=False) as stream:
+            temp_path = Path(stream.name)
+            stream.write(wip.read_bytes())
+        if temp_path.stat().st_size != wip.stat().st_size or sha256(temp_path) != sha256(wip):
+            raise RuntimeError("COPY_HASH_MISMATCH: a cópia do wip não bateu com o original.")
+        os.replace(temp_path, dest_file)
+    except Exception:
+        if temp_path:
+            temp_path.unlink(missing_ok=True)
         if created_dir and dest_dir.exists() and not any(dest_dir.iterdir()):
             dest_dir.rmdir()
-        raise RuntimeError("COPY_HASH_MISMATCH: a cópia do wip não bateu com o original.")
+        raise
 
 
 # Monta o JSON que a skill lê; stdout só o path do relatório.
@@ -185,6 +212,9 @@ def write_report(vf: Path, payload: dict[str, Any]) -> Path:
 
 # Inventaria o disco e opcionalmente promove o wip para spec.md.
 def run(args: argparse.Namespace) -> Path:
+    if args.mvp and (args.slug is not None or args.dir is not None):
+        raise RuntimeError("MODO_INVALIDO: o alvo MVP não aceita --slug nem --dir.")
+
     repo = repo_root(args.root)
     vf = repo / ".vibeflow"
     phases = vf / "phases"
@@ -212,6 +242,9 @@ def run(args: argparse.Namespace) -> Path:
     pending = find_interview_pendente(existing)
     draft = find_rascunho(existing)
     alvo, modo_sugerido = resolve_alvo(existing)
+    mvp = get_mvp(vf)
+    if args.mvp and (mvp is None or "interview.md" not in mvp["files"]):
+        raise RuntimeError("MVP_INTERVIEW_AUSENTE: falta .vibeflow/mvp/interview.md.")
     created: dict[str, Any] | None = None
     modo: str | None = None
 
@@ -221,7 +254,10 @@ def run(args: argparse.Namespace) -> Path:
 
         dest_dir: Path
         created_dir = False
-        if args.dir:
+        if args.mvp:
+            dest_dir = vf / "mvp"
+            modo = "atualizar" if (dest_dir / "spec.md").is_file() else "reuse"
+        elif args.dir:
             dest_dir = phases / Path(args.dir).name
             if not dest_dir.is_dir():
                 raise RuntimeError(f"FASE_AUSENTE: .vibeflow/phases/{dest_dir.name} não existe.")
@@ -249,11 +285,11 @@ def run(args: argparse.Namespace) -> Path:
             if created_dir and not any(dest_dir.iterdir()):
                 dest_dir.rmdir()
             raise RuntimeError(
-                f"SPEC_JA_PLANEJADA: {dest_dir.name} já tem plan.md. Não pise. Pedido novo = outra fase."
+                f"SPEC_JA_PLANEJADA: {dest_dir.name} já tem plan.md. Não pise. Pedido novo = outra phase."
             )
 
         dest_file = dest_dir / "spec.md"
-        rel = f".vibeflow/phases/{dest_dir.name}"
+        rel = ".vibeflow/mvp" if args.mvp else f".vibeflow/phases/{dest_dir.name}"
         try:
             promote_wip(wip, dest_file, dest_dir, created_dir)
         except Exception:
@@ -264,24 +300,30 @@ def run(args: argparse.Namespace) -> Path:
             raise
         wip.unlink()
         actions.append({"op": "promover_wip", "alvo": f"{rel}/spec.md"})
-        existing, extra_warnings = list_phases(phases)
-        warnings.extend(extra_warnings)
-        next_n = (existing[-1]["n"] + 1) if existing else 1
-        pending = find_interview_pendente(existing)
-        draft = find_rascunho(existing)
-        alvo, modo_sugerido = resolve_alvo(existing)
-        created = next((item for item in existing if item["dir"] == dest_dir.name), None)
+        if args.mvp:
+            mvp = get_mvp(vf)
+            created = mvp
+        else:
+            existing, extra_warnings = list_phases(phases)
+            warnings.extend(extra_warnings)
+            next_n = (existing[-1]["n"] + 1) if existing else 1
+            pending = find_interview_pendente(existing)
+            draft = find_rascunho(existing)
+            alvo, modo_sugerido = resolve_alvo(existing)
+            created = next((item for item in existing if item["dir"] == dest_dir.name), None)
 
     payload = {
         "root": str(repo),
+        "rota": "mvp" if args.mvp else "phase",
         "vibeflow": vf_state,
         "phases": ph_state,
         "next_n": next_n,
         "existing": existing,
         "interview_pendente": pending,
         "rascunho": draft,
-        "alvo": alvo,
-        "modo_sugerido": modo_sugerido,
+        "alvo": mvp if args.mvp else alvo,
+        "mvp": mvp,
+        "modo_sugerido": "reuse" if args.mvp and "spec.md" not in mvp["files"] else ("atualizar" if args.mvp else modo_sugerido),
         "wip": "presente" if wip.is_file() else "ausente",
         "created": created,
         "modo": modo,

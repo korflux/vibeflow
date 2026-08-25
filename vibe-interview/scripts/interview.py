@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Inventaria .vibeflow/phases e promove o wip para phase-N-slug/interview.md."""
+"""Inventaria o interview e promove o wip para um alvo phase ou MVP explícito."""
 
 from __future__ import annotations
 
@@ -17,16 +17,17 @@ from typing import Any
 
 
 PHASE_RE = re.compile(r"^phase-(\d+)-([a-z0-9]+(?:-[a-z0-9]+)*)$")
-CHAIN_FILES = ("interview.md", "spec.md", "plan.md", "analyze.md", "review.md")
+CHAIN_FILES = ("interview.md", "spec.md", "plan.md", "analyze.md", "implement.md", "review.md")
 MAX_SLUG = 48
 
 
 # Interpreta somente os parâmetros equivalentes ao contrato público do interview.ps1.
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Inventaria e promove interview para .vibeflow/phases")
+    parser = argparse.ArgumentParser(description="Inventaria e promove interview para um alvo phase ou MVP")
     parser.add_argument("--root")
     parser.add_argument("--apply", action="store_true")
     parser.add_argument("--slug")
+    parser.add_argument("--mvp", action="store_true")
     return parser.parse_args()
 
 
@@ -125,6 +126,7 @@ def list_phases(phases: Path) -> tuple[list[dict[str, Any]], list[str]]:
         files = [name for name in CHAIN_FILES if (child / name).is_file()]
         existing.append(
             {
+                "kind": "phase",
                 "dir": child.name,
                 "n": int(match.group(1)),
                 "slug": match.group(2),
@@ -134,6 +136,35 @@ def list_phases(phases: Path) -> tuple[list[dict[str, Any]], list[str]]:
         )
     existing.sort(key=lambda item: item["n"])
     return existing, warnings
+
+
+# Representa o alvo MVP sem inferir intenção; a flag pública continua sendo decisão da IA.
+def get_mvp(vf: Path) -> dict[str, Any] | None:
+    mvp = vf / "mvp"
+    if not mvp.exists():
+        return None
+    if not mvp.is_dir():
+        raise RuntimeError("MVP_INESPERADO: .vibeflow/mvp existe, mas não é um diretório.")
+    return {
+        "kind": "mvp",
+        "dir": "mvp",
+        "path": ".vibeflow/mvp",
+        "files": [name for name in CHAIN_FILES if (mvp / name).is_file()],
+    }
+
+
+# Copia o wip e só o remove depois de conferir tamanho e SHA-256 do destino.
+def promote_wip(wip: Path, dest_file: Path, remove_empty_dir_on_error: bool) -> None:
+    try:
+        dest_file.write_bytes(wip.read_bytes())
+        if dest_file.stat().st_size != wip.stat().st_size or sha256(dest_file) != sha256(wip):
+            raise RuntimeError("COPY_HASH_MISMATCH: a cópia do wip não bateu com o original.")
+    except Exception:
+        dest_file.unlink(missing_ok=True)
+        if remove_empty_dir_on_error and dest_file.parent.exists() and not any(dest_file.parent.iterdir()):
+            dest_file.parent.rmdir()
+        raise
+    wip.unlink()
 
 
 # Fase de maior n com interview e sem spec: entrevista ainda não entregue à spec.
@@ -154,6 +185,9 @@ def write_report(vf: Path, payload: dict[str, Any]) -> Path:
 
 # Inventaria o disco, cria phases/ se faltar, e opcionalmente promove o wip.
 def run(args: argparse.Namespace) -> Path:
+    if args.mvp and args.slug is not None:
+        raise RuntimeError("MODO_INVALIDO: o alvo MVP não aceita --slug.")
+
     repo = repo_root(args.root)
     vf = repo / ".vibeflow"
     phases = vf / "phases"
@@ -178,52 +212,60 @@ def run(args: argparse.Namespace) -> Path:
     ensure_gitignore(vf)
     existing, warnings = list_phases(phases)
     next_n = (existing[-1]["n"] + 1) if existing else 1
+    mvp = get_mvp(vf)
     created: dict[str, Any] | None = None
 
     if args.apply:
         if not wip.is_file() or wip.stat().st_size == 0:
             raise RuntimeError("WIP_AUSENTE: falta .vibeflow/interview-wip.md preenchido.")
-        slug = sanitize_slug(args.slug or "")
-        if len(slug) < 2:
-            raise RuntimeError("SLUG_INVALIDO: a frase curta não gerou um slug utilizável.")
-        dest_dir = phases / f"phase-{next_n}-{slug}"
-        dest_file = dest_dir / "interview.md"
-        rel = f".vibeflow/phases/{dest_dir.name}"
-        if dest_dir.exists():
-            raise RuntimeError(f"FASE_EXISTE: {rel} já existe.")
-        dest_dir.mkdir(parents=True)
-        try:
-            dest_file.write_bytes(wip.read_bytes())
-            if dest_file.stat().st_size != wip.stat().st_size or sha256(dest_file) != sha256(wip):
-                dest_file.unlink(missing_ok=True)
-                dest_dir.rmdir()
-                raise RuntimeError("COPY_HASH_MISMATCH: a cópia do wip não bateu com o original.")
-        except Exception:
+        if args.mvp:
+            dest_dir = vf / "mvp"
+            dest_file = dest_dir / "interview.md"
             if dest_file.exists():
-                dest_file.unlink(missing_ok=True)
-            if dest_dir.exists() and not any(dest_dir.iterdir()):
-                dest_dir.rmdir()
-            raise
-        wip.unlink()
-        actions.append({"op": "promover_wip", "alvo": f"{rel}/interview.md"})
-        created = {
-            "dir": dest_dir.name,
-            "n": next_n,
-            "slug": slug,
-            "path": rel,
-            "files": ["interview.md"],
-        }
-        existing, extra_warnings = list_phases(phases)
-        warnings.extend(extra_warnings)
-        next_n = (existing[-1]["n"] + 1) if existing else 1
+                raise RuntimeError("MVP_EXISTE: .vibeflow/mvp/interview.md já existe e não pode ser sobrescrito.")
+            created_dir = not dest_dir.exists()
+            dest_dir.mkdir()
+            promote_wip(wip, dest_file, created_dir)
+            actions.append({"op": "promover_wip", "alvo": ".vibeflow/mvp/interview.md"})
+            mvp = get_mvp(vf)
+            created = mvp
+        else:
+            slug = sanitize_slug(args.slug or "")
+            if len(slug) < 2:
+                raise RuntimeError("SLUG_INVALIDO: a frase curta não gerou um slug utilizável.")
+            dest_dir = phases / f"phase-{next_n}-{slug}"
+            dest_file = dest_dir / "interview.md"
+            rel = f".vibeflow/phases/{dest_dir.name}"
+            if dest_dir.exists():
+                raise RuntimeError(f"FASE_EXISTE: {rel} já existe.")
+            dest_dir.mkdir(parents=True)
+            promote_wip(wip, dest_file, True)
+            actions.append({"op": "promover_wip", "alvo": f"{rel}/interview.md"})
+            created = {
+                "kind": "phase",
+                "dir": dest_dir.name,
+                "n": next_n,
+                "slug": slug,
+                "path": rel,
+                "files": ["interview.md"],
+            }
+            existing, extra_warnings = list_phases(phases)
+            warnings.extend(extra_warnings)
+            next_n = (existing[-1]["n"] + 1) if existing else 1
+
+    aberta = find_aberta(existing)
 
     payload = {
         "root": str(repo),
+        "rota": "mvp" if args.mvp else "phase",
+        "modo": "mvp" if args.mvp else "phase",
         "vibeflow": vf_state,
         "phases": ph_state,
         "next_n": next_n,
         "existing": existing,
-        "aberta": find_aberta(existing),
+        "aberta": aberta,
+        "mvp": mvp,
+        "alvo": mvp if args.mvp else aberta,
         "wip": "presente" if wip.is_file() else "ausente",
         "created": created,
         "actions": actions,

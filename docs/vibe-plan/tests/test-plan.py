@@ -134,6 +134,45 @@ class PythonContracts(unittest.TestCase):
         self.assertNotEqual(0, process.returncode)
         self.assertIn("PHASES_INESPERADO", process.stderr)
 
+    def test_mvp_requires_spec(self) -> None:
+        seed_vibeflow(self.repo)
+        process, _ = invoke(self.repo, "--mvp", check=False)
+        self.assertNotEqual(0, process.returncode)
+        self.assertIn("PLAN_SEM_SPEC", process.stderr)
+
+    def test_mvp_apply_reuses_special_target(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        mvp = vf / "mvp"
+        mvp.mkdir()
+        (mvp / "spec.md").write_text("spec\n", encoding="utf-8")
+        (vf / "plan-wip.md").write_bytes(b"# plan MVP\n\x00")
+        _, report = invoke(self.repo, "--apply", "--mvp")
+        self.assertEqual(b"# plan MVP\n\x00", (mvp / "plan.md").read_bytes())
+        self.assertFalse((vf / "plan-wip.md").exists())
+        self.assertEqual("mvp", report["rota"])
+        self.assertEqual("mvp", report["created"]["kind"])
+        self.assertEqual([], [item.name for item in (vf / "phases").iterdir() if item.is_dir()])
+
+    def test_mvp_analyze_refuses_update_and_preserves_wip(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        mvp = vf / "mvp"
+        mvp.mkdir()
+        (mvp / "spec.md").write_text("s\n", encoding="utf-8")
+        (mvp / "plan.md").write_text("old\n", encoding="utf-8")
+        (mvp / "analyze.md").write_text("a\n", encoding="utf-8")
+        (vf / "plan-wip.md").write_text("new\n", encoding="utf-8")
+        process, _ = invoke(self.repo, "--apply", "--mvp", check=False)
+        self.assertNotEqual(0, process.returncode)
+        self.assertIn("PLAN_JA_ANALISADO", process.stderr)
+        self.assertEqual("old\n", (mvp / "plan.md").read_text(encoding="utf-8"))
+        self.assertTrue((vf / "plan-wip.md").is_file())
+
+    def test_mvp_rejects_dir(self) -> None:
+        seed_vibeflow(self.repo)
+        process, _ = invoke(self.repo, "--mvp", "--dir", "phase-1-x", check=False)
+        self.assertNotEqual(0, process.returncode)
+        self.assertIn("MODO_INVALIDO", process.stderr)
+
 
 
 # Verifica se existe uma versão real de PowerShell 7, única suportada pelo motor gêmeo.
@@ -174,6 +213,23 @@ class PowershellParity(unittest.TestCase):
         self.assertTrue((phase / "spec.md").is_file())
         self.assertFalse((vf / "plan-wip.md").exists())
 
+    def test_mvp_apply_same_path(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        mvp = vf / "mvp"
+        mvp.mkdir()
+        (mvp / "spec.md").write_text("s\n", encoding="utf-8")
+        (vf / "plan-wip.md").write_text("# MVP\n", encoding="utf-8")
+        process = subprocess.run(
+            [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo), "-Apply", "-Mvp"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(0, process.returncode, process.stderr)
+        self.assertEqual("# MVP\n", (mvp / "plan.md").read_text(encoding="utf-8"))
+        report = json.loads((vf / "plan-report.json").read_text(encoding="utf-8"))
+        self.assertEqual("mvp", report["created"]["kind"])
+
 
 class TemplateContracts(unittest.TestCase):
     """Trava as linhas que a implement parseia e a Verificação como comando."""
@@ -188,9 +244,11 @@ class TemplateContracts(unittest.TestCase):
 
     def test_skill_requires_real_deps_and_command_verification(self) -> None:
         skill = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
-        self.assertIn("Deps reais", skill)
-        self.assertIn("Verificação só manual", skill)
-        self.assertIn("fluxo extra", skill)
+        self.assertIn("gitleaks", skill.lower())
+        self.assertIn("chrome-devtools", skill.lower())
+        self.assertIn("smoke test", skill.lower())
+        self.assertIn("deps", skill.lower())
+        self.assertIn("manual recusa", skill.lower())
 
 
 if __name__ == "__main__":

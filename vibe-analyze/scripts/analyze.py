@@ -6,16 +6,18 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
 
 PHASE_RE = re.compile(r"^phase-(\d+)-([a-z0-9]+(?:-[a-z0-9]+)*)$")
-CHAIN_FILES = ("interview.md", "spec.md", "plan.md", "analyze.md", "review.md")
+CHAIN_FILES = ("interview.md", "spec.md", "plan.md", "analyze.md", "implement.md", "review.md")
 
 
 # Interpreta somente os parâmetros equivalentes ao contrato público do analyze.ps1.
@@ -24,6 +26,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--root")
     parser.add_argument("--apply", action="store_true")
     parser.add_argument("--dir")
+    parser.add_argument("--mvp", action="store_true")
     return parser.parse_args()
 
 
@@ -112,6 +115,7 @@ def list_phases(phases: Path) -> tuple[list[dict[str, Any]], list[str]]:
         files = [name for name in CHAIN_FILES if (child / name).is_file()]
         existing.append(
             {
+                "kind": "phase",
                 "dir": child.name,
                 "n": int(match.group(1)),
                 "slug": match.group(2),
@@ -121,6 +125,21 @@ def list_phases(phases: Path) -> tuple[list[dict[str, Any]], list[str]]:
         )
     existing.sort(key=lambda item: item["n"])
     return existing, warnings
+
+
+# Representa o alvo MVP sem inferir a rota a partir dos artefatos existentes.
+def get_mvp(vf: Path) -> dict[str, Any] | None:
+    mvp = vf / "mvp"
+    if not mvp.exists():
+        return None
+    if not mvp.is_dir():
+        raise RuntimeError("MVP_INESPERADO: .vibeflow/mvp existe, mas não é um diretório.")
+    return {
+        "kind": "mvp",
+        "dir": "mvp",
+        "path": ".vibeflow/mvp",
+        "files": [name for name in CHAIN_FILES if (mvp / name).is_file()],
+    }
 
 
 # Maior n com spec+plan e sem analyze: o analyze deve reusar esta pasta.
@@ -153,14 +172,20 @@ def resolve_alvo(
     return None, "criar"
 
 
-# Cópia binária conferida. Não apaga pasta que já tinha spec ou plan.
+# Substitui o relatório somente depois de conferir uma cópia temporária, preservando o rascunho anterior.
 def promote_wip(wip: Path, dest_file: Path) -> None:
-    existed = dest_file.exists()
-    dest_file.write_bytes(wip.read_bytes())
-    if dest_file.stat().st_size != wip.stat().st_size or sha256(dest_file) != sha256(wip):
-        if not existed:
-            dest_file.unlink(missing_ok=True)
-        raise RuntimeError("COPY_HASH_MISMATCH: a cópia do wip não bateu com o original.")
+    temp_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(dir=dest_file.parent, prefix=".analyze-", suffix=".tmp", delete=False) as stream:
+            temp_path = Path(stream.name)
+            stream.write(wip.read_bytes())
+        if temp_path.stat().st_size != wip.stat().st_size or sha256(temp_path) != sha256(wip):
+            raise RuntimeError("COPY_HASH_MISMATCH: a cópia do wip não bateu com o original.")
+        os.replace(temp_path, dest_file)
+    except Exception:
+        if temp_path:
+            temp_path.unlink(missing_ok=True)
+        raise
 
 
 # Monta o JSON que a skill lê; stdout só o path do relatório.
@@ -173,6 +198,9 @@ def write_report(vf: Path, payload: dict[str, Any]) -> Path:
 
 # Inventaria o disco e opcionalmente promove o wip para analyze.md.
 def run(args: argparse.Namespace) -> Path:
+    if args.mvp and args.dir is not None:
+        raise RuntimeError("MODO_INVALIDO: o alvo MVP não aceita --dir.")
+
     repo = repo_root(args.root)
     vf = repo / ".vibeflow"
     phases = vf / "phases"
@@ -200,6 +228,14 @@ def run(args: argparse.Namespace) -> Path:
     pending = find_plan_pendente(existing)
     draft = find_rascunho(existing)
     alvo, modo_sugerido = resolve_alvo(existing)
+    mvp = get_mvp(vf)
+    if args.mvp:
+        if mvp is None or "plan.md" not in mvp["files"]:
+            raise RuntimeError("ANALYZE_SEM_PLAN: falta .vibeflow/mvp/plan.md. Rode /vibe-plan primeiro.")
+        if "spec.md" not in mvp["files"]:
+            raise RuntimeError("ANALYZE_SEM_SPEC: falta .vibeflow/mvp/spec.md. Rode /vibe-spec primeiro.")
+        if "interview.md" not in mvp["files"]:
+            raise RuntimeError("ANALYZE_SEM_INTERVIEW: falta .vibeflow/mvp/interview.md.")
     created: dict[str, Any] | None = None
     modo: str | None = None
 
@@ -207,7 +243,10 @@ def run(args: argparse.Namespace) -> Path:
         if not wip.is_file() or wip.stat().st_size == 0:
             raise RuntimeError("WIP_AUSENTE: falta .vibeflow/analyze-wip.md preenchido.")
 
-        if args.dir:
+        if args.mvp:
+            dest_dir = vf / "mvp"
+            modo = "atualizar" if (dest_dir / "analyze.md").is_file() else "reuse"
+        elif args.dir:
             dest_dir = phases / Path(args.dir).name
             if not dest_dir.is_dir() or not PHASE_RE.fullmatch(dest_dir.name):
                 raise RuntimeError(f"FASE_AUSENTE: .vibeflow/phases/{dest_dir.name} não é uma pasta de fase.")
@@ -224,28 +263,34 @@ def run(args: argparse.Namespace) -> Path:
             raise RuntimeError(f"ANALYZE_SEM_SPEC: {dest_dir.name} não tem spec.md. Rode /vibe-spec primeiro.")
 
         dest_file = dest_dir / "analyze.md"
-        rel = f".vibeflow/phases/{dest_dir.name}"
+        rel = ".vibeflow/mvp" if args.mvp else f".vibeflow/phases/{dest_dir.name}"
         promote_wip(wip, dest_file)
         wip.unlink()
         actions.append({"op": "promover_wip", "alvo": f"{rel}/analyze.md"})
-        existing, extra_warnings = list_phases(phases)
-        warnings.extend(extra_warnings)
-        next_n = (existing[-1]["n"] + 1) if existing else 1
-        pending = find_plan_pendente(existing)
-        draft = find_rascunho(existing)
-        alvo, modo_sugerido = resolve_alvo(existing)
-        created = next((item for item in existing if item["dir"] == dest_dir.name), None)
+        if args.mvp:
+            mvp = get_mvp(vf)
+            created = mvp
+        else:
+            existing, extra_warnings = list_phases(phases)
+            warnings.extend(extra_warnings)
+            next_n = (existing[-1]["n"] + 1) if existing else 1
+            pending = find_plan_pendente(existing)
+            draft = find_rascunho(existing)
+            alvo, modo_sugerido = resolve_alvo(existing)
+            created = next((item for item in existing if item["dir"] == dest_dir.name), None)
 
     payload = {
         "root": str(repo),
+        "rota": "mvp" if args.mvp else "phase",
         "vibeflow": vf_state,
         "phases": ph_state,
         "next_n": next_n,
         "existing": existing,
         "plan_pendente": pending,
         "rascunho": draft,
-        "alvo": alvo,
-        "modo_sugerido": modo_sugerido,
+        "alvo": mvp if args.mvp else alvo,
+        "mvp": mvp,
+        "modo_sugerido": "atualizar" if args.mvp and "analyze.md" in mvp["files"] else ("reuse" if args.mvp else modo_sugerido),
         "wip": "presente" if wip.is_file() else "ausente",
         "created": created,
         "modo": modo,

@@ -1,4 +1,4 @@
-# vibe-review — mapeamento e fluxo
+# vibe-review, mapeamento e fluxo
 
 Fontes:
 
@@ -48,9 +48,10 @@ A IA lê a fase e o diff. Julga. Cruza A*/C* com o código. Grava `R*`. **Não**
 | Etapas no mesmo arquivo | Fluxline + pedido | Não abre fase nova. `### Etapa N` no vivo |
 | Approve sem perfeição | Fluxline | Não bloquear gosto |
 | Apply + wip | Analyze/spec | First-pass promove wip; etapa N edita o vivo |
-| Lê `implement.md` | ESCOPO 3.1 | Inventário lista se existir; skill lê fatia, prova e “Para a review” |
+| Lê provas no `plan.md` | Vibe | IA lê as tasks concluídas, comandos executados e provas no `plan.md` vivo |
 | Checklist vivo | Pedido | Campo abre com o achado e fecha com a prova. `## Etapas` no lugar de `## Re-review` |
 | Handoff sem disparar | REGRAS | `vibe-implement` / `volta vibe-spec` / fechada |
+
 
 ---
 
@@ -89,6 +90,10 @@ A IA lê a fase e o diff. Julga. Cruza A*/C* com o código. Grava `R*`. **Não**
 ---
 
 ## Assumido
+
+### Extensão MVP e decisões vigentes
+
+O MVP só chega à review com a cadeia max completa. O review propõe uma tabela compacta de decisões para vigência, mas isso ainda é histórico até o humano aprovar o veredito. Depois da confirmação, a IA atualiza `REGRAS.md` por ID e preserva todo o resto; o script permanece incapaz de sincronizar regras. Essa separação evita que um rascunho ou Request changes publique semântica por efeito colateral do apply.
 
 - Sem `.vibeflow/` a skill para.
 - Review da cadeia reusa a pasta do plan. Avulsa é pedido **outro**.

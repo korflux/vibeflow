@@ -1,14 +1,16 @@
 ﻿#Requires -Version 7.0
 # vibe-interview/scripts/interview.ps1
-# Inventário de .vibeflow/phases → promove interview-wip.md para phase-N-slug/interview.md.
+# Inventaria o interview e promove o wip para um alvo phase ou MVP explícito.
 param(
     [string]$Root,
     [switch]$Apply,
-    [string]$Slug
+    [string]$Slug,
+    [switch]$Mvp
 )
 
 $ErrorActionPreference = 'Stop'
-$script:ChainFiles = @('interview.md', 'spec.md', 'plan.md', 'analyze.md', 'review.md')
+$script:SlugWasBound = $PSBoundParameters.ContainsKey('Slug')
+$script:ChainFiles = @('interview.md', 'spec.md', 'plan.md', 'analyze.md', 'implement.md', 'review.md')
 $script:MaxSlug = 48
 
 # Resolve a raiz por parâmetro, Git ou cwd sem exigir que Git esteja instalado.
@@ -94,6 +96,7 @@ function Get-PhaseList([string]$Phases) {
             if (Test-Path -LiteralPath (Join-Path $_.FullName $name)) { [void]$files.Add($name) }
         }
         $existing.Add([pscustomobject]@{
+            kind  = 'phase'
             dir   = $_.Name
             n     = [int]$m.Groups[1].Value
             slug  = $m.Groups[2].Value
@@ -103,6 +106,26 @@ function Get-PhaseList([string]$Phases) {
     }
     $sorted = @($existing | Sort-Object n)
     return @{ existing = $sorted; warnings = @($warnings) }
+}
+
+# Representa o alvo MVP sem inferir intenção; a flag continua sendo decisão da IA.
+function Get-MvpMap([string]$Vf) {
+    $mvpPath = Join-Path $Vf 'mvp'
+    if (-not (Test-Path -LiteralPath $mvpPath)) { return $null }
+    $item = Get-Item -LiteralPath $mvpPath -Force
+    if (-not $item.PSIsContainer) {
+        throw 'MVP_INESPERADO: .vibeflow/mvp existe, mas não é um diretório.'
+    }
+    $files = New-Object System.Collections.Generic.List[string]
+    foreach ($name in $script:ChainFiles) {
+        if (Test-Path -LiteralPath (Join-Path $mvpPath $name) -PathType Leaf) { [void]$files.Add($name) }
+    }
+    return [pscustomobject]@{
+        kind  = 'mvp'
+        dir   = 'mvp'
+        path  = '.vibeflow/mvp'
+        files = @($files)
+    }
 }
 
 # Fase de maior n com interview e sem spec: entrevista ainda não entregue à spec.
@@ -119,6 +142,7 @@ function Get-Aberta($Existing) {
 function ConvertTo-PhaseMap($Item) {
     if ($null -eq $Item) { return $null }
     return [pscustomobject]@{
+        kind  = 'phase'
         dir   = [string]$Item.dir
         n     = [int]$Item.n
         slug  = [string]$Item.slug
@@ -138,6 +162,10 @@ function Write-InterviewReport([string]$Vf, [hashtable]$Payload) {
 
 # Inventaria o disco, cria phases/ se faltar, e opcionalmente promove o wip.
 function Invoke-Interview {
+    if ($Mvp -and $script:SlugWasBound) {
+        throw 'MODO_INVALIDO: o alvo MVP não aceita -Slug.'
+    }
+
     $repo = Get-RepoRoot
     $vf = Join-Path $repo '.vibeflow'
     $phases = Join-Path $vf 'phases'
@@ -173,55 +201,85 @@ function Invoke-Interview {
     foreach ($w in $listed.warnings) { $warnings.Add($w) }
     $nextN = 1
     if ($existing.Count -gt 0) { $nextN = [int]$existing[-1].n + 1 }
+    $mvpMap = Get-MvpMap $vf
     $created = $null
 
     if ($Apply) {
         if (-not (Test-Path -LiteralPath $wip) -or (Get-Item -LiteralPath $wip).Length -eq 0) {
             throw 'WIP_AUSENTE: falta .vibeflow/interview-wip.md preenchido.'
         }
-        $clean = ConvertTo-Slug $Slug
-        if ($clean.Length -lt 2) {
-            throw 'SLUG_INVALIDO: a frase curta não gerou um slug utilizável.'
-        }
-        $destDir = Join-Path $phases "phase-$nextN-$clean"
-        $destFile = Join-Path $destDir 'interview.md'
-        $rel = ".vibeflow/phases/phase-$nextN-$clean"
-        if (Test-Path -LiteralPath $destDir) {
-            throw "FASE_EXISTE: $rel já existe."
-        }
-        New-Item -ItemType Directory -Path $destDir -Force | Out-Null
-        try {
-            Copy-Item -LiteralPath $wip -Destination $destFile -Force
-            $srcHash = Get-Sha256File $wip
-            $dstHash = Get-Sha256File $destFile
-            $srcLen = (Get-Item -LiteralPath $wip).Length
-            $dstLen = (Get-Item -LiteralPath $destFile).Length
-            if ($srcHash -ne $dstHash -or $srcLen -ne $dstLen) {
-                Remove-Item -LiteralPath $destFile -Force
-                Remove-Item -LiteralPath $destDir -Force
-                throw 'COPY_HASH_MISMATCH: a cópia do wip não bateu com o original.'
+        if ($Mvp) {
+            $destDir = Join-Path $vf 'mvp'
+            $destFile = Join-Path $destDir 'interview.md'
+            if (Test-Path -LiteralPath $destFile) {
+                throw 'MVP_EXISTE: .vibeflow/mvp/interview.md já existe e não pode ser sobrescrito.'
             }
-        } catch {
-            if (Test-Path -LiteralPath $destFile) { Remove-Item -LiteralPath $destFile -Force }
-            if ((Test-Path -LiteralPath $destDir) -and -not (Get-ChildItem -LiteralPath $destDir -Force)) {
-                Remove-Item -LiteralPath $destDir -Force
+            $createdDir = -not (Test-Path -LiteralPath $destDir)
+            if ($createdDir) { New-Item -ItemType Directory -Path $destDir | Out-Null }
+            try {
+                Copy-Item -LiteralPath $wip -Destination $destFile
+                $srcHash = Get-Sha256File $wip
+                $dstHash = Get-Sha256File $destFile
+                $srcLen = (Get-Item -LiteralPath $wip).Length
+                $dstLen = (Get-Item -LiteralPath $destFile).Length
+                if ($srcHash -ne $dstHash -or $srcLen -ne $dstLen) {
+                    throw 'COPY_HASH_MISMATCH: a cópia do wip não bateu com o original.'
+                }
+            } catch {
+                if (Test-Path -LiteralPath $destFile) { Remove-Item -LiteralPath $destFile -Force }
+                if ($createdDir -and (Test-Path -LiteralPath $destDir) -and -not (Get-ChildItem -LiteralPath $destDir -Force)) {
+                    Remove-Item -LiteralPath $destDir -Force
+                }
+                throw
             }
-            throw
+            Remove-Item -LiteralPath $wip -Force
+            $actions.Add([pscustomobject]@{ op = 'promover_wip'; alvo = '.vibeflow/mvp/interview.md' })
+            $mvpMap = Get-MvpMap $vf
+            $created = $mvpMap
+        } else {
+            $clean = ConvertTo-Slug $Slug
+            if ($clean.Length -lt 2) {
+                throw 'SLUG_INVALIDO: a frase curta não gerou um slug utilizável.'
+            }
+            $destDir = Join-Path $phases "phase-$nextN-$clean"
+            $destFile = Join-Path $destDir 'interview.md'
+            $rel = ".vibeflow/phases/phase-$nextN-$clean"
+            if (Test-Path -LiteralPath $destDir) {
+                throw "FASE_EXISTE: $rel já existe."
+            }
+            New-Item -ItemType Directory -Path $destDir | Out-Null
+            try {
+                Copy-Item -LiteralPath $wip -Destination $destFile
+                $srcHash = Get-Sha256File $wip
+                $dstHash = Get-Sha256File $destFile
+                $srcLen = (Get-Item -LiteralPath $wip).Length
+                $dstLen = (Get-Item -LiteralPath $destFile).Length
+                if ($srcHash -ne $dstHash -or $srcLen -ne $dstLen) {
+                    throw 'COPY_HASH_MISMATCH: a cópia do wip não bateu com o original.'
+                }
+            } catch {
+                if (Test-Path -LiteralPath $destFile) { Remove-Item -LiteralPath $destFile -Force }
+                if ((Test-Path -LiteralPath $destDir) -and -not (Get-ChildItem -LiteralPath $destDir -Force)) {
+                    Remove-Item -LiteralPath $destDir -Force
+                }
+                throw
+            }
+            Remove-Item -LiteralPath $wip -Force
+            $actions.Add([pscustomobject]@{ op = 'promover_wip'; alvo = "$rel/interview.md" })
+            $created = [pscustomobject]@{
+                kind  = 'phase'
+                dir   = "phase-$nextN-$clean"
+                n     = $nextN
+                slug  = $clean
+                path  = $rel
+                files = @('interview.md')
+            }
+            $listed = Get-PhaseList $phases
+            $existing = @($listed.existing)
+            foreach ($w in $listed.warnings) { $warnings.Add($w) }
+            $nextN = 1
+            if ($existing.Count -gt 0) { $nextN = [int]$existing[-1].n + 1 }
         }
-        Remove-Item -LiteralPath $wip -Force
-        $actions.Add([pscustomobject]@{ op = 'promover_wip'; alvo = "$rel/interview.md" })
-        $created = [pscustomobject]@{
-            dir   = "phase-$nextN-$clean"
-            n     = $nextN
-            slug  = $clean
-            path  = $rel
-            files = @('interview.md')
-        }
-        $listed = Get-PhaseList $phases
-        $existing = @($listed.existing)
-        foreach ($w in $listed.warnings) { $warnings.Add($w) }
-        $nextN = 1
-        if ($existing.Count -gt 0) { $nextN = [int]$existing[-1].n + 1 }
     }
 
     $wipState = 'ausente'
@@ -231,13 +289,18 @@ function Invoke-Interview {
     foreach ($item in @($existing)) {
         if ($null -ne $item) { [void]$mapped.Add((ConvertTo-PhaseMap $item)) }
     }
+    $aberta = ConvertTo-PhaseMap (Get-Aberta $existing)
     $payload = @{
         root     = "$repo"
+        rota     = $(if ($Mvp) { 'mvp' } else { 'phase' })
+        modo     = $(if ($Mvp) { 'mvp' } else { 'phase' })
         vibeflow = 'ok'
         phases   = "$phState"
         next_n   = [int]$nextN
         existing = $mapped.ToArray()
-        aberta   = ConvertTo-PhaseMap (Get-Aberta $existing)
+        aberta   = $aberta
+        mvp      = $mvpMap
+        alvo     = $(if ($Mvp) { $mvpMap } else { $aberta })
         wip      = "$wipState"
         created  = $created
         actions  = $actions.ToArray()

@@ -140,6 +140,46 @@ class PythonContracts(unittest.TestCase):
         self.assertNotEqual(0, process.returncode)
         self.assertIn("SLUG_INVALIDO", process.stderr)
 
+    def test_mvp_requires_interview(self) -> None:
+        seed_vibeflow(self.repo)
+        process, _ = invoke(self.repo, "--mvp", check=False)
+        self.assertNotEqual(0, process.returncode)
+        self.assertIn("MVP_INTERVIEW_AUSENTE", process.stderr)
+
+    def test_mvp_apply_reuses_special_target(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        mvp = vf / "mvp"
+        mvp.mkdir()
+        (mvp / "interview.md").write_text("interview\n", encoding="utf-8")
+        (vf / "spec-wip.md").write_bytes(b"# spec MVP\n\x00")
+        _, report = invoke(self.repo, "--apply", "--mvp")
+        self.assertEqual(b"# spec MVP\n\x00", (mvp / "spec.md").read_bytes())
+        self.assertFalse((vf / "spec-wip.md").exists())
+        self.assertEqual("mvp", report["rota"])
+        self.assertEqual("mvp", report["created"]["kind"])
+        self.assertEqual(".vibeflow/mvp", report["alvo"]["path"])
+        self.assertEqual([], [item.name for item in (vf / "phases").iterdir() if item.is_dir()])
+
+    def test_mvp_plan_refuses_update_and_preserves_wip(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        mvp = vf / "mvp"
+        mvp.mkdir()
+        (mvp / "interview.md").write_text("i\n", encoding="utf-8")
+        (mvp / "spec.md").write_text("old\n", encoding="utf-8")
+        (mvp / "plan.md").write_text("plan\n", encoding="utf-8")
+        (vf / "spec-wip.md").write_text("new\n", encoding="utf-8")
+        process, _ = invoke(self.repo, "--apply", "--mvp", check=False)
+        self.assertNotEqual(0, process.returncode)
+        self.assertIn("SPEC_JA_PLANEJADA", process.stderr)
+        self.assertEqual("old\n", (mvp / "spec.md").read_text(encoding="utf-8"))
+        self.assertTrue((vf / "spec-wip.md").is_file())
+
+    def test_mvp_rejects_phase_selectors(self) -> None:
+        seed_vibeflow(self.repo)
+        process, _ = invoke(self.repo, "--mvp", "--slug", "produto", check=False)
+        self.assertNotEqual(0, process.returncode)
+        self.assertIn("MODO_INVALIDO", process.stderr)
+
 
 
 # Verifica se existe uma versão real de PowerShell 7, única suportada pelo motor gêmeo.
@@ -179,6 +219,23 @@ class PowershellParity(unittest.TestCase):
         self.assertEqual("# spec\n", dest.read_text(encoding="utf-8"))
         self.assertTrue((phase / "interview.md").is_file())
         self.assertFalse((vf / "spec-wip.md").exists())
+
+    def test_mvp_apply_same_path(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        mvp = vf / "mvp"
+        mvp.mkdir()
+        (mvp / "interview.md").write_text("i\n", encoding="utf-8")
+        (vf / "spec-wip.md").write_text("# MVP\n", encoding="utf-8")
+        process = subprocess.run(
+            [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo), "-Apply", "-Mvp"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(0, process.returncode, process.stderr)
+        self.assertEqual("# MVP\n", (mvp / "spec.md").read_text(encoding="utf-8"))
+        report = json.loads((vf / "spec-report.json").read_text(encoding="utf-8"))
+        self.assertEqual("mvp", report["created"]["kind"])
 
 
 if __name__ == "__main__":

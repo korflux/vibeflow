@@ -1,136 +1,106 @@
 ---
 name: vibe-interview
 description: >
-  Entrevista pedido ambíguo até fechar intenção, sucesso e fora, e grava a trilha em .vibeflow/phases/phase-N-slug/interview.md. Use when the user runs /vibe-interview, pede para entrevistar o pedido, fechar intenção, descobrir o que realmente quer, refinar ideia, explorar variações, ou o pedido está vago, sem sucesso observável, sem público, ou convenção no lugar de outcome — mesmo que não diga vibe-interview.
+  Entrevista pedidos ambíguos e projetos novos até fechar intenção, sucesso, limites e decisões iniciais, gravando a trilha em `.vibeflow/phases/phase-N-slug/interview.md` ou `.vibeflow/mvp/interview.md`. Use when the user runs /vibe-interview, pede para refinar uma ideia, iniciar um produto ou MVP, ou ainda não definiu outcome, público, funcionamento ou restrições, mesmo que não diga vibe-interview.
 ---
 
 # vibe-interview
 
-Não invente `n`, slug ou path. Disco decide o número. Chat sozinho não conta.
-Sem `.vibeflow/`: pare e mande `/vibe-init`. Não grave em `docs/` nem na raiz.
+Não invente `n`, slug ou path. Sem `.vibeflow/`, pare e mande `/vibe-init`. Não grave em `docs/` nem na raiz.
+Um MVP usa `.vibeflow/mvp/` uma única vez por repo. Nunca sobrescreva esse baseline nem transforme uma feature posterior em continuação dele.
 
-## 0. Script primeiro
 
-1. Resolva o diretório desta skill (pasta deste `SKILL.md`).
-2. No cwd do repo do usuário:
-   - Windows: `pwsh "<skill>/scripts/interview.ps1"`
-   - Unix: `bash "<skill>/scripts/interview.sh"`
-     - O launcher usa Python 3; se indisponível, usa PowerShell 7. Sem um deles, pare e informe a dependência.
-3. Leia `.vibeflow/interview-report.json`. Se `aberta`, leia aquele `interview.md`. Não abrir a árvore inteira.
+## 0. Entender e usar o script
 
-Se o script parar com `INIT_AUSENTE`: `/vibe-init` e só então volte.
-Se `PHASES_INESPERADO`: não contorne. Humano resolve o path.
+1. Resolva o diretório desta skill e leia o motor que vai executar: `scripts/interview.ps1` no Windows ou `scripts/interview.py` no fluxo Unix. Entenda flags, relatório, recusas e promoção antes de chamá-lo. Se encontrar defeito, corrija o motor e prove o contrato antes de continuar.
+2. No cwd do repo:
+   - Windows: `pwsh "<skill>/scripts/interview.ps1"`.
+   - Unix: `bash "<skill>/scripts/interview.sh"`.
+   - Modo MVP: acrescente `-Mvp` ou `--mvp`.
+3. Leia `.vibeflow/interview-report.json`. Abra apenas o alvo indicado em `alvo`, quando houver, e os paths citados pelo humano.
 
-## 1. Abrir (5 linhas)
+`INIT_AUSENTE` exige `/vibe-init`. `PHASES_INESPERADO`, `MVP_INESPERADO` e `MODO_INVALIDO` não são contornados.
 
-hipótese · confidence · next_n · aberta · wip
+## 1. Abrir
 
+Declare em cerca de cinco linhas: hipótese, confiança, modo, alvo e wip.
+
+```text
+HIPÓTESE: produto novo para organizar solicitações internas
+CONFIDENCE: ~35%, faltam público, jornada e operação
+modo: mvp · alvo: ausente · wip: ausente
 ```
-HIPÓTESE: standup quer "como estamos?", "dashboard" foi convenção
-CONFIDENCE: ~30% — falta: quem, métrica, sucesso
-next: 2 · aberta: phase-1-lock-bloco · wip: ausente
-```
 
-Abaixo de ~70%: motivo na mesma linha. Número alto sem prever as próximas 3 reações = número errado.
+No modo phase, `aberta` e o pedido atual são o mesmo assunto: edite o vivo, sem apply. Assunto diferente: nova sessão no wip.
+No modo MVP, `.vibeflow/mvp/interview.md` existente é baseline fechado. Mudança posterior vira phase max com substituição explícita, nunca novo apply MVP.
 
-`aberta` e o pedido atual são o **mesmo** assunto → edite o `interview.md` vivo. Não chame apply.
-Assunto diferente, ou `aberta` nula → sessão nova no wip; apply no fim.
+## 2. Gate e seleção do modo
 
-## 2. Gate
-
-| | Ação |
+| Sinal | Ação |
 |---|---|
-| Typo / rename / inequívoco auto-contido / velocidade pedida / pergunta de info | **Não** usar; não invente entrevista |
-| `/vibe-interview` explícito | Usa, mesmo se o pedido parecer claro |
-| Já ≥~95% e restate fechável sem chute | Restate → sim → gravar trilha (pode pular Q) |
-| Falta quem, por quê, sucesso ou restrição; ou convenção no lugar de outcome | **Fase 1** |
-| Intenção ok, forma da solução não | **Fase 2** (depois de F1 ou conceito grosso) |
-| CI / loop / agendado sem usuário vivo e pedido subespecificado | **Bloquear** — não chute |
+| Typo, rename, pedido inequívoco, velocidade pedida ou pergunta informativa | Não entrevistar |
+| Documento, briefing, artigo, proposta ou texto em Markdown | Usar modo phase (entrevista focada em público, tom, dor e estrutura; **não** acionar modo MVP de software nem catálogo de infra/banco) |
+| `/vibe-interview` explícito | Entrevistar |
+| Produto novo de software, repo ainda será criado, primeira versão operacional ou pedido descrito como app, plataforma ou sistema completo | Usar modo MVP |
+| Mudança delimitada num produto existente | Usar modo phase |
+| Dúvida real entre produto e feature | Perguntar uma vez, com recomendação |
+| CI, loop ou agendado sem humano e pedido subespecificado | Bloquear, sem chutar |
 
-## 3. Fase 1
+Se já existe baseline MVP em `.vibeflow/mvp/`, qualquer alteração posterior deve ser conduzida como phase max, nunca sobrescrevendo o MVP existente.
 
-Wip = `.vibeflow/interview-wip.md`. Crie na primeira HIPÓTESE; acrescente cada Q/GUESS/R na hora. Molde: `templates/interview.md`. Não apague Solicitação/Trilha para “limpar” no final.
 
-### 3.1 Uma pergunta, com GUESS
 
+## 3. Entrevista normal
+
+Wip: `.vibeflow/interview-wip.md`. Use `templates/interview.md`, preserve Solicitação e Trilha e registre cada Q/GUESS/R na hora.
+
+1. Faça uma pergunta focada por vez, com um GUESS visível e corrigível.
+2. Quando intenção estiver clara e apenas a forma estiver aberta, leia `references/frameworks.md`, `references/refinement-criteria.md` e, se necessário, `references/examples.md`. Use uma lente, gere opções e recomende uma direção.
+3. Se o foco for documento/conteúdo: concentre-se no público-alvo, objetivo do texto, tom de voz, tópicos essenciais e formato de saída.
+4. Se houver UI e o tom estiver aberto, faça no máximo duas perguntas visuais. Não feche CSS detalhado nesta rota normal.
+5. Quando conseguir prever as próximas três reações, apresente o restate curto: o quê, pra quem, por quê, sucesso, limite, fora e visual/formato quando aplicável.
+6. Exija um sim claro. Delegação como “o que você achar melhor” permite recomendar e assumir; “parece bom” ou “bora” ainda pede confirmação direta do recap.
+
+Várias respostas de uma vez são válidas: registre tudo e feche os gaps restantes sem repetir perguntas.
+
+## 4. Módulo MVP
+
+Leia `references/mvp-discovery.md` somente no modo MVP (software/sistema). O catálogo orienta a cobertura, não vira formulário nem é despejado no chat.
+
+1. Comece por produto, público, dor, resultado e funcionamento esperado.
+2. Avance em blocos pequenos, normalmente de uma a três perguntas relacionadas. Não exiba uma lista extensa de pendências. Adapte o próximo bloco às respostas anteriores.
+3. Aceite “não sei”. Para lacuna reversível e de baixo risco, escolha o padrão mais adequado, informe recomendação e impacto e registre como `ASSUMIDO`. Pergunte diretamente decisões irreversíveis, caras, sensíveis ou que alterem a lógica central.
+4. Para cada recomendação, diga a escolha, por que serve a este caso e o impacto. Mencione contra apenas quando ele puder mudar a decisão ou a arquitetura.
+5. Cubra todos os domínios relevantes do catálogo. Marque cada um como `DECIDIDO`, `ASSUMIDO`, `N/A` ou `PENDENTE CRÍTICO`, com evidência. Não encerre com pendente crítico.
+6. Identifique decisões críticas estáveis com IDs por domínio, por exemplo `AUTH-01`, `DATA-01` e `INFRA-01`. Registre opção, estado, motivo e impacto.
+7. Segurança entra desde o início. Recuperação administrativa pode usar break-glass temporário e auditado via ambiente. Nunca recomende senha master permanente.
+
+O módulo prefere uma primeira versão pequena e operável, sem empurrar arquitetura sofisticada. Minimalismo não autoriza cortar validação, segurança, acessibilidade, backup ou recuperação necessários.
+
+## 5. Restate e gravação
+
+Depois do sim explícito, complete o wip e salve imediatamente.
+
+Modo phase:
+
+```text
+pwsh "<skill>/scripts/interview.ps1" -Apply -Slug "<slug>"
+bash "<skill>/scripts/interview.sh" --apply --slug "<slug>"
 ```
-Q: <uma pergunta focada>
-GUESS: <hipótese da resposta + por que>
+
+Modo MVP, sem slug:
+
+```text
+pwsh "<skill>/scripts/interview.ps1" -Apply -Mvp
+bash "<skill>/scripts/interview.sh" --apply --mvp
 ```
 
-Espere a reação. A 3ª pergunta depende da 1ª. Chute errado visível > pergunta vazia (mitiga concordância educada).
+No MVP, preencha também Cobertura, Mapa do produto, Direção técnica, Direção visual, Operação e Decisões críticas. No modo normal, omita todas essas seções.
 
-### 3.2 "Quer" vs "deveria querer"
-
-Best-practice theater, deferência à convenção, buzzword como meta:
-
-> Se você não tivesse que justificar isso para ninguém, o que você realmente queria?
-
-### 3.3 Probe visual (só se UI e ainda aberto)
-
-Outcome user-visible **e** tom ainda não fechou. Máx. 1–2 Q+GUESS. Não paleta, não type pairing, não manifesto. Interview **não** fecha CSS.
-
-### 3.4 Restate (só o bloco, no chat)
-
-≥~95% ou for fechar. 1 frase por linha, ~15 palavras. Fora inegociável.
-
-```
-Entendi assim:
-
-- O quê:     <resultado, não a feature>
-- Pra quem:  <quem se beneficia>
-- Por quê:   <o que mudou / por que agora>
-- Sucesso:   <observável>
-- Limite:    <restrição que manda>
-- Fora:      <o que explicitamente não entra>
-- Visual:    <só se UI e fechou tom; senão omitir a linha>
-
-Fecha assim? (sim / não / ajustar)
-```
-
-Parada: *consigo prever as próximas 3 reações?* → restate e para. Várias rodadas e ainda imprevisível = uma linha, pergunte se recua.
-
-### 3.5 Sim explícito
-
-| Resposta | O que é | O que fazer |
-|---|---|---|
-| "o que você achar melhor" | delegação | **2 opções concretas**, uma linha cada |
-| "parece bom" | ambíguo | "O que mudaria?" |
-| "beleza, bora" | saída educada | "Sim no recap acima, ou quer ajustar algo?" |
-| silêncio + "ok, pode começar" | desistência | não tratar como sim |
-
-Gate = "sim" claro. Não confirme campo a campo.
-
-## 4. Fase 2 (só se a forma estiver aberta)
-
-Intenção fechada, rota não. Leia `references/frameworks.md` para expandir (**uma** lente). Leia `references/refinement-criteria.md` para convergir. Ritmo em `references/examples.md` — não copiar o caso.
-
-1. Reframe em 1 linha (problema, não solução).
-2. Afiar: 1–3 Q+GUESS que decidem o *tipo* de problema.
-3. 4–6 variações: cada uma com lente + por que existe.
-4. Opinião: empurrar 1–2 + porquê. Dizer baixa diferenciação e complexidade alta em voz alta.
-5. Convergir: valor / viabilidade / diferenciação que importam aqui; **Not Doing** justificado; MVP que testa a aposta central.
-6. Escrever seção **Direção** no mesmo arquivo (wip ou vivo). Não apagar Solicitação/Trilha.
-
-Maioria dos pedidos: só Fase 1.
-
-## 5. Gravar
-
-Intenção confirmada = restate + sim + arquivo em disco. Depois do sim, **salve na hora** — não pergunte.
-
-Sessão nova (wip):
-
-1. Complete o wip: Solicitação, Hipótese, Trilha, Resultado (= restate). Direção se F2. Handoff `vibe-spec` ou `precisa-forma`.
-2. Slug = frase curta da fase (do O quê), ainda não sanitizado.
-3. `pwsh "<skill>/scripts/interview.ps1" -Apply -Slug "<slug>"` (Unix: `interview.sh --apply --slug "<slug>"`).
-4. Leia o relatório: `created.path`. Mostre o path. Não reimprima o arquivo.
-
-Se `WIP_AUSENTE`, `SLUG_INVALIDO`, `FASE_EXISTE` ou `COPY_HASH_MISMATCH`: não contorne. Corrija o que o erro nomeia e rode apply de novo.
-
-Continuar fase já promovida: patch no `interview.md` vivo. Sem apply.
+Leia `created.path` no relatório e apresente o caminho do arquivo gravado no chat com resumo factual. `WIP_AUSENTE`, `SLUG_INVALIDO`, `FASE_EXISTE`, `MVP_EXISTE` e `COPY_HASH_MISMATCH` exigem corrigir a causa e executar novamente. Nunca copie o wip manualmente para contornar o motor.
 
 ## 6. Fechar
 
-Não commita. Avise: commitar `.vibeflow/phases/phase-N-slug/interview.md`. Não commitar `interview-report.json` nem `interview-wip.md`.
-Não dispare `vibe-spec`. Handoff é uma linha no artefato.
-
+Handoff padrão é `vibe-spec` (ou geração direta do texto/documento se o objetivo for puramente editorial/conteúdo). Para MVP de software, registre também `rota: max`.
+Não commite no git. Não dispare a próxima etapa a menos que o usuário tenha autorizado explicitamente o avanço (ex.: "pode ir para a próxima fase", "segue pro spec", "pode gerar").
+Informe que o vivo entra no git e `interview-report.json` e `interview-wip.md` ficam de fora.

@@ -64,6 +64,19 @@ def write_plan(phase: Path, body: str) -> None:
     (phase / "plan.md").write_text(body, encoding="utf-8")
 
 
+# Grava o alvo MVP mínimo e permite variar o gate do analyze nos contratos.
+def seed_mvp(vf: Path, plan: str, status: str | None = "aprovado", verdict: str = "limpo") -> Path:
+    mvp = vf / "mvp"
+    mvp.mkdir()
+    (mvp / "plan.md").write_text(plan, encoding="utf-8")
+    if status is not None:
+        (mvp / "analyze.md").write_text(
+            f"# Analyze: fixture\n# Status: {status}\n\n## Veredito\n\n{verdict}\n",
+            encoding="utf-8",
+        )
+    return mvp
+
+
 class PythonContracts(unittest.TestCase):
     """Verifica inventário, alvo com plan, apply do wip e gitignore."""
 
@@ -274,21 +287,73 @@ class PythonContracts(unittest.TestCase):
         self.assertEqual([], fila["elegiveis"])
         self.assertEqual([], fila["avisos"])
 
+    def test_mvp_fila_uses_only_special_plan(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        phase = seed_phase(vf, "phase-9-outra", "plan.md")
+        write_plan(phase, plan_tasks(("T1", " ", "nenhuma")))
+        seed_mvp(vf, plan_tasks(("T7", " ", "nenhuma")))
+        _, report = invoke(self.repo, "--mvp")
+        self.assertEqual("mvp", report["rota"])
+        self.assertEqual(["T7"], report["fila"]["elegiveis"])
+        self.assertTrue(report["analyze_gate"]["pronto"])
+
+    def test_mvp_apply_refuses_missing_draft_and_blocked_analyze(self) -> None:
+        for status, verdict, expected in (
+            (None, "limpo", "IMPLEMENT_ANALYZE_AUSENTE"),
+            ("rascunho", "limpo", "IMPLEMENT_ANALYZE_RASCUNHO"),
+            ("aprovado", "bloqueado", "IMPLEMENT_ANALYZE_BLOQUEADO"),
+        ):
+            with self.subTest(expected=expected):
+                repo = self.repo / expected
+                repo.mkdir()
+                vf = seed_vibeflow(repo)
+                seed_mvp(vf, plan_tasks(("T1", " ", "nenhuma")), status, verdict)
+                (vf / "implement-wip.md").write_text("fatia\n", encoding="utf-8")
+                process, _ = invoke(repo, "--apply", "--mvp", check=False)
+                self.assertNotEqual(0, process.returncode)
+                self.assertIn(expected, process.stderr)
+                self.assertTrue((vf / "implement-wip.md").is_file())
+                self.assertFalse((vf / "mvp" / "implement.md").exists())
+
+    def test_mvp_apply_accumulates_verified_wip(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        mvp = seed_mvp(vf, plan_tasks(("T1", " ", "nenhuma")))
+        (vf / "implement-wip.md").write_bytes(b"# Fatia T1\n\x00")
+        _, report = invoke(self.repo, "--apply", "--mvp")
+        self.assertEqual(b"# Fatia T1\n\x00", (mvp / "implement.md").read_bytes())
+        self.assertEqual("mvp", report["created"]["kind"])
+        (vf / "implement-wip.md").write_bytes(b"# Fatia T1\n\x00\n## Fatia T2\n")
+        invoke(self.repo, "--apply", "--mvp")
+        self.assertEqual(b"# Fatia T1\n\x00\n## Fatia T2\n", (mvp / "implement.md").read_bytes())
+        self.assertEqual([], [item.name for item in (vf / "phases").iterdir() if item.is_dir()])
+
+    def test_mvp_rejects_phase_selectors(self) -> None:
+        seed_vibeflow(self.repo)
+        process, _ = invoke(self.repo, "--mvp", "--slug", "produto", check=False)
+        self.assertNotEqual(0, process.returncode)
+        self.assertIn("MODO_INVALIDO", process.stderr)
+
 
 class SkillContracts(unittest.TestCase):
-    """Trava no disco as frases que a skill precisa para ler fila e recusar sem RED-GREEN."""
+    """Trava no disco os contratos que a skill precisa para ler fila e executar o ciclo de implementação."""
 
     def test_skill_reads_fila_from_report(self) -> None:
         text = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("fila.elegiveis", text)
-        self.assertIn("não monta a fila varrendo", text)
         self.assertIn("2+ elegíveis", text)
 
-    def test_skill_refuses_without_red_green(self) -> None:
+
+    def test_skill_requires_execution_cycle_and_green_test(self) -> None:
         skill = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
         dod = (SKILL_DIR / "references" / "definition-of-done.md").read_text(encoding="utf-8")
-        self.assertIn("Sem RED-GREEN", skill)
+        self.assertIn("Sem teste verde executável", skill)
+        self.assertIn("Reconhecer", skill)
+        self.assertIn("Codar", skill)
+        self.assertIn("Testar", skill)
+        self.assertIn("Simplificar", skill)
+        self.assertIn("Re-testar", skill)
         self.assertIn("Não rebaixe", dod)
+
 
 
 # Verifica se existe uma versão real de PowerShell 7, única suportada pelo motor gêmeo.
@@ -345,6 +410,22 @@ class PowershellParity(unittest.TestCase):
         self.assertEqual(py_report["fila"]["bloqueadas"], ps_report["fila"]["bloqueadas"])
         self.assertEqual(["T1"], ps_report["fila"]["elegiveis"])
         self.assertEqual([{"id": "T2", "deps": ["T1"]}], ps_report["fila"]["bloqueadas"])
+
+    def test_mvp_apply_same_path_and_gate(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        mvp = seed_mvp(vf, plan_tasks(("T1", " ", "nenhuma")))
+        (vf / "implement-wip.md").write_text("# MVP\n", encoding="utf-8")
+        process = subprocess.run(
+            [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo), "-Apply", "-Mvp"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(0, process.returncode, process.stderr)
+        self.assertEqual("# MVP\n", (mvp / "implement.md").read_text(encoding="utf-8"))
+        report = json.loads((vf / "implement-report.json").read_text(encoding="utf-8"))
+        self.assertTrue(report["analyze_gate"]["pronto"])
+        self.assertEqual(["T1"], report["fila"]["elegiveis"])
 
 
 if __name__ == "__main__":

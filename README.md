@@ -12,6 +12,7 @@ Cada skill é um pacote instalável (`vibe-init/`, `vibe-interview/`, …) com `
 
 ```text
 .vibeflow/REGRAS.md                         fonte única de regras do projeto
+.vibeflow/mvp/                              baseline único de projeto novo na rota max
 .vibeflow/phases/phase-N-slug/interview.md
 .vibeflow/phases/phase-N-slug/spec.md
 .vibeflow/phases/phase-N-slug/plan.md
@@ -22,7 +23,7 @@ AGENTS.md  →  .vibeflow/REGRAS.md           symlink
 CLAUDE.md  →  .vibeflow/REGRAS.md           symlink
 ```
 
-`n` e o slug da pasta saem do script, não da IA. Skills seguintes do mesmo pedido gravam na mesma pasta, outro arquivo. Nenhuma skill dispara a próxima: o handoff é uma linha no artefato.
+`n` e o slug das phases saem do script, não da IA. Projeto novo classificado como MVP usa uma única `.vibeflow/mvp/`, sem número nem slug, e percorre a rota max completa. Skills seguintes do mesmo pedido gravam na mesma pasta, outro arquivo. Nenhuma skill dispara a próxima: o handoff é uma linha no artefato.
 
 Escopo do produto: [`docs/ESCOPO.md`](docs/ESCOPO.md). Contrato de cada skill: `docs/vibe-<nome>/ARQUITETURA.md`. CI: [`.github/workflows/contrato.yml`](.github/workflows/contrato.yml).
 
@@ -86,6 +87,8 @@ O bloco de cadeia em `.vibeflow/REGRAS.md` escolhe o tamanho da rota. A IA não 
 | xhigh | interview → spec → plan → implement → review | Pedido ambíguo, confiança baixa, intenção ou sucesso em aberto |
 | max | interview → spec → plan → analyze → implement → review | Auth, pagamento, segredo, perda de dados, produção ou alto blast radius |
 
+Todo MVP de projeto novo usa a rota `max` em `.vibeflow/mvp/`. Feature chamada de MVP dentro de produto existente continua usando uma phase normal. Depois de concluído, o baseline não é sobrescrito; pivôs e reconstruções posteriores entram como phase `max`.
+
 O mesmo pedido reusa a pasta `phase-N-slug`. Pedido novo: próxima pasta, `n` numérico. Chat não substitui o arquivo quando a skill promete artefato.
 
 ## Por que usar as skills
@@ -94,9 +97,10 @@ Agentes de código otimizam o caminho curto: pulam spec, marcam tarefa sem prova
 
 Esta cadeia separa papéis e deixa o disco como fonte:
 
-- **Script** inventaria, calcula `n` e slug, copia bytes, grava o relatório JSON.
-- **IA** faz a semântica: pergunta, une prosa, preenche o template.
-- **Humano** só decide o que o disco não resolve, e o que entra no git. Nenhuma skill commita.
+- **IA** pilota a run: entende o pedido, investiga o projeto e os scripts, decide a semântica e audita o resultado.
+- **Skill** orienta a IA com invariantes, gates e critérios de fechamento.
+- **Script** auxilia operações determinísticas como inventário, path, número, slug, cópia e relatório.
+- **Humano** decide apenas o que muda materialmente o resultado e o que entra no git. Nenhuma skill commita.
 
 Efeito prático: as regras do projeto ficam numa fonte (`.vibeflow/REGRAS.md`), o pedido deixa trilha (interview → spec → plan → implement → review), e “feito” exige comando e resultado, não recap no chat.
 
@@ -105,7 +109,7 @@ Efeito prático: as regras do projeto ficam numa fonte (`.vibeflow/REGRAS.md`), 
 | Skill | Slash | Faz | Grava |
 |---|---|---|---|
 | [`vibe-init`](vibe-init/SKILL.md) | `/vibe-init` | Inicializa ou repara a fonte única de regras. `AGENTS.md` e `CLAUDE.md` viram symlink para `.vibeflow/REGRAS.md`. Une legado em vez de escolher um arquivo e descartar o outro | `.vibeflow/REGRAS.md`, ponteiros na raiz |
-| [`vibe-interview`](vibe-interview/SKILL.md) | `/vibe-interview` | Fecha intenção ambígua: uma pergunta por vez, até haver sucesso observável e fora real | `phase-N-slug/interview.md` |
+| [`vibe-interview`](vibe-interview/SKILL.md) | `/vibe-interview` | Fecha intenção ambígua e inicia descoberta adaptativa de projeto MVP quando aplicável | `phase-N-slug/interview.md` ou `.vibeflow/mvp/interview.md` |
 | [`vibe-spec`](vibe-spec/SKILL.md) | `/vibe-spec` | Grava o decidido. Comportamento, aceite, fora, como provar. Sem mural de user story | `phase-N-slug/spec.md` |
 | [`vibe-plan`](vibe-plan/SKILL.md) | `/vibe-plan` | Fatia a spec em T* verificáveis, com deps reais, comando de verificação e checkpoint | `phase-N-slug/plan.md` |
 | [`vibe-analyze`](vibe-analyze/SKILL.md) | `/vibe-analyze` | Cruza interview, spec e plan da mesma fase. Achado com path. Não edita os três | `phase-N-slug/analyze.md` |
@@ -151,7 +155,7 @@ vibe-<nome>/
 2. Scripts em trio, mesmo contrato: `.py` (motor), `.ps1` (Windows), `.sh` (launcher Unix).
 3. Teste de contrato em `docs/vibe-<nome>/tests/`, `unittest`, pasta isolada. Depois: `python docs/vibe-<nome>/tests/test-<nome>.py -v`.
 4. Distribuição: `python docs/tests/test-distribuicao.py -v`.
-5. Não inventar path de artefato fora de `.vibeflow/phases/phase-N-slug/`. Não copiar `REGRAS.md` para `AGENTS.md` / `CLAUDE.md`.
+5. Não inventar path de artefato fora de `.vibeflow/phases/phase-N-slug/`; a única exceção é o baseline fixo `.vibeflow/mvp/`. Não copiar `REGRAS.md` para `AGENTS.md` / `CLAUDE.md`.
 6. Relatórios `*-report.json` e `*-wip.md` ficam fora do git.
 
 PR contra `main`. Mudança de contrato (path, schema do relatório, flag pública) é Major; o resto segue o semver em `.vibeflow/REGRAS.md`.
@@ -163,6 +167,7 @@ Minhas referências
 - [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills)
 - [github/spec-kit](https://github.com/github/spec-kit)
 - [mattpocock/skills](https://github.com/mattpocock/skills)
+- [ponytail](https://github.com/korflux/ponytail) (skill e padrão para registro de limitações conscientes)
 
 ## Autor
 

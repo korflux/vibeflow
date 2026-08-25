@@ -1,5 +1,5 @@
 # Plan: <frase curta>
-# Pasta: phase-<n>-<slug>
+# Alvo: <phase-<n>-<slug> ou mvp>
 # Status: rascunho
 # Spec: spec.md (mesma pasta)
 
@@ -11,58 +11,62 @@
 
 ### Fase 1: <nome>
 
-- T1–T2 (corpo em Tasks)
+- T1-T2 (corpo em Tasks)
 
-### Checkpoint: após T1–T2
+### Checkpoint: após T1-T2
 
 - [ ] `<comando da suite do grupo>`
-- [ ] <fluxo do grupo — omitir se o caminho não atravessa T*>
+- [ ] <fluxo do grupo, omitir se o caminho não atravessa T*>
 
 ### Fase 2: <nome>
 
-- T3–…
+- T3-...
 
 ## Riscos
 
 | Risco | Impacto | Mitigação |
 |---|---|---|
-| … | alto / médio / baixo | … |
+| ... | alto / médio / baixo | ... |
 
 ## Paralelização
 
-- Paralelo ok: …
-- Sequencial: …
-- Contrato primeiro, depois paralelo: …
+- Paralelo ok: ...
+- Sequencial: ...
+- Contrato primeiro, depois paralelo: ...
 
 ## Tasks
 
-### T1: <verbo + outcome>
+### T1: <verbo + outcome (smoke test / walking skeleton ou setup de ferramentas)>
 
 - [ ] T1 concluída
 - **Spec:** A1, C1
+- **Decisões:** <AUTH-01 (mantém), INFRA-01 (cria); omitir quando N/A>
 - **O quê:** <1–3 frases>
 - **Aceite:**
   - [ ] <condição testável>
 - **Verificação:**
   - [ ] `<comando do repo>`
 - **Deps:** nenhuma
-- **Arquivos:** `path/…`
-- **Size:** low \| medium \| high
+- **Arquivos:** `path/...`
+- **Size:** low | medium | high
 
-### Checkpoint: após T1–T2
+### Checkpoint: após T1-T2
 
 - [ ] `<comando da suite do grupo>`
-- [ ] <fluxo do grupo — omitir se o caminho não atravessa T*>
+- [ ] <fluxo do grupo, omitir se o caminho não atravessa T*>
 
 ## Conferência
 
 - [x] Spec aprovada como fonte; mesma pasta
 - [x] Fatias verticais; size ≤ high
 - [x] Toda T* tem aceite + verificação + Spec: A*/C* quando couber
+- [x] Ferramentas essenciais (gitleaks, chrome-devtools) validadas ou com task de setup
+- [x] T1 estabelece ponto de entrada real (smoke test / walking skeleton)
 - [x] UI greenfield/sem DS → T* de kit antes das telas (ou N/A)
 - [x] Checkpoints a cada 2–3 T*
 - [ ] Aprovação humana (leu o arquivo e confirmou)
 
 ## Handoff
 
-vibe-implement
+<vibe-implement no phase sem analyze obrigatório; vibe-analyze no MVP>
+<!-- No MVP, acrescentar: rota: max -->
