@@ -31,7 +31,7 @@ Bloqueio imediato. Falhas exploráveis ou perda de dados/segredos:
 
 - **Falta de limites de entrada:** Inputs sem restrição de tamanho máximo de caracteres, arquivos sem limite de bytes ou requests sem timeout (risco de DoS e travamento).
 - **Validação frouxa:** Ausência de allowlist de campos no body das requisições (mass assignment).
-- **Tratamento de erros inseguro:** Exibição de stack traces, erros internos de banco ou infraestrutura para o usuário final.
+- **Tratamento de erros inseguro na borda:** Exibição de stack traces, queries SQL, erros internos de banco ou infraestrutura para o usuário final. Ausência de envelope padronizado ({ error: { code, message, status } }) ou de middleware central para captura de exceções de domínio.
 - **Rate Limit ausente:** Endpoints sensíveis de autenticação (login, cadastro, recuperação de senha, 2FA) sem limitação de taxa de requisições.
 
 ---

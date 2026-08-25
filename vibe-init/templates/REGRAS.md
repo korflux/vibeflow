@@ -40,7 +40,8 @@
 - **Entradas Não Confiáveis:** Toda informação recebida de fora (request, query, headers, forms) deve ser validada na borda com allowlist e limite de tamanho. SQL sempre parametrizado.
 - **Credenciais e Segredos:** Chaves, tokens e segredos nunca ficam no código ou repositório. Usar variáveis de ambiente (`.env`).
 - **Autorização no Servidor:** Toda ação sensível deve validar permissões no servidor (proteção anti-IDOR).
-- **Tratamento de Erros:** Não expor stack traces, detalhes de banco ou dados sensíveis ao usuário final nem em logs públicos.
+- **Tratamento de Erros na Borda:** Respostas externas (APIs, webhooks, CLIs) devem retornar envelope padronizado com código estável em maiúsculas (`code`), mensagem segura (`message`) e status HTTP/CLI. Não expor stack traces, queries ou dados internos do banco.
+- **Erros no Núcleo Interno:** Lógica interna e serviços devem lançar exceções de domínio tipadas. A conversão da exceção para o código público de erro é responsabilidade exclusiva do middleware/handler central na borda.
 
 ## Estrutura
 <!-- SLOT:estrutura -->

@@ -88,6 +88,7 @@ path/arquivo    # papel na entrega
 
 - limites: …
 - API / schema / eventos fechados: …
+- Catálogo de erros na borda: CODE_EXEMPLO (status HTTP/CLI, mensagem segura e causa)
 
 ## Como provar
 
