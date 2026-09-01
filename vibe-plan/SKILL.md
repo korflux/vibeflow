@@ -70,19 +70,35 @@ Antes de fatiar, audite a spec e o ambiente:
 
 Fatia **vertical** (um caminho usável de ponta a ponta), nunca horizontal (ex.: criar todas as tabelas, depois toda a API, depois toda a UI).
 
-| Size | Files | Ação |
-|---|---|---|
-| low | 1 | Uma T* |
-| medium | 1 a 2 | Uma T* |
-| high | 3 a 5 | Uma T* |
-| xhigh / max | 5+ ou alto risco | Quebrar obrigatoriamente |
+### Regra de Size
 
-Quebre se: mais de uma sessão focada; aceite com mais de 3 bullets; múltiplos subsistemas independentes; "e" no título.
+`Size` mede a complexidade estrutural para entregar uma única fatia vertical verde. Não é duração, volume de texto nem contagem isolada de arquivos. Para cada T*, pontue as cinco dimensões abaixo com `0`, `1` ou `2` e some os valores:
+
+| Dimensão | 0 | 1 | 2 |
+|---|---|---|---|
+| Superfície | Um módulo ou artefato | Vários arquivos do mesmo módulo | Vários subsistemas |
+| Acoplamento | Isolado | Contrato interno compartilhado | API, schema, auth ou serviço externo |
+| Verificação | Unitário ou estático | Integração ou serviço | E2E, navegador, hardware ou dependência externa |
+| Incerteza | Padrão conhecido | Investigação pequena | Comportamento ou solução desconhecida |
+| Coordenação | Independente e reversível | Uma dependência ou migração | Ordem crítica, rollout ou efeito irreversível |
+
+| Score | Size final | Ação |
+|---|---|---|
+| 0–3 | low | Uma T* |
+| 4–6 | medium | Uma T* |
+| 7–8 | high | Uma T*, com justificativa explícita |
+| 9–10 | — | Quebrar obrigatoriamente antes de gravar o plan |
+
+`Risk` é separado do score de `Size` e registra impacto potencial: `low` para mudança local e reversível, `medium` para contrato compartilhado ou regressão relevante, e `high` para autenticação, autorização, pagamento, segredo, dado pessoal, produção, perda de dados ou alto blast radius. `Risk: high` pode exigir uma rota e validações mais rigorosas, mas não transforma automaticamente `Size` em `high`.
+
+O campo `Arquivos` continua listando paths prováveis e ajudando a explicar a superfície, mas não define sozinho o tamanho. Não estime minutos no plan. Se o tempo real for observado depois, use-o apenas para calibrar a regra em outra revisão, nunca para classificar uma task individual. O esforço da rota (`low`, `medium`, `high`, `xhigh`, `max`) é independente do `Size`; uma rota `high` pode conter T* `low` ou `medium`.
+
+Quebre obrigatoriamente se: score `9–10`; mais de uma sessão focada; aceite com mais de 3 bullets; múltiplos subsistemas independentes; ou "e" no título indicando mais de um outcome.
 
 ### Regras das Tasks:
 
 1. **Walking Skeleton / Smoke Test Inicial:** A primeira task funcional (T1 ou logo após o setup de ferramentas) deve validar o ponto de entrada real (subir a aplicação, executar `--help` no CLI ou rodar o bootstrap inicial).
-2. **Estrutura de cada T\*:** Título com verbo + outcome, `Spec: A*/C*`, aceite testável, verificação com comando real do repo, dependências explícitas (`Deps`), arquivos prováveis e `Size`.
+2. **Estrutura de cada T\*:** Título com verbo + outcome, `Spec: A*/C*`, aceite testável, verificação com comando real do repo, dependências explícitas (`Deps`), arquivos prováveis, `Size` com score e `Risk` separado.
 3. **Decisões Críticas:** Quando a task implementar ou substituir decisão crítica, adicionar `Decisões: <ID> (<ação>)`.
 4. **Comandos de Verificação Reais:** Toda task exige pelo menos um comando de teste executável no repositório. Teste apenas manual recusa o aceite; leitura de arquivo não conta como verificação.
 5. **Dependências (`Deps`):** Declarar apenas dependências reais de execução. Fatias independentes usam `Deps: nenhuma`.

@@ -123,6 +123,12 @@ Contrato: `docs/vibe-review/ARQUITETURA.md` e `templates/review.md` antes de mud
 - [x] CLI `npx skills add korflux/vibeflow` (projeto ou `-g` global) para `grok`, `claude-code`, `codex`, `antigravity`.
 - [x] Manifests nativos: `.claude-plugin/`, `.codex-plugin/`, `.agents/plugins/`, `.grok-plugin/`, `plugin.json` (Antigravity). Pasta `skills/` aponta para `vibe-<nome>/`. Sem aliases `/spec` `/plan`.
 
+### 3.5 Size por complexidade e Risk separado
+
+- [x] `vibe-plan` classifica T* por cinco dimensões pontuadas de 0 a 2, com `0–3 = low`, `4–6 = medium`, `7–8 = high` e quebra obrigatória em `9–10`.
+- [x] `Risk` é registrado separadamente de `Size`; tempo e quantidade de arquivos não são critérios isolados.
+- [x] Template, arquitetura, análise, README e testes de contrato refletem a mesma regra sem alterar o parser mecânico.
+
 ## 4. Limites de contrato
 
 Não são backlog. Mudá-los quebra o disco.

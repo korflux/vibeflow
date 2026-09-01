@@ -250,6 +250,38 @@ class TemplateContracts(unittest.TestCase):
         self.assertIn("deps", skill.lower())
         self.assertIn("manual recusa", skill.lower())
 
+    # Contrato A1: a regra de tamanho usa cinco dimensões com escala reproduzível.
+    def test_size_uses_five_dimensions_and_break_limit(self) -> None:
+        skill = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
+        for dimension in ("Superfície", "Acoplamento", "Verificação", "Incerteza", "Coordenação"):
+            self.assertIn(dimension, skill)
+        for interval in ("0–3", "4–6", "7–8", "9–10"):
+            self.assertIn(interval, skill)
+        self.assertIn("Quebrar obrigatoriamente", skill)
+        self.assertNotIn("| Size | Files |", skill)
+        self.assertNotIn("| xhigh / max | 5+ ou alto risco", skill)
+
+    # Contrato A2: cada T* registra tamanho calculado e risco sem criar xhigh/max como tamanho.
+    def test_template_requires_size_score_and_separate_risk(self) -> None:
+        template = (SKILL_DIR / "templates" / "plan.md").read_text(encoding="utf-8")
+        self.assertIn("**Size:**", template)
+        self.assertIn("<score>/10", template)
+        self.assertIn("**Risk:**", template)
+        self.assertIn("<low | medium | high>", template)
+        self.assertNotIn("Size:** xhigh", template)
+        self.assertNotIn("Size:** max", template)
+
+    # Contrato A3/A4: a documentação secundária mantém os conceitos alinhados e não revive a regra antiga.
+    def test_size_documentation_keeps_route_risk_and_size_distinct(self) -> None:
+        architecture = (Path.cwd() / "docs" / "vibe-plan" / "ARQUITETURA.md").read_text(encoding="utf-8")
+        analysis = (Path.cwd() / "docs" / "vibe-plan" / "ANALISE.md").read_text(encoding="utf-8")
+        readme = (Path.cwd() / "README.md").read_text(encoding="utf-8")
+        for text in (architecture, analysis, readme):
+            self.assertIn("Size", text)
+        self.assertIn("Risk", architecture)
+        self.assertIn("Esforço da rota e `Size`", readme)
+        self.assertNotIn("Size ≤ high; quebrar xhigh/max", analysis)
+
 
 if __name__ == "__main__":
     unittest.main()

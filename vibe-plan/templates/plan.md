@@ -48,7 +48,8 @@
   - [ ] `<comando do repo>`
 - **Deps:** nenhuma
 - **Arquivos:** `path/...`
-- **Size:** low | medium | high
+- **Size:** `<low | medium | high>, <score>/10, <justificativa curta>`
+- **Risk:** `<low | medium | high>, <motivo curto quando não for low>`
 
 ### Checkpoint: após T1-T2
 
@@ -58,7 +59,7 @@
 ## Conferência
 
 - [x] Spec aprovada como fonte; mesma pasta
-- [x] Fatias verticais; size ≤ high
+- [x] Fatias verticais; score de Size ≤ 8; Risk separado
 - [x] Toda T* tem aceite + verificação + Spec: A*/C* quando couber
 - [x] Ferramentas essenciais (gitleaks, chrome-devtools) validadas ou com task de setup
 - [x] T1 estabelece ponto de entrada real (smoke test / walking skeleton)

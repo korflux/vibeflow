@@ -38,7 +38,9 @@ Um arquivo. Overview + ordem + riscos + **corpo das T\*** + conferência. A buil
 | Gate: sem spec não planeja | Fluxline | `PLAN_SEM_SPEC` |
 | Pedido de plan aprova spec rascunho | Fluxline | Patch no `spec.md` |
 | Fatia vertical, não horizontal | Fluxline + tasks (história independente) | Uma T* = caminho usável |
-| Size ≤ high; quebrar xhigh/max | Fluxline | Tabela na skill |
+| Size por score de cinco dimensões; quebrar score 9–10 | Decisão desta phase | Matriz canônica na skill |
+| Risk separado do Size | Decisão desta phase | Campo próprio no template |
+| Tempo fora do cálculo | Decisão desta phase | Size é classificação ordinal, não estimativa |
 | T* com aceite, verificação, deps, Spec: A*/C* | Fluxline | Corpo no `plan.md` |
 | Walking Skeleton / Smoke Test na T1 | Engenharia / Robustez | T1 valida ponto de entrada real |
 | Validação de ferramentas de teste (gitleaks, chrome-devtools) | Governança | Checar ambiente; alocar task se faltar |
@@ -85,7 +87,7 @@ Um arquivo. Overview + ordem + riscos + **corpo das T\*** + conferência. A buil
 [3] IA analisa o relatório como evidência, lê spec.md da alvo, interview.md (se houver) e REGRAS.md
 [4] IA valida ferramentas de suporte no ambiente (gitleaks, chrome-devtools) e define tasks de setup se ausentes
 [5] Sem spec → para, mande vibe-spec. Spec rascunho + humano pediu plan → flip spec para aprovado
-[6] IA realiza conferência de robustez e fatiamento vertical com smoke test na T1
+[6] IA realiza conferência de robustez, pontua cada T* nas cinco dimensões e faz o fatiamento vertical com smoke test na T1
 [7] IA escreve plan-wip.md no molde do template (Status: rascunho)
 [8] Script apply promove com validação atômica → phase-N-slug/plan.md ou mvp/plan.md
 [9] Chat: path + 4 linhas com resumo e validação de ferramentas

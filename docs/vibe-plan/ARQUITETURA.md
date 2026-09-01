@@ -90,6 +90,29 @@ O artefato MVP preserva IDs e ações críticas da spec nas tasks correspondente
 
 Depois do `plan.md` existir, ajuste e flip de Status editam o vivo diretamente. Sem apply de novo.
 
+### 4.2 Classificação semântica das tasks
+
+`Size` é a complexidade estrutural para entregar uma única fatia vertical verde. A regra canônica fica em `vibe-plan/SKILL.md`; este contrato preserva seus limites para que template, testes e documentação não criem outra interpretação.
+
+Cada T* soma cinco dimensões, pontuadas de `0` a `2`:
+
+| Dimensão | 0 | 1 | 2 |
+|---|---|---|---|
+| Superfície | Um módulo ou artefato | Vários arquivos do mesmo módulo | Vários subsistemas |
+| Acoplamento | Isolado | Contrato interno compartilhado | API, schema, auth ou serviço externo |
+| Verificação | Unitário ou estático | Integração ou serviço | E2E, navegador, hardware ou dependência externa |
+| Incerteza | Padrão conhecido | Investigação pequena | Comportamento ou solução desconhecida |
+| Coordenação | Independente e reversível | Uma dependência ou migração | Ordem crítica, rollout ou efeito irreversível |
+
+| Total | Classificação | Regra |
+|---|---|---|
+| 0–3 | `low` | Uma T* |
+| 4–6 | `medium` | Uma T* |
+| 7–8 | `high` | Uma T*, com justificativa |
+| 9–10 | — | Quebrar antes de gravar o plan |
+
+`Risk` é registrado separadamente como `low`, `medium` ou `high`. Ele descreve impacto potencial e pode exigir mais rigor de rota, teste ou review sem alterar automaticamente o `Size`. `Arquivos` continua sendo uma lista de paths prováveis, não um limiar. Tempo observado não entra no cálculo nem é exigido no plan. O esforço da rota (`low` a `max`) é independente do tamanho da T*.
+
 
 ---
 
@@ -188,7 +211,7 @@ Seções (omitir a que não se aplica):
 - Ordem (fases + checkpoints; índice, não recópia o corpo)
 - Riscos
 - Paralelização
-- Tasks (corpo T1…; aceite; Verificação = comando do repo; `Deps`; linha `T{n} concluída`; Spec: A*/C*)
+- Tasks (corpo T1…; aceite; Verificação = comando do repo; `Deps`; linha `T{n} concluída`; Spec: A*/C*; `Size` com score; `Risk`)
 - Conferência (cobertura da spec, não fila da build)
 - Handoff (`vibe-implement`)
 
@@ -209,6 +232,8 @@ Sem Open Questions. Sem `todo.md`. Sem `checklists/`. Sem T001/[P]/[US1].
 9. `phases` é arquivo → `PHASES_INESPERADO`.
 10. Paridade pwsh: apply reuse grava o mesmo path.
 11. Template congela `- [ ] T1 concluída`, `- **Deps:**`, Verificação como `comando do repo` (sem “passo manual”), checkpoint com omitir fluxo se não atravessa T*.
+12. A skill contém as cinco dimensões, os intervalos `0–3`, `4–6`, `7–8`, o gate `9–10` e não usa quantidade de arquivos ou tempo como regra isolada.
+13. O template exige `Size` com score e `Risk` separado, sem `xhigh` ou `max` como valor final de uma T*.
 
 Suíte: `docs/vibe-plan/tests/test-plan.py`. Launcher: `docs/vibe-plan/tests/test-plan.sh`.
 
