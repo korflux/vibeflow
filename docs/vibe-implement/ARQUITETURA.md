@@ -1,261 +1,75 @@
 # vibe-implement, arquitetura
 
-`/vibe-implement` executa a fatia elegível do alvo, marca o disco da cadeia e grava a trilha em `implement.md`. A IA pilota a inspeção de código existente, implementação, testes com comandos reais do repositório ou MCP Server `chrome-devtools`, simplificação do código e diagnóstico de erros; o script inventaria, projeta `fila`, aplica o gate MVP e promove bytes.
+`/vibe-implement` executa uma fatia elegível, prova o resultado e registra a trilha em `implement.md`. A IA inspeciona o fluxo, codifica, testa, simplifica e atualiza os artefatos vivos; o motor projeta a fila e prepara o destino.
 
+```text
+.vibeflow/phases/phase-<n>-<slug>/plan.md
+.vibeflow/phases/phase-<n>-<slug>/implement.md
+.vibeflow/phases/phase-<n>-<slug>/spec.md
+.vibeflow/phases/phase-<n>-<slug>/review.md
+.vibeflow/mvp/implement.md
 ```
-.vibeflow/phases/phase-<n>-<slug>/implement.md   ← trilha da run (prova + feedback)
-.vibeflow/phases/phase-<n>-<slug>/plan.md        ← fila (T* + checkpoints)
-.vibeflow/phases/phase-<n>-<slug>/spec.md        ← A*/C* quando a fatia prova
-.vibeflow/phases/phase-<n>-<slug>/review.md      ← R* se existir e estiver aberto
-.vibeflow/mvp/implement.md                       ← histórico acumulativo do MVP
-```
 
-Mesma pasta do plan. Esta skill **não** aloca `n` novo se já há alvo. Sem `plan.md`, o script devolve `alvo` nulo (ou a fase com `implement.md`, se for avulsa em andamento); a skill decide se a rota `low`/`medium` abre pasta com `--slug` ou se `high+` manda `/vibe-plan`.
+## 1. Papéis e ownership
 
----
-
-## 1. Papéis
-
-| Peça | Onde | Faz |
-|---|---|---|
-| IA | Piloto | Executa o ciclo de 6 passos (reconhecer, codar, testar, simplificar, re-testar, entregar), diagnostica erros sem pular tarefas, valida via MCP Server `chrome-devtools` e marca o disco |
-| Skill | `vibe-implement/SKILL.md` | Gate, ciclo de fatiamento vertical, prova visual, marcação do disco, wip, modo A/B, Q+RECOMENDO |
-| Scripts | `vibe-implement/scripts/implement.ps1`, `implement.py`, `implement.sh` | Inventário, alvo, `fila` do plan, `--slug`, promove wip → `implement.md` |
-| Template | `vibe-implement/templates/implement.md` | Esqueleto. Script não preenche prosa |
-| Referências | `vibe-implement/references/chrome-devtools.md`, `definition-of-done.md` | Sob demanda. Script não lê |
-| Relatório | `.vibeflow/implement-report.json` | Contrato script → IA (gitignored) |
-| Wip | `.vibeflow/implement-wip.md` | Rascunho até o apply (gitignored) |
-| Vivo | `.vibeflow/phases/phase-N-slug/implement.md` ou `.vibeflow/mvp/implement.md` | Depois do apply. Commitável |
-
-Install: `npx skills` ou marketplace (README). Pacote sem `docs/`. Fonte canônica: `vibe-implement/`.
-
----
-
-## 2. Dependência
-
-Sem `.vibeflow/` → `INIT_AUSENTE`. `/vibe-init` primeiro.
-
-`phases/` falta → cria + `.gitkeep`. Não mexe em `REGRAS.md` nem symlink.
-
----
-
-## 3. Alvo do implement
-
-Pasta que bate `^phase-(\d+)-([a-z0-9]+(?:-[a-z0-9]+)*)$`.
-
-| Campo | Significa |
+| Peça | Responsabilidade |
 |---|---|
-| `alvo` | Destino preferido do apply sem `--dir` |
-| `plan_pendente` | Maior `n` com `plan.md` e sem `implement.md` |
-| `rascunho` | Maior `n` com `implement.md` |
+| `SKILL.md` | Gate, escolha de T*/R*, ciclo de seis passos, prova visual, commit da task, registro e handoff. |
+| `scripts/implement.py`, `implement.ps1`, `implement.sh` | Inventário, alvo, fila, gate MVP, preparação do vivo e relatório. |
+| `templates/implement.md` | Forma da trilha por fatia. |
+| `references/chrome-devtools.md` | Checklist de prova renderizada, consultada quando a task toca UI. |
+| `.vibeflow/implement-report.json` | Evidência operacional, fora do Git. |
+| `implement.md` | Histórico acumulativo da execução, incluindo a mensagem do commit e o handoff; o hash fica no resultado da execução e no chat para evitar um residual pós-commit. |
 
-Resolução de `alvo` (primeira que existir):
+O script não codifica, não escreve a prosa da implementação, não marca aceite e não escolhe semântica.
 
-1. `--dir` (pasta existente e com nome válido)
-2. maior `n` com `plan.md` (`reuse` se ainda não há `implement.md`, `atualizar` se já há)
-3. maior `n` com `implement.md` (`atualizar`, avulsa em andamento)
-4. `null` (`criar`)
+## 2. Alvo e fila
 
-`--dir` inexistente ou fora do padrão → `FASE_AUSENTE`. `--dir` **não** exige `plan.md` (rota `low` pode apontar uma fase sem fila).
+Sem `.vibeflow/`, `INIT_AUSENTE`. Com plan, o alvo é a maior phase com `plan.md`; `--dir` força uma phase existente. Sem plan, o relatório deixa a fila nula e a skill encaminha `high+` para `vibe-plan`; uma execução avulsa `low/medium` pode usar `--slug`.
 
-Sem alvo e sem `--slug` no apply → `IMPLEMENT_SEM_ALVO`.
+O parser lê somente `### T{n}:`, a linha `T{n} concluída` e `Deps`. `fila.elegiveis` contém tasks abertas cujas dependências estão concluídas; `fila.bloqueadas` expõe as dependências faltantes. R* Critical/Required abertos têm prioridade sem alterar o plan.
 
-`interview.md`, `analyze.md` e `review.md` são opcionais no modo phase. No MVP, `plan.md` e `analyze.md` aprovado com veredito limpo são obrigatórios.
+No MVP, `--mvp` fixa `.vibeflow/mvp/`, exige plan e analyze aprovado com veredito limpo, e não aceita slug ou dir.
 
----
+## 3. Relatório
 
-## 4. Fluxo
+O relatório contém `vibeflow`, `phases`, `next_n`, `existing`, `plan_pendente`, `rascunho`, `alvo`, `mvp`, `modo_sugerido`, `created`, `modo`, `actions`, `avisos` e `fila`. `files` lista os seis artefatos vivos.
 
-### 4.1 Alvo MVP
+`actions` registra criação de phase ou de `implement.md`. Não há estado de arquivo temporário, promoção, cópia ou hash de conteúdo semântico.
 
-`--mvp` ou `-Mvp` fixa o alvo em `.vibeflow/mvp/` e recusa slug ou dir com `MODO_INVALIDO`. Sem plan, `IMPLEMENT_SEM_PLAN`.
+## 4. Apply e escrita direta
 
-O relatório inclui `analyze_gate` com `status`, `veredito` e `pronto`. Apply recusa analyze ausente, não aprovado ou não limpo com erros específicos. A `fila` é calculada somente de `.vibeflow/mvp/plan.md`; phases existentes não participam da seleção.
+1. Reexecuta o inventário e a projeção da fila.
+2. Valida alvo, modo e, no MVP, o gate de analyze.
+3. Cria a phase avulsa quando `--slug` for permitido.
+4. Prepara `implement.md` vazio somente quando ausente.
+5. Preserva bytes do vivo existente.
+6. A IA executa a task e grava diretamente a nova seção em `implement.md`.
 
-Apply promove o wip completo para `mvp/implement.md`. A IA preserva as fatias anteriores no wip; o motor substitui somente após conferir tamanho e SHA-256. Não cria `phase-N` nem publica decisões em `REGRAS.md`.
+O apply não substitui histórico acumulativo. Plan, spec e review recebem apenas os patches semânticos que a skill autoriza, depois da prova verde.
 
-```
-[1] SCRIPT inventário → implement-report.json
-[2] IA lê relatório + o que a alvo tiver + REGRAS.md
-[3] Gate (rota, modo A/B, analyze bloqueado, R* vs fila do relatório)
-[4] Execução do ciclo de 6 passos:
-    a. Reconhecer o código existente para reutilização
-    b. Codar a solução enxuta e focada
-    c. Testar com comando real do repo (ou MCP Server chrome-devtools para UI)
-    d. Simplificar o código recém-escrito (refactor)
-    e. Re-testar para garantir regressão zero
-    f. Entregar, gravar prova e marcar [x] nos vivos
-[5] Wip no template (fatias anteriores copiadas + fatia nova + feedback)
-[6] SCRIPT apply promove wip → implement.md
-[7] Se teste falhar: diagnostica causa raiz, corrige no código e retesta (não desiste nem pula)
-[8] Modo A: para. Não commita. Não dispara review
-```
+## 5. Ciclo da fatia
 
-Checkbox é patch no vivo. `implement.md` só entra por apply.
+Cada T*/R* segue: reconhecer o fluxo real, codar a solução mínima, testar com comando real, simplificar, re-testar e registrar. Falha de teste exige diagnóstico da causa raiz e nova execução.
 
-Fatia nova **não** apaga as anteriores: a IA lê o vivo, escreve o wip completo (histórico + fatia desta run) e o apply substitui o arquivo inteiro.
+Em UI, a seleção é navegador integrado quando disponível, MCP Server `chrome-devtools` para snapshot, screenshot, DOM, estilos, console, rede e assets, e Playwright somente se já existir no repositório ou for solicitado. A prova registra rota, viewport, estado, ações e evidência; sem capacidade visual, a limitação impede marcar a validação visual.
 
+## 6. Artefato, modos e handoff
 
----
+`implement.md` mantém uma seção por T*/R* com feito, marcado, prova, feedback, commit e pontos para review. Modo A executa exatamente uma task elegível, cria seu commit e para; modo B só existe quando o humano pede execução contínua e cria um commit por task. A mensagem e o hash do commit são registrados no resultado da execução e no chat, sem reabrir o artefato vivo depois do commit.
 
-## 5. Inventário
+Quando a fila da run termina, o handoff é `vibe-review`. Recomenda-se um novo chat focado por T* e outro para review. O plan e o implement vivos são a ponte; continuar no mesmo chat é escolha consciente.
 
-Zero prosa. Não interpreta `# Status:`, aceite, verificação, checkpoint nem prosa da T*. Lê só três âncoras no `plan.md` da alvo: `### T{n}:`, `- [ ] T{n} concluída` / `[x]` / `[X]`, `- **Deps:**`.
+## 7. Erros e testes
 
-| Campo | Significa |
-|---|---|
-| `vibeflow` | `ausente` / `ok` / `inesperado` |
-| `phases` | `ausente` / `ok` / `inesperado` |
-| `next_n` | max n + 1, ou 1 |
-| `existing[]` | `{ dir, n, slug, path, files }` |
-| `plan_pendente` | objeto ou `null` |
-| `rascunho` | objeto ou `null` |
-| `alvo` | objeto ou `null` |
-| `modo_sugerido` | `reuse` / `atualizar` / `criar` |
-| `wip` | `ausente` / `presente` |
-| `actions[]` | ex. `criar_phases`, `promover_wip` |
-| `avisos[]` | nomes fora do padrão |
-| `fila` | objeto da fila ou `null` (sem `plan.md` na alvo) |
+Falhas previstas usam `CODIGO: descrição`, incluindo `IMPLEMENT_SEM_ALVO`, `IMPLEMENT_SEM_PLAN`, `IMPLEMENT_ANALYZE_AUSENTE`, `IMPLEMENT_ANALYZE_RASCUNHO`, `IMPLEMENT_ANALYZE_BLOQUEADO`, `FASE_AUSENTE`, `MODO_INVALIDO` e `PHASES_INESPERADO`.
 
-`files` só: `interview.md`, `spec.md`, `plan.md`, `analyze.md`, `implement.md`, `review.md`.
+Suítes: `docs/vibe-implement/tests/test-implement.py` e `docs/vibe-implement/tests/test-implement.sh`. Elas cobrem seleção, fila, phase/MVP, reexecução, preservação e paridade.
 
-`fila` quando não é `null`:
+## 8. Limites
 
-| Campo | Significa |
-|---|---|
-| `parse` | `ok` / `parcial` / `ausente` (nenhum `### T{n}:`) |
-| `concluidas` | T* com `[x]` / `[X]` na linha `concluída`, ordem numérica |
-| `abertas` | T* com `[ ]` na linha `concluída` |
-| `elegiveis` | abertas cujas deps estão em `concluidas` |
-| `bloqueadas` | `{ id, deps }` — `deps` = ids ainda não concluídos, ou a lista declarada se a dep não existe |
-| `avisos` | linha `concluída` faltando, T* duplicada, dep inexistente |
-
-Sem linha `concluída` a T* some das listas e `parse` vira `parcial`. Deps ausente ou `nenhuma` = `[]`. Parse falho não derruba o inventário.
-
----
-
-## 6. Apply
-
-```
-pwsh "<skill>/scripts/implement.ps1" -Apply [-Dir "phase-1-slug"] [-Slug "frase"]
-bash "<skill>/scripts/implement.sh" --apply [--dir phase-1-slug] [--slug frase]
-```
-
-Ordem:
-
-1. Inventário de novo.
-2. Sem wip → `WIP_AUSENTE`.
-3. Resolve destino:
-   - `--dir` se veio;
-   - senão `alvo` do inventário;
-   - senão cria `phase-<next_n>-<slug>`. Sem slug → `IMPLEMENT_SEM_ALVO`.
-4. `--dir` apontando pasta inexistente ou fora do padrão → `FASE_AUSENTE`.
-5. Destino a criar já existe → `FASE_EXISTE`.
-6. Slug sanitizado se for criar. Inválido → `SLUG_INVALIDO`.
-7. Cria a pasta só se for `criar`.
-8. Cópia binária `implement-wip.md` → `implement.md` (pode sobrescrever o vivo).
-9. Tamanho + SHA-256. Falha: apaga só o `implement.md` **novo** desta run se a pasta foi criada vazia. `COPY_HASH_MISMATCH`. Wip permanece.
-10. Apaga o wip.
-11. Garante `.gitignore`: `implement-report.json`, `implement-wip.md`. Não remove entradas das outras skills.
-12. Relatório com `created` e `modo` (`reuse` / `atualizar` / `criar`).
-
-Script não escreve prosa. Não escolhe slug. Não pergunta. Não recusa pasta que já tem `plan.md`: essa é a rota normal.
-
----
-
-## 7. Relatório
-
-`.vibeflow/implement-report.json`:
-
-```json
-{
-  "root": "...",
-  "vibeflow": "ok",
-  "phases": "ok",
-  "next_n": 2,
-  "existing": [],
-  "plan_pendente": null,
-  "rascunho": null,
-  "alvo": {
-    "dir": "phase-1-vibe-implement",
-    "n": 1,
-    "slug": "vibe-implement",
-    "path": ".vibeflow/phases/phase-1-vibe-implement",
-    "files": ["spec.md", "plan.md"]
-  },
-  "modo_sugerido": "reuse",
-  "wip": "ausente",
-  "created": null,
-  "modo": null,
-  "actions": [],
-  "avisos": [],
-  "fila": {
-    "parse": "ok",
-    "concluidas": ["T1"],
-    "abertas": ["T2"],
-    "elegiveis": ["T2"],
-    "bloqueadas": [],
-    "avisos": []
-  }
-}
-```
-
-A IA não varre o repo. Lê este JSON, os `.md` da alvo que o relatório listou, `REGRAS.md`. Paths só os que esses arquivos citaram.
-
----
-
-## 8. Artefato vivo
-
-`implement.md` guarda a lógica da run (fatia → feito → prova → feedback), não só o recap. Uma seção `## Fatia` por T*/R* concluída. Feedback + / − / para a review omitidos quando vazios.
-
-O script **não** preenche markdown. A IA copia a forma do template.
-
----
-
-## 9. Contratos de teste
-
-1. Sem `.vibeflow/` → `INIT_AUSENTE`.
-2. Sem `phases/` → cria; `modo_sugerido=criar`; `alvo` nulo.
-3. `phase-1-a` com `plan.md` → `alvo` é essa pasta; não cria `phase-2`.
-4. Duas fases com plan: `alvo` é a de maior `n`.
-5. Fase sem plan e outra com plan: `alvo` é a que tem plan.
-6. `--dir` em pasta existente sem plan → `alvo` é essa pasta (sem erro).
-7. `--dir` inexistente ou nome inválido → `FASE_AUSENTE`.
-8. `review.md` e `implement.md` na fase entram em `files`.
-9. `.gitignore` ganha `implement-report.json` e `implement-wip.md`, preserva `plan-report.json`.
-10. `--apply` sem wip → `WIP_AUSENTE`.
-11. `--apply` com wip e alvo com plan → promove `implement.md`, apaga wip, `modo=reuse` ou `atualizar`.
-12. Sem alvo, `--apply --slug` cria `phase-N-slug/implement.md`.
-13. Sem alvo, `--apply` sem slug → `IMPLEMENT_SEM_ALVO`.
-14. `phases` é arquivo → `PHASES_INESPERADO`.
-15. Paridade pwsh: apply reuse grava o mesmo path; `fila` de duas T* (uma bloqueada por dep) bate com o Python.
-16. Sem `plan.md` na alvo → `fila` nulo.
-17. Uma T* `[x]` e a seguinte aberta com essa dep → só a aberta em `elegiveis`.
-18. Duas T* abertas com `Deps: nenhuma` → as duas em `elegiveis`.
-19. T* com dep aberta → `bloqueadas` com essa dep; não entra em `elegiveis`.
-20. Sem linha `T{n} concluída` → T* omitida, `parse=parcial`, aviso.
-21. `plan.md` sem `### T{n}:` → `parse=ausente`, listas vazias.
-
-Suíte: `docs/vibe-implement/tests/test-implement.py`. Launcher: `docs/vibe-implement/tests/test-implement.sh`.
-
----
-
-## 10. Limites de contrato
-
-- Um `implement.md` por alvo. Fatia nova é seção no mesmo arquivo, via wip completo + apply.
-- Não grava `todo.md`, `tasks.md`, `checklists/` nem path fora de `.vibeflow/phases/phase-N-slug/`.
-- O script não interpreta aceite, verificação nem prosa. A fila sai só de `### T{n}:`, da linha `concluída` e de `Deps`. Exceção deliberada no MVP: lê apenas `# Status:` e `## Veredito` do analyze para o gate de segurança.
-- Não cria ignore de stack (`.npmignore`, `.dockerignore`…).
-- Não adiciona lib de browser como dependência nova sem o humano pedir.
-
-Backlog e decisões de escopo: [`docs/ESCOPO.md`](../ESCOPO.md).
-
----
-
-## 11. Assumido
-
-- Init já rodou (ou o humano aceita `INIT_AUSENTE`).
-- Uma fase = um pedido. Implement reusa a pasta do plan.
-- Status `aprovado` do plan/analyze é patch da IA no vivo, não do script.
-- Review ainda pode não existir: `review.md` é opcional no inventário.
-- Rota e veredito `bloqueado` são semântica da skill, não do script.
+- Sem teste verde executável, não marca `[x]`.
+- Não cria `todo.md`, `tasks.md` ou uma segunda trilha.
+- Não interpreta a prosa do plan para montar a fila.
+- Não publica decisões vigentes em `REGRAS.md`.
+- Código e artefatos vivos da task entram no commit path-scoped; relatório fica fora. Cada task verde gera commit sem push; o push só ocorre no fechamento aprovado da phase pela review.

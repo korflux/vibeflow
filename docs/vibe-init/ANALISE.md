@@ -8,6 +8,8 @@ AGENTS.md                 symlink → .vibeflow/REGRAS.md
 CLAUDE.md                 symlink → .vibeflow/REGRAS.md
 ```
 
+O Antigravity não recebe uma cópia das regras. O init prepara `.agents/rules/vibeflow.md` com `@../../.vibeflow/REGRAS.md`; regras globais permanecem fora do workspace, em `~/.gemini/GEMINI.md`. Codex mantém suas regras globais em `~/.codex/AGENTS.md` ou `~/.codex/AGENTS.override.md`. A descoberta do host é adaptada sem sincronização global.
+
 A responsabilidade é dividida assim:
 
 ```
@@ -113,6 +115,8 @@ AGENTS.md
 CLAUDE.md
 ```
 
+O init também considera `.agents/rules/vibeflow.md` como adaptador de workspace. Regras globais do Codex e do Antigravity não entram neste inventário porque pertencem ao perfil do usuário.
+
 ### 5. Faz um inventário sem escrever nada
 
 O script classifica o estado inicial de cada peça.
@@ -144,6 +148,12 @@ Para AGENTS.md e CLAUDE.md:
 - ponteiro_texto
 - arquivo_igual
 - arquivo_legado
+
+Para o adaptador Antigravity:
+
+- `.agents/rules/vibeflow.md` é `ausente`, `ponteiro_ok`, `divergente` ou `inesperado`.
+- A ponte correta contém somente `@../../.vibeflow/REGRAS.md`.
+- Divergência gera backup verificado em `.vibeflow/old/antigravity-vibeflow.md` antes do reparo; não gera merge.
 
 Esse inventário é preservado no relatório como o estado encontrado antes das alterações.
 
@@ -341,7 +351,7 @@ O relatório contém:
 {
   "flow": "novo ou reparar",
   "root": "raiz do repo",
-  "inventory": {},
+  "inventory": { "antigravity": "ausente|ponteiro_ok|divergente|inesperado" },
   "olds": [],
   "actions": [],
   "merges": [],
@@ -349,10 +359,10 @@ O relatório contém:
   "filled": {},
   "slots_abertos": [],
   "migrations_detectadas": false,
-  "symlink_ok": {},
-  "scan": {},
-  "avisos": [],
-  "apply_token": "token quando houver merge ou null"
+ "symlink_ok": {},
+ "scan": {},
+ "avisos": [],
+ "apply_token": "token quando houver merge ou null"
 }
 ```
 
@@ -541,14 +551,14 @@ Usuário ativa vibe-init
 → IA lê SKILL.md
 → IA chama init.ps1 no Windows ou init.sh no Unix
 → script identifica raiz do repo
-→ script inventaria .vibeflow, REGRAS, AGENTS e CLAUDE
+→ script inventaria .vibeflow, REGRAS, AGENTS, CLAUDE e a ponte Antigravity
 → script classifica o fluxo como novo ou reparar
-→ script cria .vibeflow/phases e .gitignore
+→ script cria .vibeflow/phases, o .gitignore operacional e as pastas da ponte quando necessário
 → script calcula merges e conflitos
 → script cria backups e valida SHA-256
 → script move, cria ou preserva REGRAS.md
-→ script cria symlinks que já são seguros
-→ script preserva arquivos usados por merge
+→ script cria symlinks seguros e a inclusão Antigravity mínima
+→ script preserva arquivos usados por merge e faz backup da ponte divergente antes do reparo
 → script escaneia nome, descrição, estrutura, stack e migrations
 → script preenche somente SLOTs comprováveis
 → script atualiza VIBEFLOW:CADEIA

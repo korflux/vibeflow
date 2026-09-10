@@ -39,7 +39,7 @@ def seed_vibeflow(repo: Path) -> Path:
 
 
 class PythonContracts(unittest.TestCase):
-    """Verifica reuse do plan, recusa sem plan/spec e overwrite do rascunho."""
+    """Verifica reuse do plan, recusa sem plan/spec e preservação do artefato vivo."""
 
     def setUp(self) -> None:
         self.repo = Path.cwd() / f".vibe-analyze-python-{uuid.uuid4().hex}"
@@ -67,19 +67,18 @@ class PythonContracts(unittest.TestCase):
         phase.mkdir(parents=True)
         (phase / "spec.md").write_text("spec\n", encoding="utf-8")
         (phase / "plan.md").write_text("plan\n", encoding="utf-8")
-        (vf / "analyze-wip.md").write_text("# analyze\n", encoding="utf-8")
         _, report = invoke(self.repo, "--apply")
         dest = phase / "analyze.md"
         self.assertTrue(dest.is_file())
-        self.assertEqual("# analyze\n", dest.read_text(encoding="utf-8"))
+        self.assertEqual(b"", dest.read_bytes())
         self.assertTrue((phase / "plan.md").is_file())
         self.assertFalse((vf / "phases" / "phase-2-lock-bloco").exists())
         self.assertEqual("reuse", report["modo"])
-        self.assertFalse((vf / "analyze-wip.md").exists())
+        self.assertNotIn("wip", report)
+        self.assertEqual([{"op": "criar_arquivo", "alvo": ".vibeflow/phases/phase-1-lock-bloco/analyze.md"}], report["actions"])
 
     def test_apply_without_plan(self) -> None:
         vf = seed_vibeflow(self.repo)
-        (vf / "analyze-wip.md").write_text("x\n", encoding="utf-8")
         process, _ = invoke(self.repo, "--apply", check=False)
         self.assertNotEqual(0, process.returncode)
         self.assertIn("ANALYZE_SEM_PLAN", process.stderr)
@@ -89,7 +88,6 @@ class PythonContracts(unittest.TestCase):
         phase = vf / "phases" / "phase-1-so-spec"
         phase.mkdir(parents=True)
         (phase / "spec.md").write_text("s\n", encoding="utf-8")
-        (vf / "analyze-wip.md").write_text("x\n", encoding="utf-8")
         process, _ = invoke(self.repo, "--apply", "--dir", "phase-1-so-spec", check=False)
         self.assertNotEqual(0, process.returncode)
         self.assertIn("ANALYZE_SEM_PLAN", process.stderr)
@@ -100,23 +98,24 @@ class PythonContracts(unittest.TestCase):
         phase = vf / "phases" / "phase-1-so-plan"
         phase.mkdir(parents=True)
         (phase / "plan.md").write_text("p\n", encoding="utf-8")
-        (vf / "analyze-wip.md").write_text("x\n", encoding="utf-8")
         process, _ = invoke(self.repo, "--apply", "--dir", "phase-1-so-plan", check=False)
         self.assertNotEqual(0, process.returncode)
         self.assertIn("ANALYZE_SEM_SPEC", process.stderr)
         self.assertFalse((phase / "analyze.md").exists())
 
-    def test_overwrite_rascunho(self) -> None:
+    def test_preserve_rascunho(self) -> None:
         vf = seed_vibeflow(self.repo)
         phase = vf / "phases" / "phase-1-lock"
         phase.mkdir(parents=True)
         (phase / "spec.md").write_text("s\n", encoding="utf-8")
         (phase / "plan.md").write_text("p\n", encoding="utf-8")
-        (phase / "analyze.md").write_text("old\n", encoding="utf-8")
-        (vf / "analyze-wip.md").write_text("novo\n", encoding="utf-8")
+        original = b"old\n\x00historico\n"
+        (phase / "analyze.md").write_bytes(original)
         _, report = invoke(self.repo, "--apply")
-        self.assertEqual("novo\n", (phase / "analyze.md").read_text(encoding="utf-8"))
+        self.assertEqual(original, (phase / "analyze.md").read_bytes())
         self.assertEqual("atualizar", report["modo"])
+        self.assertEqual([], report["actions"])
+        self.assertNotIn("wip", report)
 
     def test_gitignore_preserves_siblings(self) -> None:
         vf = seed_vibeflow(self.repo)
@@ -124,7 +123,7 @@ class PythonContracts(unittest.TestCase):
         text = (vf / ".gitignore").read_text(encoding="utf-8")
         self.assertIn("plan-report.json", text)
         self.assertIn("analyze-report.json", text)
-        self.assertIn("analyze-wip.md", text)
+        self.assertNotIn("analyze-wip.md", text)
 
     def test_phases_file_is_unexpected(self) -> None:
         vf = seed_vibeflow(self.repo)
@@ -149,13 +148,28 @@ class PythonContracts(unittest.TestCase):
         mvp.mkdir()
         for name in ("interview.md", "spec.md", "plan.md"):
             (mvp / name).write_text(f"{name}\n", encoding="utf-8")
-        (vf / "analyze-wip.md").write_bytes(b"# analyze MVP\n\x00")
         _, report = invoke(self.repo, "--apply", "--mvp")
-        self.assertEqual(b"# analyze MVP\n\x00", (mvp / "analyze.md").read_bytes())
-        self.assertFalse((vf / "analyze-wip.md").exists())
+        self.assertEqual(b"", (mvp / "analyze.md").read_bytes())
         self.assertEqual("mvp", report["rota"])
         self.assertEqual("mvp", report["created"]["kind"])
+        self.assertNotIn("wip", report)
         self.assertEqual([], [item.name for item in (vf / "phases").iterdir() if item.is_dir()])
+
+    # Confirma que o apply MVP pode ser repetido sem substituir o histórico semântico.
+    def test_mvp_apply_preserves_existing_file(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        (vf / "phases").mkdir()
+        (vf / "phases" / ".gitkeep").write_text("", encoding="utf-8")
+        mvp = vf / "mvp"
+        mvp.mkdir()
+        for name in ("interview.md", "spec.md", "plan.md"):
+            (mvp / name).write_text(f"{name}\n", encoding="utf-8")
+        original = b"# Analyze\n\x00historico\n"
+        (mvp / "analyze.md").write_bytes(original)
+        _, report = invoke(self.repo, "--apply", "--mvp")
+        self.assertEqual(original, (mvp / "analyze.md").read_bytes())
+        self.assertEqual("atualizar", report["modo"])
+        self.assertEqual([], report["actions"])
 
     def test_mvp_rejects_dir(self) -> None:
         seed_vibeflow(self.repo)
@@ -190,7 +204,6 @@ class PowershellParity(unittest.TestCase):
         phase.mkdir(parents=True)
         (phase / "spec.md").write_text("spec\n", encoding="utf-8")
         (phase / "plan.md").write_text("plan\n", encoding="utf-8")
-        (vf / "analyze-wip.md").write_text("# analyze\n", encoding="utf-8")
         process = subprocess.run(
             [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo), "-Apply"],
             capture_output=True,
@@ -200,9 +213,31 @@ class PowershellParity(unittest.TestCase):
         self.assertEqual(0, process.returncode, process.stderr)
         dest = phase / "analyze.md"
         self.assertTrue(dest.is_file())
-        self.assertEqual("# analyze\n", dest.read_text(encoding="utf-8"))
+        self.assertEqual(b"", dest.read_bytes())
         self.assertTrue((phase / "plan.md").is_file())
-        self.assertFalse((vf / "analyze-wip.md").exists())
+        report = json.loads((vf / "analyze-report.json").read_text(encoding="utf-8"))
+        self.assertNotIn("wip", report)
+
+    # Confirma que o motor PowerShell preserva o conteúdo do analyze já existente.
+    def test_apply_preserves_existing_file(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        phase = vf / "phases" / "phase-1-lock-bloco"
+        phase.mkdir(parents=True)
+        (phase / "spec.md").write_text("spec\n", encoding="utf-8")
+        (phase / "plan.md").write_text("plan\n", encoding="utf-8")
+        original = b"# analyze\n\x00historico\n"
+        (phase / "analyze.md").write_bytes(original)
+        process = subprocess.run(
+            [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo), "-Apply"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(0, process.returncode, process.stderr)
+        self.assertEqual(original, (phase / "analyze.md").read_bytes())
+        report = json.loads((vf / "analyze-report.json").read_text(encoding="utf-8"))
+        self.assertEqual([], report["actions"])
+        self.assertNotIn("wip", report)
 
     def test_mvp_apply_same_path(self) -> None:
         vf = seed_vibeflow(self.repo)
@@ -210,7 +245,6 @@ class PowershellParity(unittest.TestCase):
         mvp.mkdir()
         for name in ("interview.md", "spec.md", "plan.md"):
             (mvp / name).write_text(f"{name}\n", encoding="utf-8")
-        (vf / "analyze-wip.md").write_text("# MVP\n", encoding="utf-8")
         process = subprocess.run(
             [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo), "-Apply", "-Mvp"],
             capture_output=True,
@@ -218,9 +252,10 @@ class PowershellParity(unittest.TestCase):
             check=False,
         )
         self.assertEqual(0, process.returncode, process.stderr)
-        self.assertEqual("# MVP\n", (mvp / "analyze.md").read_text(encoding="utf-8"))
+        self.assertEqual(b"", (mvp / "analyze.md").read_bytes())
         report = json.loads((vf / "analyze-report.json").read_text(encoding="utf-8"))
         self.assertEqual("mvp", report["created"]["kind"])
+        self.assertNotIn("wip", report)
 
 
 class TemplateContracts(unittest.TestCase):

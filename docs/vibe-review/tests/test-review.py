@@ -49,7 +49,7 @@ def seed_mvp(vf: Path) -> Path:
 
 
 class PythonContracts(unittest.TestCase):
-    """Verifica reuse do plan, avulsa com slug e recusa sem alvo."""
+    """Verifica reuse do plan, avulsa com slug e preservação do artefato vivo."""
 
     def setUp(self) -> None:
         self.repo = Path.cwd() / f".vibe-review-python-{uuid.uuid4().hex}"
@@ -76,64 +76,61 @@ class PythonContracts(unittest.TestCase):
         phase = vf / "phases" / "phase-1-a"
         phase.mkdir(parents=True)
         (phase / "plan.md").write_text("plan\n", encoding="utf-8")
-        (vf / "review-wip.md").write_text("# review\n", encoding="utf-8")
         _, report = invoke(self.repo, "--apply")
         dest = phase / "review.md"
         self.assertTrue(dest.is_file())
-        self.assertEqual("# review\n", dest.read_text(encoding="utf-8"))
+        self.assertEqual(b"", dest.read_bytes())
         self.assertTrue((phase / "plan.md").is_file())
         self.assertFalse((vf / "phases" / "phase-2-a").exists())
         self.assertEqual("reuse", report["modo"])
-        self.assertFalse((vf / "review-wip.md").exists())
+        self.assertNotIn("wip", report)
 
     def test_apply_without_alvo_or_slug(self) -> None:
         vf = seed_vibeflow(self.repo)
-        (vf / "review-wip.md").write_text("x\n", encoding="utf-8")
         process, _ = invoke(self.repo, "--apply", check=False)
         self.assertNotEqual(0, process.returncode)
         self.assertIn("REVIEW_SEM_ALVO", process.stderr)
-        self.assertTrue((vf / "review-wip.md").is_file())
 
     def test_slug_creates_avulsa(self) -> None:
         vf = seed_vibeflow(self.repo)
-        (vf / "review-wip.md").write_text("# avulsa\n", encoding="utf-8")
         _, report = invoke(self.repo, "--apply", "--slug", "diff-local")
         dest = vf / "phases" / "phase-1-diff-local" / "review.md"
         self.assertTrue(dest.is_file())
-        self.assertEqual("# avulsa\n", dest.read_text(encoding="utf-8"))
+        self.assertEqual(b"", dest.read_bytes())
         self.assertEqual("criar", report["modo"])
         self.assertEqual(["review.md"], report["created"]["files"])
+        self.assertNotIn("wip", report)
 
     def test_dir_without_plan_writes_review(self) -> None:
         vf = seed_vibeflow(self.repo)
         phase = vf / "phases" / "phase-1-so-spec"
         phase.mkdir(parents=True)
         (phase / "spec.md").write_text("s\n", encoding="utf-8")
-        (vf / "review-wip.md").write_text("# dir\n", encoding="utf-8")
         _, report = invoke(self.repo, "--apply", "--dir", "phase-1-so-spec")
         dest = phase / "review.md"
         self.assertTrue(dest.is_file())
-        self.assertEqual("# dir\n", dest.read_text(encoding="utf-8"))
+        self.assertEqual(b"", dest.read_bytes())
         self.assertEqual("reuse", report["modo"])
         self.assertFalse((phase / "plan.md").exists())
 
     def test_dir_missing(self) -> None:
         vf = seed_vibeflow(self.repo)
-        (vf / "review-wip.md").write_text("x\n", encoding="utf-8")
         process, _ = invoke(self.repo, "--apply", "--dir", "phase-9-sumiu", check=False)
         self.assertNotEqual(0, process.returncode)
         self.assertIn("FASE_AUSENTE", process.stderr)
 
-    def test_overwrite_rascunho(self) -> None:
+    def test_preserve_rascunho(self) -> None:
         vf = seed_vibeflow(self.repo)
         phase = vf / "phases" / "phase-1-lock"
         phase.mkdir(parents=True)
         (phase / "plan.md").write_text("p\n", encoding="utf-8")
-        (phase / "review.md").write_text("old\n", encoding="utf-8")
-        (vf / "review-wip.md").write_text("novo\n", encoding="utf-8")
+        original = b"old\n\x00historico\n"
+        (phase / "review.md").write_bytes(original)
         _, report = invoke(self.repo, "--apply")
-        self.assertEqual("novo\n", (phase / "review.md").read_text(encoding="utf-8"))
+        self.assertEqual(original, (phase / "review.md").read_bytes())
         self.assertEqual("atualizar", report["modo"])
+        self.assertEqual([], report["actions"])
+        self.assertNotIn("wip", report)
 
     def test_implement_listed_in_files(self) -> None:
         vf = seed_vibeflow(self.repo)
@@ -151,7 +148,7 @@ class PythonContracts(unittest.TestCase):
         text = (vf / ".gitignore").read_text(encoding="utf-8")
         self.assertIn("plan-report.json", text)
         self.assertIn("review-report.json", text)
-        self.assertIn("review-wip.md", text)
+        self.assertNotIn("review-wip.md", text)
 
     def test_phases_file_is_unexpected(self) -> None:
         vf = seed_vibeflow(self.repo)
@@ -179,11 +176,11 @@ class PythonContracts(unittest.TestCase):
                 mvp = seed_mvp(vf)
                 rules = b"# Regras\n\nconteudo intacto \x00\n"
                 (vf / "REGRAS.md").write_bytes(rules)
-                (vf / "review-wip.md").write_text(f"# Review\n# Status: {status}\n", encoding="utf-8")
                 _, report = invoke(repo, "--apply", "--mvp")
-                self.assertEqual(f"# Review\n# Status: {status}\n", (mvp / "review.md").read_text(encoding="utf-8"))
+                self.assertEqual(b"", (mvp / "review.md").read_bytes())
                 self.assertEqual(rules, (vf / "REGRAS.md").read_bytes())
                 self.assertEqual("mvp", report["created"]["kind"])
+                self.assertNotIn("wip", report)
                 self.assertEqual([], [item.name for item in (vf / "phases").iterdir() if item.is_dir()])
 
     def test_mvp_rejects_phase_selectors(self) -> None:
@@ -218,7 +215,6 @@ class PowershellParity(unittest.TestCase):
         phase = vf / "phases" / "phase-1-lock-bloco"
         phase.mkdir(parents=True)
         (phase / "plan.md").write_text("plan\n", encoding="utf-8")
-        (vf / "review-wip.md").write_text("# review\n", encoding="utf-8")
         process = subprocess.run(
             [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo), "-Apply"],
             capture_output=True,
@@ -228,16 +224,36 @@ class PowershellParity(unittest.TestCase):
         self.assertEqual(0, process.returncode, process.stderr)
         dest = phase / "review.md"
         self.assertTrue(dest.is_file())
-        self.assertEqual("# review\n", dest.read_text(encoding="utf-8"))
+        self.assertEqual(b"", dest.read_bytes())
         self.assertTrue((phase / "plan.md").is_file())
-        self.assertFalse((vf / "review-wip.md").exists())
+        report = json.loads((vf / "review-report.json").read_text(encoding="utf-8"))
+        self.assertNotIn("wip", report)
+
+    # Confirma que o motor PowerShell preserva o conteúdo da review já existente.
+    def test_apply_preserves_existing_file(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        phase = vf / "phases" / "phase-1-lock-bloco"
+        phase.mkdir(parents=True)
+        (phase / "plan.md").write_text("plan\n", encoding="utf-8")
+        original = b"# review\n\x00historico\n"
+        (phase / "review.md").write_bytes(original)
+        process = subprocess.run(
+            [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo), "-Apply"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(0, process.returncode, process.stderr)
+        self.assertEqual(original, (phase / "review.md").read_bytes())
+        report = json.loads((vf / "review-report.json").read_text(encoding="utf-8"))
+        self.assertEqual([], report["actions"])
+        self.assertNotIn("wip", report)
 
     def test_mvp_apply_same_path_preserves_regras(self) -> None:
         vf = seed_vibeflow(self.repo)
         mvp = seed_mvp(vf)
         rules = b"# Regras intactas\n"
         (vf / "REGRAS.md").write_bytes(rules)
-        (vf / "review-wip.md").write_text("# MVP\n", encoding="utf-8")
         process = subprocess.run(
             [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo), "-Apply", "-Mvp"],
             capture_output=True,
@@ -245,8 +261,10 @@ class PowershellParity(unittest.TestCase):
             check=False,
         )
         self.assertEqual(0, process.returncode, process.stderr)
-        self.assertEqual("# MVP\n", (mvp / "review.md").read_text(encoding="utf-8"))
+        self.assertEqual(b"", (mvp / "review.md").read_bytes())
         self.assertEqual(rules, (vf / "REGRAS.md").read_bytes())
+        report = json.loads((vf / "review-report.json").read_text(encoding="utf-8"))
+        self.assertNotIn("wip", report)
 
 
 class SkillContracts(unittest.TestCase):
@@ -268,6 +286,19 @@ class SkillContracts(unittest.TestCase):
         self.assertIn("Inspeção Visual e Interface", skill)
         self.assertIn("Simplificação e Qualidade de Código", skill)
         self.assertIn("chrome-devtools", skill)
+
+    # Garante que a review é a única porta de commit residual e push da phase.
+    def test_review_owns_final_phase_commit_and_push(self) -> None:
+        skill = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
+        template = (SKILL_DIR / "templates" / "review.md").read_text(encoding="utf-8")
+        for text in (skill, template):
+            self.assertIn("Finalização Git da phase", text)
+            self.assertIn("git push", text)
+            self.assertIn("sem `--force`", text)
+            self.assertIn("Approve", text)
+            self.assertNotIn("checkpoint", text.lower())
+        self.assertIn("Critical ou Required", skill)
+        self.assertIn("Não faça `git push`", (Path.cwd() / "vibe-implement" / "SKILL.md").read_text(encoding="utf-8"))
 
 if __name__ == "__main__":
     unittest.main()

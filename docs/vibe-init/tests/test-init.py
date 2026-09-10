@@ -82,11 +82,44 @@ class PythonContracts(unittest.TestCase):
     # 1. Confirma a criação mínima, os dois links e a ausência de old em repo vazio.
     def test_new_repository(self) -> None:
         _, report = invoke(self.repo)
+        bridge = self.repo / ".agents" / "rules" / "vibeflow.md"
         self.assertEqual("novo", report["flow"])
         self.assertTrue((self.repo / "AGENTS.md").is_symlink())
         self.assertTrue((self.repo / "CLAUDE.md").is_symlink())
         self.assertTrue((self.repo / ".vibeflow" / "phases" / ".gitkeep").is_file())
         self.assertFalse((self.repo / ".vibeflow" / "old").exists())
+        self.assertFalse((self.repo / "GEMINI.md").exists())
+        self.assertEqual("ausente", report["inventory"]["antigravity"])
+        self.assertEqual("@../../.vibeflow/REGRAS.md\n", bridge.read_text(encoding="utf-8"))
+        self.assertNotIn("# Regras do projeto", bridge.read_text(encoding="utf-8"))
+        self.assertIn("antigravity_bridge_criar", [item["op"] for item in report["actions"]])
+
+    # 1b. Uma ponte já correta permanece byte a byte e não gera ação nova.
+    def test_antigravity_bridge_is_idempotent(self) -> None:
+        invoke(self.repo)
+        bridge = self.repo / ".agents" / "rules" / "vibeflow.md"
+        antes = bridge.read_bytes()
+        _, report = invoke(self.repo)
+        self.assertEqual("ponteiro_ok", report["inventory"]["antigravity"])
+        self.assertEqual(antes, bridge.read_bytes())
+        self.assertNotIn("antigravity_bridge_criar", [item["op"] for item in report["actions"]])
+        self.assertNotIn("antigravity_bridge_reparar", [item["op"] for item in report["actions"]])
+        self.assertEqual([], report["olds"])
+
+    # 1c. Conteúdo divergente é salvo em old antes de a ponte ser reparada.
+    def test_antigravity_bridge_divergence_is_backed_up_before_repair(self) -> None:
+        invoke(self.repo)
+        bridge = self.repo / ".agents" / "rules" / "vibeflow.md"
+        bridge.write_text("regra local do Antigravity\n", encoding="utf-8")
+        _, report = invoke(self.repo)
+        old = self.repo / ".vibeflow" / "old" / "antigravity-vibeflow.md"
+        operations = [item["op"] for item in report["actions"]]
+        self.assertEqual("divergente", report["inventory"]["antigravity"])
+        self.assertEqual("regra local do Antigravity\n", old.read_text(encoding="utf-8"))
+        self.assertEqual("@../../.vibeflow/REGRAS.md\n", bridge.read_text(encoding="utf-8"))
+        self.assertEqual([], report["merges"])
+        self.assertLess(operations.index("old"), operations.index("antigravity_bridge_reparar"))
+        self.assertTrue(any("antigravity-vibeflow.md" in aviso for aviso in report["avisos"]))
 
     # 2. Sem README nem manifest, o parágrafo continua sendo pergunta para o humano.
     def test_paragraph_stays_open(self) -> None:
@@ -347,6 +380,45 @@ class PythonContracts(unittest.TestCase):
             self.assertEqual(powershell_report["inventory"], python_report["inventory"])
             self.assertEqual([item["op"] for item in powershell_report["actions"]], [item["op"] for item in python_report["actions"]])
             self.assertEqual(powershell_report["slots_abertos"], python_report["slots_abertos"])
+            self.assertEqual(
+                "@../../.vibeflow/REGRAS.md\n",
+                (other / ".agents" / "rules" / "vibeflow.md").read_text(encoding="utf-8"),
+            )
+        finally:
+            shutil.rmtree(other)
+
+    # 24. Reparo de ponte divergente mantém estado, ações e backup equivalentes nos dois motores.
+    @unittest.skipUnless(powershell7(), "PowerShell 7 indisponível para teste de paridade")
+    def test_antigravity_bridge_repair_contract_parity(self) -> None:
+        other = Path.cwd() / f".vibe-init-pwsh-{uuid.uuid4().hex}"
+        other.mkdir()
+        try:
+            invoke(self.repo)
+            subprocess.run(
+                [powershell7(), "-NoProfile", "-File", str(POWERSHELL_SCRIPT), "-Root", str(other)],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            for repo in (self.repo, other):
+                (repo / ".agents" / "rules" / "vibeflow.md").write_text(
+                    "regra local do Antigravity\n", encoding="utf-8"
+                )
+
+            _, python_report = invoke(self.repo)
+            subprocess.run(
+                [powershell7(), "-NoProfile", "-File", str(POWERSHELL_SCRIPT), "-Root", str(other)],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            powershell_report = json.loads((other / ".vibeflow" / "init-report.json").read_text(encoding="utf-8-sig"))
+
+            self.assertEqual(powershell_report["inventory"], python_report["inventory"])
+            self.assertEqual(powershell_report["actions"], python_report["actions"])
+            self.assertEqual(powershell_report["olds"], python_report["olds"])
+            self.assertEqual(powershell_report["avisos"], python_report["avisos"])
+            self.assertEqual([], python_report["merges"])
         finally:
             shutil.rmtree(other)
 

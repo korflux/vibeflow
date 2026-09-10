@@ -3,6 +3,8 @@
 # Status: rascunho
 # Plan: plan.md (mesma pasta)
 
+<!-- Escreva diretamente neste artefato vivo; o status permanece rascunho durante a elaboração. -->
+
 ## Fontes
 
 | Arquivo | Estado |
@@ -74,5 +76,7 @@ limpo | bloqueado
 
 vibe-implement
 <!-- No MVP, acrescentar: rota: max -->
+
+- Chat: recomende novo chat para `vibe-implement`; continuidade no mesmo chat só por escolha consciente. O `analyze.md` e os artefatos vivos são a ponte.
 
 - [ ] Aprovação humana (leu o arquivo e confirmou)

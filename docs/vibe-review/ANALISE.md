@@ -1,102 +1,54 @@
-# vibe-review, mapeamento e fluxo
+# vibe-review, análise
 
-Fontes:
+## Problema
 
-- [fluxline-review](https://github.com/korflux/fluxline/blob/main/skills/fluxline-review/SKILL.md)
-- [spec-kit converge](https://github.com/github/spec-kit/blob/main/templates/commands/converge.md)
-- Contrato `.vibeflow/REGRAS.md` e as skills `vibe-implement`, `vibe-analyze`, `vibe-plan`
+Review precisa julgar o diff e a cobertura sem virar uma segunda implementação nem espalhar vereditos por arquivos. O contrato anterior ainda descrevia um transporte temporário na primeira passagem, embora re-review já editasse o vivo.
 
-Pedido: **uma** skill. Veredito em disco + passe de cobertura pós-código. Sem segunda porta `vibe-converge`.
+## Decisão de desenho
 
----
-
-## O que cada fonte é
-
-| | Fluxline review | Spec-kit converge | Cadeia vibe |
-|---|---|---|---|
-| Pergunta | O **diff** está bom para merge? | O **código** cobre spec/plan/tasks? | As duas, no mesmo `review.md` |
-| Disco | `docs/fluxline/review/review-fase-N-…` | Append em `tasks.md` | `.vibeflow/phases/phase-N-slug/review.md` |
-| Código da app | Proibido editar | Proibido editar | Proibido editar |
-| Fila de remédio | `R*` no review | T* novas no tasks | `R*` no review. Plan intocado |
-| Quando | Pediu review / handoff build | Depois do implement, se alguém rodar | `medium+` ou pedido; handoff da implement |
-| Qualidade do patch | Cinco eixos | Quase zero | Cinco eixos |
-| Cobertura pós-código | Informal (aceite) | Formal (FR/SC × código) | Formal (A*/C* × código) |
-
-Spec-kit não tem review no core. Converge não julga XSS, slop nem arquivo inchado. Fluxline não tem passe “marquei T* e o A* não está no código”. Juntar sem regra faria a review reescrever o plan, ou o converge fingir code review.
-
----
-
-## Síntese (uma skill, um arquivo)
-
-```
-.vibeflow/phases/phase-N-slug/review.md
+```text
+diff + artefatos da cadeia
+  → auditoria dirigida e reexecução das provas
+  → first-pass prepara review.md
+  → IA grava etapa, R* e veredito diretamente
+  → humano confirma ou pede correção
+  → re-review acrescenta etapa no mesmo arquivo
+  → Approve confirmado: commit residual e push final da phase
 ```
 
-A IA lê a fase e o diff. Julga. Cruza A*/C* com o código. Grava `R*`. **Não** pisa plan/spec. Remédio = handoff `vibe-implement`.
+A IA começa pela pergunta de auditoria e pelos T*/diff relevantes. Usa `rg --files` e `rg -n` para localizar paths, símbolos, testes e referências aplicáveis, abrindo somente as dependências do fluxo. O histórico do chat não substitui a prova no disco.
 
-| Entra | De onde | Como |
-|---|---|---|
-| Read-only no source | Os dois | Script e skill não editam app |
-| Artefato + `R*` | Fluxline | Checklist é a fila da implement |
-| Mesma pasta, sem `n` novo se há plan | Irmãs | `plan_pendente` / `rascunho` |
-| Avulsa `--slug` | Fluxline (N novo) traduzido | Só se `alvo` nulo |
-| Cinco eixos + severidade | Fluxline | Critical/Required bloqueiam |
-| Testes primeiro + visual | Fluxline; DevTools da implement | Playwright só se T*/humano |
-| Passe cobertura | Converge | Seção Cobertura; gap = `R*` com `source`/`gap` |
-| `unrequested` | Converge | FYI ou Required se inflar |
-| Constitution | Converge + analyze | `REGRAS.md` MUST = Critical |
-| Etapas no mesmo arquivo | Fluxline + pedido | Não abre fase nova. `### Etapa N` no vivo |
-| Approve sem perfeição | Fluxline | Não bloquear gosto |
-| Apply + wip | Analyze/spec | First-pass promove wip; etapa N edita o vivo |
-| Lê provas no `plan.md` | Vibe | IA lê as tasks concluídas, comandos executados e provas no `plan.md` vivo |
-| Checklist vivo | Pedido | Campo abre com o achado e fecha com a prova. `## Etapas` no lugar de `## Re-review` |
-| Handoff sem disparar | REGRAS | `vibe-implement` / `volta vibe-spec` / fechada |
+## Escrita direta e etapas
 
+`review.md` é a fonte viva do julgamento. O motor prepara um arquivo vazio na primeira passagem e preserva o existente em todas as outras. A IA acrescenta etapas, fecha R* com prova e atualiza o veredito vigente diretamente.
 
----
+Essa escolha mantém o histórico no mesmo path e permite que implement consuma a fila de remédio sem interpretar outro formato. A sincronização de decisões em `REGRAS.md` continua explicitamente pós-aprovação humana.
 
-## O que foi cortado
+## Finalização Git
+
+Review continua sem corrigir source. Depois de Approve confirmado, todas as tasks e R* bloqueantes fechados e a suíte final verde, ela valida o escopo restante, cria somente o commit residual da phase quando houver mudanças e faz `git push` para o upstream atual sem force. O push não acontece por task.
+
+## Visual e acessibilidade
+
+Quando o diff toca UI, a review usa a referência visual existente e registra contexto renderizado. Navegador integrado é a primeira opção, Chrome DevTools MCP cobre inspeção, e Playwright só entra se já existir ou for solicitado. Screenshot isolado não substitui a leitura de comportamento, geometria, estados e console/rede/assets.
+
+Controles compactos reduzem ruído apenas quando a ação é universalmente reconhecível. `icon-only` exige semântica acessível, foco, área de interação e feedback; ação ambígua mantém texto.
+
+## Chat
+
+Review recomenda novo chat para evitar que a conclusão seja influenciada pela própria implementação. O humano pode continuar conscientemente; review.md e diff carregam o contexto verificável.
+
+## Cortes
 
 | Corte | Motivo |
 |---|---|
-| Skill `vibe-converge` à parte | Pedido: uma. Analyze já cruzou spec×plan *antes* |
-| Append T* no `plan.md` | Dono do plan é `vibe-plan`. Misturar dívida com fila nova apaga trilha |
-| `docs/fluxline/`, `specs/`, `tasks.md` | Contrato `phase-N-slug` |
-| 16 classes + `security-map` + shipping/CI/ADR | v1: uma ref de hardening; o resto quando o diff gritar e a casa existir |
-| Playwright default | Mesma regra da implement: DevTools; E2E se mandado |
-| Hooks / `extensions.yml` | Outro produto |
-| Review que “já corrige” | Julgamento ≠ patch. Implement marca `R*` |
-| Open Questions no `.md` | Chat |
-| LGTM só no chat | Disco completo |
-| Disparar implement | Handoff é linha |
-| Segundo `review.md` por rodada | Espalha o veredito. Etapa N no mesmo arquivo |
-| `## Re-review` no rodapé | Dump da rodada. Substituído por `## Etapas` |
+| `vibe-converge` separado | Cobertura e julgamento ficam na mesma review. |
+| Correção de código pela review | Finding deve apontar o remédio para implement. |
+| Segundo `review.md` por rodada | Etapas no mesmo arquivo preservam o veredito vigente. |
+| Browser obrigatório para task sem UI | A prova visual só abre quando o diff toca interface. |
+| Publicação automática de decisões | Exige Approve sem bloqueios e confirmação humana. |
+| Push antes da aprovação | O remoto só recebe a phase depois do fechamento da review. |
 
----
+## Impacto
 
-## Fluxo de uma run
-
-```
-[1] Script inventário → review-report.json
-[2] IA lê relatório + vivos da alvo + REGRAS.md + diff
-[3] Sem alvo e sem diff → para. T* abertas + “pronto da feature” → recusa Approve de feature
-[4] Testes → cobertura A*/C* × código → cinco eixos
-[5] Etapa 1: wip + apply. Etapa N: patch no vivo (### Etapa N + checklist + veredito vigente)
-[6] Chat: path + etapa + veredito vigente + o que abriu/fechou. Humano lê o arquivo
-[7] Request changes → handoff implement. Próxima etapa no mesmo path
-[8] Fecha. Não commita. Não dispara. Não pisa plan/spec/implement
-```
-
----
-
-## Assumido
-
-### Extensão MVP e decisões vigentes
-
-O MVP só chega à review com a cadeia max completa. O review propõe uma tabela compacta de decisões para vigência, mas isso ainda é histórico até o humano aprovar o veredito. Depois da confirmação, a IA atualiza `REGRAS.md` por ID e preserva todo o resto; o script permanece incapaz de sincronizar regras. Essa separação evita que um rascunho ou Request changes publique semântica por efeito colateral do apply.
-
-- Sem `.vibeflow/` a skill para.
-- Review da cadeia reusa a pasta do plan. Avulsa é pedido **outro**.
-- `vibe-analyze` não é substituída: ela é spec×plan antes; o passe aqui é código×A* depois.
-- Implement já declara: se `review.md` tem `R*` em `[ ]`, essa fila manda.
-- Re-run de apply por cima de `review.md` só se o wip já trouxer o arquivo inteiro. Etapa consciente edita o vivo.
+Review e implement compartilham o mesmo histórico: a primeira registra R*, a implementação prova o remédio e a etapa seguinte fecha o item. A troca de chat não perde o julgamento porque o arquivo vivo é acumulativo.

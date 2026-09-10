@@ -1,4 +1,7 @@
 # <frase curta da fase ou nome provisório do MVP>
+# Status: rascunho
+
+<!-- Escreva diretamente neste artefato vivo; mantenha rascunho até a confirmação humana. -->
 
 ## Solicitação
 
@@ -79,3 +82,5 @@ Entendi assim:
 
 vibe-spec
 <!-- No MVP, acrescentar na linha seguinte: rota: max -->
+
+- Chat: `init → interview → spec` pode continuar no mesmo chat. Se abrir outro, use este arquivo vivo como ponte.

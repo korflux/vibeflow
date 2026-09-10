@@ -39,7 +39,7 @@ def seed_vibeflow(repo: Path) -> Path:
 
 
 class PythonContracts(unittest.TestCase):
-    """Verifica os invariantes com maior risco de path, número ou perda do wip."""
+    """Verifica os invariantes com maior risco de path, número ou perda do vivo."""
 
     def setUp(self) -> None:
         self.repo = Path.cwd() / f".vibe-interview-python-{uuid.uuid4().hex}"
@@ -85,60 +85,61 @@ class PythonContracts(unittest.TestCase):
         self.assertEqual([], report["existing"])
         self.assertTrue(any("notes" in item for item in report["avisos"]))
 
-    def test_apply_without_wip(self) -> None:
+    # Confirma que o apply prepara o artefato sem depender de um rascunho temporário.
+    def test_apply_creates_live_file_without_draft(self) -> None:
         seed_vibeflow(self.repo)
-        process, _ = invoke(self.repo, "--apply", "--slug", "dashboard", check=False)
-        self.assertNotEqual(0, process.returncode)
-        self.assertIn("WIP_AUSENTE", process.stderr)
+        process, report = invoke(self.repo, "--apply", "--slug", "dashboard")
+        self.assertEqual(0, process.returncode)
+        self.assertTrue((self.repo / ".vibeflow" / "phases" / "phase-1-dashboard" / "interview.md").is_file())
+        self.assertNotIn("wip", report)
 
-    def test_apply_promotes_sanitized_slug(self) -> None:
+    # Confirma que o slug continua sanitizado e que o arquivo novo começa vazio.
+    def test_apply_prepares_sanitized_slug(self) -> None:
         vf = seed_vibeflow(self.repo)
-        (vf / "interview-wip.md").write_text("# trilha\n", encoding="utf-8")
         _, report = invoke(self.repo, "--apply", "--slug", "Dashboard Standup!!")
         dest = vf / "phases" / "phase-1-dashboard-standup" / "interview.md"
         self.assertTrue(dest.is_file())
-        self.assertEqual("# trilha\n", dest.read_text(encoding="utf-8"))
-        self.assertFalse((vf / "interview-wip.md").exists())
+        self.assertEqual(b"", dest.read_bytes())
         self.assertEqual("phase-1-dashboard-standup", report["created"]["dir"])
         self.assertEqual("phase", report["created"]["kind"])
         self.assertEqual(2, report["next_n"])
         self.assertEqual("phase-1-dashboard-standup", report["aberta"]["dir"])
+        self.assertEqual("criar_arquivo", report["actions"][-1]["op"])
 
+    # Confirma que cada novo pedido recebe seu próprio número sem reaproveitar conteúdo anterior.
     def test_second_apply_increments(self) -> None:
         vf = seed_vibeflow(self.repo)
-        (vf / "interview-wip.md").write_text("um\n", encoding="utf-8")
         invoke(self.repo, "--apply", "--slug", "primeiro")
-        (vf / "interview-wip.md").write_text("dois\n", encoding="utf-8")
         _, report = invoke(self.repo, "--apply", "--slug", "segundo")
         self.assertTrue((vf / "phases" / "phase-2-segundo" / "interview.md").is_file())
         self.assertEqual(2, report["created"]["n"])
 
+    # Confirma que o gate de slug ocorre antes de qualquer criação do destino.
     def test_invalid_slug(self) -> None:
-        vf = seed_vibeflow(self.repo)
-        (vf / "interview-wip.md").write_text("x\n", encoding="utf-8")
+        seed_vibeflow(self.repo)
         process, _ = invoke(self.repo, "--apply", "--slug", "!!!", check=False)
         self.assertNotEqual(0, process.returncode)
         self.assertIn("SLUG_INVALIDO", process.stderr)
 
+    # Confirma que uma colisão de pasta não é mascarada pela preparação do arquivo vivo.
     def test_fase_existe(self) -> None:
         vf = seed_vibeflow(self.repo)
         phases = vf / "phases"
         phases.mkdir()
         # Destino com o próximo n, mas que o inventário não conta (é arquivo, não pasta).
         (phases / "phase-1-dashboard").write_text("colisao", encoding="utf-8")
-        (vf / "interview-wip.md").write_text("x\n", encoding="utf-8")
         process, _ = invoke(self.repo, "--apply", "--slug", "dashboard", check=False)
         self.assertNotEqual(0, process.returncode)
         self.assertIn("FASE_EXISTE", process.stderr)
-        self.assertTrue((vf / "interview-wip.md").exists())
 
+    # Confirma que o motor adiciona somente seu relatório ao gitignore operacional.
     def test_gitignore_preserves_init_entries(self) -> None:
         vf = seed_vibeflow(self.repo)
         invoke(self.repo)
         text = (vf / ".gitignore").read_text(encoding="utf-8")
         self.assertIn("init-report.json", text)
         self.assertIn("interview-report.json", text)
-        self.assertIn("interview-wip.md", text)
+        self.assertNotIn("interview-wip.md", text)
 
     def test_aberta_requires_interview_without_spec(self) -> None:
         vf = seed_vibeflow(self.repo)
@@ -158,30 +159,29 @@ class PythonContracts(unittest.TestCase):
         self.assertNotEqual(0, process.returncode)
         self.assertIn("PHASES_INESPERADO", process.stderr)
 
-    def test_mvp_apply_promotes_without_creating_phase(self) -> None:
+    # Confirma que o alvo MVP é preparado sem criar fase cronológica nem conteúdo semântico.
+    def test_mvp_apply_prepares_without_creating_phase(self) -> None:
         vf = seed_vibeflow(self.repo)
-        source = b"# MVP\n\x00trilha\n"
-        (vf / "interview-wip.md").write_bytes(source)
         _, report = invoke(self.repo, "--apply", "--mvp")
         dest = vf / "mvp" / "interview.md"
-        self.assertEqual(source, dest.read_bytes())
-        self.assertFalse((vf / "interview-wip.md").exists())
+        self.assertEqual(b"", dest.read_bytes())
         self.assertEqual("mvp", report["modo"])
         self.assertEqual("mvp", report["created"]["kind"])
         self.assertEqual(".vibeflow/mvp", report["alvo"]["path"])
+        self.assertNotIn("wip", report)
         self.assertEqual([], [item.name for item in (vf / "phases").iterdir() if item.is_dir()])
 
-    def test_mvp_second_apply_refuses_overwrite_and_preserves_wip(self) -> None:
+    # Confirma que um segundo apply preserva byte a byte o vivo já existente.
+    def test_mvp_second_apply_preserves_live_file(self) -> None:
         vf = seed_vibeflow(self.repo)
-        (vf / "interview-wip.md").write_text("primeiro\n", encoding="utf-8")
         invoke(self.repo, "--apply", "--mvp")
-        original = (vf / "mvp" / "interview.md").read_bytes()
-        (vf / "interview-wip.md").write_text("segundo\n", encoding="utf-8")
-        process, _ = invoke(self.repo, "--apply", "--mvp", check=False)
-        self.assertNotEqual(0, process.returncode)
-        self.assertIn("MVP_EXISTE", process.stderr)
+        dest = vf / "mvp" / "interview.md"
+        dest.write_bytes(b"conteudo vivo\n\x00")
+        original = dest.read_bytes()
+        process, report = invoke(self.repo, "--apply", "--mvp")
+        self.assertEqual(0, process.returncode)
         self.assertEqual(original, (vf / "mvp" / "interview.md").read_bytes())
-        self.assertEqual("segundo\n", (vf / "interview-wip.md").read_text(encoding="utf-8"))
+        self.assertEqual([], report["actions"])
 
     def test_mvp_path_as_file_is_unexpected(self) -> None:
         vf = seed_vibeflow(self.repo)
@@ -219,7 +219,6 @@ class PowershellParity(unittest.TestCase):
 
     def test_apply_same_path(self) -> None:
         vf = seed_vibeflow(self.repo)
-        (vf / "interview-wip.md").write_text("# trilha\n", encoding="utf-8")
         process = subprocess.run(
             [powershell7(),
                 "-File",
@@ -237,12 +236,10 @@ class PowershellParity(unittest.TestCase):
         self.assertEqual(0, process.returncode, process.stderr)
         dest = vf / "phases" / "phase-1-dashboard-standup" / "interview.md"
         self.assertTrue(dest.is_file())
-        self.assertEqual("# trilha\n", dest.read_text(encoding="utf-8"))
-        self.assertFalse((vf / "interview-wip.md").exists())
+        self.assertEqual(b"", dest.read_bytes())
 
     def test_mvp_apply_same_path(self) -> None:
         vf = seed_vibeflow(self.repo)
-        (vf / "interview-wip.md").write_text("# MVP\n", encoding="utf-8")
         process = subprocess.run(
             [powershell7(),
                 "-File",
@@ -258,10 +255,30 @@ class PowershellParity(unittest.TestCase):
         )
         self.assertEqual(0, process.returncode, process.stderr)
         dest = vf / "mvp" / "interview.md"
-        self.assertEqual("# MVP\n", dest.read_text(encoding="utf-8"))
-        self.assertFalse((vf / "interview-wip.md").exists())
+        self.assertEqual(b"", dest.read_bytes())
         report = json.loads((vf / "interview-report.json").read_text(encoding="utf-8"))
         self.assertEqual("mvp", report["created"]["kind"])
+
+    # Confirma que o motor PowerShell também preserva um interview vivo já existente.
+    def test_mvp_apply_preserves_existing_file(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        (vf / "phases").mkdir()
+        mvp = vf / "mvp"
+        mvp.mkdir()
+        dest = mvp / "interview.md"
+        dest.write_bytes(b"vivo PowerShell\n\x00")
+        original = dest.read_bytes()
+        process = subprocess.run(
+            [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo), "-Apply", "-Mvp"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(0, process.returncode, process.stderr)
+        self.assertEqual(original, dest.read_bytes())
+        report = json.loads((vf / "interview-report.json").read_text(encoding="utf-8"))
+        self.assertNotIn("wip", report)
+        self.assertEqual([], report["actions"])
 
 
 if __name__ == "__main__":

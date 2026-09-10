@@ -31,9 +31,9 @@ def invoke(repo: Path, skill: str, *arguments: str) -> dict:
     return json.loads(report_path.read_text(encoding="utf-8"))
 
 
-# Grava o wip sem interferir na promoção, que continua responsabilidade do motor testado.
-def write_wip(vf: Path, skill: str, body: str) -> None:
-    (vf / f"{skill}-wip.md").write_text(body, encoding="utf-8", newline="\n")
+# Escreve o conteúdo semântico depois que o motor prepara o arquivo vivo vazio.
+def write_live(vf: Path, skill: str, body: str) -> None:
+    (vf / "mvp" / f"{skill}.md").write_text(body, encoding="utf-8", newline="\n")
 
 
 class MvpFlow(unittest.TestCase):
@@ -62,18 +62,19 @@ class MvpFlow(unittest.TestCase):
         }
 
         for skill in SKILLS:
-            write_wip(self.vf, skill, artifacts[skill])
             report = invoke(self.repo, skill, "--apply", "--mvp")
             self.assertEqual("mvp", report["rota"], skill)
             self.assertEqual("mvp", report["created"]["kind"], skill)
             self.assertEqual(".vibeflow/mvp", report["created"]["path"], skill)
-            self.assertEqual(artifacts[skill], (self.vf / "mvp" / f"{skill}.md").read_text(encoding="utf-8"))
-            self.assertFalse((self.vf / f"{skill}-wip.md").exists(), skill)
+            self.assertEqual(b"", (self.vf / "mvp" / f"{skill}.md").read_bytes(), skill)
+            self.assertNotIn("wip", report, skill)
+            write_live(self.vf, skill, artifacts[skill])
 
         self.assertEqual(set(SKILLS), {path.stem for path in (self.vf / "mvp").glob("*.md")})
         phase_dirs = [path for path in (self.vf / "phases").iterdir() if path.is_dir()]
         self.assertEqual([], phase_dirs)
         self.assertEqual(self.rules, (self.vf / "REGRAS.md").read_bytes())
+        self.assertEqual([], list(self.vf.glob("*-wip.md")))
 
     def test_decision_sync_contract_is_after_human_approval_and_ai_only(self) -> None:
         skill = (ROOT / "vibe-review" / "SKILL.md").read_text(encoding="utf-8")

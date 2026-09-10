@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
-"""Inventaria o interview e promove o wip para um alvo phase ou MVP explícito."""
+"""Inventaria o interview e prepara um alvo phase ou MVP explícito."""
 
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
-import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import unicodedata
@@ -19,11 +18,23 @@ from typing import Any
 PHASE_RE = re.compile(r"^phase-(\d+)-([a-z0-9]+(?:-[a-z0-9]+)*)$")
 CHAIN_FILES = ("interview.md", "spec.md", "plan.md", "analyze.md", "implement.md", "review.md")
 MAX_SLUG = 48
+REPARSE_POINT = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+
+
+# Detecta symlinks, junctions e outros reparse points sem seguir o alvo do caminho.
+def is_reparse_point(path: Path) -> bool:
+    if path.is_symlink():
+        return True
+    try:
+        attributes = getattr(path.lstat(), "st_file_attributes", 0)
+    except FileNotFoundError:
+        return False
+    return bool(attributes & REPARSE_POINT)
 
 
 # Interpreta somente os parâmetros equivalentes ao contrato público do interview.ps1.
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Inventaria e promove interview para um alvo phase ou MVP")
+    parser = argparse.ArgumentParser(description="Inventaria e prepara interview para um alvo phase ou MVP")
     parser.add_argument("--root")
     parser.add_argument("--apply", action="store_true")
     parser.add_argument("--slug")
@@ -47,15 +58,6 @@ def repo_root(explicit: str | None) -> Path:
     return Path.cwd().resolve()
 
 
-# Calcula o hash usado para validar a cópia do wip byte a byte.
-def sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
 # Lê texto operacional que precisa ser preservado integralmente.
 def read_text(path: Path) -> str | None:
     if not path.is_file():
@@ -63,8 +65,15 @@ def read_text(path: Path) -> str | None:
     return path.read_text(encoding="utf-8-sig")
 
 
+# Recusa caminhos operacionais linkados ou de tipo incompatível antes de qualquer escrita.
+def assert_safe_operational_path(path: Path, code: str) -> None:
+    if is_reparse_point(path) or (path.exists() and not path.is_file()):
+        raise RuntimeError(f"{code}: {path.name} não é um arquivo operacional regular.")
+
+
 # Acrescenta exclusões operacionais preservando regras existentes e evitando duplicação.
 def add_gitignore_entry(path: Path, entry: str) -> None:
+    assert_safe_operational_path(path, "GITIGNORE_INESPERADO")
     body = read_text(path) or ""
     if entry in {line.strip() for line in body.splitlines()}:
         return
@@ -73,15 +82,16 @@ def add_gitignore_entry(path: Path, entry: str) -> None:
         stream.write(f"{prefix}{entry}\n")
 
 
-# Garante que relatório e wip não entrem no Git sem apagar as entradas do init.
+# Garante que o relatório operacional não entre no Git sem apagar as entradas existentes.
 def ensure_gitignore(vf: Path) -> None:
     gitignore = vf / ".gitignore"
     add_gitignore_entry(gitignore, "interview-report.json")
-    add_gitignore_entry(gitignore, "interview-wip.md")
 
 
 # Classifica .vibeflow antes de qualquer escrita.
 def vibeflow_state(path: Path) -> str:
+    if is_reparse_point(path):
+        return "inesperado"
     if not path.exists():
         return "ausente"
     if not path.is_dir():
@@ -91,6 +101,8 @@ def vibeflow_state(path: Path) -> str:
 
 # Classifica phases/ sem interpretar o conteúdo das fases.
 def phases_state(path: Path) -> str:
+    if is_reparse_point(path):
+        return "inesperado"
     if not path.exists():
         return "ausente"
     if not path.is_dir():
@@ -115,6 +127,9 @@ def list_phases(phases: Path) -> tuple[list[dict[str, Any]], list[str]]:
     if not phases.is_dir():
         return existing, warnings
     for child in phases.iterdir():
+        if is_reparse_point(child):
+            warnings.append(f"ignorado (link/reparse point): {child.name}")
+            continue
         if not child.is_dir():
             if child.name != ".gitkeep":
                 warnings.append(f"ignorado (não é pasta de fase): {child.name}")
@@ -141,6 +156,8 @@ def list_phases(phases: Path) -> tuple[list[dict[str, Any]], list[str]]:
 # Representa o alvo MVP sem inferir intenção; a flag pública continua sendo decisão da IA.
 def get_mvp(vf: Path) -> dict[str, Any] | None:
     mvp = vf / "mvp"
+    if is_reparse_point(mvp):
+        raise RuntimeError("MVP_INESPERADO: .vibeflow/mvp não pode ser symlink, junction ou reparse point.")
     if not mvp.exists():
         return None
     if not mvp.is_dir():
@@ -153,18 +170,20 @@ def get_mvp(vf: Path) -> dict[str, Any] | None:
     }
 
 
-# Copia o wip e só o remove depois de conferir tamanho e SHA-256 do destino.
-def promote_wip(wip: Path, dest_file: Path, remove_empty_dir_on_error: bool) -> None:
+# Cria o arquivo vivo vazio sem substituir conteúdo já escrito pela IA.
+def prepare_live_file(dest_file: Path) -> bool:
+    if dest_file.is_symlink() or dest_file.exists():
+        if dest_file.is_symlink() or not dest_file.is_file():
+            raise RuntimeError(f"ARTEFATO_INESPERADO: {dest_file.name} não é um arquivo vivo.")
+        return False
     try:
-        dest_file.write_bytes(wip.read_bytes())
-        if dest_file.stat().st_size != wip.stat().st_size or sha256(dest_file) != sha256(wip):
-            raise RuntimeError("COPY_HASH_MISMATCH: a cópia do wip não bateu com o original.")
-    except Exception:
-        dest_file.unlink(missing_ok=True)
-        if remove_empty_dir_on_error and dest_file.parent.exists() and not any(dest_file.parent.iterdir()):
-            dest_file.parent.rmdir()
-        raise
-    wip.unlink()
+        with dest_file.open("xb"):
+            pass
+    except FileExistsError:
+        if dest_file.is_file() and not dest_file.is_symlink():
+            return False
+        raise RuntimeError(f"ARTEFATO_INESPERADO: {dest_file.name} não é um arquivo vivo.")
+    return True
 
 
 # Fase de maior n com interview e sem spec: entrevista ainda não entregue à spec.
@@ -178,12 +197,13 @@ def find_aberta(existing: list[dict[str, Any]]) -> dict[str, Any] | None:
 # Monta o JSON que a skill lê; stdout só o path do relatório.
 def write_report(vf: Path, payload: dict[str, Any]) -> Path:
     report_path = vf / "interview-report.json"
+    assert_safe_operational_path(report_path, "RELATORIO_INESPERADO")
     report_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8", newline="\n")
     print(report_path)
     return report_path
 
 
-# Inventaria o disco, cria phases/ se faltar, e opcionalmente promove o wip.
+# Inventaria o disco, cria phases/ se faltar e prepara o arquivo vivo no apply.
 def run(args: argparse.Namespace) -> Path:
     if args.mvp and args.slug is not None:
         raise RuntimeError("MODO_INVALIDO: o alvo MVP não aceita --slug.")
@@ -191,7 +211,6 @@ def run(args: argparse.Namespace) -> Path:
     repo = repo_root(args.root)
     vf = repo / ".vibeflow"
     phases = vf / "phases"
-    wip = vf / "interview-wip.md"
     actions: list[dict[str, str]] = []
 
     vf_state = vibeflow_state(vf)
@@ -216,17 +235,22 @@ def run(args: argparse.Namespace) -> Path:
     created: dict[str, Any] | None = None
 
     if args.apply:
-        if not wip.is_file() or wip.stat().st_size == 0:
-            raise RuntimeError("WIP_AUSENTE: falta .vibeflow/interview-wip.md preenchido.")
         if args.mvp:
             dest_dir = vf / "mvp"
+            if is_reparse_point(dest_dir):
+                raise RuntimeError("MVP_INESPERADO: .vibeflow/mvp não pode ser symlink, junction ou reparse point.")
             dest_file = dest_dir / "interview.md"
-            if dest_file.exists():
-                raise RuntimeError("MVP_EXISTE: .vibeflow/mvp/interview.md já existe e não pode ser sobrescrito.")
             created_dir = not dest_dir.exists()
-            dest_dir.mkdir()
-            promote_wip(wip, dest_file, created_dir)
-            actions.append({"op": "promover_wip", "alvo": ".vibeflow/mvp/interview.md"})
+            if created_dir:
+                dest_dir.mkdir()
+            try:
+                file_created = prepare_live_file(dest_file)
+            except Exception:
+                if created_dir and not is_reparse_point(dest_dir) and dest_dir.exists() and not any(dest_dir.iterdir()):
+                    dest_dir.rmdir()
+                raise
+            if file_created:
+                actions.append({"op": "criar_arquivo", "alvo": ".vibeflow/mvp/interview.md"})
             mvp = get_mvp(vf)
             created = mvp
         else:
@@ -236,11 +260,17 @@ def run(args: argparse.Namespace) -> Path:
             dest_dir = phases / f"phase-{next_n}-{slug}"
             dest_file = dest_dir / "interview.md"
             rel = f".vibeflow/phases/{dest_dir.name}"
-            if dest_dir.exists():
+            if is_reparse_point(dest_dir) or dest_dir.exists():
                 raise RuntimeError(f"FASE_EXISTE: {rel} já existe.")
             dest_dir.mkdir(parents=True)
-            promote_wip(wip, dest_file, True)
-            actions.append({"op": "promover_wip", "alvo": f"{rel}/interview.md"})
+            try:
+                file_created = prepare_live_file(dest_file)
+            except Exception:
+                if not is_reparse_point(dest_dir) and dest_dir.exists() and not any(dest_dir.iterdir()):
+                    dest_dir.rmdir()
+                raise
+            if file_created:
+                actions.append({"op": "criar_arquivo", "alvo": f"{rel}/interview.md"})
             created = {
                 "kind": "phase",
                 "dir": dest_dir.name,
@@ -266,7 +296,6 @@ def run(args: argparse.Namespace) -> Path:
         "aberta": aberta,
         "mvp": mvp,
         "alvo": mvp if args.mvp else aberta,
-        "wip": "presente" if wip.is_file() else "ausente",
         "created": created,
         "actions": actions,
         "avisos": warnings,

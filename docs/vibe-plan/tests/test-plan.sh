@@ -18,16 +18,15 @@ assert "$( [ "$last_rc" -ne 0 ] && grep -q INIT_AUSENTE "$last_err" && echo 1 ||
   "1-init-ausente" "rc=$last_rc err=$(cat "$last_err")"
 rm -rf "$s"
 
-# 2. --apply reusa a pasta da spec e promove o wip.
+# 2. --apply reusa a pasta da spec e prepara o arquivo vivo.
 s=$(new_sandbox)
 seed_vibeflow "$s"
 mkdir -p "$s/.vibeflow/phases/phase-1-lock"
 printf 's\n' >"$s/.vibeflow/phases/phase-1-lock/spec.md"
-printf '# plan\n' >"$s/.vibeflow/plan-wip.md"
 root=$(native_root "$s")
 run_sh bash "$LAUNCHER" --root "$root" --apply
 dest="$s/.vibeflow/phases/phase-1-lock/plan.md"
-assert "$( [ "$last_rc" -eq 0 ] && [ -f "$dest" ] && [ ! -f "$s/.vibeflow/plan-wip.md" ] && echo 1 || echo 0 )" \
+assert "$( [ "$last_rc" -eq 0 ] && [ -f "$dest" ] && [ ! -s "$dest" ] && echo 1 || echo 0 )" \
   "2-apply-reuse" "rc=$last_rc dest=$dest err=$(cat "$last_err")"
 rm -rf "$s"
 
@@ -36,7 +35,6 @@ s=$(new_sandbox)
 seed_vibeflow "$s"
 mkdir -p "$s/.vibeflow/phases/phase-1-so-interview"
 printf 'i\n' >"$s/.vibeflow/phases/phase-1-so-interview/interview.md"
-printf 'x\n' >"$s/.vibeflow/plan-wip.md"
 root=$(native_root "$s")
 run_sh bash "$LAUNCHER" --root "$root" --apply --dir phase-1-so-interview
 assert "$( [ "$last_rc" -ne 0 ] && grep -q PLAN_SEM_SPEC "$last_err" && [ ! -f "$s/.vibeflow/phases/phase-1-so-interview/plan.md" ] && echo 1 || echo 0 )" \
@@ -48,12 +46,11 @@ s=$(new_sandbox)
 seed_vibeflow "$s"
 mkdir -p "$s/.vibeflow/mvp"
 printf 's\n' >"$s/.vibeflow/mvp/spec.md"
-printf '# MVP\n' >"$s/.vibeflow/plan-wip.md"
 root=$(native_root "$s")
 run_sh bash "$LAUNCHER" --root "$root" --apply --mvp
 dest="$s/.vibeflow/mvp/plan.md"
 phase_count=$(find "$s/.vibeflow/phases" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')
-assert "$( [ "$last_rc" -eq 0 ] && [ -f "$dest" ] && [ "$phase_count" = 0 ] && echo 1 || echo 0 )" \
+assert "$( [ "$last_rc" -eq 0 ] && [ -f "$dest" ] && [ ! -s "$dest" ] && [ "$phase_count" = 0 ] && echo 1 || echo 0 )" \
   "4-apply-mvp" "rc=$last_rc phases=$phase_count dest=$dest err=$(cat "$last_err")"
 rm -rf "$s"
 

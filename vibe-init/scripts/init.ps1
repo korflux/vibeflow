@@ -13,6 +13,9 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $script:EvidenceWarnings = New-Object System.Collections.Generic.List[string]
+$script:AntigravityBridgeRel = '.agents/rules/vibeflow.md'
+$script:AntigravityBridgeInclude = '@../../.vibeflow/REGRAS.md'
+$script:AntigravityBridgeOldName = 'antigravity-vibeflow.md'
 # Estado vivo da run, para que uma falha depois da primeira escrita ainda produza relatório.
 $script:Partial = $null
 
@@ -57,6 +60,14 @@ function Get-FsItem([string]$Path) {
 function Test-IsSymlink($Item) {
     if (-not $Item) { return $false }
     return $Item.Attributes.ToString() -match 'ReparsePoint' -or $Item.LinkType -eq 'SymbolicLink'
+}
+
+# Recusa links e tipos incompatíveis nos arquivos graváveis do init antes da primeira mutação.
+function Assert-SafeOperationalFile([string]$Path, [string]$Label) {
+    $item = Get-FsItem $Path
+    if ($item -and ((Test-IsSymlink $item) -or $item.PSIsContainer)) {
+        throw "TIPO_INESPERADO: '$Label' precisa ser um arquivo local regular."
+    }
 }
 
 # Compara caminhos conforme a semântica do sistema, sensível a caixa em Unix.
@@ -130,6 +141,7 @@ function Test-IsPointerText([string]$Path) {
 function Get-VibeflowState([string]$Vf) {
     $item = Get-FsItem $Vf
     if (-not $item) { return 'ausente' }
+    if (Test-IsSymlink $item) { return 'inesperado' }
     if (-not $item.PSIsContainer) { return 'inesperado' }
     $regras = Join-Path $Vf 'REGRAS.md'
     if (Test-Path -LiteralPath $regras) { return 'com_regras' }
@@ -184,6 +196,23 @@ function Get-PointerState([string]$Repo, [string]$Name, [string]$VfRegras) {
     return 'arquivo_legado'
 }
 
+# Classifica a inclusão mínima descoberta pelo Antigravity sem seguir symlinks externos.
+function Get-AntigravityBridgeState([string]$Path) {
+    $item = Get-FsItem $Path
+    if (-not $item) {
+        if (Test-Path -LiteralPath $Path -IsValid) { return 'ausente' }
+        return 'inesperado'
+    }
+    if (Test-IsSymlink $item -or $item.PSIsContainer) { return 'inesperado' }
+    try {
+        $content = [System.IO.File]::ReadAllText($Path)
+    } catch {
+        return 'divergente'
+    }
+    if ($content.Trim() -eq $script:AntigravityBridgeInclude) { return 'ponteiro_ok' }
+    return 'divergente'
+}
+
 # --- old (nunca sobrescreve; sem verify não segue) ---------------------------
 
 # Escolhe um destino de backup único sem depender apenas da precisão do relógio.
@@ -217,6 +246,22 @@ function Copy-Verified([string]$From, [string]$To) {
     return $true
 }
 
+# Escreve a inclusão curta em arquivo temporário para trocar a ponte sem truncar o arquivo anterior.
+function Set-AntigravityBridge([string]$Path) {
+    $parent = Split-Path -Parent $Path
+    if (-not (Test-Path -LiteralPath $parent)) {
+        New-Item -ItemType Directory -Path $parent -Force | Out-Null
+    }
+    $temporary = Join-Path $parent ('.vibeflow-' + [guid]::NewGuid().ToString('n') + '.tmp')
+    try {
+        $utf8 = New-Object System.Text.UTF8Encoding $false
+        [System.IO.File]::WriteAllText($temporary, "$($script:AntigravityBridgeInclude)`n", $utf8)
+        [System.IO.File]::Move($temporary, $Path, $true)
+    } finally {
+        if (Get-FsItem $temporary) { Remove-Item -LiteralPath $temporary -Force -ErrorAction SilentlyContinue }
+    }
+}
+
 # --- symlink: cria o link primeiro; só então tira o original -----------------
 
 function New-RelSymlink([string]$LinkPath, [string]$TargetRel) {
@@ -239,6 +284,7 @@ function New-RelSymlink([string]$LinkPath, [string]$TargetRel) {
 
 # Garante uma regra operacional sem sobrescrever as exclusões já mantidas pelo projeto.
 function Add-GitIgnoreEntry([string]$Path, [string]$Entry) {
+    Assert-SafeOperationalFile $Path $Path
     $body = if (Test-Path -LiteralPath $Path) { Get-Text $Path } else { '' }
     $present = @($body -split '\r?\n') | Where-Object { $_.Trim() -eq $Entry }
     if ($present.Count -gt 0) { return $false }
@@ -436,6 +482,7 @@ function Write-PendingMerge([string]$Path, [string]$Repo, [string]$TargetPath, $
         remove_regras_raiz    = [bool](@($Merges | Where-Object { $_.id -eq 'regras_duplicado' }).Count -gt 0)
     }
     $json = $pending | ConvertTo-Json -Depth 10
+    Assert-SafeOperationalFile $Path $Path
     [System.IO.File]::WriteAllText($Path, $json, (New-Object System.Text.UTF8Encoding $false))
     return $pending
 }
@@ -467,26 +514,46 @@ function Confirm-PendingMerge([string]$Path, [string]$Repo, [string]$Token) {
 }
 
 # Interrompe antes da primeira escrita quando caminhos estruturais possuem tipos incompatíveis.
-function Assert-InfrastructureTypes([string]$Vf, [string]$VfRegras, [string]$RootRegras, [string]$Phases) {
+function Assert-InfrastructureTypes(
+    [string]$Vf,
+    [string]$VfRegras,
+    [string]$RootRegras,
+    [string]$OldDir,
+    [string]$Phases,
+    [string]$GitIgnore,
+    [string]$GitKeep,
+    [string]$PendingPath,
+    [string]$ReportPath,
+    [string]$AntigravityRoot,
+    [string]$AntigravityRules
+) {
     $vfItem = Get-FsItem $Vf
+    if ($vfItem -and (Test-IsSymlink $vfItem)) {
+        throw 'TIPO_INESPERADO: .vibeflow precisa ser um diretório local.'
+    }
     if ($vfItem -and -not $vfItem.PSIsContainer) {
         throw 'TIPO_INESPERADO: .vibeflow existe, mas não é um diretório.'
     }
-    foreach ($path in @($VfRegras, $RootRegras)) {
+    foreach ($path in @($VfRegras, $RootRegras, $GitIgnore, $GitKeep, $PendingPath, $ReportPath)) {
+        Assert-SafeOperationalFile $path $path
+    }
+    foreach ($path in @($OldDir, $Phases)) {
         $item = Get-FsItem $path
-        if ($item -and $item.PSIsContainer) {
-            throw "TIPO_INESPERADO: '$path' existe, mas não é um arquivo."
+        if (($item -and (Test-IsSymlink $item)) -or ($item -and -not $item.PSIsContainer)) {
+            throw "TIPO_INESPERADO: '$path' precisa ser um diretório local."
         }
     }
-    $phasesItem = Get-FsItem $Phases
-    if ($phasesItem -and -not $phasesItem.PSIsContainer) {
-        throw 'TIPO_INESPERADO: .vibeflow/phases existe, mas não é um diretório.'
+    foreach ($path in @($AntigravityRoot, $AntigravityRules)) {
+        $item = Get-FsItem $path
+        if (($item -and (Test-IsSymlink $item)) -or ($item -and -not $item.PSIsContainer)) {
+            throw "TIPO_INESPERADO: '$path' precisa ser um diretório local."
+        }
     }
 }
 
 # --- fluxo -------------------------------------------------------------------
 
-# Executa a matriz determinística e coordena inventário, backup, scan e ponteiros.
+# Executa a matriz determinística, prepara a ponte do Antigravity e coordena inventário, backup, scan e ponteiros.
 function Invoke-VibeInit {
     $repo = Get-RepoRoot
     $skill = Get-SkillDir
@@ -500,10 +567,16 @@ function Invoke-VibeInit {
     $rootRegras = Join-Path $repo 'REGRAS.md'
     $oldDir = Join-Path $vf 'old'
     $phases = Join-Path $vf 'phases'
+    $antigravityRoot = Join-Path $repo '.agents'
+    $antigravityRules = Join-Path $antigravityRoot 'rules'
+    $antigravityBridge = Join-Path $antigravityRules 'vibeflow.md'
+    $gitIgnore = Join-Path $vf '.gitignore'
+    $gitKeep = Join-Path $phases '.gitkeep'
     $pendingPath = Join-Path $vf 'init-pending.json'
+    $reportPath = Join-Path $vf 'init-report.json'
     $targetRel = '.vibeflow/REGRAS.md'
 
-    Assert-InfrastructureTypes $vf $vfRegras $rootRegras $phases
+    Assert-InfrastructureTypes $vf $vfRegras $rootRegras $oldDir $phases $gitIgnore $gitKeep $pendingPath $reportPath $antigravityRoot $antigravityRules
 
     $confirmedPending = $null
     if ($ApplyPointers) {
@@ -518,12 +591,14 @@ function Invoke-VibeInit {
         regras   = Get-RegrasState $repo $vfRegras $rootRegras
         agents   = Get-PointerState $repo 'AGENTS.md' $vfRegras
         claude   = Get-PointerState $repo 'CLAUDE.md' $vfRegras
+        antigravity = Get-AntigravityBridgeState $antigravityBridge
     }
 
     $hasAny = ($inventory.vibeflow -ne 'ausente') -or
         (Test-Path -LiteralPath $rootRegras) -or
         ($inventory.agents -ne 'ausente') -or
-        ($inventory.claude -ne 'ausente')
+        ($inventory.claude -ne 'ausente') -or
+        ($inventory.antigravity -ne 'ausente')
     $flow = if ($hasAny) { 'reparar' } else { 'novo' }
 
     $olds = New-Object System.Collections.Generic.List[object]
@@ -572,14 +647,12 @@ function Invoke-VibeInit {
         New-Item -ItemType Directory -Path $phases -Force | Out-Null
         Add-Action 'criar_phases' '.vibeflow/phases'
     }
-    $gitkeep = Join-Path $phases '.gitkeep'
-    if (-not (Test-Path -LiteralPath $gitkeep)) {
-        [System.IO.File]::WriteAllText($gitkeep, '')
+    if (-not (Test-Path -LiteralPath $gitKeep)) {
+        [System.IO.File]::WriteAllText($gitKeep, '')
         Add-Action 'criar_phases' '.vibeflow/phases/.gitkeep'
     }
-    $gi = Join-Path $vf '.gitignore'
-    [void](Add-GitIgnoreEntry $gi 'init-report.json')
-    [void](Add-GitIgnoreEntry $gi 'init-pending.json')
+    [void](Add-GitIgnoreEntry $gitIgnore 'init-report.json')
+    [void](Add-GitIgnoreEntry $gitIgnore 'init-pending.json')
 
     $agentsPath = Join-Path $repo 'AGENTS.md'
     $claudePath = Join-Path $repo 'CLAUDE.md'
@@ -750,6 +823,22 @@ function Invoke-VibeInit {
     if (Test-Path -LiteralPath $vfRegras) {
         Convert-Pointer 'AGENTS.md' $inventory.agents
         Convert-Pointer 'CLAUDE.md' $inventory.claude
+        if ($inventory.antigravity -eq 'ausente') {
+            Set-AntigravityBridge $antigravityBridge
+            Add-Action 'antigravity_bridge_criar' $script:AntigravityBridgeRel
+        } elseif ($inventory.antigravity -eq 'divergente') {
+            $backup = Save-Old $antigravityBridge $script:AntigravityBridgeOldName
+            $backupRel = Get-RepoRelativePath $repo $backup
+            [void]$avisos.Add("$script:AntigravityBridgeRel divergente; backup verificado em $backupRel e ponte reparada.")
+            Set-AntigravityBridge $antigravityBridge
+            Add-Action 'antigravity_bridge_reparar' $script:AntigravityBridgeRel
+        } elseif ($inventory.antigravity -eq 'inesperado') {
+            [void]$conflicts.Add([ordered]@{
+                id      = 'tipo_inesperado'
+                peca    = $script:AntigravityBridgeRel
+                detalhe = 'não é arquivo regular com inclusão relativa do REGRAS'
+            })
+        }
     }
 
     # e. leftover raiz (caso iguais já apagou; diferentes esperam merge)
@@ -860,6 +949,7 @@ function Write-Report(
     $jsonPath = Join-Path $vf 'init-report.json'
     $json = $report | ConvertTo-Json -Depth 10
     $utf8 = New-Object System.Text.UTF8Encoding $false
+    Assert-SafeOperationalFile $jsonPath $jsonPath
     [System.IO.File]::WriteAllText($jsonPath, $json, $utf8)
     Write-Output $jsonPath
 }

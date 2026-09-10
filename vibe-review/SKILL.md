@@ -10,19 +10,21 @@ description: >
 # vibe-review
 
 Não invente `n` se há plan. Não edite source, teste nem lockfile. Sem `review.md` não há veredito.
-Um arquivo por alvo. Sem `.vibeflow/`: `/vibe-init`. Open Questions no arquivo = defeito. Não commita.
+Um arquivo por alvo. Sem `.vibeflow/`: `/vibe-init`. Open Questions no arquivo = defeito. Correções ficam na `vibe-implement`; o Git só é finalizado após Approve e confirmação humana.
 Decisões vigentes em `REGRAS.md` só são sincronizadas após Approve sem bloqueios e confirmação humana explícita.
+
+A investigação começa pela pergunta de auditoria e pelo T*/diff que precisa ser provado. Use `rg --files` para localizar os artefatos, paths alterados, testes e referências aplicáveis; use `rg -n` para localizar símbolos, contratos e evidências. Abra somente as entradas e dependências do fluxo real e expanda a leitura quando uma lacuna bloquear o veredito. O inventário é mapa de seleção, não autorização para ler a árvore inteira.
 
 ## 0. Entender e usar o script
 
-1. Resolva o diretório desta skill e leia o motor que vai executar. Entenda alvo, cadeia exigida, recusas e promoção. Confirme que ele não escreve `REGRAS.md`; corrija e prove qualquer defeito antes de seguir.
+1. Resolva o diretório desta skill e leia o motor que vai executar. Entenda alvo, cadeia exigida, recusas, preparação do destino e preservação do arquivo vivo. Confirme que ele não escreve `REGRAS.md`; corrija e prove qualquer defeito antes de seguir.
 2. No cwd do repo:
    - Windows: `pwsh "<skill>/scripts/review.ps1"`
    - Unix: `bash "<skill>/scripts/review.sh"` (Python 3, senão pwsh 7)
    - Alvo MVP: acrescente `-Mvp` ou `--mvp`.
-3. Leia `.vibeflow/review-report.json`. Se `alvo`, leia o que `files` listar. Leia `plan.md` (com as provas e arquivos alterados anotados sob as tasks), `spec.md`, `analyze.md` se houver e `REGRAS.md`. Diff: o que o humano apontou, ou o working tree da sessão. Não varrer a árvore.
+3. Leia `.vibeflow/review-report.json`. Use `rg --files` e `rg -n` para localizar o alvo, o que `files` listar, `plan.md` com as provas, `spec.md`, `analyze.md` se houver, `REGRAS.md` e o diff apontado pelo humano ou da sessão. Abra somente os paths que sustentam o veredito; não leia a árvore inteira.
 
-`INIT_AUSENTE` exige init. `REVIEW_SEM_ALVO`, `REVIEW_CADEIA_INCOMPLETA`, `MVP_INESPERADO`, `MODO_INVALIDO`, `FASE_AUSENTE`, `WIP_AUSENTE` e `SLUG_INVALIDO` não são contornados.
+`INIT_AUSENTE` exige init. `REVIEW_SEM_ALVO`, `REVIEW_CADEIA_INCOMPLETA`, `MVP_INESPERADO`, `MODO_INVALIDO`, `FASE_AUSENTE` e `SLUG_INVALIDO` não são contornados.
 
 Apply:
 - first-pass reuse/atualizar: `pwsh "<skill>/scripts/review.ps1" -Apply` (`--dir` se o alvo errar)
@@ -48,7 +50,7 @@ Já existe `review.md` = próxima etapa no **mesmo** arquivo.
 | Sem alvo e sem diff | **Para.** Peça path, branch, PR ou `--dir` |
 | T* obrigatórias em `[ ]` e o humano pediu “pronto da feature” | Recuse Approve de feature. Pode revisar o diff e listar o que falta no plan |
 | Intenção/sucesso/fora frouxos | Devolve interview/spec. Finding de código não reabre plan |
-| Etapa 2+ | Mesmo `review.md`. Edite o vivo. Não apply de wip por cima se só vai acrescentar etapa |
+| Etapa 2+ | Mesmo `review.md`. Edite o vivo diretamente e acrescente a etapa sem substituir o histórico |
 | “Já corrige” | Grave o veredito **primeiro**. Handoff implement. Não patche aqui |
 | MVP sem cadeia max completa | Recuse review e corrija a porta ausente |
 
@@ -79,13 +81,11 @@ A review é um processo cético e investigativo. A IA não confia cegamente em c
      - IDOR: o servidor valida se o usuário autenticado tem permissão sobre o recurso manipulado?
      - Há segredos, chaves ou tokens expostos no código, no bundle do frontend ou gravados em logs?
    - Toda brecha explorável vira `R*` `Critical`. Falta de limite/validação de borda vira `R*` `Required`.
-4. **Inspeção Visual e Interface (MCP Server chrome-devtools):**
-   - Se o diff tocar interface de usuário web, inspecione a tela via MCP Server `chrome-devtools` (`references/ui-visual-quality.md`):
-     - Há elementos sobrepostos, botões cobertos ou textos truncados?
-     - O contraste e a legibilidade estão adequados?
-     - Há quebra de layout, overflow horizontal ou desalinhamento?
-     - Estados de erro, loading e empty states estão implementados conforme a spec?
-   - Interface sem prova visual ou com defeitos visuais vira `R*` `Required`.
+4. **Inspeção Visual e Interface:**
+   - Se o diff tocar interface de usuário web, selecione nesta ordem, conforme `references/ui-visual-quality.md`: navegador integrado (`@Browser` ou equivalente) primeiro quando disponível, MCP Server `chrome-devtools` para snapshot, screenshot, DOM, estilos, console, rede e assets, ou Playwright somente se já existir no repositório ou for solicitado para fluxos repetíveis e assertions.
+   - Registre rota, viewport, estado, ações e evidência observada. Use a checklist da referência para conferir overflow, conteúdo fora da viewport, clipping, sobreposição ou cobertura, z-index, truncamento ou quebra, proporção de largura, controles excessivos, input e ícone inline, viewport estreita, estados loading/empty/error/success, foco, teclado, contraste e console/rede/assets.
+   - Para ações compactas, aceite `icon-only` somente quando a ação for universalmente reconhecível, como lixeira para apagar, com nome acessível, área de interação adequada, foco visível e tooltip quando aplicável. Ações ambíguas continuam com texto.
+   - Sem capacidade visual ou sem evidência renderizada, abra `R*` `Required`; não aprove silenciosamente e não instale ferramenta automaticamente.
 5. **Simplificação e Qualidade de Código:**
    - Inspecione se o código é o mínimo necessário (YAGNI, sem estruturas especulativas, sem duplicação de lógica ou componentes).
    - Verifique se todas as funções criadas ou modificadas possuem comentários semânticos obrigatórios.
@@ -124,9 +124,9 @@ Status: `rascunho` na etapa 1; `request-changes` enquanto houver R* bloqueante e
 
 Não pergunte se pode salvar. Não cole o corpo no chat.
 
-**Etapa 1 (não há `review.md`):** preencha o wip, apply (§0).
+**Etapa 1 (não há `review.md`):** execute o apply para preparar o `review.md` vivo e escreva nele diretamente (§0).
 
-**Etapa 2+ (já há `review.md`):** patch no vivo. Acrescente `### Etapa N`. Atualize a checklist e o **veredito vigente**. Não apply de wip por cima, salvo wip que já contém o arquivo inteiro (histórico + etapa nova).
+**Etapa 2+ (já há `review.md`):** edite o vivo diretamente. Acrescente `### Etapa N` e atualize a checklist e o **veredito vigente** sem substituir o histórico.
 
 3. Chat, **só**:
 
@@ -136,7 +136,7 @@ Review gravada: <created.path>/review.md
 - Etapa: <N> · Veredito vigente: Approve | Request changes | Approve com defer
 - Abriu: <R* ou nenhum>
 - Fechou: <R* ou nenhum>
-- Handoff: vibe-implement | volta vibe-spec | cadeia fechada
+- Handoff: vibe-implement | volta vibe-spec | finalização Git da phase
 
 Arquivo disponível em <created.path>/review.md. Responda "aprovado" para sincronizar decisões e encerrar, ou indique os ajustes desejados.
 ```
@@ -145,8 +145,7 @@ Arquivo disponível em <created.path>/review.md. Responda "aprovado" para sincro
 
 ## 5. Fechar
 
-Não commita no git. Commitável: `review.md`. Fora: `review-report.json`, `review-wip.md`.
-Request changes → handoff `vibe-implement` (arquivo + R* em `[ ]`). Se o usuário pedir para corrigir imediatamente, inicia `vibe-implement`.
+Commitável: o `review.md` vivo e, no fechamento aprovado, os artefatos residuais autorizados da phase. Fora: `review-report.json`. Request changes → handoff `vibe-implement` (arquivo + R* em `[ ]`), com recomendação de novo chat focado na correção. Se o usuário pedir para corrigir imediatamente, inicia `vibe-implement`. Continuar no mesmo chat é permitido somente por escolha consciente do humano; o `review.md` e o diff são a ponte.
 Approve sem R* bloqueantes em `[ ]` ainda é proposta até o humano ler e confirmar.
 
 Após aprovação humana explícita:
@@ -156,3 +155,14 @@ Após aprovação humana explícita:
 3. Se houver linhas, aplique patch mínimo em `.vibeflow/REGRAS.md`. Crie ou atualize uma única seção `## Decisões vigentes` com tabela `ID | Decisão vigente | Fonte`. Atualize por ID, preserve linhas não citadas e use como fonte o review aprovado do alvo.
 4. Não copie justificativa, histórico ou impacto para as regras. Eles permanecem nos artefatos.
 5. Releia `REGRAS.md` e confirme que apenas os IDs aprovados mudaram. Review rascunho, Request changes ou Approve sem confirmação humana nunca autoriza sync.
+
+### Finalização Git da phase
+
+Depois da aprovação humana explícita e somente quando não houver Critical ou Required em `[ ]`:
+
+1. Execute a suíte final da phase, `git diff --check` e gitleaks quando previsto pelo repositório.
+2. Compare o estado atual com o snapshot da review. Se houver path fora da phase, das decisões aprovadas ou da correção registrada, pare e peça isolamento; não misture trabalho pré-existente.
+3. Adicione somente os paths residuais autorizados, com `git add -- path/da/phase .vibeflow/REGRAS.md` quando a sincronização foi aprovada. Nunca use `git add -A` ou `git add .`.
+4. Valide `git diff --cached --check` e a lista de paths. Crie `chore(phase-N): finalize review` sem `Co-Authored-By` quando houver mudanças residuais. Não crie commit vazio; se não houver residual, o último commit da task é o HEAD da phase.
+5. Execute `git push` para o upstream do branch atual, sem `--force`. Ausência de upstream, falha de commit ou falha de push mantém o handoff bloqueado e precisa ser informada com a causa segura.
+6. Registre no `review.md` e no chat o hash do commit final ou o HEAD já existente, o resultado do push e os paths enviados. Relatórios operacionais ficam fora.

@@ -1,28 +1,38 @@
 #!/usr/bin/env python3
-"""Inventaria .vibeflow/phases e promove o wip para phase-N-slug/plan.md."""
+"""Inventaria .vibeflow/phases e prepara phase-N-slug/plan.md."""
 
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
-import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
 from typing import Any
 
 
 PHASE_RE = re.compile(r"^phase-(\d+)-([a-z0-9]+(?:-[a-z0-9]+)*)$")
 CHAIN_FILES = ("interview.md", "spec.md", "plan.md", "analyze.md", "implement.md", "review.md")
+REPARSE_POINT = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+
+
+# Detecta symlinks, junctions e outros reparse points sem seguir o alvo do caminho.
+def is_reparse_point(path: Path) -> bool:
+    if path.is_symlink():
+        return True
+    try:
+        attributes = getattr(path.lstat(), "st_file_attributes", 0)
+    except FileNotFoundError:
+        return False
+    return bool(attributes & REPARSE_POINT)
 
 
 # Interpreta somente os parâmetros equivalentes ao contrato público do plan.ps1.
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Inventaria e promove plan para .vibeflow/phases")
+    parser = argparse.ArgumentParser(description="Inventaria e prepara plan para .vibeflow/phases")
     parser.add_argument("--root")
     parser.add_argument("--apply", action="store_true")
     parser.add_argument("--dir")
@@ -46,15 +56,6 @@ def repo_root(explicit: str | None) -> Path:
     return Path.cwd().resolve()
 
 
-# Calcula o hash usado para validar a cópia do wip byte a byte.
-def sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
 # Lê texto operacional que precisa ser preservado integralmente.
 def read_text(path: Path) -> str | None:
     if not path.is_file():
@@ -62,8 +63,15 @@ def read_text(path: Path) -> str | None:
     return path.read_text(encoding="utf-8-sig")
 
 
+# Recusa caminhos operacionais linkados ou de tipo incompatível antes de qualquer escrita.
+def assert_safe_operational_path(path: Path, code: str) -> None:
+    if is_reparse_point(path) or (path.exists() and not path.is_file()):
+        raise RuntimeError(f"{code}: {path.name} não é um arquivo operacional regular.")
+
+
 # Acrescenta exclusões operacionais preservando regras existentes e evitando duplicação.
 def add_gitignore_entry(path: Path, entry: str) -> None:
+    assert_safe_operational_path(path, "GITIGNORE_INESPERADO")
     body = read_text(path) or ""
     if entry in {line.strip() for line in body.splitlines()}:
         return
@@ -72,15 +80,16 @@ def add_gitignore_entry(path: Path, entry: str) -> None:
         stream.write(f"{prefix}{entry}\n")
 
 
-# Garante que relatório e wip não entrem no Git sem apagar as entradas das outras skills.
+# Garante que o relatório operacional não entre no Git sem apagar as entradas existentes.
 def ensure_gitignore(vf: Path) -> None:
     gitignore = vf / ".gitignore"
     add_gitignore_entry(gitignore, "plan-report.json")
-    add_gitignore_entry(gitignore, "plan-wip.md")
 
 
 # Classifica .vibeflow antes de qualquer escrita.
 def vibeflow_state(path: Path) -> str:
+    if is_reparse_point(path):
+        return "inesperado"
     if not path.exists():
         return "ausente"
     if not path.is_dir():
@@ -90,6 +99,8 @@ def vibeflow_state(path: Path) -> str:
 
 # Classifica phases/ sem interpretar o conteúdo das fases.
 def phases_state(path: Path) -> str:
+    if is_reparse_point(path):
+        return "inesperado"
     if not path.exists():
         return "ausente"
     if not path.is_dir():
@@ -104,6 +115,9 @@ def list_phases(phases: Path) -> tuple[list[dict[str, Any]], list[str]]:
     if not phases.is_dir():
         return existing, warnings
     for child in phases.iterdir():
+        if is_reparse_point(child):
+            warnings.append(f"ignorado (link/reparse point): {child.name}")
+            continue
         if not child.is_dir():
             if child.name != ".gitkeep":
                 warnings.append(f"ignorado (não é pasta de fase): {child.name}")
@@ -130,6 +144,8 @@ def list_phases(phases: Path) -> tuple[list[dict[str, Any]], list[str]]:
 # Representa o alvo MVP sem inferir a rota a partir dos artefatos existentes.
 def get_mvp(vf: Path) -> dict[str, Any] | None:
     mvp = vf / "mvp"
+    if is_reparse_point(mvp):
+        raise RuntimeError("MVP_INESPERADO: .vibeflow/mvp não pode ser symlink, junction ou reparse point.")
     if not mvp.exists():
         return None
     if not mvp.is_dir():
@@ -171,31 +187,32 @@ def resolve_alvo(
     return None, "criar"
 
 
-# Substitui o plan somente depois de conferir uma cópia temporária, preservando o rascunho anterior em falhas.
-def promote_wip(wip: Path, dest_file: Path) -> None:
-    temp_path: Path | None = None
+# Cria o arquivo vivo vazio sem substituir conteúdo já escrito pela IA.
+def prepare_live_file(dest_file: Path) -> bool:
+    if dest_file.is_symlink() or dest_file.exists():
+        if dest_file.is_symlink() or not dest_file.is_file():
+            raise RuntimeError(f"ARTEFATO_INESPERADO: {dest_file.name} não é um arquivo vivo.")
+        return False
     try:
-        with tempfile.NamedTemporaryFile(dir=dest_file.parent, prefix=".plan-", suffix=".tmp", delete=False) as stream:
-            temp_path = Path(stream.name)
-            stream.write(wip.read_bytes())
-        if temp_path.stat().st_size != wip.stat().st_size or sha256(temp_path) != sha256(wip):
-            raise RuntimeError("COPY_HASH_MISMATCH: a cópia do wip não bateu com o original.")
-        os.replace(temp_path, dest_file)
-    except Exception:
-        if temp_path:
-            temp_path.unlink(missing_ok=True)
-        raise
+        with dest_file.open("xb"):
+            pass
+    except FileExistsError:
+        if dest_file.is_file() and not dest_file.is_symlink():
+            return False
+        raise RuntimeError(f"ARTEFATO_INESPERADO: {dest_file.name} não é um arquivo vivo.")
+    return True
 
 
 # Monta o JSON que a skill lê; stdout só o path do relatório.
 def write_report(vf: Path, payload: dict[str, Any]) -> Path:
     report_path = vf / "plan-report.json"
+    assert_safe_operational_path(report_path, "RELATORIO_INESPERADO")
     report_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8", newline="\n")
     print(report_path)
     return report_path
 
 
-# Inventaria o disco e opcionalmente promove o wip para plan.md.
+# Inventaria o disco e prepara o arquivo vivo no apply.
 def run(args: argparse.Namespace) -> Path:
     if args.mvp and args.dir is not None:
         raise RuntimeError("MODO_INVALIDO: o alvo MVP não aceita --dir.")
@@ -203,7 +220,6 @@ def run(args: argparse.Namespace) -> Path:
     repo = repo_root(args.root)
     vf = repo / ".vibeflow"
     phases = vf / "phases"
-    wip = vf / "plan-wip.md"
     actions: list[dict[str, str]] = []
 
     vf_state = vibeflow_state(vf)
@@ -234,15 +250,12 @@ def run(args: argparse.Namespace) -> Path:
     modo: str | None = None
 
     if args.apply:
-        if not wip.is_file() or wip.stat().st_size == 0:
-            raise RuntimeError("WIP_AUSENTE: falta .vibeflow/plan-wip.md preenchido.")
-
         if args.mvp:
             dest_dir = vf / "mvp"
             modo = "atualizar" if (dest_dir / "plan.md").is_file() else "reuse"
         elif args.dir:
             dest_dir = phases / Path(args.dir).name
-            if not dest_dir.is_dir() or not PHASE_RE.fullmatch(dest_dir.name):
+            if is_reparse_point(dest_dir) or not dest_dir.is_dir() or not PHASE_RE.fullmatch(dest_dir.name):
                 raise RuntimeError(f"FASE_AUSENTE: .vibeflow/phases/{dest_dir.name} não é uma pasta de fase.")
             modo = "atualizar" if (dest_dir / "plan.md").is_file() else "reuse"
         elif alvo:
@@ -260,9 +273,9 @@ def run(args: argparse.Namespace) -> Path:
 
         dest_file = dest_dir / "plan.md"
         rel = ".vibeflow/mvp" if args.mvp else f".vibeflow/phases/{dest_dir.name}"
-        promote_wip(wip, dest_file)
-        wip.unlink()
-        actions.append({"op": "promover_wip", "alvo": f"{rel}/plan.md"})
+        file_created = prepare_live_file(dest_file)
+        if file_created:
+            actions.append({"op": "criar_arquivo", "alvo": f"{rel}/plan.md"})
         if args.mvp:
             mvp = get_mvp(vf)
             created = mvp
@@ -287,7 +300,6 @@ def run(args: argparse.Namespace) -> Path:
         "alvo": mvp if args.mvp else alvo,
         "mvp": mvp,
         "modo_sugerido": "atualizar" if args.mvp and "plan.md" in mvp["files"] else ("reuse" if args.mvp else modo_sugerido),
-        "wip": "presente" if wip.is_file() else "ausente",
         "created": created,
         "modo": modo,
         "actions": actions,

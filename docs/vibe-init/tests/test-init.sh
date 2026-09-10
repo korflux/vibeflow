@@ -18,8 +18,12 @@ flow=""
 if [ -f "$s/.vibeflow/init-report.json" ]; then
   flow=$(json_field "$s/.vibeflow/init-report.json" flow)
 fi
-assert "$( [ "$last_rc" -eq 0 ] && [ "$flow" = novo ] && echo 1 || echo 0 )" \
-  "1-root-inventario" "rc=$last_rc flow=$flow err=$(cat "$last_err")"
+bridge_ok=0
+if [ -f "$s/.agents/rules/vibeflow.md" ] && [ "$(cat "$s/.agents/rules/vibeflow.md")" = '@../../.vibeflow/REGRAS.md' ]; then
+  bridge_ok=1
+fi
+assert "$( [ "$last_rc" -eq 0 ] && [ "$flow" = novo ] && [ "$bridge_ok" -eq 1 ] && echo 1 || echo 0 )" \
+  "1-root-inventario" "rc=$last_rc flow=$flow bridge=$bridge_ok err=$(cat "$last_err")"
 rm -rf "$s"
 
 # 2. --stop-after-old é repassado: backup existe e o legado ainda não virou symlink.

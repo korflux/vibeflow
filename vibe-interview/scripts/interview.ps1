@@ -1,6 +1,6 @@
 ﻿#Requires -Version 7.0
 # vibe-interview/scripts/interview.ps1
-# Inventaria o interview e promove o wip para um alvo phase ou MVP explícito.
+# Inventaria o interview e prepara um alvo phase ou MVP explícito.
 param(
     [string]$Root,
     [switch]$Apply,
@@ -13,6 +13,25 @@ $script:SlugWasBound = $PSBoundParameters.ContainsKey('Slug')
 $script:ChainFiles = @('interview.md', 'spec.md', 'plan.md', 'analyze.md', 'implement.md', 'review.md')
 $script:MaxSlug = 48
 
+# Obtém o item do sistema de arquivos sem resolver links quebrados em ausência.
+function Get-FsItem([string]$Path) {
+    return Get-Item -LiteralPath $Path -Force -ErrorAction SilentlyContinue
+}
+
+# Detecta symlink, junction ou outro reparse point antes de qualquer leitura ou escrita.
+function Test-IsReparsePoint($Item) {
+    if (-not $Item) { return $false }
+    return $Item.Attributes.ToString() -match 'ReparsePoint' -or $Item.LinkType -eq 'SymbolicLink'
+}
+
+# Recusa caminhos operacionais linkados ou de tipo incompatível antes de qualquer escrita.
+function Assert-SafeOperationalFile([string]$Path, [string]$Code) {
+    $item = Get-FsItem $Path
+    if ($item -and ((Test-IsReparsePoint $item) -or $item.PSIsContainer)) {
+        throw "${Code}: $([System.IO.Path]::GetFileName($Path)) não é um arquivo operacional regular."
+    }
+}
+
 # Resolve a raiz por parâmetro, Git ou cwd sem exigir que Git esteja instalado.
 function Get-RepoRoot {
     if ($Root) { return (Resolve-Path -LiteralPath $Root).Path }
@@ -23,19 +42,9 @@ function Get-RepoRoot {
     return (Get-Location).Path
 }
 
-# Calcula o hash usado para validar a cópia do wip byte a byte.
-function Get-Sha256File([string]$Path) {
-    return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
-}
-
-# Lê texto operacional que precisa ser preservado integralmente.
-function Read-Utf8File([string]$Path) {
-    if (-not (Test-Path -LiteralPath $Path)) { return $null }
-    return [System.IO.File]::ReadAllText($Path)
-}
-
 # Acrescenta exclusões operacionais preservando regras existentes e evitando duplicação.
 function Add-GitignoreEntry([string]$Path, [string]$Entry) {
+    Assert-SafeOperationalFile $Path 'GITIGNORE_INESPERADO'
     $body = ''
     if (Test-Path -LiteralPath $Path) { $body = [System.IO.File]::ReadAllText($Path) }
     $lines = @()
@@ -48,11 +57,10 @@ function Add-GitignoreEntry([string]$Path, [string]$Entry) {
     [System.IO.File]::AppendAllText($Path, "$prefix$Entry`n")
 }
 
-# Garante que relatório e wip não entrem no Git sem apagar as entradas do init.
+# Garante que o relatório operacional não entre no Git sem apagar as entradas existentes.
 function Assert-InterviewGitignore([string]$Vf) {
     $gi = Join-Path $Vf '.gitignore'
     Add-GitignoreEntry $gi 'interview-report.json'
-    Add-GitignoreEntry $gi 'interview-wip.md'
 }
 
 # Transforma a frase curta da fase em slug ASCII [a-z0-9-], 2–48 chars.
@@ -82,6 +90,10 @@ function Get-PhaseList([string]$Phases) {
         return @{ existing = @(); warnings = @() }
     }
     Get-ChildItem -LiteralPath $Phases -Force | ForEach-Object {
+        if (Test-IsReparsePoint $_) {
+            $warnings.Add("ignorado (link/reparse point): $($_.Name)")
+            return
+        }
         if (-not $_.PSIsContainer) {
             if ($_.Name -ne '.gitkeep') { $warnings.Add("ignorado (não é pasta de fase): $($_.Name)") }
             return
@@ -111,8 +123,9 @@ function Get-PhaseList([string]$Phases) {
 # Representa o alvo MVP sem inferir intenção; a flag continua sendo decisão da IA.
 function Get-MvpMap([string]$Vf) {
     $mvpPath = Join-Path $Vf 'mvp'
-    if (-not (Test-Path -LiteralPath $mvpPath)) { return $null }
-    $item = Get-Item -LiteralPath $mvpPath -Force
+    $item = Get-FsItem $mvpPath
+    if (-not $item) { return $null }
+    if (Test-IsReparsePoint $item) { throw 'MVP_INESPERADO: .vibeflow/mvp não pode ser symlink, junction ou reparse point.' }
     if (-not $item.PSIsContainer) {
         throw 'MVP_INESPERADO: .vibeflow/mvp existe, mas não é um diretório.'
     }
@@ -125,6 +138,26 @@ function Get-MvpMap([string]$Vf) {
         dir   = 'mvp'
         path  = '.vibeflow/mvp'
         files = @($files)
+    }
+}
+
+# Cria o arquivo vivo vazio sem substituir conteúdo já escrito pela IA.
+function New-LiveFile([string]$Path) {
+    $item = Get-FsItem $Path
+    if ($item) {
+        if ((Test-IsReparsePoint $item) -or -not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+            throw "ARTEFATO_INESPERADO: $([System.IO.Path]::GetFileName($Path)) não é um arquivo vivo."
+        }
+        return $false
+    }
+    try {
+        $stream = [System.IO.File]::Open($Path, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
+        $stream.Dispose()
+        return $true
+    } catch [System.IO.IOException] {
+        $item = Get-FsItem $Path
+        if ($item -and -not (Test-IsReparsePoint $item) -and (Test-Path -LiteralPath $Path -PathType Leaf)) { return $false }
+        throw "ARTEFATO_INESPERADO: $([System.IO.Path]::GetFileName($Path)) não é um arquivo vivo."
     }
 }
 
@@ -156,11 +189,12 @@ function Write-InterviewReport([string]$Vf, [hashtable]$Payload) {
     $reportPath = Join-Path $Vf 'interview-report.json'
     $json = [string](ConvertTo-Json -InputObject $Payload -Depth 8)
     $utf8 = New-Object System.Text.UTF8Encoding $false
+    Assert-SafeOperationalFile $reportPath 'RELATORIO_INESPERADO'
     [System.IO.File]::WriteAllText($reportPath, $json, $utf8)
     Write-Output $reportPath
 }
 
-# Inventaria o disco, cria phases/ se faltar, e opcionalmente promove o wip.
+# Inventaria o disco, cria phases/ se faltar e prepara o arquivo vivo no apply.
 function Invoke-Interview {
     if ($Mvp -and $script:SlugWasBound) {
         throw 'MODO_INVALIDO: o alvo MVP não aceita -Slug.'
@@ -169,20 +203,21 @@ function Invoke-Interview {
     $repo = Get-RepoRoot
     $vf = Join-Path $repo '.vibeflow'
     $phases = Join-Path $vf 'phases'
-    $wip = Join-Path $vf 'interview-wip.md'
     $actions = New-Object System.Collections.Generic.List[object]
 
     if (-not (Test-Path -LiteralPath $vf)) {
         throw 'INIT_AUSENTE: não existe .vibeflow/. Rode /vibe-init antes.'
     }
-    $vfItem = Get-Item -LiteralPath $vf -Force
+    $vfItem = Get-FsItem $vf
+    if (Test-IsReparsePoint $vfItem) { throw 'INIT_AUSENTE: .vibeflow não pode ser symlink, junction ou reparse point.' }
     if (-not $vfItem.PSIsContainer) {
         throw 'INIT_AUSENTE: .vibeflow existe, mas não é um diretório.'
     }
 
     $phState = 'ausente'
-    if (Test-Path -LiteralPath $phases) {
-        $phItem = Get-Item -LiteralPath $phases -Force
+    $phItem = Get-FsItem $phases
+    if ($phItem) {
+        if (Test-IsReparsePoint $phItem) { throw 'PHASES_INESPERADO: .vibeflow/phases não pode ser symlink, junction ou reparse point.' }
         if (-not $phItem.PSIsContainer) {
             throw 'PHASES_INESPERADO: .vibeflow/phases existe, mas não é um diretório.'
         }
@@ -205,35 +240,23 @@ function Invoke-Interview {
     $created = $null
 
     if ($Apply) {
-        if (-not (Test-Path -LiteralPath $wip) -or (Get-Item -LiteralPath $wip).Length -eq 0) {
-            throw 'WIP_AUSENTE: falta .vibeflow/interview-wip.md preenchido.'
-        }
         if ($Mvp) {
             $destDir = Join-Path $vf 'mvp'
-            $destFile = Join-Path $destDir 'interview.md'
-            if (Test-Path -LiteralPath $destFile) {
-                throw 'MVP_EXISTE: .vibeflow/mvp/interview.md já existe e não pode ser sobrescrito.'
+            if (Test-IsReparsePoint (Get-FsItem $destDir)) {
+                throw 'MVP_INESPERADO: .vibeflow/mvp não pode ser symlink, junction ou reparse point.'
             }
+            $destFile = Join-Path $destDir 'interview.md'
             $createdDir = -not (Test-Path -LiteralPath $destDir)
             if ($createdDir) { New-Item -ItemType Directory -Path $destDir | Out-Null }
             try {
-                Copy-Item -LiteralPath $wip -Destination $destFile
-                $srcHash = Get-Sha256File $wip
-                $dstHash = Get-Sha256File $destFile
-                $srcLen = (Get-Item -LiteralPath $wip).Length
-                $dstLen = (Get-Item -LiteralPath $destFile).Length
-                if ($srcHash -ne $dstHash -or $srcLen -ne $dstLen) {
-                    throw 'COPY_HASH_MISMATCH: a cópia do wip não bateu com o original.'
-                }
+                $fileCreated = New-LiveFile $destFile
             } catch {
-                if (Test-Path -LiteralPath $destFile) { Remove-Item -LiteralPath $destFile -Force }
-                if ($createdDir -and (Test-Path -LiteralPath $destDir) -and -not (Get-ChildItem -LiteralPath $destDir -Force)) {
+                if ($createdDir -and -not (Test-IsReparsePoint (Get-FsItem $destDir)) -and (Test-Path -LiteralPath $destDir) -and -not (Get-ChildItem -LiteralPath $destDir -Force)) {
                     Remove-Item -LiteralPath $destDir -Force
                 }
                 throw
             }
-            Remove-Item -LiteralPath $wip -Force
-            $actions.Add([pscustomobject]@{ op = 'promover_wip'; alvo = '.vibeflow/mvp/interview.md' })
+            if ($fileCreated) { $actions.Add([pscustomobject]@{ op = 'criar_arquivo'; alvo = '.vibeflow/mvp/interview.md' }) }
             $mvpMap = Get-MvpMap $vf
             $created = $mvpMap
         } else {
@@ -244,28 +267,19 @@ function Invoke-Interview {
             $destDir = Join-Path $phases "phase-$nextN-$clean"
             $destFile = Join-Path $destDir 'interview.md'
             $rel = ".vibeflow/phases/phase-$nextN-$clean"
-            if (Test-Path -LiteralPath $destDir) {
+            if ((Test-IsReparsePoint (Get-FsItem $destDir)) -or (Test-Path -LiteralPath $destDir)) {
                 throw "FASE_EXISTE: $rel já existe."
             }
             New-Item -ItemType Directory -Path $destDir | Out-Null
             try {
-                Copy-Item -LiteralPath $wip -Destination $destFile
-                $srcHash = Get-Sha256File $wip
-                $dstHash = Get-Sha256File $destFile
-                $srcLen = (Get-Item -LiteralPath $wip).Length
-                $dstLen = (Get-Item -LiteralPath $destFile).Length
-                if ($srcHash -ne $dstHash -or $srcLen -ne $dstLen) {
-                    throw 'COPY_HASH_MISMATCH: a cópia do wip não bateu com o original.'
-                }
+                $fileCreated = New-LiveFile $destFile
             } catch {
-                if (Test-Path -LiteralPath $destFile) { Remove-Item -LiteralPath $destFile -Force }
-                if ((Test-Path -LiteralPath $destDir) -and -not (Get-ChildItem -LiteralPath $destDir -Force)) {
+                if (-not (Test-IsReparsePoint (Get-FsItem $destDir)) -and (Test-Path -LiteralPath $destDir) -and -not (Get-ChildItem -LiteralPath $destDir -Force)) {
                     Remove-Item -LiteralPath $destDir -Force
                 }
                 throw
             }
-            Remove-Item -LiteralPath $wip -Force
-            $actions.Add([pscustomobject]@{ op = 'promover_wip'; alvo = "$rel/interview.md" })
+            if ($fileCreated) { $actions.Add([pscustomobject]@{ op = 'criar_arquivo'; alvo = "$rel/interview.md" }) }
             $created = [pscustomobject]@{
                 kind  = 'phase'
                 dir   = "phase-$nextN-$clean"
@@ -281,9 +295,6 @@ function Invoke-Interview {
             if ($existing.Count -gt 0) { $nextN = [int]$existing[-1].n + 1 }
         }
     }
-
-    $wipState = 'ausente'
-    if (Test-Path -LiteralPath $wip) { $wipState = 'presente' }
 
     $mapped = New-Object System.Collections.Generic.List[object]
     foreach ($item in @($existing)) {
@@ -301,7 +312,6 @@ function Invoke-Interview {
         aberta   = $aberta
         mvp      = $mvpMap
         alvo     = $(if ($Mvp) { $mvpMap } else { $aberta })
-        wip      = "$wipState"
         created  = $created
         actions  = $actions.ToArray()
         avisos   = $warnings.ToArray()

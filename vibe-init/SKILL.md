@@ -11,6 +11,8 @@ description: >
 
 Inicializa a infraestrutura de governança do Vibeflow e cria a fonte única e viva da verdade de arquitetura e regras (`.vibeflow/REGRAS.md`).
 
+A investigação começa pela pergunta do bootstrap e pelas evidências do disco. Use `rg --files` para localizar README, manifestos, regras, ponteiros e entradas; use `rg -n` para localizar símbolos, comandos e referências. Abra somente os paths que sustentam a decisão e expanda a leitura quando uma lacuna bloquear a prova. O inventário é mapa de seleção, não autorização para ler a árvore inteira.
+
 ---
 
 ## 1. O que o Utilitário de Setup Faz
@@ -40,23 +42,23 @@ Se o script falhar por limitações da máquina do usuário (ex: versão incompa
 
 ## 3. Auditoria Factual e Leitura de Contexto
 
-Audite o disco antes de consolidar as regras:
+Audite o disco antes de consolidar as regras. Comece pela pergunta que motivou o bootstrap, por exemplo ausência, conflito ou ponteiro inválido, e formule as evidências necessárias para respondê-la.
 
+1. **Localizar as entradas:**
+   * Use `rg --files -g 'README*' -g 'package.json' -g 'Cargo.toml' -g 'pyproject.toml' -g 'go.mod' -g 'pom.xml' -g 'AGENTS.md' -g 'CLAUDE.md' -g 'REGRAS.md'` para encontrar candidatos.
+   * Use `rg -n 'entrada|rota|stack|migra|AGENTS|CLAUDE|REGRAS'` somente nos paths relevantes para localizar referências e símbolos.
+   * Abra o `README.md`, os manifestos encontrados, os ponteiros e os entrypoints necessários, não todos os arquivos listados.
 
-1. **Auditoria de Disco:**
+2. **Auditoria de Disco:**
    * Verifique se `.vibeflow/REGRAS.md` existe e está acessível.
-   * Inspecione `.vibeflow/old/` para conferir se existiam regras legadas que precisam ser resgatadas e mescladas.
+   * Inspecione `.vibeflow/old/` somente para confirmar regras legadas que precisam ser resgatadas e mescladas.
    * Confirme se `AGENTS.md` e `CLAUDE.md` estão presentes na raiz como links ou ponteiros válidos.
 
-2. **Identidade e Stack Real do Projeto:**
-   * Inspecione o `README.md` e os arquivos manifestos (`package.json`, `Cargo.toml`, `pyproject.toml`, `go.mod`, `pom.xml`, etc.).
-   * Extraia o verdadeiro propósito da aplicação e suas tecnologias principais diretamente do código, sem inventar suposições.
-
 3. **Mapeamento Semântico de Arquitetura:**
-   * Inspecione as pastas principais do repositório.
-   * Mapeie o papel arquitetural de cada pasta (ex: onde vivem rotas, regras de negócio, componentes visuais, configs).
-   * Destaque apenas arquivos-chave ou pontos de entrada essenciais.
-   * **Proibido fazer dump cego de listagem de arquivos.** Registre o mapa de responsabilidades.
+   * Leia apenas as pastas e arquivos necessários para explicar o fluxo real do projeto.
+   * Mapeie o papel arquitetural de cada pasta relevante, como rotas, regras de negócio, componentes visuais e configs.
+   * Destaque somente arquivos-chave ou pontos de entrada essenciais.
+   * O inventário não é uma ordem para ler a árvore inteira. Não faça dump cego de listagem de arquivos; registre o mapa de responsabilidades.
 
 ---
 
@@ -82,3 +84,11 @@ Edite e preencha diretamente o arquivo `.vibeflow/REGRAS.md`:
 
 ### Princípio da Manutenção Contínua:
 O `.vibeflow/REGRAS.md` é um **Documento Vivo**. Sempre que novas fases adicionarem novos módulos, serviços ou convenções de código, a IA e o desenvolvedor devem atualizar este arquivo para que o repositório nunca fique com governança defasada.
+
+---
+
+## 6. Fechar
+
+Não commite no git. A fonte viva e o caminho do handoff são a ponte para a etapa seguinte. `init → interview` pode continuar no mesmo chat; abrir outro chat é opcional quando o humano quiser separar o bootstrap da definição do pedido.
+
+Handoff: `vibe-interview`.

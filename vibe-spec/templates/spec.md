@@ -2,6 +2,8 @@
 # Alvo: <phase-<n>-<slug> ou mvp>
 # Status: rascunho
 
+<!-- Escreva diretamente neste artefato vivo; o status permanece rascunho durante a elaboração. -->
+
 ## Objetivo
 
 <quem opera, o que esta entrega resolve, o que sucesso parece — 2–4 frases>
@@ -126,5 +128,7 @@ path/arquivo    # papel na entrega
 
 vibe-plan
 <!-- No MVP, acrescentar: rota: max -->
+
+- Chat: recomende novo chat para `vibe-plan`; continuidade no mesmo chat só por escolha consciente. O `spec.md` vivo é a ponte.
 
 - [ ] Aprovação humana (leu o arquivo e confirmou)

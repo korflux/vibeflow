@@ -18,62 +18,73 @@ assert "$( [ "$last_rc" -ne 0 ] && grep -q INIT_AUSENTE "$last_err" && echo 1 ||
   "1-init-ausente" "rc=$last_rc err=$(cat "$last_err")"
 rm -rf "$s"
 
-# 2. --apply reusa a pasta do plan e promove o wip.
+# 2. --apply reusa a pasta do plan e prepara o arquivo vivo.
 s=$(new_sandbox)
 seed_vibeflow "$s"
 mkdir -p "$s/.vibeflow/phases/phase-1-lock"
 printf 's\n' >"$s/.vibeflow/phases/phase-1-lock/spec.md"
 printf 'p\n' >"$s/.vibeflow/phases/phase-1-lock/plan.md"
-printf '# analyze\n' >"$s/.vibeflow/analyze-wip.md"
 root=$(native_root "$s")
 run_sh bash "$LAUNCHER" --root "$root" --apply
 dest="$s/.vibeflow/phases/phase-1-lock/analyze.md"
-assert "$( [ "$last_rc" -eq 0 ] && [ -f "$dest" ] && [ ! -f "$s/.vibeflow/analyze-wip.md" ] && echo 1 || echo 0 )" \
+assert "$( [ "$last_rc" -eq 0 ] && [ -f "$dest" ] && [ ! -s "$dest" ] && echo 1 || echo 0 )" \
   "2-apply-reuse" "rc=$last_rc dest=$dest err=$(cat "$last_err")"
 rm -rf "$s"
 
-# 3. --dir sem plan devolve ANALYZE_SEM_PLAN: a flag chegou.
+# 3. Reexecução preserva o conteúdo do arquivo vivo.
+s=$(new_sandbox)
+seed_vibeflow "$s"
+mkdir -p "$s/.vibeflow/phases/phase-1-lock"
+printf 's\n' >"$s/.vibeflow/phases/phase-1-lock/spec.md"
+printf 'p\n' >"$s/.vibeflow/phases/phase-1-lock/plan.md"
+printf '# historico\n' >"$s/.vibeflow/phases/phase-1-lock/analyze.md"
+root=$(native_root "$s")
+run_sh bash "$LAUNCHER" --root "$root" --apply
+dest="$s/.vibeflow/phases/phase-1-lock/analyze.md"
+assert "$( [ "$last_rc" -eq 0 ] && [ "$(cat "$dest")" = '# historico' ] && echo 1 || echo 0 )" \
+  "3-preserva-vivo" "rc=$last_rc dest=$dest err=$(cat "$last_err")"
+rm -rf "$s"
+
+# 4. --dir sem plan devolve ANALYZE_SEM_PLAN: a flag chegou.
 s=$(new_sandbox)
 seed_vibeflow "$s"
 mkdir -p "$s/.vibeflow/phases/phase-1-so-spec"
 printf 's\n' >"$s/.vibeflow/phases/phase-1-so-spec/spec.md"
-printf 'x\n' >"$s/.vibeflow/analyze-wip.md"
 root=$(native_root "$s")
 run_sh bash "$LAUNCHER" --root "$root" --apply --dir phase-1-so-spec
 assert "$( [ "$last_rc" -ne 0 ] && grep -q ANALYZE_SEM_PLAN "$last_err" && [ ! -f "$s/.vibeflow/phases/phase-1-so-spec/analyze.md" ] && echo 1 || echo 0 )" \
-  "3-dir-sem-plan" "rc=$last_rc err=$(cat "$last_err")"
+  "4-dir-sem-plan" "rc=$last_rc err=$(cat "$last_err")"
 rm -rf "$s"
 
-# 4. --mvp promove após os três predecessores sem criar phase.
+# 5. --mvp prepara após os três predecessores sem criar phase.
 s=$(new_sandbox)
 seed_vibeflow "$s"
 mkdir -p "$s/.vibeflow/mvp"
 printf 'i\n' >"$s/.vibeflow/mvp/interview.md"
 printf 's\n' >"$s/.vibeflow/mvp/spec.md"
 printf 'p\n' >"$s/.vibeflow/mvp/plan.md"
-printf '# MVP\n' >"$s/.vibeflow/analyze-wip.md"
 root=$(native_root "$s")
 run_sh bash "$LAUNCHER" --root "$root" --apply --mvp
 dest="$s/.vibeflow/mvp/analyze.md"
 phase_count=$(find "$s/.vibeflow/phases" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')
-assert "$( [ "$last_rc" -eq 0 ] && [ -f "$dest" ] && [ "$phase_count" = 0 ] && echo 1 || echo 0 )" \
-  "4-apply-mvp" "rc=$last_rc phases=$phase_count dest=$dest err=$(cat "$last_err")"
+assert "$( [ "$last_rc" -eq 0 ] && [ -f "$dest" ] && [ ! -s "$dest" ] && [ "$phase_count" = 0 ] && echo 1 || echo 0 )" \
+  "5-apply-mvp" "rc=$last_rc phases=$phase_count dest=$dest err=$(cat "$last_err")"
 rm -rf "$s"
 
-# 5. Flag desconhecida para no launcher.
+# 6. Flag desconhecida para no launcher.
 s=$(new_sandbox)
 root=$(native_root "$s")
 run_sh bash "$LAUNCHER" --root "$root" --force
 assert "$( [ "$last_rc" -eq 2 ] && grep -q 'uso: analyze.sh' "$last_err" && echo 1 || echo 0 )" \
-  "5-flag-desconhecida" "rc=$last_rc err=$(cat "$last_err")"
+  "6-flag-desconhecida" "rc=$last_rc err=$(cat "$last_err")"
 rm -rf "$s"
 
-# 6. Sem motor: recusa explícita.
+# 7. Sem motor: recusa explícita.
 s=$(new_sandbox)
 root=$(native_root "$s")
 run_without_motors bash "$LAUNCHER" --root "$root"
 assert "$( [ "$last_rc" -eq 1 ] && grep -q 'precisa de Python 3 ou PowerShell' "$last_err" && echo 1 || echo 0 )" \
-  "6-sem-motor" "rc=$last_rc err=$(cat "$last_err")"
+  "7-sem-motor" "rc=$last_rc err=$(cat "$last_err")"
 rm -rf "$s"
 
 finish

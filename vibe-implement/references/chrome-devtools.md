@@ -1,33 +1,28 @@
-# Prova visual no browser com MCP Server chrome-devtools
+# Prova visual renderizada no navegador
 
-Abrir **apenas** se a fatia alterar ou criar interface web visual no navegador. Não carregar para tasks sem UI.
+Abra esta referência somente quando a fatia alterar ou criar interface web visualizada no navegador. Toda mudança de UI precisa ser conferida no estado renderizado; teste unitário, snapshot de DOM ou screenshot isolado não substitui a inspeção do comportamento quando houver interação relevante.
 
-## Uso das Ferramentas MCP chrome-devtools
+## Seleção da ferramenta
 
-A validação de interface é executada diretamente pela IA através do **MCP Server `chrome-devtools`**:
+Escolha a primeira capacidade disponível, sem instalar ferramenta automaticamente:
 
-1. Identifique ou suba o servidor local da aplicação. Sem URL funcional, pare e pergunte via chat.
-2. Execute a ferramenta MCP `navigate_page` para acessar a URL da rota a ser testada.
-3. Use `take_snapshot` (árvore de acessibilidade) para inspecionar elementos do DOM e interagir através do `uid` correspondente (`click`, `fill`, etc.).
-4. Chame `take_screenshot` na página ou componente renderizado.
-5. Inspecione factualmente a imagem capturada: validar renderização, texto, layout, estados de erro/vazio, contraste e ausência de elementos quebrados ou sobrepostos.
-6. Registre na prova da fatia: URL testada, ações executadas e leitura visual do screenshot.
+1. **Navegador integrado (`@Browser` ou equivalente):** abra a rota local e confira a tela renderizada, os estados e a interação principal.
+2. **MCP Server `chrome-devtools`:** use `navigate_page`, `take_snapshot`, `click` ou `fill`, `take_screenshot` e, quando necessário, a inspeção de DOM, estilos, console, rede e assets.
+3. **Playwright:** use somente quando já existir no repositório ou quando o humano o solicitar, para fluxos repetíveis, viewports, screenshots e assertions de visibilidade ou acessibilidade.
 
-## Testes E2E do Repositório (Playwright / Cypress)
+Se nenhuma capacidade estiver disponível, registre a limitação e não marque a validação visual como concluída. A ausência de navegador não é passe visual e não justifica instalar uma dependência nova.
 
-Usar testes E2E locais quando:
-- A verificação da task (`T*`) já especificar comando E2E existente no repositório.
-- O usuário solicitar explicitamente.
-- O MCP `chrome-devtools` estiver indisponível no ambiente.
+## Checklist renderizada
 
-Execute o comando de teste do repositório. Não instale novas bibliotecas de navegador sem solicitação explícita.
+Registre a rota, a viewport normal e estreita, o estado exercitado, as ações realizadas e a evidência observada. Verifique:
 
-## Sem prova de navegador possível
+- overflow horizontal ou vertical inesperado e conteúdo fora da viewport;
+- clipping, elementos sobrepostos ou cobertos e z-index de modal ou sticky;
+- truncamento, quebra de texto e proporção de largura dos containers;
+- controles maiores que o necessário e composição de input com ícone na mesma linha quando houver espaço;
+- responsividade em viewport estreita;
+- estados loading, empty, error e success;
+- foco visível, navegação por teclado, contraste e nomes acessíveis;
+- erros no console, na rede ou no carregamento de assets.
 
-Se a task exigir validação de UI e não houver MCP `chrome-devtools` ativo nem comando E2E no repositório, não feche a task apenas com teste unitário. Pergunte via chat:
-
-```text
-Q: Interface criada sem MCP chrome-devtools e sem suíte E2E no repositório
-RECOMENDO: Ativar o MCP chrome-devtools no ambiente, ou executar comando E2E do repo, ou validação manual pelo usuário
-(ok / outra?)
-```
+Para interações, use a árvore de acessibilidade do `take_snapshot` e os identificadores retornados para executar as ações antes do screenshot. Leia a captura de forma factual e registre qualquer anomalia como pendência da fatia.

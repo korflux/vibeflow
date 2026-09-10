@@ -1,42 +1,33 @@
 # vibe-interview: arquitetura
 
-`vibe-interview` fecha intenção ambígua antes de spec, plan ou código. Há dois alvos explícitos:
+`/vibe-interview` fecha intenção ambígua antes de `spec`, `plan` ou código. A IA conduz a entrevista e escreve o artefato; os motores apenas inventariam, validam os paths e preparam o arquivo vivo.
+
+Alvos:
 
 ```text
 .vibeflow/phases/phase-<n>-<slug>/interview.md
 .vibeflow/mvp/interview.md
 ```
 
-O primeiro atende mudanças delimitadas. O segundo registra uma única baseline histórica de produto novo e inicia obrigatoriamente a rota max. A IA escolhe o alvo e conduz a semântica; o motor apenas inventaria, valida paths e promove bytes.
-
-## 1. Papéis
+## 1. Papéis e ownership
 
 | Peça | Responsabilidade |
 |---|---|
-| `SKILL.md` | Classificar produto ou feature, entrevistar, recomendar, preencher wip e chamar o modo explícito |
-| `references/mvp-discovery.md` | Catálogo interno e condicional de cobertura, baselines e recomendações do MVP |
-| `templates/interview.md` | Esqueleto único; seções MVP são omitidas no modo phase |
-| Motores `.py` e `.ps1` | Inventário, slug de phase, validação de alvo, cópia, hash, relatório e erros curtos |
-| Launcher `.sh` | Encaminhar as mesmas flags ao Python 3 ou PowerShell 7 |
-| IA | Entender o motor usado, decidir o modo, pilotar conversa e escrever prosa |
-| Humano | Resolver somente decisões críticas que não podem ser assumidas com segurança |
+| `SKILL.md` | Classificar produto ou feature, entrevistar e conduzir a escrita semântica. |
+| `scripts/interview.py`, `interview.ps1`, `interview.sh` | Inventário, slug, validação do alvo, preparação do arquivo e relatório. |
+| `templates/interview.md` | Forma do artefato; não é preenchido pelo motor. |
+| `.vibeflow/interview-report.json` | Evidência operacional, sempre fora do Git. |
+| `interview.md` | Registro vivo e commitável da entrevista. |
 
-O motor não detecta MVP pelo texto, não escreve markdown, não escolhe stack e não atualiza `REGRAS.md`.
+O script não detecta MVP pelo texto, não escolhe stack, não faz perguntas e não escreve a prosa da entrevista.
 
-## 2. Dependência e paths operacionais
+## 2. Dependências e alvos
 
-Sem `.vibeflow/`, o motor encerra com `INIT_AUSENTE`. Se `phases/` não existe, cria o diretório e `.gitkeep`, preservando o contrato phase.
+Sem `.vibeflow/`, encerra com `INIT_AUSENTE`. Se `.vibeflow/phases/` faltar, cria a pasta e `.gitkeep`; não altera `REGRAS.md` nem os ponteiros.
 
-| Path | Papel | Git |
-|---|---|---|
-| `.vibeflow/interview-wip.md` | sessão ainda não promovida | ignorado |
-| `.vibeflow/interview-report.json` | contrato motor para IA | ignorado |
-| `.vibeflow/phases/phase-N-slug/interview.md` | entrevista normal viva | commitável |
-| `.vibeflow/mvp/interview.md` | baseline MVP viva e única | commitável |
+No modo phase, `--slug` cria uma nova `phase-N-slug` com `n` calculado pelo inventário. O modo MVP é explícito, usa somente `.vibeflow/mvp/` e não usa `n` nem slug. O arquivo vivo existente é preservado.
 
-`mvp` inexistente significa alvo disponível. Um arquivo no lugar de `.vibeflow/mvp/` é `MVP_INESPERADO`. `interview.md` já existente é `MVP_EXISTE` no apply e nunca é sobrescrito. Evoluções posteriores usam phase max e substituição crítica explícita.
-
-## 3. Interface pública
+Flags equivalentes:
 
 ```text
 python interview.py [--root PATH] [--apply] [--slug TEXTO] [--mvp]
@@ -44,105 +35,41 @@ pwsh interview.ps1 [-Root PATH] [-Apply] [-Slug TEXTO] [-Mvp]
 bash interview.sh [--root PATH] [--apply] [--slug TEXTO] [--mvp]
 ```
 
-`--mvp` e `--slug` juntos produzem `MODO_INVALIDO`. No modo phase, `--apply` exige slug. No modo MVP, apply não aceita nem precisa de slug.
+`--mvp` combinado com `--slug` é `MODO_INVALIDO`. Slug inválido é recusado antes da criação da fase.
 
-## 4. Inventário e relatório
+## 3. Relatório
 
-O relatório mantém o schema phase e acrescenta `rota`, `modo`, `mvp` e `alvo`:
+O relatório contém `rota`, `modo`, `vibeflow`, `phases`, `next_n`, `existing`, `aberta`, `mvp`, `alvo`, `created`, `actions` e `avisos`. `files` lista somente os seis artefatos da cadeia.
 
-```json
-{
-  "modo": "mvp",
-  "vibeflow": "ok",
-  "phases": "ok",
-  "next_n": 3,
-  "existing": [],
-  "aberta": null,
-  "mvp": {
-    "kind": "mvp",
-    "dir": "mvp",
-    "path": ".vibeflow/mvp",
-    "files": ["interview.md"]
-  },
-  "alvo": {
-    "kind": "mvp",
-    "dir": "mvp",
-    "path": ".vibeflow/mvp",
-    "files": ["interview.md"]
-  },
-  "wip": "ausente",
-  "created": null,
-  "actions": [],
-  "avisos": []
-}
-```
+Quando o apply cria um arquivo, `actions` registra `criar_arquivo`. Quando o destino já existe, a ação não substitui bytes e o relatório mantém o estado observado. O relatório não carrega estado de rascunho temporário nem contrato de promoção.
 
-Objetos de phase recebem `kind: "phase"`. `alvo` aponta para `mvp` no modo MVP e para `aberta` no modo phase. Quando o diretório MVP ainda não existe, `mvp` e `alvo` são `null`. `files` lista apenas `interview.md`, `spec.md`, `plan.md`, `analyze.md`, `implement.md` e `review.md` existentes.
+## 4. Apply e escrita direta
 
-## 5. Apply phase
+1. O motor reexecuta o inventário e valida o modo.
+2. No modo phase, cria a pasta calculada e prepara `interview.md` vazio.
+3. No modo MVP, prepara `.vibeflow/mvp/interview.md` sem criar uma phase.
+4. Se o arquivo vivo já existir e for regular, preserva seus bytes.
+5. O motor grava o relatório operacional e não escreve markdown semântico.
+6. A IA escreve ou atualiza diretamente `interview.md`, mantendo `# Status: rascunho` enquanto houver elaboração.
 
-O contrato anterior permanece:
+O apply não usa arquivo intermediário, não transporta conteúdo entre arquivos e não remove o vivo. A escrita é concorrente-segura no ponto de criação: se outra operação criar o arquivo primeiro, o conteúdo é preservado.
 
-1. Recalcular inventário e `next_n` numericamente.
-2. Exigir wip e slug sanitizável.
-3. Recusar destino existente.
-4. Criar `phase-N-slug/interview.md` com os bytes do wip.
-5. Comparar tamanho e SHA-256.
-6. Remover wip somente após a conferência.
-7. Atualizar relatório com `created.kind = "phase"`.
+## 5. Artefato e MVP
 
-## 6. Apply MVP
+O template é único. A entrevista phase usa Solicitação, Hipótese inicial, Trilha, Resultado e Handoff. O modo MVP acrescenta cobertura, mapa do produto, direção técnica, direção visual, operação e decisões críticas; seções exclusivas são omitidas no modo phase.
 
-1. Recalcular inventário em modo MVP.
-2. Exigir wip.
-3. Recusar `.vibeflow/mvp/interview.md` existente com `MVP_EXISTE`.
-4. Criar `.vibeflow/mvp/` somente se necessário.
-5. Copiar binariamente o wip para `mvp/interview.md`.
-6. Comparar tamanho e SHA-256.
-7. Em falha, remover apenas o destino novo e o diretório se ele foi criado e está vazio. Preservar wip.
-8. Remover wip somente após sucesso.
-9. Atualizar relatório com `created.kind = "mvp"`.
+O interview MVP não publica decisões em `REGRAS.md`. O handoff da entrevista é `vibe-spec`; a aprovação e o caminho permanecem no arquivo vivo.
 
-Nenhuma phase é criada pelo apply MVP. O motor pode garantir `phases/.gitkeep` durante o inventário comum, mas isso não constitui phase.
+## 6. Erros e testes
 
-## 7. Artefato semântico
+Falhas previstas usam `CODIGO: descrição` no stderr, sem stack operacional. Os contratos cobrem ausência de init, tipos inesperados, slug, criação phase/MVP, idempotência, preservação byte a byte, ponteiros de alvo e paridade Python/PowerShell quando disponível.
 
-As seções comuns são Solicitação, Hipótese inicial, Trilha, Resultado, Direção e Handoff. No modo MVP, acrescentam-se:
+Suítes: `docs/vibe-interview/tests/test-interview.py` e `docs/vibe-interview/tests/test-interview.sh`.
 
-| Seção | Conteúdo |
-|---|---|
-| Cobertura do MVP | Domínios relevantes em `DECIDIDO`, `ASSUMIDO`, `N/A` ou `PENDENTE CRÍTICO`, sempre com evidência |
-| Mapa do produto | Jornadas, telas, estados, acesso, usuários, dados, arquivos, integrações e notificações |
-| Direção técnica | Repo, stack, banco, validação, infraestrutura, ambientes e deploy |
-| Direção visual | Identidade, temas, cor, tokens, fonte e acessibilidade |
-| Operação | Segurança, privacidade, analytics, backup, restore, suporte e custos |
-| Decisões críticas | IDs estáveis, estado, decisão, motivo e impacto |
+## 7. Limites
 
-O modo MVP não fecha com `PENDENTE CRÍTICO`. O handoff é `vibe-spec` e `rota: max`. O modo phase omite integralmente as seções exclusivas de MVP.
-
-## 8. Erros previstos
-
-| Código | Condição |
-|---|---|
-| `INIT_AUSENTE` | `.vibeflow/` ausente |
-| `PHASES_INESPERADO` | `phases` existe e não é diretório |
-| `MVP_INESPERADO` | `mvp` existe e não é diretório |
-| `MODO_INVALIDO` | combinação incompatível de modo e slug |
-| `WIP_AUSENTE` | apply sem wip |
-| `SLUG_AUSENTE` / `SLUG_INVALIDO` | apply phase sem slug válido |
-| `FASE_EXISTE` | destino phase já existe |
-| `MVP_EXISTE` | baseline MVP já contém interview |
-| `COPY_HASH_MISMATCH` | tamanho ou SHA-256 diverge após cópia |
-
-Falhas previstas usam `CODIGO: descrição` no stderr e não exibem stack.
-
-## 9. Testes de contrato
-
-- Todos os contratos phase anteriores continuam verdes.
-- Inventário distingue `kind: phase` e `kind: mvp`.
-- Apply MVP promove bytes exatamente para `mvp/interview.md` e não cria `phase-N`.
-- Segundo apply MVP recusa sobrescrita e preserva wip.
-- Path `mvp` inesperado e combinação MVP com slug são recusados.
-- Python, PowerShell quando disponível e launcher Unix aceitam o mesmo modo.
-
-Backlog e limites globais vivem em [`docs/ESCOPO.md`](../ESCOPO.md).
+- Uma entrevista pertence a uma única phase ou ao baseline MVP.
+- O script não preenche, aprova ou interpreta o markdown.
+- O inventário seleciona paths; a IA abre somente as entradas e dependências necessárias, usando `rg --files` e `rg -n` quando precisar localizar evidência.
+- `init → interview → spec` pode permanecer no mesmo chat. A troca de chat é opcional nesta porta; o arquivo vivo é a fonte de continuidade.
+- Sem commit automático. O arquivo vivo entra no Git; o relatório fica fora.

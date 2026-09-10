@@ -30,12 +30,15 @@ native_root() {
   fi
 }
 
-# Python 3 do host, só para ler JSON do relatório. Não é o motor sob teste.
+# Seleciona um Python 3 executável para ler JSON, ignorando aliases quebrados do Windows.
 host_python() {
-  if command -v python3 >/dev/null 2>&1; then
+  if command -v python3 >/dev/null 2>&1 && python3 -c 'import sys; raise SystemExit(sys.version_info.major != 3)' >/dev/null 2>&1; then
     python3 "$@"
-  else
+  elif command -v python >/dev/null 2>&1 && python -c 'import sys; raise SystemExit(sys.version_info.major != 3)' >/dev/null 2>&1; then
     python "$@"
+  else
+    echo 'launcher-harness.sh precisa de Python 3 para ler o relatório.' >&2
+    return 1
   fi
 }
 
@@ -120,10 +123,9 @@ run_pwsh_only() {
     return 0
   fi
   bindir=$(mktemp -d)
-  ln -s "$pwsh_bin" "$bindir/pwsh"
-  if [ -f "${pwsh_bin}.exe" ] || [[ "$pwsh_bin" == *.exe ]]; then
-    ln -sf "$pwsh_bin" "$bindir/pwsh.exe" 2>/dev/null || true
-  fi
+  # Wrapper preserva o diretório real do PowerShell, evitando que um symlink quebre a resolução de pwsh.dll no Windows.
+  printf '#!/usr/bin/env bash\nexec "%s" "$@"\n' "$pwsh_bin" >"$bindir/pwsh"
+  chmod +x "$bindir/pwsh"
   path="$bindir"
   if _is_msys; then
     path="$bindir:$(dirname "$(command -v bash)")"

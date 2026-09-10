@@ -39,7 +39,7 @@ def seed_vibeflow(repo: Path) -> Path:
 
 
 class PythonContracts(unittest.TestCase):
-    """Verifica reuse de pasta, recusa com plan e criação sem interview."""
+    """Verifica reuse de pasta, recusa com plan e preparação do vivo."""
 
     def setUp(self) -> None:
         self.repo = Path.cwd() / f".vibe-spec-python-{uuid.uuid4().hex}"
@@ -61,38 +61,54 @@ class PythonContracts(unittest.TestCase):
         self.assertEqual("criar", report["modo_sugerido"])
         self.assertTrue((self.repo / ".vibeflow" / "phases" / ".gitkeep").is_file())
 
+    # Confirma que o apply reutiliza a pasta da interview e cria somente o arquivo vivo vazio.
     def test_reuse_interview_folder(self) -> None:
         vf = seed_vibeflow(self.repo)
         phase = vf / "phases" / "phase-1-lock-bloco"
         phase.mkdir(parents=True)
         (phase / "interview.md").write_text("trilha\n", encoding="utf-8")
-        (vf / "spec-wip.md").write_text("# spec\n", encoding="utf-8")
         _, report = invoke(self.repo, "--apply")
         dest = phase / "spec.md"
         self.assertTrue(dest.is_file())
-        self.assertEqual("# spec\n", dest.read_text(encoding="utf-8"))
+        self.assertEqual(b"", dest.read_bytes())
         self.assertTrue((phase / "interview.md").is_file())
         self.assertFalse((vf / "phases" / "phase-2-lock-bloco").exists())
         self.assertEqual("reuse", report["modo"])
         self.assertEqual("phase-1-lock-bloco", report["created"]["dir"])
-        self.assertFalse((vf / "spec-wip.md").exists())
+        self.assertNotIn("wip", report)
 
+    # Confirma que a seleção falha por falta de alvo, sem depender de conteúdo temporário.
     def test_apply_without_alvo_or_slug(self) -> None:
-        vf = seed_vibeflow(self.repo)
-        (vf / "spec-wip.md").write_text("x\n", encoding="utf-8")
+        seed_vibeflow(self.repo)
         process, _ = invoke(self.repo, "--apply", check=False)
         self.assertNotEqual(0, process.returncode)
         self.assertIn("SPEC_SEM_ALVO", process.stderr)
 
+    # Confirma que uma fase nova recebe spec.md vazio depois da sanitização do slug.
     def test_create_with_slug(self) -> None:
         vf = seed_vibeflow(self.repo)
-        (vf / "spec-wip.md").write_text("# spec\n", encoding="utf-8")
         _, report = invoke(self.repo, "--apply", "--slug", "Dashboard!!")
         dest = vf / "phases" / "phase-1-dashboard" / "spec.md"
         self.assertTrue(dest.is_file())
+        self.assertEqual(b"", dest.read_bytes())
         self.assertEqual("criar", report["modo"])
         self.assertEqual(2, report["next_n"])
 
+    # Garante que um slug explícito abre pedido novo mesmo com rascunho antigo pendente.
+    def test_explicit_slug_starts_new_phase_when_draft_exists(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        old = vf / "phases" / "phase-1-pedido-antigo"
+        old.mkdir(parents=True)
+        (old / "spec.md").write_text("spec antigo\n", encoding="utf-8")
+
+        _, report = invoke(self.repo, "--apply", "--slug", "pedido-novo")
+
+        self.assertTrue((vf / "phases" / "phase-2-pedido-novo" / "spec.md").is_file())
+        self.assertEqual("phase-2-pedido-novo", report["created"]["dir"])
+        self.assertEqual("criar", report["modo"])
+        self.assertEqual("spec antigo\n", (old / "spec.md").read_text(encoding="utf-8"))
+
+    # Confirma que plan.md continua sendo um gate de proteção e não é afetado pelo apply.
     def test_spec_ja_planejada(self) -> None:
         vf = seed_vibeflow(self.repo)
         phase = vf / "phases" / "phase-1-lock"
@@ -100,23 +116,23 @@ class PythonContracts(unittest.TestCase):
         (phase / "interview.md").write_text("i\n", encoding="utf-8")
         (phase / "spec.md").write_text("old\n", encoding="utf-8")
         (phase / "plan.md").write_text("plan\n", encoding="utf-8")
-        (vf / "spec-wip.md").write_text("novo\n", encoding="utf-8")
         process, _ = invoke(self.repo, "--apply", "--dir", "phase-1-lock", check=False)
         self.assertNotEqual(0, process.returncode)
         self.assertIn("SPEC_JA_PLANEJADA", process.stderr)
         self.assertEqual("old\n", (phase / "spec.md").read_text(encoding="utf-8"))
-        self.assertTrue((vf / "spec-wip.md").exists())
 
-    def test_overwrite_rascunho(self) -> None:
+    # Confirma que o apply repetido não substitui um spec vivo já editado.
+    def test_preserve_rascunho(self) -> None:
         vf = seed_vibeflow(self.repo)
         phase = vf / "phases" / "phase-1-lock"
         phase.mkdir(parents=True)
         (phase / "spec.md").write_text("old\n", encoding="utf-8")
-        (vf / "spec-wip.md").write_text("novo\n", encoding="utf-8")
         _, report = invoke(self.repo, "--apply")
-        self.assertEqual("novo\n", (phase / "spec.md").read_text(encoding="utf-8"))
+        self.assertEqual("old\n", (phase / "spec.md").read_text(encoding="utf-8"))
         self.assertEqual("atualizar", report["modo"])
+        self.assertEqual([], report["actions"])
 
+    # Confirma que o gitignore recebe apenas o relatório desta skill e preserva os irmãos.
     def test_gitignore_preserves_siblings(self) -> None:
         vf = seed_vibeflow(self.repo)
         invoke(self.repo)
@@ -124,7 +140,7 @@ class PythonContracts(unittest.TestCase):
         self.assertIn("init-report.json", text)
         self.assertIn("interview-report.json", text)
         self.assertIn("spec-report.json", text)
-        self.assertIn("spec-wip.md", text)
+        self.assertNotIn("spec-wip.md", text)
 
     def test_phases_file_is_unexpected(self) -> None:
         vf = seed_vibeflow(self.repo)
@@ -134,8 +150,7 @@ class PythonContracts(unittest.TestCase):
         self.assertIn("PHASES_INESPERADO", process.stderr)
 
     def test_invalid_slug_on_create(self) -> None:
-        vf = seed_vibeflow(self.repo)
-        (vf / "spec-wip.md").write_text("x\n", encoding="utf-8")
+        seed_vibeflow(self.repo)
         process, _ = invoke(self.repo, "--apply", "--slug", "!!!", check=False)
         self.assertNotEqual(0, process.returncode)
         self.assertIn("SLUG_INVALIDO", process.stderr)
@@ -146,33 +161,32 @@ class PythonContracts(unittest.TestCase):
         self.assertNotEqual(0, process.returncode)
         self.assertIn("MVP_INTERVIEW_AUSENTE", process.stderr)
 
-    def test_mvp_apply_reuses_special_target(self) -> None:
+    # Confirma que o alvo MVP é preparado sem criar phase nem conteúdo semântico.
+    def test_mvp_apply_prepares_special_target(self) -> None:
         vf = seed_vibeflow(self.repo)
         mvp = vf / "mvp"
         mvp.mkdir()
         (mvp / "interview.md").write_text("interview\n", encoding="utf-8")
-        (vf / "spec-wip.md").write_bytes(b"# spec MVP\n\x00")
         _, report = invoke(self.repo, "--apply", "--mvp")
-        self.assertEqual(b"# spec MVP\n\x00", (mvp / "spec.md").read_bytes())
-        self.assertFalse((vf / "spec-wip.md").exists())
+        self.assertEqual(b"", (mvp / "spec.md").read_bytes())
         self.assertEqual("mvp", report["rota"])
         self.assertEqual("mvp", report["created"]["kind"])
         self.assertEqual(".vibeflow/mvp", report["alvo"]["path"])
+        self.assertNotIn("wip", report)
         self.assertEqual([], [item.name for item in (vf / "phases").iterdir() if item.is_dir()])
 
-    def test_mvp_plan_refuses_update_and_preserves_wip(self) -> None:
+    # Confirma que a proteção de plan.md preserva o spec vivo em um segundo apply.
+    def test_mvp_plan_refuses_update_and_preserves_live_file(self) -> None:
         vf = seed_vibeflow(self.repo)
         mvp = vf / "mvp"
         mvp.mkdir()
         (mvp / "interview.md").write_text("i\n", encoding="utf-8")
         (mvp / "spec.md").write_text("old\n", encoding="utf-8")
         (mvp / "plan.md").write_text("plan\n", encoding="utf-8")
-        (vf / "spec-wip.md").write_text("new\n", encoding="utf-8")
         process, _ = invoke(self.repo, "--apply", "--mvp", check=False)
         self.assertNotEqual(0, process.returncode)
         self.assertIn("SPEC_JA_PLANEJADA", process.stderr)
         self.assertEqual("old\n", (mvp / "spec.md").read_text(encoding="utf-8"))
-        self.assertTrue((vf / "spec-wip.md").is_file())
 
     def test_mvp_rejects_phase_selectors(self) -> None:
         seed_vibeflow(self.repo)
@@ -206,7 +220,6 @@ class PowershellParity(unittest.TestCase):
         phase = vf / "phases" / "phase-1-lock-bloco"
         phase.mkdir(parents=True)
         (phase / "interview.md").write_text("trilha\n", encoding="utf-8")
-        (vf / "spec-wip.md").write_text("# spec\n", encoding="utf-8")
         process = subprocess.run(
             [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo), "-Apply"],
             capture_output=True,
@@ -216,16 +229,14 @@ class PowershellParity(unittest.TestCase):
         self.assertEqual(0, process.returncode, process.stderr)
         dest = phase / "spec.md"
         self.assertTrue(dest.is_file())
-        self.assertEqual("# spec\n", dest.read_text(encoding="utf-8"))
+        self.assertEqual(b"", dest.read_bytes())
         self.assertTrue((phase / "interview.md").is_file())
-        self.assertFalse((vf / "spec-wip.md").exists())
 
     def test_mvp_apply_same_path(self) -> None:
         vf = seed_vibeflow(self.repo)
         mvp = vf / "mvp"
         mvp.mkdir()
         (mvp / "interview.md").write_text("i\n", encoding="utf-8")
-        (vf / "spec-wip.md").write_text("# MVP\n", encoding="utf-8")
         process = subprocess.run(
             [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo), "-Apply", "-Mvp"],
             capture_output=True,
@@ -233,9 +244,47 @@ class PowershellParity(unittest.TestCase):
             check=False,
         )
         self.assertEqual(0, process.returncode, process.stderr)
-        self.assertEqual("# MVP\n", (mvp / "spec.md").read_text(encoding="utf-8"))
+        self.assertEqual(b"", (mvp / "spec.md").read_bytes())
         report = json.loads((vf / "spec-report.json").read_text(encoding="utf-8"))
         self.assertEqual("mvp", report["created"]["kind"])
+
+    # Confirma que o motor PowerShell também preserva uma spec viva já existente.
+    def test_apply_preserves_existing_file(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        phase = vf / "phases" / "phase-1-lock-bloco"
+        phase.mkdir(parents=True)
+        (phase / "interview.md").write_text("trilha\n", encoding="utf-8")
+        dest = phase / "spec.md"
+        dest.write_bytes(b"spec viva PowerShell\n\x00")
+        original = dest.read_bytes()
+        process = subprocess.run(
+            [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo), "-Apply"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(0, process.returncode, process.stderr)
+        self.assertEqual(original, dest.read_bytes())
+        report = json.loads((vf / "spec-report.json").read_text(encoding="utf-8"))
+        self.assertNotIn("wip", report)
+        self.assertEqual([], report["actions"])
+
+    # Confirma que o motor PowerShell respeita slug explícito mesmo com outro rascunho.
+    def test_explicit_slug_starts_new_phase_when_draft_exists(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        old = vf / "phases" / "phase-1-pedido-antigo"
+        old.mkdir(parents=True)
+        (old / "spec.md").write_text("spec antigo\n", encoding="utf-8")
+        process = subprocess.run(
+            [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo), "-Apply", "-Slug", "pedido-novo"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(0, process.returncode, process.stderr)
+        self.assertTrue((vf / "phases" / "phase-2-pedido-novo" / "spec.md").is_file())
+        report = json.loads((vf / "spec-report.json").read_text(encoding="utf-8"))
+        self.assertEqual("phase-2-pedido-novo", report["created"]["dir"])
 
 
 if __name__ == "__main__":

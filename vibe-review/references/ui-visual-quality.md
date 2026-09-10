@@ -1,29 +1,32 @@
-# Qualidade Visual e Interface (Rubrica de Auditoria)
+# Qualidade Visual e Interface
 
-Abrir sempre que o diff alterar elementos visuais, layouts, componentes de UI ou fluxos web vistos no navegador.
+Abra esta referência quando o diff alterar elementos visuais, layouts, componentes de UI ou fluxos web vistos no navegador. Julgue o estado renderizado com evidência factual. Toda anomalia real vira `R*` `Required`; preferência estética sem exigência da spec não bloqueia.
 
-Julgar com inspeção factual. Não assuma que a interface está correta sem verificação visual. Toda anomalia real vira `R*` bloqueante (`Required`). Remédio aponta para `vibe-implement`. Não implemente CSS nesta skill.
+## Ferramenta e evidência
 
----
+Use a seleção definida em `vibe-implement/references/chrome-devtools.md`: navegador integrado (`@Browser` ou equivalente) primeiro quando disponível, MCP Server `chrome-devtools` para snapshot, screenshot, DOM, estilos, console, rede e assets, e Playwright somente se já existir no repositório ou for solicitado para fluxos repetíveis e assertions. Sem capacidade visual, registre `R*` `Required`; não aprove silenciosamente e não instale ferramenta automaticamente.
 
-## 1. Captura e Leitura Visual
+Em toda prova, registre rota, viewport, estado, ações e evidência observada. Screenshot isolado não substitui a inspeção da interação relevante.
 
-A validação visual é feita utilizando as ferramentas do **MCP Server `chrome-devtools`** (`navigate_page`, `take_snapshot`, `take_screenshot` e leitura factual do resultado).
+## Checklist única de auditoria renderizada
 
-- **Prova obrigatória:** Qualquer fluxo visual alterado sem evidência lida via MCP `chrome-devtools` (ou screenshot analisada) bloqueia Approve (`Required`).
-- **Análise factual:** A IA deve descrever textualmente os elementos renderizados e verificar se o que está na tela corresponde exatamente ao aceite da spec.
+| Área | Conferir |
+|---|---|
+| Viewport e geometria | overflow horizontal ou vertical inesperado, conteúdo fora da viewport, clipping, sobreposição ou cobertura e z-index de modal ou sticky |
+| Texto e proporção | truncamento, quebra de texto e proporção de largura dos containers |
+| Controles e composição | controles maiores que o necessário e input com ícone na mesma linha quando houver espaço |
+| Responsividade | comportamento em viewport estreita |
+| Estados | loading, empty, error e success |
+| Acessibilidade | nome acessível, foco visível, teclado e contraste |
+| Runtime | erros de console, rede e carregamento de assets |
 
----
+## Controles compactos e semânticos
 
-## 2. Rubrica de Defeitos Visuais
+- Use `icon-only` somente para ações universalmente reconhecíveis, como o ícone de lixeira para apagar.
+- Todo controle `icon-only` mantém nome acessível programático, área de interação adequada, foco visível e tooltip quando aplicável.
+- Mantenha texto em ações ambíguas, compostas ou que dependam de contexto para evitar erro de uso. Não transforme uma ação ambígua em `icon-only` só para reduzir largura.
+- O ícone não pode esconder confirmação, feedback, estado de carregamento, erro ou permissão da ação.
 
-| Falha Visual | O que inspecionar | Severidade |
-|---|---|---|
-| **Elemento Sobreposto / Coberto** | Botões, modais, textos ou cabeçalhos sobrepondo outros componentes ou invadindo áreas vizinhas. | Required |
-| **Contraste e Legibilidade** | Texto cinza claro sobre fundo branco, texto escuro sobre fundo escuro ou cores sem contraste mínimo legível. | Required |
-| **Layout Quebrado / Overflow** | Scroll horizontal não intencional, componentes vazando o contêiner ou quebra desordenada de linhas. | Required |
-| **Copy de Erro / Empty State Ausente** | Telas de carregamento, estados vazios ou mensagens de validação genéricas ou não renderizadas conforme a spec. | Required |
-| **Duplicação de Design System** | Criação de botões, inputs ou modais isolados em vez de reutilizar os componentes base do projeto. | Required |
-| **Preferência Subjetiva** | “Eu preferiria outro tom de cor” ou “outro espaçamento” sem exigência expressa na spec ou no design system. | Não bloqueia |
+## Barra de aprovação
 
-Não aprove interfaces no escuro. Se não houver MCP `chrome-devtools` ou screenshot disponível, registre `Required` ou questione o usuário.
+Interface sem rota, viewport, estado e evidência observada não está provada. Interface com elemento coberto, overflow não intencional, clipping, texto ilegível, foco ausente ou erro de console/rede/assets recebe `R*` `Required`, com remédio apontando para `vibe-implement`.

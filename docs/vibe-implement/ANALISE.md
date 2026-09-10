@@ -1,98 +1,54 @@
-# vibe-implement, mapeamento e fluxo
+# vibe-implement, análise
 
-Fontes:
+## Problema
 
-- [fluxline-build](https://github.com/korflux/fluxline/blob/main/skills/fluxline-build/SKILL.md)
-- [spec-kit implement](https://github.com/github/spec-kit/blob/main/templates/commands/implement.md)
-- [spec-kit converge](https://github.com/github/spec-kit/blob/main/templates/commands/converge.md) (ideia; não vira porta)
-- Contrato `.vibeflow/REGRAS.md` e as skills `vibe-spec`, `vibe-plan`, `vibe-analyze`, `vibe-review`
+A implementação precisava executar uma fila verificável sem perder histórico quando a execução mudasse de chat. O contrato anterior tratava o apply como transporte de um documento acumulativo; isso duplicava responsabilidade e permitia que o arquivo vivo ficasse desatualizado.
 
-Pedido: **uma** skill. Executa a fila do `plan.md`, marca o disco e deixa trilha própria.
+## Decisão de desenho
 
----
-
-## O que cada fonte é
-
-| | Fluxline build | Spec-kit implement | Cadeia vibe |
-|---|---|---|---|
-| Papel | Porta de código; TDD; marca A*/T*/R* | Executor de `tasks.md` | Código com prova; marca a cadeia; grava `implement.md` |
-| Disco | todo + plan + spec + review | Só `[X]` em `tasks.md` | Checkboxes + `implement.md` na mesma pasta |
-| Script | `fluxline-run`: n + `chain.*` | `check_prerequisites` | Inventário + apply do wip |
-| Teste | TDD obrigatório | Opcional | Ciclo em 6 passos com comandos reais de teste |
-| Visual | Playwright + print lido | Sem | MCP Server `chrome-devtools` default; E2E se T* ou humano |
-| Depois | Handoff review | Relatório | Handoff `vibe-review` (não dispara) |
-
----
-
-## Síntese (uma skill, um arquivo)
-
-```
-.vibeflow/phases/phase-N-slug/implement.md
+```text
+relatório → fila.elegiveis
+  → investigação dirigida da T* e do fluxo real
+  → código, teste, simplificação e re-teste
+  → apply garante implement.md
+  → IA registra a fatia diretamente no vivo
+  → plan/spec/review recebem somente marcações provadas
+  → staging explícito e commit da T* sem push
+  → handoff vibe-review ou próxima T*
 ```
 
-A IA lê a fase e o `fila` do relatório, executa a T* (ou R*) elegível seguindo o ciclo de 6 passos (reconhecer, codar, testar, simplificar, re-testar, entregar), prova a execução no disco e escreve o wip (histórico + fatia nova). O script promove bytes com integridade verificada.
+O parser continua deliberadamente pequeno. A ordem sai do plan, as dependências saem de `Deps` e o significado de aceite continua na IA. Assim, não há reimplementação do parser em cada chat.
 
-| Entra | De onde | Como |
-|---|---|---|
-| Sem plan, script não inventa fase no inventário | Irmãs | `alvo` nulo; skill manda `/vibe-plan` se `high+` |
-| Avulsa `low`/`medium` | Pedido + ESCOPO | `--apply --slug` abre pasta só para a trilha |
-| Ciclo de implementação em 6 passos | Vibe | Reconhecer -> Codar -> Testar -> Simplificar -> Re-testar -> Entregar |
-| Diagnóstico sem desistência | Vibe | Trata causa raiz de erros; nunca pula tasks sem teste verde |
-| Marcar disco na hora | Fluxline | T* / A* / C* / R* |
-| Trilha + feedback | Pedido (ESCOPO 3.1) | Template: feito, marcado, prova, + / - / para a review |
-| Apply + wip | Spec/plan/review | Mesmo contrato de cópia + hash |
-| Handoff sem disparar | REGRAS | `vibe-review` |
+## Investigação e prova
 
----
+A IA formula a pergunta da T*, usa `rg --files` e `rg -n` para localizar pontos de entrada, chamadas, helpers, testes e referências, e expande a leitura apenas quando uma lacuna bloqueia a prova. O inventário seleciona o alvo, mas não autoriza ler a árvore inteira.
 
-## O que foi cortado
+Para UI, o contrato escolhe navegador integrado, depois MCP Chrome DevTools, depois Playwright existente ou solicitado. Uma task documental, de script ou de contrato não ganha exigência artificial de navegador.
+
+## Escrita direta
+
+O motor prepara um `implement.md` vazio quando necessário e preserva um arquivo já existente. A IA acrescenta uma seção por fatia diretamente no vivo, com prova, feedback e handoff. O teste verde é condição para marcar `[x]`; a persistência da trilha não depende de um segundo arquivo.
+
+Essa decisão reduz cópia e estados concorrentes. A limitação é que a IA precisa manter o histórico ao editar o vivo; o template e a revisão devem conferir essa continuidade.
+
+## Chat e modos
+
+Implement recomenda um chat focado por T* quando há fila. O modo A para após uma task e seu commit; o modo B exige autorização explícita para percorrer a fila e ainda cria um commit por task. O plan e o implement carregam o contexto verificável para um novo chat.
+
+## MVP
+
+O gate de analyze continua separado para a rota max. A existência de plan não basta: o analyze precisa estar aprovado e limpo antes do código. A implementação não altera `REGRAS.md`; vigência é uma decisão pós-review.
+
+## Cortes
 
 | Corte | Motivo |
 |---|---|
-| `todo.md` / `tasks.md` / T001 `[P]` `[US1]` | Plan já fatia |
-| `docs/fluxline/`, `specs/NNN-slug/` | Contrato `phase-N-slug` |
-| Lib de browser nova sem pedido | MCP Server `chrome-devtools` do host cobre o default |
-| Desistir ou pular tarefas com erro | Regra estrita: diagnosticar causa raiz e corrigir no código |
-| Ignore files de stack | Mistura setup com feature |
-| Teste opcional | Sem teste verde executável não marca e não aplica |
-| Run completa como default | Modo A |
-| Commit | Irmãs não commitam |
-| Disparar review | Handoff é linha |
-| Script lendo Status, aceite ou prosa | Semântica é da IA; a fila usa só duas linhas congeladas |
-| Apagar fatia anterior no apply | O wip traz o histórico; o script só copia bytes |
+| Documento de tasks paralelo | A fila já está no plan. |
+| Cópia acumulativa pelo script | O vivo é editado diretamente pela IA. |
+| Teste visual silencioso | Sem evidência renderizada, a validação não fecha. |
+| Push por task | Mantém o remoto estável durante a implementação; o push fica para a phase aprovada. |
+| Instalação de navegador | Ferramenta nova só entra por necessidade real ou pedido. |
 
----
+## Impacto
 
-## Fluxo de uma run
-
-```
-[1] Script inventário → implement-report.json
-[2] IA lê relatório + vivos da alvo + REGRAS.md
-[3] high+ sem plan → para. max sem analyze → /vibe-analyze
-[4] Fila: R* abertos primeiro, senão fila.elegiveis do relatório (Q se 2+)
-[5] Ciclo da fatia:
-    a. Reconhece código existente no repositório
-    b. Coda a implementação direta e enxuta
-    c. Testa com comando real do repo (ou MCP Server chrome-devtools para UI)
-    d. Simplifica o código recém-escrito
-    e. Re-testa para garantir integridade
-    f. Entrega, marca vivos e grava no wip
-[6] Verde → [x] + wip (fatias antigas + fatia nova + feedback)
-[7] Apply promove com verificação atômica
-[8] Se falhar: investiga log, corrige a causa raiz e retesta
-[9] Modo A para. Não commita. Não dispara review
-```
-
----
-
-## Assumido
-
-### Extensão MVP
-
-No MVP, a implementação não pode começar apenas porque existe um plan. O motor projeta a fila exclusivamente do alvo especial e expõe um gate mínimo do analyze. Ausência, rascunho ou veredito bloqueado impedem o apply, enquanto a skill impede o código antes disso. O histórico acumulativo continua sendo escrito pela IA; o script só promove bytes verificados e nunca publica decisões vigentes.
-
-- Sem `.vibeflow/` a skill para. Init primeiro.
-- Rota é declaração da IA. O script não infere `low`/`max`; apenas obedece ao alvo explícito `--mvp`.
-- `review.md` pode não existir. Inventário lista se houver.
-- A review lê `implement.md` quando o arquivo existir (a porta da review ainda mapeia o checklist vivo).
-- `fila` no relatório é acréscimo (minor). A skill antiga que ignora o campo continua; a nova não monta a fila no feeling se o campo veio preenchido.
+A próxima review lê `implement.md`, o plan marcado e as provas no mesmo alvo. A troca de chat deixa de ser uma perda de contexto porque o disco mantém a trilha completa.

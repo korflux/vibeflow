@@ -10,23 +10,25 @@ Não invente `n`, slug ou path. Sem plan no alvo, não há analyze. Sem `.vibefl
 Erros óbvios e lacunas determinísticas identificados no cruzamento devem ser corrigidos diretamente nos artefatos (`spec.md` ou `plan.md`). Ambiguidades reais de negócio ou arquitetura devem ser esclarecidas com o usuário via chat.
 Não atualize decisões vigentes nem `REGRAS.md`. No MVP, conflito crítico sem `substitui` explícito bloqueia a implementação.
 
+A investigação começa pela pergunta de consistência que precisa ser respondida. Use `rg --files` para localizar interview, spec, plan, analyze, regras e paths citados; use `rg -n` para localizar A*/C*, T*, IDs, símbolos e comandos. Abra somente as entradas e dependências que sustentam o cruzamento e expanda a leitura quando uma lacuna bloquear a prova. O inventário é mapa de seleção, não autorização para ler a árvore inteira.
+
 ## 0. Entender e usar o script
 
-1. Resolva o diretório desta skill e leia o motor que vai executar: `scripts/analyze.ps1` no Windows ou `scripts/analyze.py` no fluxo Unix. Entenda alvo, predecessores, recusas e promoção atômica temporária antes de chamá-lo. Se encontrar defeito, corrija o motor e prove o contrato antes de continuar.
+1. Resolva o diretório desta skill e leia o motor que vai executar: `scripts/analyze.ps1` no Windows ou `scripts/analyze.py` no fluxo Unix. Entenda alvo, predecessores, recusas, preparação do destino e preservação do arquivo vivo antes de chamá-lo. Se encontrar defeito, corrija o motor e prove o contrato antes de continuar.
 2. No cwd do repo:
    - Windows: `pwsh "<skill>/scripts/analyze.ps1"`.
    - Unix: `bash "<skill>/scripts/analyze.sh"`.
    - Alvo MVP: acrescente `-Mvp` ou `--mvp`.
-3. Leia `.vibeflow/analyze-report.json` como evidência operacional. Abra `spec.md` e `plan.md` (obrigatórios), `interview.md` se houver, `analyze.md` se rascunho. Leia `.vibeflow/REGRAS.md` e os arquivos de código necessários de forma direcionada.
+3. Leia `.vibeflow/analyze-report.json` como evidência operacional. Use `rg --files` e `rg -n` para localizar `spec.md` e `plan.md` (obrigatórios), `interview.md` se houver, `analyze.md`, `.vibeflow/REGRAS.md` e os paths de código necessários. Abra somente os arquivos que sustentam o cruzamento, não a árvore inteira.
 
 Erros determinísticos previstos: `INIT_AUSENTE` exige `/vibe-init`. `ANALYZE_SEM_PLAN` exige plan. `ANALYZE_SEM_SPEC`, `ANALYZE_SEM_INTERVIEW`, `MVP_INESPERADO`, `MODO_INVALIDO` e `FASE_AUSENTE` exigem diagnosticar a causa e não devem ser contornados.
 
 ## 1. Abrir
 
-Declare em cerca de cinco linhas: rota, modo, alvo, plan, interview e wip.
+Declare em cerca de cinco linhas: rota, modo, alvo, plan, interview e estado do artefato vivo.
 
 ```text
-modo: reuse · alvo: phase-1-lock-bloco · plan: sim · interview: sim · wip: ausente
+modo: reuse · alvo: phase-1-lock-bloco · plan: sim · interview: sim · artefato vivo: presente
 ```
 
 - `modo_sugerido=criar`: não há pasta com plan. Não invente fase; mande `/vibe-plan`.
@@ -80,19 +82,20 @@ Quando houver ambiguidade que não seja um erro óbvio e dependa de decisão hum
 
 ## 5. Escrever e Salvar
 
-Wip: `.vibeflow/analyze-wip.md`. Molde: `templates/analyze.md`. Status inicial: `rascunho`.
+Artefato vivo: `<created.path>/analyze.md`. Molde: `templates/analyze.md`. Mantenha `# Status: rascunho` enquanto a análise estiver em elaboração.
 Não pergunte se pode salvar e não cole o corpo do documento no chat.
 
-1. Preencha o wip certificando a cobertura, os achados corrigidos e a consistência final.
+1. Execute o apply. Ele prepara o arquivo vivo somente quando ausente e preserva bytes quando ele já existe.
+2. Escreva ou atualize diretamente o arquivo vivo, certificando a cobertura, os achados corrigidos e a consistência final.
    Veredito: `limpo` quando todas as correções forem aplicadas e o plano estiver validado para execução; `bloqueado` apenas se restar conflito crítico não resolvido.
-2. Execute o apply:
+3. Execute ou registre a prova final conforme os comandos do repositório:
    - Modo phase:
      `pwsh "<skill>/scripts/analyze.ps1" -Apply`
      `bash "<skill>/scripts/analyze.sh" --apply`
    - Modo MVP:
      `pwsh "<skill>/scripts/analyze.ps1" -Apply -Mvp`
      `bash "<skill>/scripts/analyze.sh" --apply --mvp`
-3. Responda no chat apenas:
+4. Responda no chat apenas:
 
 ```text
 Analyze gravado: <created.path>/analyze.md
@@ -122,5 +125,5 @@ Rascunho sem "aprovado" e sem pedido da próxima porta não autoriza iniciar o c
 ## 7. Fechar
 
 Não commite no git. Não dispare a próxima skill a menos que o usuário tenha pedido explicitamente para avançar (§6).
-Informe que os arquivos `analyze.md`, `plan.md` e `spec.md` atualizados entram no git e que `analyze-report.json` e `analyze-wip.md` ficam de fora.
+Informe que os arquivos vivos `analyze.md`, `plan.md` e `spec.md` atualizados entram no git e que `analyze-report.json` fica de fora. Recomende abrir um novo chat para `vibe-implement`; continuar no mesmo chat é permitido somente por escolha consciente do humano. O `analyze.md` e os artefatos vivos são a ponte entre chats.
 Handoff registrado no arquivo: `vibe-implement`. Zero implementação nesta execução.

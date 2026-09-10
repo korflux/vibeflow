@@ -68,15 +68,63 @@ $s = New-Sandbox
 try {
     Invoke-Init $s
     $r = Read-Report $s
+    $bridge = Join-Path $s '.agents\rules\vibeflow.md'
     $ok = ($r.flow -eq 'novo') -and
         (Test-Path (Join-Path $s '.vibeflow\REGRAS.md')) -and
         (Test-Path (Join-Path $s '.vibeflow\phases\.gitkeep')) -and
         (Test-IsLink (Join-Path $s 'AGENTS.md')) -and
         (Test-IsLink (Join-Path $s 'CLAUDE.md')) -and
         -not (Test-Path (Join-Path $s '.vibeflow\old')) -and
-        ((Get-Content (Join-Path $s '.vibeflow\REGRAS.md') -Raw) -match 'VIBEFLOW:CADEIA start')
+        -not (Test-Path (Join-Path $s 'GEMINI.md')) -and
+        ((Get-Content (Join-Path $s '.vibeflow\REGRAS.md') -Raw) -match 'VIBEFLOW:CADEIA start') -and
+        ($r.inventory.antigravity -eq 'ausente') -and
+        ((Get-Content $bridge -Raw) -eq "@../../.vibeflow/REGRAS.md`n") -and
+        ((Get-Content $bridge -Raw) -notmatch '# Regras do projeto') -and
+        (@($r.actions | Where-Object { $_.op -eq 'antigravity_bridge_criar' }).Count -eq 1)
     Assert $ok '1-novo-vazio' "flow=$($r.flow) old=$(Test-Path (Join-Path $s '.vibeflow\old'))"
 } catch { Bad '1-novo-vazio' "$_" }
+
+# 1b. Uma ponte já correta permanece byte a byte e não gera ação nova.
+$s = New-Sandbox
+try {
+    Invoke-Init $s
+    $bridge = Join-Path $s '.agents\rules\vibeflow.md'
+    $antes = Get-Sha $bridge
+    Invoke-Init $s
+    $r = Read-Report $s
+    $ops = @($r.actions | ForEach-Object { $_.op })
+    $ok = ($r.inventory.antigravity -eq 'ponteiro_ok') -and
+        ($antes -eq (Get-Sha $bridge)) -and
+        ($ops -notcontains 'antigravity_bridge_criar') -and
+        ($ops -notcontains 'antigravity_bridge_reparar') -and
+        (@($r.olds).Count -eq 0)
+    Assert $ok '1b-ponte-antigravity-idempotente' "state=$($r.inventory.antigravity) ops=$($ops -join ',')"
+} catch { Bad '1b-ponte-antigravity-idempotente' "$_" }
+
+# 1c. Conteúdo divergente é salvo em old antes de a ponte ser reparada.
+$s = New-Sandbox
+try {
+    Invoke-Init $s
+    $bridge = Join-Path $s '.agents\rules\vibeflow.md'
+    [System.IO.File]::WriteAllText($bridge, "regra local do Antigravity`n")
+    Invoke-Init $s
+    $r = Read-Report $s
+    $old = Join-Path $s '.vibeflow\old\antigravity-vibeflow.md'
+    $ops = @($r.actions | ForEach-Object { $_.op })
+    $oldIndex = -1
+    $repairIndex = -1
+    for ($i = 0; $i -lt $ops.Count; $i++) {
+        if ($ops[$i] -eq 'old' -and $oldIndex -lt 0) { $oldIndex = $i }
+        if ($ops[$i] -eq 'antigravity_bridge_reparar' -and $repairIndex -lt 0) { $repairIndex = $i }
+    }
+    $ok = ($r.inventory.antigravity -eq 'divergente') -and
+        ((Get-Content $old -Raw) -eq "regra local do Antigravity`n") -and
+        ((Get-Content $bridge -Raw) -eq "@../../.vibeflow/REGRAS.md`n") -and
+        (@($r.merges).Count -eq 0) -and
+        ($oldIndex -ge 0) -and ($repairIndex -gt $oldIndex) -and
+        (@($r.avisos | Where-Object { $_ -match 'antigravity-vibeflow\.md' }).Count -eq 1)
+    Assert $ok '1c-ponte-antigravity-reparo' "state=$($r.inventory.antigravity) old=$oldIndex repair=$repairIndex"
+} catch { Bad '1c-ponte-antigravity-reparo' "$_" }
 
 # 2. Sem README/description → paragrafo fica SLOT
 $s = New-Sandbox

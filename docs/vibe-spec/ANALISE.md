@@ -1,113 +1,46 @@
-# vibe-spec, mapeamento e fluxo
+# vibe-spec, análise
 
-Fontes:
+## Problema
 
-- [fluxline-spec](https://github.com/korflux/fluxline/blob/main/skills/fluxline-spec/SKILL.md)
-- [spec-kit specify](https://github.com/github/spec-kit/blob/main/templates/commands/specify.md) + [spec-template.md](https://github.com/github/spec-kit/blob/main/templates/spec-template.md)
-- [spec-kit plan-template.md](https://github.com/github/spec-kit/blob/main/templates/plan-template.md) (link de referência, focado em plan)
+A spec precisa ser uma fonte executável do decidido, não um rascunho preso ao chat nem um contrato de user stories copiado de outro produto. O contrato também precisava refletir que o arquivo vivo já é editado diretamente depois da primeira preparação.
 
-Comparado com `.vibeflow/REGRAS.md` e com `vibe-interview`.
+## Decisão de desenho
 
----
+```text
+interview.md ou pedido claro
+  → inventário e gate de predecessor
+  → perguntas pontuais, se necessário
+  → apply prepara spec.md
+  → IA escreve comportamento, aceite e boundaries diretamente
+  → humano lê o arquivo
+  → handoff vibe-plan
+```
 
-## O que cada fonte é
+O script continua determinístico. A decisão semântica de phase ou MVP é da IA e é expressa pela flag. `--apply` só resolve o destino e garante que o arquivo vivo exista; não é uma etapa de promoção.
 
-| | Fluxline spec | Spec-kit specify | Spec-kit plan-template |
-|---|---|---|---|
-| Papel | Registrar o **decidido** para o plan não chutar | Requisitos *what/why* para stakeholder | Desenho técnico da feature |
-| Disco | `docs/fluxline/spec/spec-fase-N-….md` | `specs/NNN-slug/spec.md` + checklist extra | `specs/…/plan.md` + research/data-model/contracts |
-| N | **Reusa** o da interview | Número novo (ou timestamp) + branch opcional | Lê a spec já existente |
-| Chat | Path + resumo. Proibido dump | Completion report + até 3 perguntas em lote | Preenchido pelo comando plan |
-| Buraco | Q+RECOMENDO no chat. **Proibido** Open Questions no arquivo | Até 3 `[NEEDS CLARIFICATION]` **dentro** do spec.md | `NEEDS CLARIFICATION` no contexto técnico |
-| How | Delta de stack, paths da fatia, comandos reais | **Proibido** how (sem stack, API, estrutura) | How completo (tech context, constitution, árvore) |
-| Qualidade | Spec operacional (A*/C*, seams, boundaries) | User stories P1–P3 + FR-00N + SC-00N | Constitution gate + complexity table |
+## Investigação e continuidade
 
-As duas “skills de spec” não descrevem o mesmo artefato. Spec-kit parte o trabalho em specify (negócio) e plan (técnica). Fluxline junta o que o **agente** precisa para executar, e empurra fatia/todo para a porta seguinte. O link `plan-template.md` é insumo da **vibe-plan**, não da spec.
+A IA começa pela pergunta que a spec precisa responder, localiza `interview.md`, `REGRAS.md`, entradas e testes com `rg --files`, confirma IDs, símbolos e comandos com `rg -n` e abre somente as dependências do fluxo. O inventário não autoriza leitura integral da árvore.
 
----
+`init → interview → spec` pode seguir no mesmo chat. Se o contexto ficar ambíguo, o caminho do arquivo vivo permite abrir novo chat sem transportar o histórico como autoridade.
 
-## O que entra na vibe-spec (de cada um)
+## MVP
 
-### De fluxline (espinha)
+O baseline MVP usa o mesmo template, com seções exclusivas marcadas para omissão em phase. Isso evita que a rota de produto novo se misture à numeração cronológica de features. Entrevista, spec e decisões críticas permanecem no mesmo `.vibeflow/mvp/`.
 
-- Gate ~80%. Abaixo: mandar `vibe-interview`. Intenção quebrada no meio: voltar. Não reabrir interview por seam técnico.
-- Só o decidido. Omitir o que não se aplica. Não omitir o que plan/implement precisariam inventar.
-- Grava **já** como rascunho. Humano lê o **arquivo**. Chat = path + resumo curto.
-- “Pode ir pro plan” / pedido da próxima porta = aprovação. “Parece bom” sem isso não basta.
-- Q+RECOMENDO no chat, uma por vez. “Tanto faz” crava a rec.
-- Mesmo `n` da interview. `next_n` só se não houver fase alvo (rota `high` sem interview).
-- Seções: Objetivo, Suposições, Escopo+Fora, Direção visual se UI, Checklist A*/C*, Implementação delta, Como provar, Boundaries.
-- Não dispara a próxima skill. Handoff é linha no arquivo.
-- UI: ref curta, não CSS.
+Decisões históricas não viram vigentes automaticamente. A tabela compacta de `REGRAS.md` só muda depois de implementação, review aprovada e confirmação humana.
 
-### De spec-kit specify (o que sobrevive traduzido)
-
-- Sucesso **observável** (vira `C*`, não SC-00N).
-- Assunções explícitas (vira Suposições). Defaults razoáveis no chat, não mural de FR-00N.
-- Entidades de dado, se houver, **dentro** de Escopo. Sem seção obrigatória vazia.
-- Critério de qualidade: testável, sem adjetivo. Sem arquivo extra `checklists/requirements.md`.
-- Foco what/why no Objetivo e no aceite. How só como **delta** (fluxline), nunca dump de stack.
-
-### De spec-kit plan-template (o que a spec **não** absorve)
-
-| Peça | Destino |
-|---|---|
-| Summary técnico + approach | vibe-plan |
-| Technical Context completo | vibe-plan; spec só tabela delta se houver decisão |
-| Constitution Check | `.vibeflow/REGRAS.md` já é a constituição. Spec não duplica |
-| Árvore Option 1/2/3 | Fora. Spec: paths reais da fatia, se âncora |
-| research.md, data-model.md, contracts/, quickstart.md | vibe-plan / analyze, se um dia existirem |
-| Complexity Tracking | vibe-plan |
-| Branch `###-feature-name` | Fora. Pasta da cadeia já é `phase-N-slug` |
-
----
-
-## O que foi cortado (e por quê)
+## O que foi cortado
 
 | Corte | Motivo |
 |---|---|
-| `docs/fluxline/spec/…` e id `N-slug-nome` no filename | Contrato `.vibeflow/phases/phase-N-slug/spec.md` |
-| Mural de user stories P1–P3 | Fluxline: comportamento observável por área. Story wall inchou spec sem ajudar o agente |
-| FR-001, SC-001, NEEDS CLARIFICATION no `.md` | Pendência no arquivo vira chute no plan. Fecha no chat |
-| Checklist file separado | Uma casa: verificação curta no próprio `spec.md` |
-| Hooks, extensions.yml, feature.json, specs/ | Outro produto |
-| Constitution + três layouts de repo | Ruído. Disco real + REGRAS |
-| “Spec para stakeholder, zero how” | Nesta cadeia o leitor é o agente da próxima porta. Spec magra fez o plan inventar (lição do fluxline) |
-| Colar spec no chat “pra validar” | Arquivo é a fonte |
-| Esperar sim **antes** de gravar | Spec grava rascunho na hora; interview é que espera sim |
-| Disparar `vibe-plan` | REGRAS: handoff é linha |
+| Escrita semântica no motor | Mantém o script verificável e sem interpretação de linguagem natural. |
+| Arquivo temporário como requisito de apply | A IA já edita o vivo e o apply deve preservar histórico existente. |
+| Open Questions no documento | Ambiguidades são resolvidas no chat e registradas como decisão. |
+| Mural de user stories e FR-00N | A cadeia usa comportamento observável, A*/C* e T*. |
+| Template MVP separado | Uma única forma reduz divergência entre rotas. |
+| Atualização automática de `REGRAS.md` | Vigência depende de review e confirmação humana. |
 
----
+## Impacto
 
-## Fluxo de uma run
-
-```
-[1] IA compreende o motor spec, parâmetros e invariantes de segurança
-[2] Script executa inventário mecânico → spec-report.json
-[3] IA analisa o relatório como evidência, lê interview.md da alvo (se houver), spec.md se rascunho, REGRAS.md e caminhos necessários
-[4] IA avalia CONFIDENCE (<80% e intenção incompleta: encaminha para interview)
-[5] IA fecha dúvidas pontuais de desenho no chat via Q + RECOMENDO
-[6] IA escreve spec-wip.md conforme templates/spec.md (Status: rascunho)
-[7] Script apply promove com validação atômica → phase-N-slug/spec.md ou mvp/spec.md
-[8] Chat: path + resumo 4 linhas + “leia o arquivo”
-[9] Ajuste = patch no vivo. Aprovado ou “pode ir pro plan” = Status: aprovado
-[10] IA fecha a run sem commit automático e sem auto-invoke da próxima skill
-```
-
-## Extensão para MVP
-
-A rota MVP reutiliza a espinha acima, mas fixa o alvo em `.vibeflow/mvp/` e exige a interview completa antes da spec. A IA seleciona `--mvp`; o script apenas valida o predecessor e promove o wip. Nenhum `next_n`, slug ou escolha automática participa dessa rota.
-
-A spec não repete toda a descoberta. Ela transforma o baseline em comportamento e aceite implementáveis, mantendo os IDs críticos. Cada linha declara `mantém`, `cria` ou `substitui`, o que torna contradições detectáveis pelo analyze e impede que cronologia implícita escolha a decisão vigente.
-
-Decisões da spec MVP continuam históricas. `REGRAS.md` só recebe a versão compacta depois de implementação, review aprovada e confirmação humana.
-
----
-
-## Assumido
-
-- Rota `high` pode chegar aqui sem interview. Aí a spec **cria** `phase-N-slug` (slug da frase curta). Com interview, **reusa** a pasta.
-- A*/C* ficam na spec para a build marcar depois. Plan aponta, não copia.
-- `plan.md` na mesma pasta trava overwrite: spec daquele pedido já foi fatiada. Pedido novo = pasta nova.
-- v1 não cria `research.md` nem contratos OpenAPI. Isso, se existir, é outra skill.
-- O MVP usa a mesma template, com seções críticas omitíveis no modo phase.
+Spec, plan, analyze e implement compartilham o mesmo path e o mesmo arquivo vivo. Isso reduz a chance de uma execução partir de texto que ficou preso no chat e permite que o próximo chat confira status, aceite e handoff diretamente no disco.

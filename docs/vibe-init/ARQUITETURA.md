@@ -1,6 +1,6 @@
 # vibe-init — arquitetura
 
-`/vibe-init` deixa um repo com **uma** fonte de regras e dois ponteiros.
+`/vibe-init` deixa um repo com **uma** fonte de regras e adaptadores mínimos para os hosts.
 
 ```
 .vibeflow/REGRAS.md          ← único arquivo editável
@@ -8,9 +8,10 @@
 .vibeflow/phases/            ← pasta da cadeia (criada vazia no init)
 AGENTS.md                    ← symlink → .vibeflow/REGRAS.md
 CLAUDE.md                    ← symlink → .vibeflow/REGRAS.md
+.agents/rules/vibeflow.md   ← @../../.vibeflow/REGRAS.md
 ```
 
-Dois fluxos. O script **inventaria primeiro**, escolhe o fluxo e só então mexe. Arquivo do usuário **nunca** some: antes de substituir, mover o papel ou apagar, o script copia para `.vibeflow/old/` e só segue se a cópia bater (tamanho + hash). A IA recebe o relatório, une fontes diferentes no `REGRAS.md` e faz as perguntas pré-definidas **mais** o que o contexto exigir. Não inventa fato que o disco não mostrou.
+Dois fluxos. O script **inventaria primeiro**, escolhe o fluxo e só então mexe. Arquivo do usuário **nunca** some: antes de substituir, mover o papel ou apagar, o script copia para `.vibeflow/old/` e só segue se a cópia bater (tamanho + hash). A IA recebe o relatório, une fontes diferentes no `REGRAS.md` e faz as perguntas pré-definidas **mais** o que o contexto exigir. A ponte Antigravity não é fonte de regras: conteúdo divergente é salvo em `old/` antes de ser reparado para a inclusão mínima. Não inventa fato que o disco não mostrou.
 
 ---
 
@@ -84,6 +85,19 @@ Windows é case-insensitive: `regras.md` = `REGRAS.md`.
 | `inesperado` | diretório ou tipo que não é arquivo/link |
 
 “Alvo resolve para REGRAS” compara o path canônico, não a string do link.
+
+### 2.4 Ponte do Antigravity
+
+O arquivo `.agents/rules/vibeflow.md` é um adaptador de workspace para o host Antigravity. Seu único conteúdo válido é `@../../.vibeflow/REGRAS.md` com quebra de linha final. Ele não recebe a prosa de `REGRAS.md`, não cria `GEMINI.md` no projeto e não participa de `merges[]`.
+
+| Estado | Significa | Ação |
+|---|---|---|
+| `ausente` | `.agents/rules/vibeflow.md` não existe | criar a pasta e a inclusão |
+| `ponteiro_ok` | conteúdo exato da inclusão relativa | manter byte a byte |
+| `divergente` | arquivo existe, mas contém outro texto | salvar em `.vibeflow/old/antigravity-vibeflow.md`, conferir e reparar |
+| `inesperado` | `.agents/rules` ou a ponte não é arquivo regular | registrar a falha e não sobrescrever |
+
+Ações públicas de reparo são `antigravity_bridge_criar` e `antigravity_bridge_reparar`. Reparo divergente é reversível por `old/`, mas não é merge semântico, porque a ponte nunca foi uma segunda fonte canônica.
 
 ---
 
@@ -350,12 +364,13 @@ Migration em produção é irreversível no sentido prático. Não gerar, não a
     "phases": "ausente|ok",
     "regras": "ausente|vazio|template|preenchido|raiz_sozinho|raiz_e_vibeflow",
     "agents": "ausente|vazio|symlink_ok|symlink_quebrado|symlink_outro|arquivo_igual|ponteiro_texto|arquivo_legado|inesperado",
-    "claude": "…"
-  },
+    "claude": "…",
+    "antigravity": "ausente|ponteiro_ok|divergente|inesperado"
+ },
   "olds": [
     { "from": "AGENTS.md", "to": ".vibeflow/old/AGENTS.md", "bytes": 1234, "sha256": "…" }
   ],
-  "actions": [{ "op": "criar_dir|criar_phases|escrever_template|old|merge_pendente|mover|symlink_criar|symlink_recriar|apagar_raiz|cadeia_upsert", "alvo": "…" }],
+  "actions": [{ "op": "...|antigravity_bridge_criar|antigravity_bridge_reparar", "alvo": "…" }],
   "merges": [{
     "id": "duas_fontes|legado_vs_regras|regras_duplicado",
     "sources": [".vibeflow/old/AGENTS.md", ".vibeflow/old/CLAUDE.md"],
@@ -427,7 +442,8 @@ Windows: `core.symlinks=true` é aviso, não forçado. Sem privilegio de link: f
 
 ## 13. Contratos de teste (script, sem framework)
 
-1. Repo vazio → NOVO: pasta, `phases/`, template, dois symlinks; sem `old/`.
+1. Repo vazio → NOVO: pasta, `phases/`, template, dois symlinks e a ponte Antigravity; sem `old/` nem `GEMINI.md`.
+1b. Ponte correta é idempotente; ponte divergente entra em `old/` antes de `antigravity_bridge_reparar`.
 2. Sem README/description → `paragrafo` fica SLOT.
 3. Só `.vibeflow/` vazia → REPARAR cria `phases/` + REGRAS + dois links.
 3b. `.vibeflow/` existe sem `phases/` → cria só `phases/` (e o que mais a matriz pedir).

@@ -1,79 +1,51 @@
-# vibe-interview: análise da rota MVP
+# vibe-interview, análise
 
-## Problema
+## Decisão central
 
-A entrevista normal tratava um produto novo como uma feature. Ela fechava intenção, mas não garantia as decisões que tornam um MVP implementável: funcionamento, telas, usuários, acesso, dados, stack, infraestrutura, identidade, operação e segurança. O script também era descrito como piloto da execução, invertendo o papel correto da IA.
+Entrevista é uma porta semântica. O script não tenta inferir se o pedido é um MVP nem transforma respostas em documento. A IA classifica a rota, faz perguntas adaptativas e escreve diretamente no arquivo vivo preparado pelo motor.
 
 ## Fluxo decidido
 
 ```text
-IA entende o motor
-  → classifica produto novo ou mudança
-  → chama inventário com modo explícito
-  → entrevista de forma adaptativa
-  → recomenda e assume lacunas reversíveis
-  → obtém decisão humana para gaps críticos
-  → registra cobertura e IDs críticos
-  → motor promove bytes no alvo correto
+pergunta de bootstrap
+  → inventário do alvo phase ou MVP
+  → perguntas curtas e recomendações
+  → decisões críticas e lacunas reversíveis
+  → apply prepara interview.md
+  → IA registra a entrevista no vivo
+  → humano lê o arquivo
+  → handoff vibe-spec
 ```
 
-O script não interpreta linguagem natural. A flag `--mvp` ou `-Mvp` representa uma decisão já tomada pela IA. Isso mantém o motor determinístico e permite que a própria IA identifique e corrija um defeito durante o uso.
+O inventário é evidência de seleção, não uma ordem para abrir a árvore. A investigação começa pela pergunta que motivou a entrevista, usa `rg --files` para localizar entradas e `rg -n` para confirmar símbolos e decisões, e só expande o conjunto de leitura quando uma lacuna bloquear o resultado.
 
-## Por que `.vibeflow/mvp/`
+## Por que o alvo MVP é separado
 
-MVP é baseline do produto, não uma etapa cronológica comum. Colocá-lo em `phase-1` faria uma phase posterior parecer automaticamente mais correta quando, na realidade, mudanças críticas precisam declarar o que substituem. O diretório especial torna o baseline visível e único, sem inflar `REGRAS.md` com todo o conteúdo da descoberta.
+`.vibeflow/mvp/` representa o baseline único de um produto novo. Ele não recebe `n`, slug ou uma phase cronológica. A flag `--mvp` é uma decisão da IA, porque o motor não deve interpretar linguagem natural nem criar uma rota semântica implícita.
 
-Somente a tabela compacta de decisões vigentes chega às regras após review humana aprovada. O interview registra o histórico completo, mas não publica decisões por conta própria.
+O template continua único. Seções de cobertura, produto, técnica, visual e operação são omitidas no modo phase. Isso evita dois formatos concorrentes sem transformar a entrevista normal em um formulário.
 
-## Descoberta sem formulário
+## Escrita direta e preservação
 
-O catálogo de MVP fica em `references/mvp-discovery.md`, lido somente no modo especial. A skill obriga cobertura, mas não ordem fixa nem exposição do checklist. A IA usa blocos pequenos e adapta cada bloco às respostas já obtidas.
+O ciclo anterior dependia de um arquivo temporário para transportar a prosa até o apply. O contrato atual separa responsabilidades: o script cria apenas a pasta e o arquivo vivo ausente; a IA escreve o conteúdo diretamente e mantém `# Status: rascunho` até a aprovação. Uma segunda execução preserva o arquivo existente.
 
-Esse desenho equilibra dois riscos:
+Essa separação reduz o risco de substituir uma entrevista em andamento e torna o arquivo no disco a ponte entre chats. O relatório continua útil para seleção e auditoria, mas não carrega conteúdo semântico.
 
-| Risco | Controle |
-|---|---|
-| Encerrar cedo e deixar o projeto indefinido | Estados de cobertura e proibição de pendente crítico no fechamento |
-| Assustar quem não sabe responder tudo | Blocos de uma a três perguntas, recomendação clara e premissas assumidas |
+## Política de perguntas e chat
 
-## Política de recomendação
-
-Uma recomendação precisa ter escolha, motivo contextual e impacto. Contra só entra quando pode mudar a decisão. Isso evita devolver indecisão ao usuário por meio de listas neutras de opções.
-
-Os baselines são preferências condicionais, não stack universal:
-
-- Next.js, Auth.js quando aplicável, Zod e PostgreSQL para aplicação web dinâmica.
-- Astro para site predominantemente estático.
-- Supabase quando o usuário não opera PostgreSQL, não tem infraestrutura ou precisa de administração visual de tabelas.
-- GitHub, Vercel e Supabase quando não há infraestrutura aproveitável.
-- Redis somente com necessidade concreta.
-
-A infraestrutura existente é perguntada antes. Hostinger, HostGator, VPS, runtime, banco e nível de acesso podem invalidar a recomendação inicial.
-
-## Segurança e primeiro acesso
-
-A preferência original por master no `.env` foi preservada no objetivo, recuperar acesso, mas não como senha permanente. O padrão é bootstrap ou break-glass por configuração de ambiente, temporário, auditado, forte e desabilitado depois do uso. Assim, o VibeCoder mantém uma rota recuperável sem criar uma credencial universal invisível.
-
-## Visual
-
-O padrão inicial é clean, minimalista e moderno, com um tema principal escolhido pelo contexto e suporte light/dark planejado desde o começo. Cor primária, tokens semânticos, fonte moderna e acessibilidade entram na descoberta. Identidade existente sempre prevalece sobre geração automática.
-
-## Compatibilidade
-
-O template continua único. Seções MVP têm instrução explícita de omissão, portanto a entrevista normal permanece curta. O relatório só recebe campos aditivos, e o fluxo phase mantém cálculo de `next_n`, slug, promoção e fase aberta.
+Perguntas devem fechar decisões que o disco não sustenta. Recomendações precisam declarar escolha, motivo e impacto. A continuidade entre `init`, `interview` e `spec` pode permanecer no mesmo chat; abrir outro chat é opcional e não é gate.
 
 ## Cortes
 
 | Não entrou | Motivo |
 |---|---|
-| Detector de MVP dentro do script | Semântica pertence à IA |
-| Um arquivo de template separado para MVP | Duplicaria estrutura e permitiria divergência |
-| Questionário rígido | Impede adaptação e piora fluidez |
-| Stack obrigatória | Infraestrutura e tipo de produto podem exigir outra escolha |
-| Redis por padrão | Complexidade sem necessidade concreta |
-| Senha master permanente | Backdoor de alto risco |
-| Atualização de `REGRAS.md` no interview | Decisão só se torna vigente após review humana aprovada |
+| Detector automático de MVP | A classificação pertence à IA. |
+| Template separado para MVP | Duplicaria a estrutura e criaria divergência. |
+| Questionário rígido | Impediria adaptação às respostas e às evidências. |
+| Escrita semântica no script | O motor deve permanecer determinístico. |
+| Persistência temporária como requisito | O vivo já é a fonte de continuidade. |
+| Atualização de `REGRAS.md` na entrevista | Decisões vigentes dependem de implementação, review e confirmação humana. |
 
 ## Impacto
 
-Projetos novos saem do interview com informação suficiente para abrir a spec e percorrer a rota max no mesmo alvo. Features continuam usando phases sem carregar o catálogo de MVP. A IA permanece responsável pela condução e consegue auditar o script que apenas protege o contrato de disco.
+Features continuam entrando em phases com slug calculado; projetos novos seguem o baseline MVP. Em ambos os casos, o caminho, o status e o handoff ficam no disco. A próxima skill recebe uma fonte viva legível, sem depender do histórico do chat.

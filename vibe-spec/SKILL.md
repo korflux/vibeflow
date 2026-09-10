@@ -13,25 +13,27 @@ Não invente `n`, slug ou path. Sem `.vibeflow/`, pare e mande `/vibe-init`. Nã
 Só o decidido. Open Questions no arquivo é defeito. O arquivo vivo é a fonte da verdade; o chat não substitui o disco.
 No MVP, preserve IDs críticos da interview e declare `mantém`, `cria` ou `substitui`; não publique decisões em `REGRAS.md`.
 
+A investigação começa pela pergunta de comportamento e aceite que a spec precisa fechar no fluxo real. Use `rg --files` para localizar os artefatos e entradas do fluxo; use `rg -n` para localizar nomes, símbolos, contratos e decisões. Abra somente os paths que sustentam o desenho e expanda a leitura quando uma lacuna bloquear a prova. O inventário é mapa de seleção, não autorização para ler a árvore inteira.
+
 
 ## 0. Entender e usar o script
 
-1. Resolva o diretório desta skill e leia o motor que vai executar: `scripts/spec.ps1` no Windows ou `scripts/spec.py` no fluxo Unix. Entenda flags, seleção de alvo, tratamento de erros e promoção atômica temporária antes de chamá-lo. Se encontrar defeito, corrija o motor e prove o contrato antes de continuar.
+1. Resolva o diretório desta skill e leia o motor que vai executar: `scripts/spec.ps1` no Windows ou `scripts/spec.py` no fluxo Unix. Entenda flags, seleção de alvo, tratamento de erros, preparação do destino e preservação do arquivo vivo antes de chamá-lo. Se encontrar defeito, corrija o motor e prove o contrato antes de continuar.
 2. No cwd do repo:
    - Windows: `pwsh "<skill>/scripts/spec.ps1"`.
    - Unix: `bash "<skill>/scripts/spec.sh"`.
    - Modo MVP: acrescente `-Mvp` ou `--mvp`.
-3. Leia `.vibeflow/spec-report.json` como evidência operacional. Abra `interview.md` e/ou `spec.md` do alvo, `.vibeflow/REGRAS.md` e apenas os paths do codebase necessários para entender o comportamento pretendido. Não faça varredura cega da árvore.
+3. Leia `.vibeflow/spec-report.json` como evidência operacional. Use `rg --files` e `rg -n` para localizar `interview.md`, `spec.md`, `.vibeflow/REGRAS.md` e somente os paths do codebase necessários para entender o comportamento pretendido. Abra as entradas e dependências do fluxo; o inventário não é uma ordem para ler a árvore inteira.
 
-Erros determinísticos previstos: `INIT_AUSENTE` exige `/vibe-init`. `PHASES_INESPERADO`, `MVP_INESPERADO`, `MVP_INTERVIEW_AUSENTE`, `SPEC_JA_PLANEJADA`, `SPEC_SEM_ALVO`, `FASE_AUSENTE`, `FASE_EXISTE`, `SLUG_INVALIDO`, `COPY_HASH_MISMATCH` e `MODO_INVALIDO` exigem diagnosticar a causa e não devem ser contornados.
+Erros determinísticos previstos: `INIT_AUSENTE` exige `/vibe-init`. `PHASES_INESPERADO`, `MVP_INESPERADO`, `MVP_INTERVIEW_AUSENTE`, `SPEC_JA_PLANEJADA`, `SPEC_SEM_ALVO`, `FASE_AUSENTE`, `FASE_EXISTE`, `SLUG_INVALIDO` e `MODO_INVALIDO` exigem diagnosticar a causa e não devem ser contornados.
 
 ## 1. Abrir
 
-Declare em cerca de cinco linhas: confiança, rota, modo, alvo e wip.
+Declare em cerca de cinco linhas: confiança, rota, modo, alvo e estado do artefato vivo.
 
 ```text
 CONFIDENCE: ~85%, entendo: lock por bloco no editor | falta: concorrência
-modo: reuse · alvo: phase-1-lock-bloco · interview: sim · wip: ausente
+modo: reuse · alvo: phase-1-lock-bloco · interview: sim · artefato vivo: presente
 ```
 
 - `modo=criar` (sem interview anterior): use slug no apply para criar nova pasta de fase.
@@ -75,11 +77,10 @@ RECOMENDO: <opção>, <1 linha explicando motivo e impacto>
 
 ## 4. Escrever e salvar
 
-Wip: `.vibeflow/spec-wip.md`. Molde: `templates/spec.md`. Status inicial: `rascunho`.
+Artefato vivo: `<created.path>/spec.md`. Molde: `templates/spec.md`. Mantenha `# Status: rascunho` enquanto a spec estiver em elaboração.
 Não pergunte se pode salvar e não cole o corpo do documento no chat.
 
-1. Preencha o wip. Omita seções não aplicáveis. Comandos de teste somente se existirem no repo. Sem `FR-00N`, sem mural de user stories e sem CSS/paleta: a spec fecha comportamento e aceite.
-2. Execute o apply através do script:
+1. Execute o apply através do script. Ele prepara o arquivo vivo somente quando ausente e preserva bytes quando ele já existe:
    - Reuse/atualizar em phase existente:
      `pwsh "<skill>/scripts/spec.ps1" -Apply`
      `bash "<skill>/scripts/spec.sh" --apply`
@@ -89,6 +90,7 @@ Não pergunte se pode salvar e não cole o corpo do documento no chat.
    - Modo MVP:
      `pwsh "<skill>/scripts/spec.ps1" -Apply -Mvp`
      `bash "<skill>/scripts/spec.sh" --apply --mvp`
+2. Escreva ou atualize diretamente o arquivo vivo. Omita seções não aplicáveis. Comandos de teste somente se existirem no repo. Sem `FR-00N`, sem mural de user stories e sem CSS/paleta: a spec fecha comportamento e aceite.
 3. Responda no chat apenas:
 
 ```text
@@ -117,6 +119,6 @@ Rascunho sem "aprovado" e sem pedido explícito de plan não autoriza avançar p
 ## 6. Fechar
 
 Não commite no git. Não dispare a próxima skill a menos que o usuário tenha pedido explicitamente para avançar (§5).
-Informe que o arquivo `spec.md` entra no git e que `spec-report.json` e `spec-wip.md` ficam de fora.
+Informe que o arquivo vivo `spec.md` entra no git e que `spec-report.json` fica de fora. Recomende abrir um novo chat para `vibe-plan`; continuar no mesmo chat é permitido somente por escolha consciente do humano. O `spec.md` vivo e o handoff são a ponte entre chats.
 Handoff registrado no arquivo: `vibe-plan`.
 

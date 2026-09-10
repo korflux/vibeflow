@@ -29,14 +29,13 @@ assert "$( [ "$last_rc" -eq 0 ] && [ "$next" = 1 ] && echo 1 || echo 0 )" \
   "2-root-inventario" "rc=$last_rc next=$next err=$(cat "$last_err")"
 rm -rf "$s"
 
-# 3. --apply --slug chegam no motor e promovem o wip.
+# 3. --apply --slug chega no motor e prepara o arquivo vivo.
 s=$(new_sandbox)
 seed_vibeflow "$s"
-printf '# trilha\n' >"$s/.vibeflow/interview-wip.md"
 root=$(native_root "$s")
 run_sh bash "$LAUNCHER" --root "$root" --apply --slug "Dashboard Standup!!"
 dest="$s/.vibeflow/phases/phase-1-dashboard-standup/interview.md"
-assert "$( [ "$last_rc" -eq 0 ] && [ -f "$dest" ] && [ ! -f "$s/.vibeflow/interview-wip.md" ] && echo 1 || echo 0 )" \
+assert "$( [ "$last_rc" -eq 0 ] && [ -f "$dest" ] && [ ! -s "$dest" ] && echo 1 || echo 0 )" \
   "3-apply-slug" "rc=$last_rc dest=$dest err=$(cat "$last_err")"
 rm -rf "$s"
 
@@ -51,12 +50,11 @@ rm -rf "$s"
 # 5. --mvp chega no motor e não cria phase-N.
 s=$(new_sandbox)
 seed_vibeflow "$s"
-printf '# MVP\n' >"$s/.vibeflow/interview-wip.md"
 root=$(native_root "$s")
 run_sh bash "$LAUNCHER" --root "$root" --apply --mvp
 dest="$s/.vibeflow/mvp/interview.md"
 phase_count=$(find "$s/.vibeflow/phases" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')
-assert "$( [ "$last_rc" -eq 0 ] && [ -f "$dest" ] && [ "$phase_count" = 0 ] && echo 1 || echo 0 )" \
+assert "$( [ "$last_rc" -eq 0 ] && [ -f "$dest" ] && [ ! -s "$dest" ] && [ "$phase_count" = 0 ] && echo 1 || echo 0 )" \
   "5-apply-mvp" "rc=$last_rc phases=$phase_count dest=$dest err=$(cat "$last_err")"
 rm -rf "$s"
 

@@ -25,21 +25,62 @@ CLAUDE.md  →  .vibeflow/REGRAS.md           symlink
 
 `n` e o slug das phases saem do script, não da IA. Projeto novo classificado como MVP usa uma única `.vibeflow/mvp/`, sem número nem slug, e percorre a rota max completa. Skills seguintes do mesmo pedido gravam na mesma pasta, outro arquivo. Nenhuma skill dispara a próxima: o handoff é uma linha no artefato.
 
+O `--apply` das skills de artefato executa os gates mecânicos e prepara o arquivo vivo somente quando ele ainda não existe. A IA escreve e atualiza a prosa diretamente em `interview.md`, `spec.md`, `plan.md`, `analyze.md`, `implement.md` e `review.md`; o conteúdo existente é preservado.
+
 Escopo do produto: [`docs/ESCOPO.md`](docs/ESCOPO.md). Contrato de cada skill: `docs/vibe-<nome>/ARQUITETURA.md`. CI: [`.github/workflows/contrato.yml`](.github/workflows/contrato.yml).
 
 ## Como instalar as skills
 
-Um comando instala as sete skills no Grok, Claude Code, Codex e Antigravity. O CLI [`skills`](https://github.com/vercel-labs/skills) aponta cada pacote `vibe-*` para o diretório de skills do agente.
+O repositório oferece instalação por `npx skills` e manifests nativos. O pacote Antigravity tem `plugin.json` na raiz e descobre os sete pacotes pela pasta `skills/`; não há aliases em `commands/`.
+
+### Instalador `npx skills`, project-local e global
+
+O CLI [`skills`](https://github.com/vercel-labs/skills) usa, por padrão, o escopo project-local (`./<agent>/skills/`) e, com `-g`, o escopo global (`~/<agent>/skills/`). Os dois comandos abaixo instalam os sete pacotes nos agentes selecionados:
 
 ```bash
-# global (máquina do usuário)
-npx skills add korflux/vibeflow -g -a grok -a claude-code -a codex -a antigravity -y
-
-# só neste projeto (pode ir no git do consumidor)
+# project-local, somente neste projeto e compartilhável com a equipe
 npx skills add korflux/vibeflow -a grok -a claude-code -a codex -a antigravity -y
+
+# global, disponível em todos os projetos da máquina
+npx skills add korflux/vibeflow -g -a grok -a claude-code -a codex -a antigravity -y
 ```
 
-Windows sem symlink no destino: acrescente `--copy`.
+Windows sem suporte a symlink no destino: acrescente `--copy` ao comando escolhido. Use `npx skills list` para conferir a instalação.
+
+### Antigravity IDE
+
+Para um plugin específico do workspace, coloque a pasta do repositório em:
+
+```text
+<workspace-root>/.agents/plugins/vibeflow/
+```
+
+O fallback documentado pelo host é `_agents/plugins/`. Para uso global na IDE, coloque a pasta em:
+
+```text
+~/.gemini/config/plugins/vibeflow/
+```
+
+Em ambos os casos, `plugin.json` deve permanecer na raiz do plugin e `skills/` deve conter os sete diretórios com `SKILL.md`. Confirme a descoberta por `/skills` quando o host oferecer esse comando ou reabra o workspace/host para recarregar os plugins.
+
+O `vibe-init` cria a regra de workspace em `.agents/rules/vibeflow.md` com a inclusão `@../../.vibeflow/REGRAS.md`. Esse arquivo é somente uma ponte curta. A fonte editável continua sendo `.vibeflow/REGRAS.md`.
+
+Para skills avulsas sem o bundle de plugin, a IDE usa `.agents/skills/` no workspace e `~/.gemini/antigravity/skills/` globalmente.
+
+### Antigravity CLI
+
+O CLI instala o plugin no perfil global do Antigravity:
+
+```text
+agy plugin install https://github.com/korflux/vibeflow.git
+agy plugin list
+```
+
+O pacote fica disponível em `~/.gemini/antigravity-cli/plugins/vibeflow/`. Para instalar um plugin local, passe o caminho da pasta ao mesmo comando, por exemplo `agy plugin install <caminho-do-plugin>`. O escopo project-local da IDE e o perfil global do CLI são caminhos diferentes.
+
+Para skills avulsas sem o bundle de plugin, o CLI usa `.agents/skills/` no workspace e `~/.gemini/antigravity-cli/skills/` globalmente. Use o caminho de plugin quando precisar carregar o manifest e o conjunto completo do Vibeflow.
+
+### Codex, regras globais e verificação de carga
 
 Marketplace nativo, depois de clonar ou a partir do GitHub:
 
@@ -52,11 +93,13 @@ codex plugin add vibeflow@vibeflow
 
 grok plugin marketplace add korflux/vibeflow
 grok plugin install vibeflow --trust
-
-agy plugin install https://github.com/korflux/vibeflow.git
 ```
 
-Depois disso os slash names são `/vibe-init` … `/vibe-review`. Não há alias `/spec` nem `/plan`.
+O Codex mantém suas regras globais em `~/.codex/AGENTS.md` ou `~/.codex/AGENTS.override.md`. O Antigravity mantém as regras globais em `~/.gemini/GEMINI.md`. Nenhum desses arquivos substitui `.vibeflow/REGRAS.md`, e o pacote não cria uma cópia `GEMINI.md` no workspace.
+
+Quando um host puder carregar mais de um nome de regra, como `AGENTS.md` e `CLAUDE.md`, inspecione a carga efetiva com `grok inspect` ou a ferramenta equivalente do host. Se o slash command estiver disponível, `/skills` e `agy plugin list` são as confirmações mínimas para skills e plugins. Reiniciar ou reabrir o host é o fallback quando não houver comando de inspeção.
+
+Depois da instalação, os slash names são `/vibe-init` … `/vibe-review`. Não há alias `/spec` nem `/plan`.
 
 Primeira vez num repo sem `.vibeflow/`: rode `/vibe-init`. As demais skills recusam sem isso.
 
@@ -93,6 +136,14 @@ Todo MVP de projeto novo usa a rota `max` em `.vibeflow/mvp/`. Feature chamada d
 
 O mesmo pedido reusa a pasta `phase-N-slug`. Pedido novo: próxima pasta, `n` numérico. Chat não substitui o arquivo quando a skill promete artefato.
 
+### Handoff e isolamento de chat
+
+`init → interview → spec` pode continuar no mesmo chat. As portas `plan`, `analyze`, `implement` e `review` recomendam um novo chat para reduzir contexto residual; na implementação, a recomendação é um chat focado por T*. A continuidade é permitida quando o humano a escolhe conscientemente. O artefato vivo e a linha de handoff são a ponte verificável entre chats.
+
+Cada `T*` é executada, testada e commitada isoladamente. O commit da task não faz push. Depois de Approve na review, confirmação humana e correções fechadas, o handoff final valida a phase, cria o commit residual quando necessário e faz `git push` para o upstream atual, sem force.
+
+No Codex desktop, a prova de UI prioriza o navegador integrado quando disponível. Se ele não estiver disponível, registre a limitação no resultado ou use o fallback visual existente no projeto.
+
 ## Por que usar as skills
 
 Agentes de código otimizam o caminho curto: pulam spec, marcam tarefa sem prova, escolhem path, misturam regras do Claude com as do Codex, disparam a skill seguinte sozinhos.
@@ -101,8 +152,8 @@ Esta cadeia separa papéis e deixa o disco como fonte:
 
 - **IA** pilota a run: entende o pedido, investiga o projeto e os scripts, decide a semântica e audita o resultado.
 - **Skill** orienta a IA com invariantes, gates e critérios de fechamento.
-- **Script** auxilia operações determinísticas como inventário, path, número, slug, cópia e relatório.
-- **Humano** decide apenas o que muda materialmente o resultado e o que entra no git. Nenhuma skill commita.
+- **Script** auxilia operações determinísticas como inventário, path, número, slug, preparação do alvo e relatório.
+- **Humano** decide apenas o que muda materialmente o resultado e confirma o fechamento. `vibe-implement` commita cada task verde; `vibe-review` faz o commit/push final da phase somente após Approve confirmado.
 
 Efeito prático: as regras do projeto ficam numa fonte (`.vibeflow/REGRAS.md`), o pedido deixa trilha (interview → spec → plan → implement → review), e “feito” exige comando e resultado, não recap no chat.
 
@@ -110,13 +161,13 @@ Efeito prático: as regras do projeto ficam numa fonte (`.vibeflow/REGRAS.md`), 
 
 | Skill | Slash | Faz | Grava |
 |---|---|---|---|
-| [`vibe-init`](vibe-init/SKILL.md) | `/vibe-init` | Inicializa ou repara a fonte única de regras. `AGENTS.md` e `CLAUDE.md` viram symlink para `.vibeflow/REGRAS.md`. Une legado em vez de escolher um arquivo e descartar o outro | `.vibeflow/REGRAS.md`, ponteiros na raiz |
+| [`vibe-init`](vibe-init/SKILL.md) | `/vibe-init` | Inicializa ou repara a fonte única de regras. `AGENTS.md` e `CLAUDE.md` viram symlink para `.vibeflow/REGRAS.md`; `.agents/rules/vibeflow.md` vira uma inclusão mínima para Antigravity. Une legado em vez de escolher um arquivo e descartar o outro | `.vibeflow/REGRAS.md`, ponteiros e adaptador de host |
 | [`vibe-interview`](vibe-interview/SKILL.md) | `/vibe-interview` | Fecha intenção ambígua e inicia descoberta adaptativa de projeto MVP quando aplicável | `phase-N-slug/interview.md` ou `.vibeflow/mvp/interview.md` |
 | [`vibe-spec`](vibe-spec/SKILL.md) | `/vibe-spec` | Grava o decidido. Comportamento, aceite, fora, como provar. Sem mural de user story | `phase-N-slug/spec.md` |
-| [`vibe-plan`](vibe-plan/SKILL.md) | `/vibe-plan` | Fatia a spec em T* verificáveis, com deps reais, comando de verificação e checkpoint | `phase-N-slug/plan.md` |
-| [`vibe-analyze`](vibe-analyze/SKILL.md) | `/vibe-analyze` | Cruza interview, spec e plan da mesma fase. Achado com path. Não edita os três | `phase-N-slug/analyze.md` |
-| [`vibe-implement`](vibe-implement/SKILL.md) | `/vibe-implement` | Executa a fatia elegível com prova, marca `[x]` no plan (e A*/C*/R* quando a fatia prova) | `phase-N-slug/implement.md` |
-| [`vibe-review`](vibe-review/SKILL.md) | `/vibe-review` | Julga o patch. Mesmo `review.md` em etapas. Não edita source da app | `phase-N-slug/review.md` |
+| [`vibe-plan`](vibe-plan/SKILL.md) | `/vibe-plan` | Fatia a spec em T* verificáveis, com deps reais e comando de verificação por task | `phase-N-slug/plan.md` |
+| [`vibe-analyze`](vibe-analyze/SKILL.md) | `/vibe-analyze` | Cruza interview, spec e plan da mesma fase. Corrige lacunas óbvias em `spec.md` e `plan.md`; grava o certificado no vivo | `phase-N-slug/analyze.md` |
+| [`vibe-implement`](vibe-implement/SKILL.md) | `/vibe-implement` | Executa a T* elegível, prova, marca `[x]` e cria o commit isolado da task | `phase-N-slug/implement.md` |
+| [`vibe-review`](vibe-review/SKILL.md) | `/vibe-review` | Julga o patch, conduz correções e faz o commit/push final após aprovação | `phase-N-slug/review.md` |
 
 Arquitetura, análise e testes de contrato de cada skill ficam em `docs/vibe-<nome>/` e **não** entram no pacote instalável.
 
@@ -158,7 +209,7 @@ vibe-<nome>/
 3. Teste de contrato em `docs/vibe-<nome>/tests/`, `unittest`, pasta isolada. Depois: `python docs/vibe-<nome>/tests/test-<nome>.py -v`.
 4. Distribuição: `python docs/tests/test-distribuicao.py -v`.
 5. Não inventar path de artefato fora de `.vibeflow/phases/phase-N-slug/`; a única exceção é o baseline fixo `.vibeflow/mvp/`. Não copiar `REGRAS.md` para `AGENTS.md` / `CLAUDE.md`.
-6. Relatórios `*-report.json` e `*-wip.md` ficam fora do git.
+6. Relatórios `*-report.json` ficam fora do git; os artefatos vivos entram no git.
 
 PR contra `main`. Mudança de contrato (path, schema do relatório, flag pública) é Major; o resto segue o semver em `.vibeflow/REGRAS.md`.
 

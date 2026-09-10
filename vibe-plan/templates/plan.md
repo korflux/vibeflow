@@ -3,6 +3,8 @@
 # Status: rascunho
 # Spec: spec.md (mesma pasta)
 
+<!-- Escreva diretamente neste artefato vivo; o status permanece rascunho durante a elaboração. -->
+
 ## Overview
 
 <1 parágrafo: o que esta entrega realiza, apontando a spec>
@@ -11,12 +13,7 @@
 
 ### Fase 1: <nome>
 
-- T1-T2 (corpo em Tasks)
-
-### Checkpoint: após T1-T2
-
-- [ ] `<comando da suite do grupo>`
-- [ ] <fluxo do grupo, omitir se o caminho não atravessa T*>
+- T1-... (corpo em Tasks; cada task tem sua própria verificação e commit)
 
 ### Fase 2: <nome>
 
@@ -51,11 +48,6 @@
 - **Size:** `<low | medium | high>, <score>/10, <justificativa curta>`
 - **Risk:** `<low | medium | high>, <motivo curto quando não for low>`
 
-### Checkpoint: após T1-T2
-
-- [ ] `<comando da suite do grupo>`
-- [ ] <fluxo do grupo, omitir se o caminho não atravessa T*>
-
 ## Conferência
 
 - [x] Spec aprovada como fonte; mesma pasta
@@ -64,10 +56,12 @@
 - [x] Ferramentas essenciais (gitleaks, chrome-devtools) validadas ou com task de setup
 - [x] T1 estabelece ponto de entrada real (smoke test / walking skeleton)
 - [x] UI greenfield/sem DS → T* de kit antes das telas (ou N/A)
-- [x] Checkpoints a cada 2–3 T*
+- [x] Cada T* possui unidade de execução, verificação e commit própria
 - [ ] Aprovação humana (leu o arquivo e confirmou)
 
 ## Handoff
 
 <vibe-implement no phase sem analyze obrigatório; vibe-analyze no MVP>
 <!-- No MVP, acrescentar: rota: max -->
+
+- Chat: recomende novo chat para `vibe-implement` ou `vibe-analyze` no MVP; continuidade no mesmo chat só por escolha consciente. O `plan.md` vivo é a ponte.

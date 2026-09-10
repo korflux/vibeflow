@@ -9,6 +9,7 @@ import json
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import uuid
@@ -19,6 +20,9 @@ from typing import Any
 
 
 TARGET_REL = ".vibeflow/REGRAS.md"
+ANTIGRAVITY_BRIDGE_REL = ".agents/rules/vibeflow.md"
+ANTIGRAVITY_BRIDGE_INCLUDE = "@../../.vibeflow/REGRAS.md"
+ANTIGRAVITY_BRIDGE_OLD_NAME = "antigravity-vibeflow.md"
 IGNORED_DIRS = {"node_modules", ".git", "dist", "build", ".next", "vendor", "__pycache__"}
 EVIDENCE_WARNINGS: list[str] = []
 MAX_STRUCTURE_ITEMS = 120
@@ -26,6 +30,7 @@ MAX_MIGRATION_DEPTH = 4
 # Estado vivo da run: referências às listas que a matriz alimenta, para que uma falha
 # depois da primeira escrita ainda produza relatório do que já foi feito no disco.
 PARTIAL: dict[str, Any] = {}
+REPARSE_POINT = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
 
 
 # Interpreta somente os parâmetros equivalentes ao contrato público do init.ps1.
@@ -82,6 +87,23 @@ def read_text(path: Path) -> str | None:
     return path.read_text(encoding="utf-8-sig")
 
 
+# Detecta symlinks, junctions e outros reparse points sem seguir o alvo do caminho.
+def is_reparse_point(path: Path) -> bool:
+    if path.is_symlink():
+        return True
+    try:
+        attributes = getattr(path.lstat(), "st_file_attributes", 0)
+    except FileNotFoundError:
+        return False
+    return bool(attributes & REPARSE_POINT)
+
+
+# Recusa links e tipos incompatíveis nos caminhos graváveis do init antes da primeira mutação.
+def assert_safe_operational_file(path: Path, label: str) -> None:
+    if is_reparse_point(path) or (path.exists() and not path.is_file()):
+        raise RuntimeError(f"TIPO_INESPERADO: '{label}' precisa ser um arquivo local regular.")
+
+
 # Limita arquivos usados apenas como evidência para evitar consumo irrestrito de memória.
 def read_evidence(path: Path, max_bytes: int = 1024 * 1024) -> str | None:
     if not path.is_file():
@@ -112,6 +134,8 @@ def is_pointer_text(path: Path) -> bool:
 
 # Classifica a pasta principal antes de qualquer alteração.
 def vibeflow_state(path: Path) -> str:
+    if is_reparse_point(path):
+        return "inesperado"
     if not path.exists():
         return "ausente"
     if not path.is_dir():
@@ -163,15 +187,47 @@ def pointer_state(repo: Path, name: str, live: Path) -> str:
     return "arquivo_igual" if live.is_file() and same_bytes(path, live) else "arquivo_legado"
 
 
+# Classifica a inclusão mínima descoberta pelo Antigravity sem seguir symlinks externos.
+def antigravity_bridge_state(path: Path) -> str:
+    if path.is_symlink():
+        return "inesperado"
+    if not path.exists():
+        return "ausente"
+    if not path.is_file():
+        return "inesperado"
+    try:
+        content = path.read_text(encoding="utf-8-sig")
+    except (OSError, UnicodeError):
+        return "divergente"
+    return "ponteiro_ok" if content.strip() == ANTIGRAVITY_BRIDGE_INCLUDE else "divergente"
+
+
 # Recusa tipos estruturais que impediriam um reparo previsível antes da primeira escrita.
-def assert_infrastructure_types(vf: Path, live: Path, root_copy: Path, phases: Path) -> None:
+def assert_infrastructure_types(
+    vf: Path,
+    live: Path,
+    root_copy: Path,
+    old_dir: Path,
+    phases: Path,
+    gitignore: Path,
+    gitkeep: Path,
+    pending_path: Path,
+    report_path: Path,
+    antigravity_root: Path,
+    antigravity_rules: Path,
+) -> None:
+    if is_reparse_point(vf):
+        raise RuntimeError("TIPO_INESPERADO: .vibeflow precisa ser um diretório local.")
     if vf.exists() and not vf.is_dir():
         raise RuntimeError("TIPO_INESPERADO: .vibeflow existe, mas não é um diretório.")
-    for path in (live, root_copy):
-        if path.exists() and not path.is_file():
-            raise RuntimeError(f"TIPO_INESPERADO: '{path}' existe, mas não é um arquivo.")
-    if phases.exists() and not phases.is_dir():
-        raise RuntimeError("TIPO_INESPERADO: .vibeflow/phases existe, mas não é um diretório.")
+    for path in (live, root_copy, gitignore, gitkeep, pending_path, report_path):
+        assert_safe_operational_file(path, str(path))
+    for path, label in ((old_dir, ".vibeflow/old"), (phases, ".vibeflow/phases")):
+        if is_reparse_point(path) or (path.exists() and not path.is_dir()):
+            raise RuntimeError(f"TIPO_INESPERADO: {label} precisa ser um diretório local.")
+    for path in (antigravity_root, antigravity_rules):
+        if is_reparse_point(path) or path.exists() and not path.is_dir():
+            raise RuntimeError(f"TIPO_INESPERADO: '{path}' precisa ser um diretório local.")
 
 
 # Escolhe um nome de backup único sem depender da precisão do relógio.
@@ -199,6 +255,18 @@ def copy_verified(source: Path, destination: Path) -> None:
         raise RuntimeError(f"OLD_HASH_MISMATCH: cópia de '{source}' não bateu com '{destination}'. Peça não substituída.")
 
 
+# Escreve a inclusão curta em arquivo temporário para trocar a ponte sem truncar o arquivo anterior.
+def write_antigravity_bridge(path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
+    try:
+        with temporary.open("w", encoding="utf-8", newline="\n") as stream:
+            stream.write(f"{ANTIGRAVITY_BRIDGE_INCLUDE}\n")
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
 # Cria e valida o link temporário antes de substituir o item que ocupa o caminho final.
 def replace_symlink(link: Path, target: str) -> None:
     temporary = link.with_name(f"{link.name}.__vibe_symlink__{uuid.uuid4().hex}")
@@ -219,6 +287,7 @@ def replace_symlink(link: Path, target: str) -> None:
 
 # Acrescenta exclusões operacionais preservando regras existentes e evitando duplicação.
 def add_gitignore_entry(path: Path, entry: str) -> None:
+    assert_safe_operational_file(path, str(path))
     body = read_text(path) or ""
     if entry in {line.strip() for line in body.splitlines()}:
         return
@@ -381,6 +450,7 @@ def write_pending(path: Path, repo: Path, target: Path, merges: list[dict[str, A
         "sources": sources,
         "remove_regras_raiz": any(merge["id"] == "regras_duplicado" for merge in merges),
     }
+    assert_safe_operational_file(path, str(path))
     path.write_text(json.dumps(pending, ensure_ascii=False, indent=2), encoding="utf-8")
     return pending
 
@@ -404,7 +474,7 @@ def confirm_pending(path: Path, repo: Path, token: str | None) -> dict[str, Any]
     return pending
 
 
-# Executa a matriz determinística e produz o relatório consumido pela IA.
+# Executa a matriz determinística, prepara a ponte do Antigravity e produz o relatório consumido pela IA.
 def run(args: argparse.Namespace) -> Path:
     EVIDENCE_WARNINGS.clear()
     repo = repo_root(args.root)
@@ -412,8 +482,17 @@ def run(args: argparse.Namespace) -> Path:
     template_path = skill / "templates" / "REGRAS.md"
     vf, root_copy = repo / ".vibeflow", repo / "REGRAS.md"
     live, old_dir, phases = vf / "REGRAS.md", vf / "old", vf / "phases"
+    antigravity_root = repo / ".agents"
+    antigravity_rules = antigravity_root / "rules"
+    antigravity_bridge = antigravity_rules / "vibeflow.md"
+    gitignore = vf / ".gitignore"
+    gitkeep = phases / ".gitkeep"
     pending_path = vf / "init-pending.json"
-    assert_infrastructure_types(vf, live, root_copy, phases)
+    report_path = vf / "init-report.json"
+    assert_infrastructure_types(
+        vf, live, root_copy, old_dir, phases, gitignore, gitkeep, pending_path,
+        report_path, antigravity_root, antigravity_rules,
+    )
     confirmed = confirm_pending(pending_path, repo, args.merge_token) if args.apply_pointers else None
     if not args.apply_pointers and pending_path.exists():
         raise RuntimeError("MERGE_PENDENTE: finalize o consolidado e use o apply_token do relatório atual.")
@@ -424,8 +503,9 @@ def run(args: argparse.Namespace) -> Path:
         "regras": regras_state(live, root_copy),
         "agents": pointer_state(repo, "AGENTS.md", live),
         "claude": pointer_state(repo, "CLAUDE.md", live),
+        "antigravity": antigravity_bridge_state(antigravity_bridge),
     }
-    flow = "reparar" if inventory["vibeflow"] != "ausente" or root_copy.exists() or inventory["agents"] != "ausente" or inventory["claude"] != "ausente" else "novo"
+    flow = "reparar" if inventory["vibeflow"] != "ausente" or root_copy.exists() or inventory["agents"] != "ausente" or inventory["claude"] != "ausente" or inventory["antigravity"] != "ausente" else "novo"
     olds: list[dict[str, Any]] = []
     actions: list[dict[str, str]] = []
     merges: list[dict[str, Any]] = []
@@ -459,8 +539,8 @@ def run(args: argparse.Namespace) -> Path:
     if not (phases / ".gitkeep").exists():
         (phases / ".gitkeep").write_text("", encoding="utf-8")
         action("criar_phases", ".vibeflow/phases/.gitkeep")
-    add_gitignore_entry(vf / ".gitignore", "init-report.json")
-    add_gitignore_entry(vf / ".gitignore", "init-pending.json")
+    add_gitignore_entry(gitignore, "init-report.json")
+    add_gitignore_entry(gitignore, "init-pending.json")
 
     agents_path, claude_path = repo / "AGENTS.md", repo / "CLAUDE.md"
     agents_legacy, claude_legacy = inventory["agents"] == "arquivo_legado", inventory["claude"] == "arquivo_legado"
@@ -554,6 +634,20 @@ def run(args: argparse.Namespace) -> Path:
     if live.exists():
         convert_pointer("AGENTS.md", inventory["agents"])
         convert_pointer("CLAUDE.md", inventory["claude"])
+        if inventory["antigravity"] == "ausente":
+            write_antigravity_bridge(antigravity_bridge)
+            action("antigravity_bridge_criar", ANTIGRAVITY_BRIDGE_REL)
+        elif inventory["antigravity"] == "divergente":
+            backup = save_old(antigravity_bridge, ANTIGRAVITY_BRIDGE_OLD_NAME)
+            warnings.append(f"{ANTIGRAVITY_BRIDGE_REL} divergente; backup verificado em {backup} e ponte reparada.")
+            write_antigravity_bridge(antigravity_bridge)
+            action("antigravity_bridge_reparar", ANTIGRAVITY_BRIDGE_REL)
+        elif inventory["antigravity"] == "inesperado":
+            conflicts.append({
+                "id": "tipo_inesperado",
+                "peca": ANTIGRAVITY_BRIDGE_REL,
+                "detalhe": "não é arquivo regular com inclusão relativa do REGRAS",
+            })
     if args.apply_pointers and confirmed and confirmed["remove_regras_raiz"] and root_copy.is_file():
         root_copy.unlink()
         action("apagar_raiz", "REGRAS.md")
@@ -621,6 +715,7 @@ def write_report(
         "avisos": warnings,
         "apply_token": apply_token,
     }
+    assert_safe_operational_file(report_path, str(report_path))
     report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8", newline="\n")
     print(report_path)
     return report_path

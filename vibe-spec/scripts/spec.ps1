@@ -1,6 +1,6 @@
 ﻿#Requires -Version 7.0
 # vibe-spec/scripts/spec.ps1
-# Inventário de .vibeflow/phases → promove spec-wip.md para phase-N-slug/spec.md.
+# Inventário de .vibeflow/phases → prepara phase-N-slug/spec.md.
 param(
     [string]$Root,
     [switch]$Apply,
@@ -13,6 +13,25 @@ $ErrorActionPreference = 'Stop'
 $script:SlugWasBound = $PSBoundParameters.ContainsKey('Slug')
 $script:DirWasBound = $PSBoundParameters.ContainsKey('Dir')
 $script:ChainFiles = @('interview.md', 'spec.md', 'plan.md', 'analyze.md', 'implement.md', 'review.md')
+
+# Obtém o item do sistema de arquivos sem resolver links quebrados em ausência.
+function Get-FsItem([string]$Path) {
+    return Get-Item -LiteralPath $Path -Force -ErrorAction SilentlyContinue
+}
+
+# Detecta symlink, junction ou outro reparse point antes de qualquer leitura ou escrita.
+function Test-IsReparsePoint($Item) {
+    if (-not $Item) { return $false }
+    return $Item.Attributes.ToString() -match 'ReparsePoint' -or $Item.LinkType -eq 'SymbolicLink'
+}
+
+# Recusa caminhos operacionais linkados ou de tipo incompatível antes de qualquer escrita.
+function Assert-SafeOperationalFile([string]$Path, [string]$Code) {
+    $item = Get-FsItem $Path
+    if ($item -and ((Test-IsReparsePoint $item) -or $item.PSIsContainer)) {
+        throw "${Code}: $([System.IO.Path]::GetFileName($Path)) não é um arquivo operacional regular."
+    }
+}
 $script:MaxSlug = 48
 
 # Resolve a raiz por parâmetro, Git ou cwd sem exigir que Git esteja instalado.
@@ -25,19 +44,9 @@ function Get-RepoRoot {
     return (Get-Location).Path
 }
 
-# Calcula o hash usado para validar a cópia do wip byte a byte.
-function Get-Sha256File([string]$Path) {
-    return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
-}
-
-# Lê texto operacional que precisa ser preservado integralmente.
-function Read-Utf8File([string]$Path) {
-    if (-not (Test-Path -LiteralPath $Path)) { return $null }
-    return [System.IO.File]::ReadAllText($Path)
-}
-
 # Acrescenta exclusões operacionais preservando regras existentes e evitando duplicação.
 function Add-GitignoreEntry([string]$Path, [string]$Entry) {
+    Assert-SafeOperationalFile $Path 'GITIGNORE_INESPERADO'
     $body = ''
     if (Test-Path -LiteralPath $Path) { $body = [System.IO.File]::ReadAllText($Path) }
     $lines = @()
@@ -50,11 +59,10 @@ function Add-GitignoreEntry([string]$Path, [string]$Entry) {
     [System.IO.File]::AppendAllText($Path, "$prefix$Entry`n")
 }
 
-# Garante que relatório e wip não entrem no Git sem apagar as entradas das outras skills.
+# Garante que o relatório operacional não entre no Git sem apagar as entradas existentes.
 function Assert-SpecGitignore([string]$Vf) {
     $gi = Join-Path $Vf '.gitignore'
     Add-GitignoreEntry $gi 'spec-report.json'
-    Add-GitignoreEntry $gi 'spec-wip.md'
 }
 
 # Transforma a frase curta da fase em slug ASCII [a-z0-9-], 2–48 chars.
@@ -84,6 +92,10 @@ function Get-PhaseList([string]$Phases) {
         return @{ existing = @(); warnings = @() }
     }
     Get-ChildItem -LiteralPath $Phases -Force | ForEach-Object {
+        if (Test-IsReparsePoint $_) {
+            $warnings.Add("ignorado (link/reparse point): $($_.Name)")
+            return
+        }
         if (-not $_.PSIsContainer) {
             if ($_.Name -ne '.gitkeep') { $warnings.Add("ignorado (não é pasta de fase): $($_.Name)") }
             return
@@ -113,8 +125,9 @@ function Get-PhaseList([string]$Phases) {
 # Representa o alvo MVP sem inferir a rota a partir do conteúdo do projeto.
 function Get-MvpMap([string]$Vf) {
     $mvpPath = Join-Path $Vf 'mvp'
-    if (-not (Test-Path -LiteralPath $mvpPath)) { return $null }
-    $item = Get-Item -LiteralPath $mvpPath -Force
+    $item = Get-FsItem $mvpPath
+    if (-not $item) { return $null }
+    if (Test-IsReparsePoint $item) { throw 'MVP_INESPERADO: .vibeflow/mvp não pode ser symlink, junction ou reparse point.' }
     if (-not $item.PSIsContainer) {
         throw 'MVP_INESPERADO: .vibeflow/mvp existe, mas não é um diretório.'
     }
@@ -150,13 +163,34 @@ function Get-Rascunho($Existing) {
     return $null
 }
 
-# Destino preferido: interview pendente, senão rascunho, senão criar.
-function Get-Alvo($Existing) {
+# Escolhe o alvo sem misturar pedido novo com rascunho antigo.
+function Get-Alvo($Existing, [bool]$ExplicitSlug = $false) {
     $pending = Get-InterviewPendente $Existing
     if ($null -ne $pending) { return @{ item = $pending; modo = 'reuse' } }
+    if ($ExplicitSlug) { return @{ item = $null; modo = 'criar' } }
     $draft = Get-Rascunho $Existing
     if ($null -ne $draft) { return @{ item = $draft; modo = 'atualizar' } }
     return @{ item = $null; modo = 'criar' }
+}
+
+# Cria o arquivo vivo vazio sem substituir conteúdo já escrito pela IA.
+function New-LiveFile([string]$Path) {
+    $item = Get-FsItem $Path
+    if ($item) {
+        if ((Test-IsReparsePoint $item) -or -not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+            throw "ARTEFATO_INESPERADO: $([System.IO.Path]::GetFileName($Path)) não é um arquivo vivo."
+        }
+        return $false
+    }
+    try {
+        $stream = [System.IO.File]::Open($Path, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
+        $stream.Dispose()
+        return $true
+    } catch [System.IO.IOException] {
+        $item = Get-FsItem $Path
+        if ($item -and -not (Test-IsReparsePoint $item) -and (Test-Path -LiteralPath $Path -PathType Leaf)) { return $false }
+        throw "ARTEFATO_INESPERADO: $([System.IO.Path]::GetFileName($Path)) não é um arquivo vivo."
+    }
 }
 
 # Converte o objeto da fase para PSCustomObject (hashtable enumeraria no JSON).
@@ -177,11 +211,12 @@ function Write-SpecReport([string]$Vf, [hashtable]$Payload) {
     $reportPath = Join-Path $Vf 'spec-report.json'
     $json = [string](ConvertTo-Json -InputObject $Payload -Depth 8)
     $utf8 = New-Object System.Text.UTF8Encoding $false
+    Assert-SafeOperationalFile $reportPath 'RELATORIO_INESPERADO'
     [System.IO.File]::WriteAllText($reportPath, $json, $utf8)
     Write-Output $reportPath
 }
 
-# Inventaria o disco e opcionalmente promove o wip para spec.md.
+# Inventaria o disco e prepara o arquivo vivo no apply.
 function Invoke-Spec {
     if ($Mvp -and ($script:SlugWasBound -or $script:DirWasBound)) {
         throw 'MODO_INVALIDO: o alvo MVP não aceita -Slug nem -Dir.'
@@ -190,20 +225,21 @@ function Invoke-Spec {
     $repo = Get-RepoRoot
     $vf = Join-Path $repo '.vibeflow'
     $phases = Join-Path $vf 'phases'
-    $wip = Join-Path $vf 'spec-wip.md'
     $actions = New-Object System.Collections.Generic.List[object]
 
     if (-not (Test-Path -LiteralPath $vf)) {
         throw 'INIT_AUSENTE: não existe .vibeflow/. Rode /vibe-init antes.'
     }
-    $vfItem = Get-Item -LiteralPath $vf -Force
+    $vfItem = Get-FsItem $vf
+    if (Test-IsReparsePoint $vfItem) { throw 'INIT_AUSENTE: .vibeflow não pode ser symlink, junction ou reparse point.' }
     if (-not $vfItem.PSIsContainer) {
         throw 'INIT_AUSENTE: .vibeflow existe, mas não é um diretório.'
     }
 
     $phState = 'ausente'
-    if (Test-Path -LiteralPath $phases) {
-        $phItem = Get-Item -LiteralPath $phases -Force
+    $phItem = Get-FsItem $phases
+    if ($phItem) {
+        if (Test-IsReparsePoint $phItem) { throw 'PHASES_INESPERADO: .vibeflow/phases não pode ser symlink, junction ou reparse point.' }
         if (-not $phItem.PSIsContainer) {
             throw 'PHASES_INESPERADO: .vibeflow/phases existe, mas não é um diretório.'
         }
@@ -222,7 +258,7 @@ function Invoke-Spec {
     foreach ($w in $listed.warnings) { $warnings.Add($w) }
     $nextN = 1
     if ($existing.Count -gt 0) { $nextN = [int]$existing[-1].n + 1 }
-    $resolved = Get-Alvo $existing
+    $resolved = Get-Alvo $existing $script:SlugWasBound
     $alvoItem = $resolved.item
     $modoSugerido = $resolved.modo
     $mvpMap = Get-MvpMap $vf
@@ -233,17 +269,14 @@ function Invoke-Spec {
     $modo = $null
 
     if ($Apply) {
-        if (-not (Test-Path -LiteralPath $wip) -or (Get-Item -LiteralPath $wip).Length -eq 0) {
-            throw 'WIP_AUSENTE: falta .vibeflow/spec-wip.md preenchido.'
-        }
-
         $createdDir = $false
         if ($Mvp) {
             $destDir = Join-Path $vf 'mvp'
             $modo = if (Test-Path -LiteralPath (Join-Path $destDir 'spec.md') -PathType Leaf) { 'atualizar' } else { 'reuse' }
         } elseif (-not [string]::IsNullOrWhiteSpace($Dir)) {
             $destDir = Join-Path $phases ([System.IO.Path]::GetFileName($Dir))
-            if (-not (Test-Path -LiteralPath $destDir) -or -not (Get-Item -LiteralPath $destDir).PSIsContainer) {
+            $destItem = Get-FsItem $destDir
+            if (-not $destItem -or (Test-IsReparsePoint $destItem) -or -not $destItem.PSIsContainer) {
                 throw "FASE_AUSENTE: .vibeflow/phases/$([System.IO.Path]::GetFileName($Dir)) não existe."
             }
             $name = [System.IO.Path]::GetFileName($destDir)
@@ -263,7 +296,7 @@ function Invoke-Spec {
                 throw 'SLUG_INVALIDO: a frase curta não gerou um slug utilizável.'
             }
             $destDir = Join-Path $phases "phase-$nextN-$clean"
-            if (Test-Path -LiteralPath $destDir) {
+            if ((Test-IsReparsePoint (Get-FsItem $destDir)) -or (Test-Path -LiteralPath $destDir)) {
                 throw "FASE_EXISTE: .vibeflow/phases/phase-$nextN-$clean já existe."
             }
             New-Item -ItemType Directory -Path $destDir -Force | Out-Null
@@ -275,34 +308,23 @@ function Invoke-Spec {
         $destName = [System.IO.Path]::GetFileName($destDir)
         $rel = if ($Mvp) { '.vibeflow/mvp' } else { ".vibeflow/phases/$destName" }
         if (Test-Path -LiteralPath (Join-Path $destDir 'plan.md')) {
-            if ($createdDir -and -not (Get-ChildItem -LiteralPath $destDir -Force)) {
+            if ($createdDir -and -not (Test-IsReparsePoint (Get-FsItem $destDir)) -and -not (Get-ChildItem -LiteralPath $destDir -Force)) {
                 Remove-Item -LiteralPath $destDir -Force
             }
             throw "SPEC_JA_PLANEJADA: $destName já tem plan.md. Não pise. Pedido novo = outra phase."
         }
 
-        $tempFile = Join-Path $destDir ('.spec-' + [System.IO.Path]::GetRandomFileName())
         try {
-            Copy-Item -LiteralPath $wip -Destination $tempFile
-            $srcHash = Get-Sha256File $wip
-            $dstHash = Get-Sha256File $tempFile
-            $srcLen = (Get-Item -LiteralPath $wip).Length
-            $dstLen = (Get-Item -LiteralPath $tempFile).Length
-            if ($srcHash -ne $dstHash -or $srcLen -ne $dstLen) {
-                throw 'COPY_HASH_MISMATCH: a cópia do wip não bateu com o original.'
-            }
-            [System.IO.File]::Move($tempFile, $destFile, $true)
+            $fileCreated = New-LiveFile $destFile
         } catch {
-            if (Test-Path -LiteralPath $tempFile) { Remove-Item -LiteralPath $tempFile -Force }
             if ($createdDir) {
-                if ((Test-Path -LiteralPath $destDir) -and -not (Get-ChildItem -LiteralPath $destDir -Force)) {
+                if (-not (Test-IsReparsePoint (Get-FsItem $destDir)) -and (Test-Path -LiteralPath $destDir) -and -not (Get-ChildItem -LiteralPath $destDir -Force)) {
                     Remove-Item -LiteralPath $destDir -Force
                 }
             }
             throw
         }
-        Remove-Item -LiteralPath $wip -Force
-        $actions.Add([pscustomobject]@{ op = 'promover_wip'; alvo = "$rel/spec.md" })
+        if ($fileCreated) { $actions.Add([pscustomobject]@{ op = 'criar_arquivo'; alvo = "$rel/spec.md" }) }
         if ($Mvp) {
             $mvpMap = Get-MvpMap $vf
             $created = $mvpMap
@@ -312,7 +334,7 @@ function Invoke-Spec {
             foreach ($w in $listed.warnings) { $warnings.Add($w) }
             $nextN = 1
             if ($existing.Count -gt 0) { $nextN = [int]$existing[-1].n + 1 }
-            $resolved = Get-Alvo $existing
+            $resolved = Get-Alvo $existing $script:SlugWasBound
             $alvoItem = $resolved.item
             $modoSugerido = $resolved.modo
             foreach ($item in $existing) {
@@ -325,9 +347,6 @@ function Invoke-Spec {
     foreach ($item in @($existing)) {
         if ($null -ne $item) { [void]$mapped.Add((ConvertTo-PhaseMap $item)) }
     }
-    $wipState = 'ausente'
-    if (Test-Path -LiteralPath $wip) { $wipState = 'presente' }
-
     $payload = @{
         root                = "$repo"
         rota                = $(if ($Mvp) { 'mvp' } else { 'phase' })
@@ -340,7 +359,6 @@ function Invoke-Spec {
         alvo                = $(if ($Mvp) { $mvpMap } else { ConvertTo-PhaseMap $alvoItem })
         mvp                 = $mvpMap
         modo_sugerido       = $(if ($Mvp -and $mvpMap.files -contains 'spec.md') { 'atualizar' } elseif ($Mvp) { 'reuse' } else { "$modoSugerido" })
-        wip                 = "$wipState"
         created             = $(if ($Mvp) { $created } else { ConvertTo-PhaseMap $created })
         modo                = $modo
         actions             = $actions.ToArray()

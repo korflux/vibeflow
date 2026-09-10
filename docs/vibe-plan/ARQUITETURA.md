@@ -1,262 +1,74 @@
 # vibe-plan, arquitetura
 
-`/vibe-plan` fatia a spec em tasks verificáveis e grava **um** arquivo. A IA pilota a run, valida pré-requisitos e ferramentas essenciais de teste (`gitleaks`, MCPs como `chrome-devtools`), define a ordem técnica e o smoke test inicial; o script inventaria evidências e promove bytes de forma determinística e verificada.
+`/vibe-plan` fatia uma spec aprovada em tasks verificáveis e grava um único `plan.md`. A IA define a ordem técnica e a prova; os motores inventariam o alvo e preparam o arquivo vivo.
 
-```
+```text
 .vibeflow/phases/phase-<n>-<slug>/plan.md
 .vibeflow/mvp/plan.md
 ```
 
-Mesmo alvo da spec. A rota MVP é explícita e não usa `n` ou `--dir`. Sem spec no alvo, não há plan.
+## 1. Papéis e ownership
 
----
-
-## 1. Papéis
-
-| Peça | Onde | Faz |
-|---|---|---|
-| IA | Piloto | Entende o motor, valida ferramentas de teste (`gitleaks`, `chrome-devtools`), define walking skeleton / smoke test, fatia em tasks verticais e fecha a ordem técnica |
-| Skill | `vibe-plan/SKILL.md` | Orienta a IA com regras de fatiamento, gates, conferência de ferramentas e handoff |
-| Scripts | `vibe-plan/scripts/plan.ps1`, `plan.py`, `plan.sh` | Ferramenta determinística: inventário mecânico, resolução de alvo e promoção atômica do wip |
-| Template | `vibe-plan/templates/plan.md` | Esqueleto do artefato. O script não preenche prosa |
-| Relatório | `.vibeflow/plan-report.json` | Evidência operacional estruturada (gitignored) |
-| Wip | `.vibeflow/plan-wip.md` | Rascunho temporário até o apply (gitignored) |
-| Vivo | `.vibeflow/phases/phase-N-slug/plan.md` ou `.vibeflow/mvp/plan.md` | Artefato permanente pós-apply. Commitável |
-
-Install: `npx skills` ou marketplace (README). Pacote sem `docs/`. Fonte canônica: `vibe-plan/`. Sem `references/` no v1.
-
----
-
-## 2. Dependência
-
-Sem `.vibeflow/` → `INIT_AUSENTE`. `/vibe-init` primeiro.
-
-`phases/` falta → cria + `.gitkeep`. Não mexe em `REGRAS.md` nem symlink.
-
----
-
-## 3. Alvo do plan
-
-Pasta que bate `^phase-(\d+)-([a-z0-9]+(?:-[a-z0-9]+)*)$`.
-
-O relatório expõe os ponteiros como evidência:
-
-| Campo | Significa |
+| Peça | Responsabilidade |
 |---|---|
-| `alvo` | Destino preferido do apply sem `--dir` |
-| `spec_pendente` | Maior `n` com `spec.md` e sem `plan.md` |
-| `rascunho` | Maior `n` com `plan.md` e sem `analyze.md` |
+| `SKILL.md` | Validar a spec, ferramentas, ordem, dependências, Size/Risk e unidade por task. |
+| `scripts/plan.py`, `plan.ps1`, `plan.sh` | Inventário, seleção do alvo, gates mecânicos, preparação do vivo e relatório. |
+| `templates/plan.md` | Forma de Overview, Ordem, Tasks e handoff. |
+| `.vibeflow/plan-report.json` | Evidência operacional, fora do Git. |
+| `plan.md` | Fila executável e fonte da próxima T*. |
 
-Resolução de `alvo` (primeira que existir):
+## 2. Dependências e seleção
 
-1. `spec_pendente`
-2. `rascunho`
-3. `null` → apply sem `--dir` falha `PLAN_SEM_SPEC`
+Sem `.vibeflow/`, `INIT_AUSENTE`. O modo phase exige `spec.md` e reusa a maior phase com spec sem plan. `--dir` força uma phase existente. O plan não cria uma phase nova e não pisa um alvo com `analyze.md`.
 
-`--dir phase-N-slug` força o destino. A pasta tem de existir **e** ter `spec.md`.
+No modo MVP, `--mvp` fixa `.vibeflow/mvp/`, exige `spec.md`, recusa `--dir` e encaminha para `vibe-analyze`. A flag representa uma decisão semântica da IA.
 
-`analyze.md` no destino → `PLAN_JA_ANALISADO`. Não pisa.
+Flags públicas:
 
-Não existe modo `criar`. Plan não abre fase.
-
----
-
-## 4. Fluxo
-
-A IA inicia compreendendo a spec aprovada, os arquivos do codebase, a disponibilidade das ferramentas necessárias (`gitleaks`, `chrome-devtools`) e o motor determinístico.
-
-### 4.1 Alvo MVP
-
-`--mvp` ou `-Mvp` fixa o alvo em `.vibeflow/mvp/`. A IA escolhe a rota; o script não infere intenção.
-
-- Exige `mvp/spec.md`; ausência gera `PLAN_SEM_SPEC`.
-- Recusa `--dir` com `MODO_INVALIDO`.
-- Recusa `mvp/analyze.md` existente com `PLAN_JA_ANALISADO`.
-- Apply promove `plan-wip.md` para `mvp/plan.md`, com verificação atômica de tamanho e SHA-256, sem criar `phase-N`.
-- Relatório acrescenta `rota`, `mvp`, `alvo.kind` e objetos phase com `kind: phase`.
-
-O artefato MVP preserva IDs e ações críticas da spec nas tasks correspondentes. O handoff é `vibe-analyze`, nunca implementação direta.
-
-```
-[1] IA entende o motor de plan, suas entradas e proteções determinísticas
-[2] SCRIPT executa inventário → plan-report.json
-[3] IA audita o relatório, lê spec.md, interview.md (se houver), REGRAS.md e verifica dependências no host (gitleaks, chrome-devtools)
-[4] IA valida Gate e confere viabilidade da spec
-[5] IA realiza o fatiamento vertical no wip garantindo smoke test / walking skeleton na T1
-[6] SCRIPT apply promove wip → plan.md com verificação atômica de integridade
-[7] Humano lê o arquivo vivo → solicitação de ajuste ou aprovação
-[8] IA fecha a run. Não commita. Não dispara implementação automaticamente
+```text
+python plan.py [--root PATH] [--apply] [--dir phase-N-slug] [--mvp]
+pwsh plan.ps1 [-Root PATH] [-Apply] [-Dir phase-N-slug] [-Mvp]
+bash plan.sh [--root PATH] [--apply] [--dir phase-N-slug] [--mvp]
 ```
 
-Depois do `plan.md` existir, ajuste e flip de Status editam o vivo diretamente. Sem apply de novo.
+## 3. Pré-requisitos de prova
 
-### 4.2 Classificação semântica das tasks
+A IA verifica `gitleaks` quando o repositório prevê essa prova. Se a spec toca UI, escolhe navegador integrado quando disponível, depois MCP Server `chrome-devtools`, e Playwright somente se já existir no repositório ou tiver sido solicitado. Ausência de capacidade visual é limitação explícita, não passe silencioso.
 
-`Size` é a complexidade estrutural para entregar uma única fatia vertical verde. A regra canônica fica em `vibe-plan/SKILL.md`; este contrato preserva seus limites para que template, testes e documentação não criem outra interpretação.
+Tasks devem conter aceite observável, comando real de verificação, `Deps`, `Spec: A*/C*`, `Size` com score e `Risk` separado. T1 funcional deve validar o ponto de entrada real.
 
-Cada T* soma cinco dimensões, pontuadas de `0` a `2`:
+## 4. Relatório
 
-| Dimensão | 0 | 1 | 2 |
-|---|---|---|---|
-| Superfície | Um módulo ou artefato | Vários arquivos do mesmo módulo | Vários subsistemas |
-| Acoplamento | Isolado | Contrato interno compartilhado | API, schema, auth ou serviço externo |
-| Verificação | Unitário ou estático | Integração ou serviço | E2E, navegador, hardware ou dependência externa |
-| Incerteza | Padrão conhecido | Investigação pequena | Comportamento ou solução desconhecida |
-| Coordenação | Independente e reversível | Uma dependência ou migração | Ordem crítica, rollout ou efeito irreversível |
+O relatório mantém `vibeflow`, `phases`, `next_n`, `existing`, `spec_pendente`, `rascunho`, `alvo`, `mvp`, `modo_sugerido`, `created`, `modo`, `actions` e `avisos`. Não existe estado de arquivo temporário no contrato.
 
-| Total | Classificação | Regra |
-|---|---|---|
-| 0–3 | `low` | Uma T* |
-| 4–6 | `medium` | Uma T* |
-| 7–8 | `high` | Uma T*, com justificativa |
-| 9–10 | — | Quebrar antes de gravar o plan |
+`actions` registra criação de `phases/.gitkeep` ou do arquivo vivo. `files` lista os seis artefatos da cadeia.
 
-`Risk` é registrado separadamente como `low`, `medium` ou `high`. Ele descreve impacto potencial e pode exigir mais rigor de rota, teste ou review sem alterar automaticamente o `Size`. `Arquivos` continua sendo uma lista de paths prováveis, não um limiar. Tempo observado não entra no cálculo nem é exigido no plan. O esforço da rota (`low` a `max`) é independente do tamanho da T*.
+## 5. Apply e escrita direta
 
+1. Reexecuta o inventário.
+2. Valida predecessor, `--dir`, status mecânico e ausência de `analyze.md`.
+3. Prepara `plan.md` vazio quando ausente.
+4. Preserva bytes do vivo existente.
+5. Grava o relatório.
+6. A IA escreve ou atualiza diretamente `plan.md`, mantendo `# Status: rascunho` até aprovação.
 
----
+O script não escreve prosa, não classifica Size, não escolhe ordem e não dispara implement. Ajuste ou aprovação posterior é patch no arquivo vivo.
 
-## 5. Inventário
+## 6. Contrato do artefato
 
-Zero prosa.
+Seções: Overview, Ordem, Riscos, Paralelização, Tasks, Conferência e Handoff. Cada task usa `T1`, `T2` em sequência, tem dependências reais, comando próprio de verificação e é a unidade que a implement pode commitar. Não usar `todo.md`, `tasks.md`, `T001`, `[P]`, `[US1]`, `checklists/` ou verificação apenas manual.
 
-| Campo | Significa |
-|---|---|
-| `vibeflow` | `ausente` / `ok` / `inesperado` |
-| `phases` | `ausente` / `ok` / `inesperado` |
-| `next_n` | max n + 1, ou 1 (informativo; apply não usa) |
-| `existing[]` | `{ dir, n, slug, path, files }` |
-| `spec_pendente` | objeto ou `null` |
-| `rascunho` | objeto ou `null` |
-| `alvo` | objeto ou `null` |
-| `modo_sugerido` | `reuse` / `atualizar` / `criar` (`criar` = sem alvo) |
-| `wip` | `ausente` / `presente` |
-| `actions[]` | ex. `criar_phases` |
-| `avisos[]` | nomes fora do padrão |
+## 7. Erros, testes e handoff
 
-`files` só: `interview.md`, `spec.md`, `plan.md`, `analyze.md`, `implement.md`, `review.md`.
+Falhas previstas usam `CODIGO: descrição`, incluindo `INIT_AUSENTE`, `PLAN_SEM_SPEC`, `PLAN_JA_ANALISADO`, `FASE_AUSENTE`, `MVP_INESPERADO` e `MODO_INVALIDO`.
 
-`modo_sugerido=criar` no inventário significa “não há pasta para gravar”. O apply **não** cria.
+Suítes: `docs/vibe-plan/tests/test-plan.py` e `docs/vibe-plan/tests/test-plan.sh`.
 
----
+O handoff normal é `vibe-implement`; no MVP é `vibe-analyze`. Recomenda-se novo chat para a porta seguinte. O `plan.md` vivo carrega a fila verificável.
 
-## 6. Apply
+## 8. Limites
 
-```
-pwsh "<skill>/scripts/plan.ps1" -Apply [-Dir "phase-1-slug"]
-bash "<skill>/scripts/plan.sh" --apply [--dir phase-1-slug]
-```
-
-Ordem:
-
-1. Inventário de novo.
-2. Sem wip → `WIP_AUSENTE`.
-3. Resolve destino: `--dir` se veio; senão `alvo`. Sem destino → `PLAN_SEM_SPEC`.
-4. `--dir` inexistente ou fora do padrão → `FASE_AUSENTE`.
-5. Destino sem `spec.md` → `PLAN_SEM_SPEC`.
-6. Destino com `analyze.md` → `PLAN_JA_ANALISADO`.
-7. Cópia binária `plan-wip.md` → `plan.md` (pode sobrescrever rascunho).
-8. Tamanho + SHA-256. Falha: apaga só o `plan.md` se **esta** run o criou e a pasta já tinha outros arquivos (não apaga a pasta). `COPY_HASH_MISMATCH`. Wip permanece.
-9. Apaga o wip.
-10. Garante `.gitignore`: `plan-report.json`, `plan-wip.md`. Não remove entradas das outras skills.
-11. Relatório com `created` e `modo` (`reuse` / `atualizar`).
-
-Sem `--slug`. Script não escreve prosa. Não pergunta.
-
-Modo MVP: `plan.py --apply --mvp`, `plan.ps1 -Apply -Mvp` ou `plan.sh --apply --mvp`.
-
----
-
-## 7. Relatório
-
-`.vibeflow/plan-report.json`:
-
-```json
-{
-  "root": "...",
-  "vibeflow": "ok",
-  "phases": "ok",
-  "next_n": 2,
-  "existing": [],
-  "spec_pendente": {
-    "dir": "phase-1-lock-bloco",
-    "n": 1,
-    "slug": "lock-bloco",
-    "path": ".vibeflow/phases/phase-1-lock-bloco",
-    "files": ["interview.md", "spec.md"]
-  },
-  "rascunho": null,
-  "alvo": { "dir": "phase-1-lock-bloco", "n": 1, "slug": "lock-bloco", "path": ".vibeflow/phases/phase-1-lock-bloco", "files": ["interview.md", "spec.md"] },
-  "modo_sugerido": "reuse",
-  "wip": "ausente",
-  "created": null,
-  "modo": null,
-  "avisos": []
-}
-```
-
-O relatório serve como evidência operacional. A IA lê o JSON, `spec.md`, `plan.md` e `interview.md` (se houver), `REGRAS.md` e os arquivos do código necessários de forma direcionada, sem varredura cega da árvore.
-
----
-
-## 8. Artefato vivo
-
-Template: `vibe-plan/templates/plan.md`.
-
-Status: `rascunho` | `aprovado`.
-
-Seções (omitir a que não se aplica):
-
-- Overview
-- Ordem (fases + checkpoints; índice, não recópia o corpo)
-- Riscos
-- Paralelização
-- Tasks (corpo T1…; aceite; Verificação = comando do repo; `Deps`; linha `T{n} concluída`; Spec: A*/C*; `Size` com score; `Risk`)
-- Conferência (cobertura da spec, não fila da build)
-- Handoff (`vibe-implement`)
-
-Sem Open Questions. Sem `todo.md`. Sem `checklists/`. Sem T001/[P]/[US1].
-
----
-
-## 9. Contratos de teste
-
-1. Sem `.vibeflow/` → `INIT_AUSENTE`.
-2. Sem `phases/` → cria; `modo_sugerido=criar`; `alvo` nulo.
-3. `phase-1-a` com `spec.md` → `alvo` é essa pasta; apply grava `plan.md` nela; não cria `phase-2`.
-4. Apply sem spec em pasta alguma → `PLAN_SEM_SPEC`.
-5. `--dir` sem `spec.md` → `PLAN_SEM_SPEC`.
-6. Destino com `analyze.md` → `PLAN_JA_ANALISADO`; wip permanece; plan antigo intacto se já existia.
-7. Rascunho existente: apply sobrescreve `plan.md`.
-8. `.gitignore` ganha as duas entradas e preserva `spec-report.json`.
-9. `phases` é arquivo → `PHASES_INESPERADO`.
-10. Paridade pwsh: apply reuse grava o mesmo path.
-11. Template congela `- [ ] T1 concluída`, `- **Deps:**`, Verificação como `comando do repo` (sem “passo manual”), checkpoint com omitir fluxo se não atravessa T*.
-12. A skill contém as cinco dimensões, os intervalos `0–3`, `4–6`, `7–8`, o gate `9–10` e não usa quantidade de arquivos ou tempo como regra isolada.
-13. O template exige `Size` com score e `Risk` separado, sem `xhigh` ou `max` como valor final de uma T*.
-
-Suíte: `docs/vibe-plan/tests/test-plan.py`. Launcher: `docs/vibe-plan/tests/test-plan.sh`.
-
----
-
-## 10. Limites de contrato
-
-- Grava um arquivo só no alvo explícito phase ou MVP. Sem `todo.md`, `tasks.md`, `checklists/`, `docs/`, `specs/`.
-- Sem `next_n`, sem `--slug`, sem pasta nova: plan entra na pasta da spec.
-- Não pisa pasta com `analyze.md`. Não apaga `spec.md`.
-- IDs `T1`, `T2`… Sem `T001`, `[P]`, `[US1]`.
-- Linhas congeladas por T* (`concluída`, `Deps`) são contrato da implement. Este script **não** as parseia.
-- Verificação da T* é comando. Só manual não fecha o fatiamento.
-- Zero código nesta porta.
-- No MVP, exige spec, preserva IDs críticos e encaminha para analyze.
-
-Backlog e decisões de escopo: [`docs/ESCOPO.md`](../ESCOPO.md).
-
----
-
-## 11. Assumido
-
-- Init e spec já rodaram (ou o humano aceita o recado `PLAN_SEM_SPEC`).
-- Uma fase = um pedido. Plan entra na pasta da spec.
-- Status `aprovado` é patch no vivo.
-- Sem backup em `old/`. Wip some após hash ok.
+- Plan não contém código nem abre fase por conta própria.
+- O inventário não autoriza ler a árvore inteira. A IA localiza evidências com `rg --files` e `rg -n`.
+- O relatório fica fora do Git; `plan.md` entra no Git.
+- Plan não commita; o commit começa somente quando a implement fecha uma task verde. Não há disparo automático da próxima skill.

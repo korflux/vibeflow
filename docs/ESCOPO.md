@@ -28,9 +28,9 @@ Contrato do que acabou de entrar. Não é fila aberta.
 
 ### 3.1 `implement.md`
 
-- [x] Artefato próprio na pasta da fase, com `--apply` / `--slug` / wip.
+- [x] Artefato próprio na pasta da fase, com `--apply` / `--slug` e escrita direta no vivo.
 
-A implement deixa de só marcar `[x]` no `plan.md` / `spec.md` / `review.md`. Na mesma pasta grava `implement.md`. A review e a próxima fatia leem isso no disco, não no chat.
+A implement deixa de só marcar `[x]` no `plan.md` / `spec.md` / `review.md`. Na mesma pasta grava `implement.md`. A review e a próxima fatia leem isso no disco, não no chat. O arquivo vivo é preparado pelo script e preenchido pela IA.
 
 O arquivo registra, por fatia:
 
@@ -44,7 +44,7 @@ O arquivo registra, por fatia:
 | Feedback − | O que emperrou, dívida, risco, decisão assumida | Omitir se vazio |
 | Para a review | O que a próxima porta precisa olhar | Omitir se nada além da prova |
 
-`--apply` / `--slug` / wip nascem junto, porque passa a existir artefato. Contrato: `docs/vibe-implement/ARQUITETURA.md` antes do código.
+`--apply` e `--slug` fazem parte da preparação do alvo. O `--apply` não transporta conteúdo temporário, não calcula hash de promoção e não substitui um vivo existente. Contrato: `docs/vibe-implement/ARQUITETURA.md`.
 
 ### 3.2 `review.md` único, checklist por etapa
 
@@ -116,7 +116,12 @@ Contrato: `docs/vibe-review/ARQUITETURA.md` e `templates/review.md` antes de mud
 ### 3.3 Fila elegível e prova em três andares
 
 - [x] Relatório da implement ganha `fila` (`elegiveis` / `bloqueadas`). Skill pergunta só se houver 2+ T* prontas.
-- [x] Plan congela `concluída`, `Deps` reais e Verificação como comando. Checkpoint = suite do grupo; fluxo extra só se o caminho atravessa T*.
+- [x] Plan congela `concluída`, `Deps` reais e Verificação como comando. Cada T* é a unidade de execução, prova e commit; o fechamento da phase usa a suíte final da review.
+
+### 3.6 Commits por task e fechamento da phase
+
+- [x] `vibe-implement` cria um commit path-scoped depois de cada task verde, sem push, sem `git add -A` e sem misturar paths já alterados.
+- [x] `vibe-review` só faz o commit residual e o `git push` final depois de Approve, confirmação humana, correções fechadas, suíte final, `git diff --check` e gitleaks quando previsto.
 
 ### 3.4 Distribuição Codex, Claude, Grok e Antigravity
 
@@ -137,11 +142,12 @@ Não são backlog. Mudá-los quebra o disco.
 |---|---|
 | `AGENTS.md` e `CLAUDE.md` nunca são cópia de `REGRAS.md` | Cópia diverge na primeira edição e deixa de existir fonte única. Sem symlink, o init falha alto. |
 | Artefato da cadeia só em `.vibeflow/phases/phase-N-slug/`, salvo o baseline único `.vibeflow/mvp/` | `docs/`, `specs/` e paths de outro produto continuam proibidos; a exceção MVP é fixa, explícita e não versionada. |
-| Segunda fonte de regras fora de `.vibeflow/REGRAS.md` | Mesma razão. |
+| Segunda fonte de regras fora de `.vibeflow/REGRAS.md` | Mesma razão. A ponte Antigravity é apenas `@../../.vibeflow/REGRAS.md`, não uma cópia. |
 | A IA não escolhe `n`, slug nem path | Disco decide, script calcula. |
 | A IA não escolhe homolog ou produção | Só o humano sabe, e a resposta muda o bloco de migrations. |
-| Nenhuma skill commita | O humano decide o que entra no git. Cada skill diz o que é commitável ao fechar. |
+| Commit por task e push final | Implement commita cada task verde com staging explícito; review fecha a phase e faz push somente após aprovação humana. |
 | Motor único ("só Python" ou "só PowerShell") | Os dois motores implementam o mesmo contrato; o launcher `.sh` escolhe, sem versão degradada. |
+| Escrita semântica no script ou em arquivo temporário de promoção | O script prepara o vivo e a IA grava a prosa, preservando o histórico já existente. |
 
 ## 5. Anti-padrões (já no corpo da skill)
 

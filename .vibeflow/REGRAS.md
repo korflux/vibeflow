@@ -33,8 +33,10 @@ Este repo não tem banco, migration nem tráfego de usuário. Skills aqui mudam 
 ## Git
 
 - Sem `Co-Authored-By` de ferramenta em commit/push.
+- `vibe-implement` commita cada task somente depois de teste verde, com staging explícito por path e sem push.
+- `vibe-review` faz o commit residual e o `git push` final da phase somente após Approve, confirmação humana e correções fechadas. Nunca usar `git add -A`, amend, squash ou force push.
 - Commitável: `.vibeflow/REGRAS.md`, `AGENTS.md`, `CLAUDE.md`, `.vibeflow/old/` se existir, `.vibeflow/phases/` (`.gitkeep` e artefatos vivos), pacote da skill, `docs/`.
-- Não commitar: `init-report.json`, `init-pending.json`, `*-report.json`, `*-wip.md`, `*-pending.json`.
+- Não commitar: `init-report.json`, `init-pending.json`, `*-report.json` e `*-pending.json`.
 - `AGENTS.md` e `CLAUDE.md` são symlink para `.vibeflow/REGRAS.md`. Nunca copiar o conteúdo para a raiz.
 
 ## Estrutura
@@ -46,6 +48,7 @@ Este repo não tem banco, migration nem tráfego de usuário. Skills aqui mudam 
 .vibeflow/old/               backups do init, se houver
 AGENTS.md                    symlink → .vibeflow/REGRAS.md
 CLAUDE.md                    symlink → .vibeflow/REGRAS.md
+.agents/rules/vibeflow.md   include → ../../.vibeflow/REGRAS.md
 vibe-<nome>/                 pacote canônico da skill
 skills/vibe-<nome>           symlink → ../vibe-<nome> (descoberta do CLI e plugins)
 .claude-plugin/              marketplace Claude
@@ -81,6 +84,12 @@ docs/vibe-<nome>/
 ```
 
 <!-- evidência: disco do repo -->
+
+### Adaptadores por host
+
+A fonte editável é sempre `.vibeflow/REGRAS.md`. `AGENTS.md` e `CLAUDE.md` são ponteiros compatíveis na raiz. O Antigravity recebe somente a ponte mínima descoberta pelo workspace, `.agents/rules/vibeflow.md`, com `@../../.vibeflow/REGRAS.md`; o init cria, verifica e repara esse arquivo sem copiar as regras.
+
+As regras globais permanecem separadas das regras do workspace: Codex usa `~/.codex/AGENTS.md` ou `~/.codex/AGENTS.override.md`, e Antigravity usa `~/.gemini/GEMINI.md`. O Vibeflow não sincroniza nem sobrescreve esses arquivos e não cria `GEMINI.md` no projeto. Se o host carregar mais de um nome, a carga efetiva deve ser conferida na ferramenta do próprio host.
 
 ## Regras deste repo
 
@@ -123,7 +132,7 @@ Testes de contrato ficam em `docs/vibe-<nome>/tests/`, fora do pacote instaláve
 - Nome do arquivo é o tipo, não o título: `interview.md`, `spec.md`, `plan.md`, `analyze.md`. Implement e review só gravam se a arquitetura daquela skill disser que existe artefato.
 - Não gravar cadeia em `docs/`, na raiz, nem em path de outro produto (`fluxline`, etc.).
 - Relatório operacional, quando a arquitetura da skill exigir: `.vibeflow/<nome>-report.json` (gitignored). Se o script o gerar, stdout = path do relatório.
-- Wip, se a sessão for longa e o slug ainda não existir: `.vibeflow/<nome>-wip.md` (gitignored). Apply promove wip → vivo com cópia binária + tamanho + SHA-256. Wip só some depois da cópia bater.
+- O artefato vivo é preparado pelo `--apply` somente quando ausente. A IA escreve e atualiza a prosa diretamente no arquivo da fase ou do MVP; conteúdo existente é preservado byte a byte.
 - Continuar o mesmo pedido: editar o vivo. Pedido novo: próxima pasta. Não renomear pasta depois de criada.
 - Sem `.vibeflow/`: a skill que não é o init para e manda `/vibe-init`.
 
@@ -132,7 +141,7 @@ Testes de contrato ficam em `docs/vibe-<nome>/tests/`, fora do pacote instaláve
 ```
 IA                →  pilota a run: entende o pedido, o projeto e os scripts; investiga, decide a semântica e audita o resultado
 Skill (SKILL.md)  →  orienta a IA com invariantes, sequência recomendada, gates e critérios de fechamento
-Script            →  auxilia operações mecânicas e determinísticas (inventário, n, slug, cópia, symlink, relatório)
+Script            →  auxilia operações mecânicas e determinísticas (inventário, n, slug, alvo, ponteiros e relatório)
 Humano            →  decide apenas o que muda materialmente o resultado e não pode ser concluído pelo contexto
 ```
 
@@ -163,13 +172,13 @@ Três arquivos, um contrato:
 - Se o defeito estiver no script e a correção couber na tarefa, a IA corrige a causa raiz e verifica o comportamento. Se for limitação do ambiente, pode usar o outro motor ou reproduzir a operação manualmente, preservando as mesmas validações, backups e garantias. Erro de segurança ou proteção explícita nunca é contornado.
 - Função no script leva comentário semântico (para que serve; se a decisão não for óbvia, o porquê). Nenhuma função órfã.
 - Old/backup de arquivo do usuário: copiar, conferir tamanho + hash, **só então** substituir. Colisão em `old/` vira timestamp. Init já faz isso; skills que mexem em arquivo alheio repetem.
-- Relatório e wip entram no `.gitignore` **dentro** de `.vibeflow/`, sem apagar entradas das outras skills.
+- Relatórios entram no `.gitignore` **dentro** de `.vibeflow/`, sem apagar entradas das outras skills.
 
 ### 6. Template
 
 - Mora em `vibe-<nome>/templates/`. É esqueleto, não documento preenchido.
-- A IA copia a forma e escreve o conteúdo (no wip ou no vivo).
-- O script **não** preenche markdown. Apply só promove bytes.
+- A IA copia a forma e escreve o conteúdo diretamente no artefato vivo.
+- O script **não** preenche markdown. Apply somente prepara ou valida o destino e preserva o vivo existente.
 - Seções fixas, nomes estáveis, um lar por fato. Placeholder óbvio (`<frase curta>`), sem prosa de exemplo que a IA possa colar sem pensar.
 - Seção opcional (ex.: Direção só na Fase 2) diz no próprio template quando omitir. Não criar arquivo extra para variação da mesma skill.
 
@@ -195,7 +204,7 @@ Corpo, nesta ordem, salvo se a arquitetura justificar furo:
 
 1. Duas ou três linhas de invariante (o que nunca fazer).
 2. **0. Entender e usar o script** (path da skill, motor que será executado, objetivo, entradas, saídas, mutações, proteções, comando Windows/Unix, evidências produzidas e erros que não se contornam).
-3. **1. Abrir** em ~5 linhas de estado (fluxo, slots, next_n, aberta, wip). Bloco de exemplo curto.
+3. **1. Abrir** em ~5 linhas de estado (fluxo, alvo, dependências, status e artefato vivo). Bloco de exemplo curto.
 4. Passos numerados: gate, trabalho semântico, gravar, fechar.
 5. Sem seção de escopo no fim. Limite que vale durante a run é invariante ancorado no passo onde vale; escopo de produto vive em `docs/ESCOPO.md` e limite de contrato em `docs/vibe-<nome>/ARQUITETURA.md`.
 
@@ -208,7 +217,7 @@ Regras de prosa na skill:
 - Uma pergunta por vez. Várias respostas de uma vez: aceitar e fechar.
 - Patch de SLOT = só aquele trecho, texto do humano, sem reescrever.
 - Não disparar a próxima `vibe-*` a menos que o humano autorize explicitamente o avanço (ex.: "pode ir pro plan", "segue pro implement"). Se autorizado, avançar imediatamente sem perguntar de novo.
-- Não commitar. No fechar, dizer o que entra no git e o que fica de fora.
+- Skills de definição e análise não commitem. `vibe-implement` commita a task verde e `vibe-review` finaliza a phase. No fechar, dizer o hash, os paths enviados e o que ficou de fora.
 - Português do Brasil. Frase completa. Sem emoji. Sem travessão longo. Tom factual, calmo, sem acolhimento.
 
 
@@ -246,8 +255,10 @@ Não inverter: skill sem arquitetura vira path inventado (foi o defeito da inter
 
 Escopo ainda não construído, com o que já foi feito marcado, vive em `docs/ESCOPO.md`.
 
-- Copiar `REGRAS.md` para `AGENTS.md` / `CLAUDE.md` na raiz.
+- Copiar `REGRAS.md` para `AGENTS.md`, `CLAUDE.md` ou `.agents/rules/vibeflow.md`.
 - Segunda fonte de regras fora de `.vibeflow/REGRAS.md`.
+- Criar um `GEMINI.md` no workspace para duplicar a fonte canônica.
+- Tratar a ponte `.agents/rules/vibeflow.md` como fonte editável.
 - Artefato da cadeia fora de `.vibeflow/phases/phase-N-slug/`.
 - Exceção única ao item anterior: baseline de projeto novo em `.vibeflow/mvp/`, uma vez por repositório e sempre na rota `max` completa.
 - Skill nova sem o par `ARQUITETURA.md` + `ANALISE.md`.

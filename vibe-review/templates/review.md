@@ -2,6 +2,8 @@
 # Alvo: <phase-<n>-<slug> ou mvp>
 # Status: rascunho
 
+<!-- Escreva diretamente neste artefato vivo; o status permanece rascunho até o veredito e a confirmação humana. -->
+
 ## Contexto
 
 - Alvo: <fase | branch | PR | local>
@@ -77,11 +79,19 @@
 
 ## Handoff
 
-vibe-implement
+vibe-implement | finalização Git da phase
 
 <!-- ou: volta vibe-spec | cadeia fechada -->
 
 - [ ] Aprovação humana (leu o arquivo e confirmou)
+
+- Chat: a review deve recomendar novo chat para correções em `vibe-implement`; após Approve e confirmação humana, o handoff é a finalização Git da phase. O `review.md` vivo e o diff são a ponte.
+
+## Finalização Git da phase
+
+- Pré-condições: Approve confirmado, todas as `T*` concluídas, Critical/Required fechados, suíte final verde, `git diff --check` e gitleaks quando previsto.
+- Commit final: `chore(phase-N): finalize review`, somente com paths residuais autorizados e sem `Co-Authored-By`; sem mudanças residuais, manter o último commit da task.
+- Push: `git push` para o upstream atual, sem `--force`. Registrar hash/HEAD, paths e resultado; falha mantém o handoff bloqueado.
 
 ## Etapas
 
