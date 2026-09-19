@@ -14,6 +14,7 @@ SKILLS = (
     "vibe-init",
     "vibe-interview",
     "vibe-spec",
+    "vibe-design",
     "vibe-plan",
     "vibe-analyze",
     "vibe-implement",
@@ -41,7 +42,7 @@ def load_json(relative: str) -> dict:
 
 
 class DistribuicaoContracts(unittest.TestCase):
-    """C1–C5 da distribuição: sete skills, manifests mínimos e sem aliases."""
+    """C1–C5 da distribuição: oito skills, manifests mínimos e sem aliases."""
 
     # C2: skills/vibe-* é symlink relativo para o pacote canônico, com SKILL.md no alvo.
     def test_skills_pointers(self) -> None:
@@ -55,7 +56,7 @@ class DistribuicaoContracts(unittest.TestCase):
             self.assertTrue(skill_md.is_file(), f"SKILL.md ausente no alvo de {name}")
             names.append(frontmatter_name(skill_md))
         self.assertEqual(names, list(SKILLS))
-        self.assertEqual(len(set(names)), 7)
+        self.assertEqual(len(set(names)), 8)
 
     # C1: descoberta pelo local padrão do CLI (skills/) não duplica name.
     def test_unique_names_under_skills(self) -> None:
@@ -165,6 +166,7 @@ class DistribuicaoContracts(unittest.TestCase):
         template_names = (
             "vibe-interview",
             "vibe-spec",
+            "vibe-design",
             "vibe-plan",
             "vibe-analyze",
             "vibe-implement",

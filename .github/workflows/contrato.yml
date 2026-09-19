@@ -24,7 +24,7 @@ jobs:
       - name: Suítes de contrato (Python)
         run: |
           set -eu
-          for skill in init interview spec plan analyze implement review; do
+          for skill in init interview spec design plan analyze implement review; do
             echo "::group::vibe-${skill}"
             python "docs/vibe-${skill}/tests/test-${skill}.py" -v
             echo "::endgroup::"
@@ -52,7 +52,7 @@ jobs:
       - name: Launchers .sh
         run: |
           set -eu
-          for skill in init interview spec plan analyze implement review; do
+          for skill in init interview spec design plan analyze implement review; do
             echo "::group::launcher vibe-${skill}"
             bash "docs/vibe-${skill}/tests/test-${skill}.sh"
             echo "::endgroup::"

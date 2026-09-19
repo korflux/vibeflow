@@ -31,11 +31,11 @@ Escopo do produto: [`docs/ESCOPO.md`](docs/ESCOPO.md). Contrato de cada skill: `
 
 ## Como instalar as skills
 
-O repositório oferece instalação por `npx skills` e manifests nativos. O pacote Antigravity tem `plugin.json` na raiz e descobre os sete pacotes pela pasta `skills/`; não há aliases em `commands/`.
+O repositório oferece instalação por `npx skills` e manifests nativos. O pacote Antigravity tem `plugin.json` na raiz e descobre os oito pacotes pela pasta `skills/`; não há aliases em `commands/`.
 
 ### Instalador `npx skills`, project-local e global
 
-O CLI [`skills`](https://github.com/vercel-labs/skills) usa, por padrão, o escopo project-local (`./<agent>/skills/`) e, com `-g`, o escopo global (`~/<agent>/skills/`). Os dois comandos abaixo instalam os sete pacotes nos agentes selecionados:
+O CLI [`skills`](https://github.com/vercel-labs/skills) usa, por padrão, o escopo project-local (`./<agent>/skills/`) e, com `-g`, o escopo global (`~/<agent>/skills/`). Os dois comandos abaixo instalam os oito pacotes nos agentes selecionados:
 
 ```bash
 # project-local, somente neste projeto e compartilhável com a equipe
@@ -61,7 +61,7 @@ O fallback documentado pelo host é `_agents/plugins/`. Para uso global na IDE, 
 ~/.gemini/config/plugins/vibeflow/
 ```
 
-Em ambos os casos, `plugin.json` deve permanecer na raiz do plugin e `skills/` deve conter os sete diretórios com `SKILL.md`. Confirme a descoberta por `/skills` quando o host oferecer esse comando ou reabra o workspace/host para recarregar os plugins.
+Em ambos os casos, `plugin.json` deve permanecer na raiz do plugin e `skills/` deve conter os oito diretórios com `SKILL.md`. Confirme a descoberta por `/skills` quando o host oferecer esse comando ou reabra o workspace/host para recarregar os plugins.
 
 O `vibe-init` cria a regra de workspace em `.agents/rules/vibeflow.md` com a inclusão `@../../.vibeflow/REGRAS.md`. Esse arquivo é somente uma ponte curta. A fonte editável continua sendo `.vibeflow/REGRAS.md`.
 
@@ -164,6 +164,7 @@ Efeito prático: as regras do projeto ficam numa fonte (`.vibeflow/REGRAS.md`), 
 | [`vibe-init`](vibe-init/SKILL.md) | `/vibe-init` | Inicializa ou repara a fonte única de regras. `AGENTS.md` e `CLAUDE.md` viram symlink para `.vibeflow/REGRAS.md`; `.agents/rules/vibeflow.md` vira uma inclusão mínima para Antigravity. Une legado em vez de escolher um arquivo e descartar o outro | `.vibeflow/REGRAS.md`, ponteiros e adaptador de host |
 | [`vibe-interview`](vibe-interview/SKILL.md) | `/vibe-interview` | Fecha intenção ambígua e inicia descoberta adaptativa de projeto MVP quando aplicável | `phase-N-slug/interview.md` ou `.vibeflow/mvp/interview.md` |
 | [`vibe-spec`](vibe-spec/SKILL.md) | `/vibe-spec` | Grava o decidido. Comportamento, aceite, fora, como provar. Sem mural de user story | `phase-N-slug/spec.md` |
+| [`vibe-design`](vibe-design/SKILL.md) | `/vibe-design` | Desenha a apresentação com dois modos de entrada e três usos, sem código nem imagem final | `phase-N-slug/design.md` |
 | [`vibe-plan`](vibe-plan/SKILL.md) | `/vibe-plan` | Fatia a spec em T* verificáveis, com deps reais e comando de verificação por task | `phase-N-slug/plan.md` |
 | [`vibe-analyze`](vibe-analyze/SKILL.md) | `/vibe-analyze` | Cruza interview, spec e plan da mesma fase. Corrige lacunas óbvias em `spec.md` e `plan.md`; grava o certificado no vivo | `phase-N-slug/analyze.md` |
 | [`vibe-implement`](vibe-implement/SKILL.md) | `/vibe-implement` | Executa a T* elegível, prova, marca `[x]` e cria o commit isolado da task | `phase-N-slug/implement.md` |
@@ -177,7 +178,7 @@ Este repo é a fonte. O consumidor instala o pacote, não a pasta `docs/`.
 
 ```text
 vibeflow/
-├── vibe-init/ … vibe-review/   pacote canônico (SKILL.md, scripts, templates, references)
+├── vibe-init/ … vibe-review/   pacote canônico (SKILL.md, scripts, templates, references, com vibe-design entre spec e plan)
 ├── skills/vibe-*               symlink → ../vibe-* (descoberta do CLI e plugins)
 ├── .claude-plugin/             marketplace Claude
 ├── .codex-plugin/              plugin Codex

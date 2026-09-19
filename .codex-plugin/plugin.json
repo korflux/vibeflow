@@ -13,7 +13,7 @@
   "interface": {
     "displayName": "vibeflow",
     "shortDescription": "Cadeia spec, plan, implement e review para agentes.",
-    "longDescription": "Sete skills (vibe-init até vibe-review) que inicializam regras do repo e conduzem interview, spec, plan, analyze, implement e review em .vibeflow/phases/.",
+    "longDescription": "Oito skills (vibe-init até vibe-review, com vibe-design entre spec e plan) que inicializam regras do repo e conduzem interview, spec, design, plan, analyze, implement e review em .vibeflow/phases/.",
     "developerName": "Marco Kormoczi",
     "category": "Productivity",
     "capabilities": ["Read", "Write"]

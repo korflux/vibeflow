@@ -13,7 +13,7 @@ Convenção: `[x]` já existe no repositório hoje. `[ ]` entra, ainda não cons
 - [x] `vibe-analyze` — cruza interview, spec e plan.
 - [x] `vibe-implement` — executa a fatia com prova.
 - [x] `vibe-review` — julga o patch e grava o veredito.
-- [ ] `vibe-design` — grava `design.md` entre spec e plan somente com UI visível, com N/A explícito sem tela. Motores, SKILL, template e distribuição entram em tasks próprias, sem mudar a contagem da distribuição nesta task.
+- [x] `vibe-design`, grava `design.md` entre spec e plan somente com UI visível, com N/A explícito sem tela. Pacote com motores, SKILL, template, references e distribuição em oito skills.
 - [ ] **Rota MVP.** Projeto novo usa baseline único em `.vibeflow/mvp/` e percorre interview, spec, plan, analyze, implement e review. Pivôs posteriores voltam às phases.
 
 Nenhuma skill dispara a seguinte. O handoff é uma linha no artefato.

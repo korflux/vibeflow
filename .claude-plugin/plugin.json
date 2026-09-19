@@ -13,6 +13,7 @@
     "./vibe-init",
     "./vibe-interview",
     "./vibe-spec",
+    "./vibe-design",
     "./vibe-plan",
     "./vibe-analyze",
     "./vibe-implement",

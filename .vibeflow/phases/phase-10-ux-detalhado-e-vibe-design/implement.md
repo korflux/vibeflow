@@ -121,10 +121,36 @@
 
 - T5 prova motor e preservação, não pacote operacional. A3 e C1 finais dependem de T6 permanecer verde.
 
+## Fatia T6
+
+- Feito: pacote operacional com SKILL de dois modos e três usos, template design.md com telas e prova, dois references como catálogo, ARQUITETURA e ANALISE, symlink skills/vibe-design, manifests Claude e Codex e Grok em 8 skills, workflow com design nos loops, teste de distribuição em 8, ESCOPO marcado e README com linha da skill. Reutilizados forma das SKILLs irmãs, molde de template, harness de launcher e contrato de manifests, sem dependência nova. `.agents/plugins/marketplace.json` e `plugin.json` da raiz precisaram de zero toque, pois não listam skills.
+- Marcado: T6 em `plan.md` com aceite e verificação em `[x]`, mais `Prova` e `Arquivos` reais sob a seção. `spec.md` não marcado, A3, A4, C1 e C2 seguem pendentes de fechamento na review.
+- Prova: `python "docs/tests/test-distribuicao.py" -v` -> 12 testes OK
+- Prova: `python "docs/tests/test-visual-contract.py" -v` -> 4 testes OK
+- Prova extra: `python "docs/vibe-design/tests/test-design.py" -v` -> 19 testes OK
+- Prova extra: `bash "docs/vibe-design/tests/test-design.sh"` -> pass=6 fail=0
+- Prova extra: `python "docs/tests/test-reparse-safety.py" -v` -> 12 testes OK
+- Arquivos: `vibe-design/SKILL.md`, `vibe-design/templates/design.md`, `vibe-design/references/modos-entrada.md`, `vibe-design/references/kit-e-tokens.md`, `docs/vibe-design/ARQUITETURA.md`, `docs/vibe-design/ANALISE.md`, `skills/vibe-design`, `.claude-plugin/marketplace.json`, `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, `.grok-plugin/marketplace.json`, `.github/workflows/contrato.yml`, `docs/tests/test-distribuicao.py`, `docs/ESCOPO.md`, `README.md`
+- Commit da task: pendente até o commit isolado, mensagem e hash serão registrados no resultado e no chat sem reabrir este artefato
+- Decisões críticas: omitir quando N/A
+
+### Feedback +
+
+- Distribuição, visual, motor design e reparse passaram de primeira após a virada para 8, sem diagnóstico de causa raiz. Paridade PowerShell do motor seguiu verde.
+
+### Feedback -
+
+- `rg --files` e `rg -n` indisponíveis no host Windows. Seleção por leitura direta dos pacotes irmãos, manifests, README, ESCOPO, workflow e suítes, sem varredura cega.
+- Linha nova no ESCOPO usou vírgula em vez de travessão longo, por regra de tom do repo.
+
+### Para a review
+
+- T6 fecha o pacote e a contagem em 8. A3, A4, C1 e C2 finais dependem da review conferir SKILL, template, references, manifests e README no diff.
+
 ## Handoff
 
-próxima T*
+vibe-review
 
-- Chat: recomende um novo chat focado na próxima T* elegível (T6). O `plan.md` e este `implement.md` vivos são a ponte. O commit da task já foi criado, sem push aqui.
+- Chat: recomende um novo chat focado em `vibe-review`. O `plan.md` e este `implement.md` vivos são a ponte. O commit da task já foi criado, sem push aqui.
 
 <!-- fatia seguinte: copie o bloco ## Fatia abaixo, não apague as anteriores -->

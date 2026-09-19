@@ -9,7 +9,7 @@
     {
       "name": "vibeflow",
       "version": "1.0.0",
-      "description": "Cadeia vibe-init, interview, spec, plan, analyze, implement e review.",
+      "description": "Cadeia vibe-init, interview, spec, design, plan, analyze, implement e review.",
       "category": "productivity",
       "source": {
         "type": "local",

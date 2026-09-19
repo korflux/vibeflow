@@ -142,19 +142,20 @@ Entrega o pacote completo da spec com UX genérica nos templates, cadeia com des
 
 ### T6: Pacote operacional da vibe-design
 
-- [ ] T6 concluída
+- [x] T6 concluída
 - **Spec:** A3, A4, C1, C2
 - **Decisões:** omitir quando N/A
 - **O quê:** Publica SKILL, template de design.md, references, arquitetura, análise e distribuição em 8 skills com o mesmo install das demais.
 - **Aceite:**
-  - [ ] SKILL descreve dois modos de entrada, três usos e handoff para plan sem editar código
-  - [ ] Template de design.md traz telas, disposição técnica, tokens, iconografia, responsivo, estados e prova visual
-  - [ ] Distribuição reconhece 8 skills com ponteiros, manifests e README atualizados
+  - [x] SKILL descreve dois modos de entrada, três usos e handoff para plan sem editar código
+  - [x] Template de design.md traz telas, disposição técnica, tokens, iconografia, responsivo, estados e prova visual
+  - [x] Distribuição reconhece 8 skills com ponteiros, manifests e README atualizados
 - **Verificação:**
-  - [ ] `python "docs/tests/test-distribuicao.py" -v`
-  - [ ] `python "docs/tests/test-visual-contract.py" -v`
+  - [x] `python "docs/tests/test-distribuicao.py" -v`
+  - [x] `python "docs/tests/test-visual-contract.py" -v`
 - **Deps:** T4, T5
-- **Arquivos:** `vibe-design/SKILL.md`, `vibe-design/templates/design.md`, `vibe-design/references/`, `docs/vibe-design/ARQUITETURA.md`, `docs/vibe-design/ANALISE.md`, `skills/vibe-design`, `.claude-plugin/`, `.codex-plugin/`, `.agents/plugins/`, `.grok-plugin/`, `plugin.json`, `README.md`
+- **Prova:** `python "docs/tests/test-distribuicao.py" -v` -> 12 testes OK; `python "docs/tests/test-visual-contract.py" -v` -> 4 testes OK; `python "docs/vibe-design/tests/test-design.py" -v` -> 19 testes OK; `bash "docs/vibe-design/tests/test-design.sh"` -> pass=6 fail=0; `python "docs/tests/test-reparse-safety.py" -v` -> 12 testes OK
+- **Arquivos:** `vibe-design/SKILL.md`, `vibe-design/templates/design.md`, `vibe-design/references/modos-entrada.md`, `vibe-design/references/kit-e-tokens.md`, `docs/vibe-design/ARQUITETURA.md`, `docs/vibe-design/ANALISE.md`, `skills/vibe-design`, `.claude-plugin/marketplace.json`, `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, `.grok-plugin/marketplace.json`, `.github/workflows/contrato.yml`, `docs/tests/test-distribuicao.py`, `docs/ESCOPO.md`, `README.md`
 - **Size:** `medium, 5/10, pacote novo com contrato compartilhado e dependência de motor pronto`
 - **Risk:** `medium, superfície instalável com regressão relevante em distribuição`
 
