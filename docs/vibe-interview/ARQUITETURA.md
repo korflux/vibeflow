@@ -58,6 +58,8 @@ O apply não usa arquivo intermediário, não transporta conteúdo entre arquivo
 
 O template é único. A entrevista phase usa Solicitação, Hipótese inicial, Trilha, Resultado e Handoff. O modo MVP acrescenta cobertura, mapa do produto, direção técnica, direção visual, operação e decisões críticas; seções exclusivas são omitidas no modo phase.
 
+Em entrevista de fluxo ou software, o Mapa do produto exige tabela de jornadas com Jornada, Ator, Gatilho, Objetivo, Telas envolvidas, Entrada, Saída e Estado crítico, e checklist de acesso com login, cadastro, recuperação, sessão, papéis, primeiro usuário, bloqueio e logout, com N/A explícito quando não aplicável. Jornada sem saída ou sem estado crítico não fecha. Texto livre sem tabela é defeito.
+
 O interview MVP não publica decisões em `REGRAS.md`. O handoff da entrevista é `vibe-spec`; a aprovação e o caminho permanecem no arquivo vivo.
 
 ## 6. Erros e testes

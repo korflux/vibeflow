@@ -28,10 +28,32 @@
 
 - T1 não prova comportamento novo, só fixa o verde. C1 final depende das tasks T2 a T6 permanecerem verdes.
 
+## Fatia T2
+
+- Feito: tabela de jornadas com 8 colunas e checklist de acesso com 8 itens tornados obrigatórios no template da interview, com N/A explícito e invariante de defeito. Ajuste mínimo em SKILL e arquitetura, mais 3 casos novos de template sem quebrar os 19 existentes. Reutilizados estrutura atual do template e catálogo de descoberta como referência interna, sem despejar catálogo no chat e sem dependência nova.
+- Marcado: T2 em `plan.md` com aceite e verificação em `[x]`, mais `Prova` e `Decisões` sob a seção. `spec.md` não marcado, A2 e C1 seguem pendentes de fechamento na review.
+- Prova: `python "docs/vibe-interview/tests/test-interview.py" -v` -> 22 testes OK (19 anteriores + 3 novos de template)
+- Prova: `bash "docs/vibe-interview/tests/test-interview.sh"` -> pass=6 fail=0
+- Arquivos: `vibe-interview/templates/interview.md`, `vibe-interview/SKILL.md`, `docs/vibe-interview/ARQUITETURA.md`, `docs/vibe-interview/tests/test-interview.py`
+- Commit da task: pendente até o commit isolado, mensagem e hash serão registrados no resultado e no chat sem reabrir este artefato
+- Decisões críticas: N/A, ajuste de template sem decisão de produto
+
+### Feedback +
+
+- Suíte Python passou com 22 testes e launcher sh com 6 passos, sem diagnóstico de causa raiz.
+
+### Feedback -
+
+- `rg --files` e `rg -n` indisponíveis no host Windows. Seleção por leitura direta dos 4 paths da T2 e das suítes, sem varredura cega.
+
+### Para a review
+
+- T2 prova contrato de template, não comportamento de motor. A2 e C1 finais dependem de T3 a T6 permanecerem verdes.
+
 ## Handoff
 
 próxima T*
 
-- Chat: recomende um novo chat focado na próxima T* elegível (T2 ou T3). O `plan.md` e este `implement.md` vivos são a ponte. O commit da task já foi criado, sem push aqui.
+- Chat: recomende um novo chat focado na próxima T* elegível (T3). O `plan.md` e este `implement.md` vivos são a ponte. O commit da task já foi criado, sem push aqui.
 
 <!-- fatia seguinte: copie o bloco ## Fatia abaixo, não apague as anteriores -->

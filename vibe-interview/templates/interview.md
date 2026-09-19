@@ -50,7 +50,11 @@ Entendi assim:
 
 ### Jornadas e telas
 
-<fluxos, telas, estados vazios, erro, loading e responsividade necessários>
+<!-- Obrigatório para fluxo ou software. Jornada sem saída ou sem estado crítico não fecha. Texto livre sem tabela é defeito. Use N/A explícito quando não houver jornada. -->
+
+| Jornada | Ator | Gatilho | Objetivo | Telas envolvidas | Entrada | Saída | Estado crítico |
+|---|---|---|---|---|---|---|---|
+| <frase curta> | <quem executa> | <o que inicia> | <o que deve obter> | <telas> | <dado ou ação de entrada> | <resultado> | <estado crítico ou N/A com motivo> |
 
 ### Dados e integrações
 
@@ -58,7 +62,16 @@ Entendi assim:
 
 ### Acesso e usuários
 
-<login, cadastro, primeiro usuário, recuperação, papéis, permissões e tenancy>
+<!-- Obrigatório. Checklist com N/A explícito quando não aplicável. -->
+
+- login: <como entra ou N/A com motivo>
+- cadastro: <como cria conta ou N/A com motivo>
+- recuperação: <como recupera acesso ou N/A com motivo>
+- sessão: <duração, renovação e revogação ou N/A com motivo>
+- papéis: <papéis e capacidades ou N/A com motivo>
+- primeiro usuário: <como é criado ou N/A com motivo>
+- bloqueio: <quando bloqueia e como desbloqueia ou N/A com motivo>
+- logout: <como sai e o que invalida ou N/A com motivo>
 
 ## Direção técnica
 

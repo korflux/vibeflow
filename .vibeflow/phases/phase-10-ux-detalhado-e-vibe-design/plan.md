@@ -65,18 +65,19 @@ Entrega o pacote completo da spec com UX genérica nos templates, cadeia com des
 
 ### T2: Jornadas genéricas na interview
 
-- [ ] T2 concluída
+- [x] T2 concluída
 - **Spec:** A2, C1
-- **Decisões:** omitir quando N/A
+- **Decisões:** N/A, ajuste de template sem decisão de produto
 - **O quê:** Torna a tabela de jornadas e o checklist de acesso obrigatórios no template da interview, com N/A explícito, e ajusta arquitetura e testes da skill.
 - **Aceite:**
-  - [ ] Template exige Jornada, Ator, Gatilho, Objetivo, Telas, Entrada, Saída e Estado crítico
-  - [ ] Checklist de acesso cobre login, cadastro, recuperação, sessão, papéis, primeiro usuário, bloqueio e logout
-  - [ ] Casos novos de template passam e antigos continuam verdes
+  - [x] Template exige Jornada, Ator, Gatilho, Objetivo, Telas, Entrada, Saída e Estado crítico
+  - [x] Checklist de acesso cobre login, cadastro, recuperação, sessão, papéis, primeiro usuário, bloqueio e logout
+  - [x] Casos novos de template passam e antigos continuam verdes
 - **Verificação:**
-  - [ ] `python "docs/vibe-interview/tests/test-interview.py" -v`
-  - [ ] `bash "docs/vibe-interview/tests/test-interview.sh"`
+  - [x] `python "docs/vibe-interview/tests/test-interview.py" -v`
+  - [x] `bash "docs/vibe-interview/tests/test-interview.sh"`
 - **Deps:** T1
+- **Prova:** `python "docs/vibe-interview/tests/test-interview.py" -v` -> 22 testes OK (19 anteriores + 3 novos de template); `bash "docs/vibe-interview/tests/test-interview.sh"` -> pass=6 fail=0
 - **Arquivos:** `vibe-interview/templates/interview.md`, `vibe-interview/SKILL.md`, `docs/vibe-interview/ARQUITETURA.md`, `docs/vibe-interview/tests/test-interview.py`
 - **Size:** `low, 3/10, vários arquivos do mesmo módulo com contrato interno e verificação por suíte`
 - **Risk:** `low`

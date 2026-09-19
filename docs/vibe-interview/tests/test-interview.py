@@ -15,6 +15,8 @@ from pathlib import Path
 SKILL_DIR = Path(__file__).resolve().parents[3] / "vibe-interview"
 SCRIPT = SKILL_DIR / "scripts" / "interview.py"
 POWERSHELL_SCRIPT = SKILL_DIR / "scripts" / "interview.ps1"
+# Caminho do template vivo; os contratos abaixo garantem jornadas e acesso obrigatórios.
+TEMPLATE = SKILL_DIR / "templates" / "interview.md"
 
 
 # Executa o motor Python e devolve processo e relatório, quando produzido.
@@ -196,6 +198,34 @@ class PythonContracts(unittest.TestCase):
         self.assertNotEqual(0, process.returncode)
         self.assertIn("MODO_INVALIDO", process.stderr)
 
+
+# Contratos do template vivo; garantem jornadas genéricas e checklist de acesso obrigatórios.
+class TemplateContracts(unittest.TestCase):
+    """Verifica que o template exige jornadas e acesso com N/A explícito."""
+
+    # Lê o template canônico sem depender de .vibeflow ou do motor.
+    def read_template(self) -> str:
+        return TEMPLATE.read_text(encoding="utf-8")
+
+    # Confirma que a tabela de jornadas exige as 8 colunas do contrato.
+    def test_jornadas_exigem_oito_colunas(self) -> None:
+        text = self.read_template()
+        for coluna in ("Jornada", "Ator", "Gatilho", "Objetivo", "Telas envolvidas", "Entrada", "Saída", "Estado crítico"):
+            self.assertIn(coluna, text)
+
+    # Confirma que o checklist de acesso cobre os 8 itens com N/A explícito.
+    def test_acesso_exige_checklist_com_na(self) -> None:
+        text = self.read_template().lower()
+        for item in ("login", "cadastro", "recuperação", "sessão", "papéis", "primeiro usuário", "bloqueio", "logout"):
+            self.assertIn(item, text)
+        self.assertIn("n/a", text)
+
+    # Confirma que o template declara o invariante de jornada incompleta como defeito.
+    def test_jornada_incompleta_e_defeito(self) -> None:
+        text = self.read_template()
+        self.assertIn("sem saída", text)
+        self.assertIn("sem estado crítico", text)
+        self.assertIn("Texto livre sem tabela é defeito", text)
 
 
 # Verifica se existe uma versão real de PowerShell 7, única suportada pelo motor gêmeo.

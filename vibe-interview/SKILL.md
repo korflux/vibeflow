@@ -76,6 +76,7 @@ Leia `references/mvp-discovery.md` somente no modo MVP (software/sistema). O cat
 5. Cubra todos os domínios relevantes do catálogo. Marque cada um como `DECIDIDO`, `ASSUMIDO`, `N/A` ou `PENDENTE CRÍTICO`, com evidência. Não encerre com pendente crítico.
 6. Identifique decisões críticas estáveis com IDs por domínio, por exemplo `AUTH-01`, `DATA-01` e `INFRA-01`. Registre opção, estado, motivo e impacto.
 7. Segurança entra desde o início. Recuperação administrativa pode usar break-glass temporário e auditado via ambiente. Nunca recomende senha master permanente.
+8. Em entrevista de fluxo ou software, o Mapa do produto exige tabela de jornadas com Jornada, Ator, Gatilho, Objetivo, Telas envolvidas, Entrada, Saída e Estado crítico, e checklist de acesso com login, cadastro, recuperação, sessão, papéis, primeiro usuário, bloqueio e logout, com N/A explícito. Jornada sem saída ou sem estado crítico não fecha. Texto livre sem tabela é defeito.
 
 O módulo prefere uma primeira versão pequena e operável, sem empurrar arquitetura sofisticada. Minimalismo não autoriza cortar validação, segurança, acessibilidade, backup ou recuperação necessários.
 
