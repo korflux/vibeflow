@@ -147,6 +147,28 @@
 
 - T6 fecha o pacote e a contagem em 8. A3, A4, C1 e C2 finais dependem da review conferir SKILL, template, references, manifests e README no diff.
 
+## Fatia R1
+
+- Feito: fechado o Nit da review Etapa 1. Conferência do `plan.md` alinhada ao estado real, item `Aprovação humana` em `[x]`, coerente com `# Status: aprovado`, T1 a T6 concluídas com prova e `spec.md` com aprovação em `[x]`. Nenhum source, template, teste ou lockfile tocado.
+- Marcado: R1 em `review.md` com `[x]`, Conferência em `plan.md` com `[x]`. `spec.md` não marcado.
+- Prova: `git diff --check` -> limpo
+- Prova: `python "docs/tests/test-distribuicao.py" -v` -> 12 testes OK
+- Arquivos: `.vibeflow/phases/phase-10-ux-detalhado-e-vibe-design/plan.md`, `.vibeflow/phases/phase-10-ux-detalhado-e-vibe-design/review.md`, `.vibeflow/phases/phase-10-ux-detalhado-e-vibe-design/implement.md`
+- Commit da task: pendente até o commit isolado, mensagem e hash serão registrados no resultado e no chat sem reabrir este artefato
+- Decisões críticas: N/A, ajuste processual sem decisão de produto
+
+### Feedback +
+
+- Correção de 1 caractere mais trilha, sem regressão na suíte de distribuição.
+
+### Feedback -
+
+- Nada a registrar.
+
+### Para a review
+
+- R1 fechado como Nit sem bloqueio. Veredito Approve da Etapa 1 permanece válido. Re-review confirma `plan.md:171` em `[x]` e R1 em `[x]`.
+
 ## Handoff
 
 vibe-review

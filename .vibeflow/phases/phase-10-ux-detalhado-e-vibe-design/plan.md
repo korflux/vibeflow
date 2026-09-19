@@ -168,7 +168,7 @@ Entrega o pacote completo da spec com UX genérica nos templates, cadeia com des
 - [x] T1 estabelece ponto de entrada real (smoke test / walking skeleton)
 - [x] UI greenfield/sem DS → T* de kit antes das telas (ou N/A)
 - [x] Cada T* possui unidade de execução, verificação e commit própria
-- [ ] Aprovação humana (leu o arquivo e confirmou)
+- [x] Aprovação humana (leu o arquivo e confirmou)
 
 ## Handoff
 
