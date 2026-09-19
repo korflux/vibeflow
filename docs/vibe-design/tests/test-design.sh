@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+# Contratos do launcher vibe-design/scripts/design.sh: motor, --apply, --dir e --mvp.
+set -u
+set -o pipefail
+
+HERE=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
+# shellcheck source=../../tests/launcher-harness.sh
+. "$HERE/../../tests/launcher-harness.sh"
+
+LAUNCHER="$HERE/../../../vibe-design/scripts/design.sh"
+set -e
+
+# 1. Sem .vibeflow o motor responde INIT_AUSENTE.
+s=$(new_sandbox)
+root=$(native_root "$s")
+run_sh bash "$LAUNCHER" --root "$root"
+assert "$( [ "$last_rc" -ne 0 ] && grep -q INIT_AUSENTE "$last_err" && echo 1 || echo 0 )" \
+  "1-init-ausente" "rc=$last_rc err=$(cat "$last_err")"
+rm -rf "$s"
+
+# 2. --dir reusa a pasta da spec e prepara o arquivo vivo.
+s=$(new_sandbox)
+seed_vibeflow "$s"
+mkdir -p "$s/.vibeflow/phases/phase-1-lock"
+printf 's\n' >"$s/.vibeflow/phases/phase-1-lock/spec.md"
+root=$(native_root "$s")
+run_sh bash "$LAUNCHER" --root "$root" --apply --dir phase-1-lock
+dest="$s/.vibeflow/phases/phase-1-lock/design.md"
+assert "$( [ "$last_rc" -eq 0 ] && [ -f "$dest" ] && [ ! -s "$dest" ] && [ ! -d "$s/.vibeflow/phases/phase-2-lock" ] && echo 1 || echo 0 )" \
+  "2-apply-dir" "rc=$last_rc dest=$dest err=$(cat "$last_err")"
+rm -rf "$s"
+
+# 3. --dir sem spec devolve DESIGN_SEM_SPEC: a flag chegou e nada foi criado.
+s=$(new_sandbox)
+seed_vibeflow "$s"
+mkdir -p "$s/.vibeflow/phases/phase-1-so-interview"
+printf 'i\n' >"$s/.vibeflow/phases/phase-1-so-interview/interview.md"
+root=$(native_root "$s")
+run_sh bash "$LAUNCHER" --root "$root" --apply --dir phase-1-so-interview
+assert "$( [ "$last_rc" -ne 0 ] && grep -q DESIGN_SEM_SPEC "$last_err" && [ ! -f "$s/.vibeflow/phases/phase-1-so-interview/design.md" ] && echo 1 || echo 0 )" \
+  "3-dir-sem-spec" "rc=$last_rc err=$(cat "$last_err")"
+rm -rf "$s"
+
+# 4. --mvp reusa o alvo especial sem abrir phase.
+s=$(new_sandbox)
+seed_vibeflow "$s"
+mkdir -p "$s/.vibeflow/mvp"
+printf 's\n' >"$s/.vibeflow/mvp/spec.md"
+root=$(native_root "$s")
+run_sh bash "$LAUNCHER" --root "$root" --apply --mvp
+dest="$s/.vibeflow/mvp/design.md"
+phase_count=$(find "$s/.vibeflow/phases" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')
+assert "$( [ "$last_rc" -eq 0 ] && [ -f "$dest" ] && [ ! -s "$dest" ] && [ "$phase_count" = 0 ] && echo 1 || echo 0 )" \
+  "4-apply-mvp" "rc=$last_rc phases=$phase_count dest=$dest err=$(cat "$last_err")"
+rm -rf "$s"
+
+# 5. Flag desconhecida para no launcher.
+s=$(new_sandbox)
+root=$(native_root "$s")
+run_sh bash "$LAUNCHER" --root "$root" --force
+assert "$( [ "$last_rc" -eq 2 ] && grep -q 'uso: design.sh' "$last_err" && echo 1 || echo 0 )" \
+  "5-flag-desconhecida" "rc=$last_rc err=$(cat "$last_err")"
+rm -rf "$s"
+
+# 6. Sem motor: recusa explícita.
+s=$(new_sandbox)
+root=$(native_root "$s")
+run_without_motors bash "$LAUNCHER" --root "$root"
+assert "$( [ "$last_rc" -eq 1 ] && grep -q 'precisa de Python 3 ou PowerShell' "$last_err" && echo 1 || echo 0 )" \
+  "6-sem-motor" "rc=$last_rc err=$(cat "$last_err")"
+rm -rf "$s"
+
+finish

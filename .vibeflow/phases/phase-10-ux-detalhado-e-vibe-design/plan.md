@@ -122,19 +122,20 @@ Entrega o pacote completo da spec com UX genérica nos templates, cadeia com des
 
 ### T5: Motor executável da vibe-design
 
-- [ ] T5 concluída
+- [x] T5 concluída
 - **Spec:** A3, C1
 - **Decisões:** omitir quando N/A
 - **O quê:** Cria os três motores com inventário, resolução de alvo, relatório gitignored e preservação do vivo, mais a suíte de contrato da skill.
 - **Aceite:**
-  - [ ] Flags públicas iguais nos dois motores com launcher sem versão degradada
-  - [ ] Apply prepara design.md só quando ausente e preserva bytes existentes
-  - [ ] Suíte nova passa incluindo preservação e paridade quando pwsh existir
+  - [x] Flags públicas iguais nos dois motores com launcher sem versão degradada
+  - [x] Apply prepara design.md só quando ausente e preserva bytes existentes
+  - [x] Suíte nova passa incluindo preservação e paridade quando pwsh existir
 - **Verificação:**
-  - [ ] `python "docs/vibe-design/tests/test-design.py" -v`
-  - [ ] `bash "docs/vibe-design/tests/test-design.sh"`
-  - [ ] `python "docs/tests/test-reparse-safety.py" -v`
+  - [x] `python "docs/vibe-design/tests/test-design.py" -v`
+  - [x] `bash "docs/vibe-design/tests/test-design.sh"`
+  - [x] `python "docs/tests/test-reparse-safety.py" -v`
 - **Deps:** T4
+- **Prova:** `python "docs/vibe-design/tests/test-design.py" -v` -> 19 testes OK; `bash "docs/vibe-design/tests/test-design.sh"` -> pass=6 fail=0; `python "docs/tests/test-reparse-safety.py" -v` -> 12 testes OK
 - **Arquivos:** `vibe-design/scripts/design.py`, `vibe-design/scripts/design.ps1`, `vibe-design/scripts/design.sh`, `docs/vibe-design/tests/test-design.py`, `docs/vibe-design/tests/test-design.sh`
 - **Size:** `medium, 4/10, módulo novo com contrato interno e investigação pequena de alvo`
 - **Risk:** `medium, escrita em disco com proteções que exige prova de preservação`

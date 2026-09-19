@@ -96,10 +96,35 @@
 
 - T4 prova contrato transversal, não pacote vibe-design. A4 e C1 finais dependem de T5 e T6 permanecerem verdes.
 
+## Fatia T5
+
+- Feito: três motores com inventário, resolução de alvo por spec pendente, relatório design-report.json gitignored e preservação do vivo byte a byte, com gate de plan DESIGN_JA_PLANEJADO e pré-requisito de spec DESIGN_SEM_SPEC. Suíte nova de contrato com 15 casos Python e 4 de paridade PowerShell, mais launcher sh com 6 passos. Reutilizados helpers de slug, inventário, relatório e harness dos motores irmãos, sem dependência nova.
+- Marcado: T5 em `plan.md` com aceite e verificação em `[x]`, mais `Prova` sob a seção. `spec.md` não marcado, A3 e C1 seguem pendentes de fechamento na review, pois SKILL, template e references ficam para T6.
+- Prova: `python "docs/vibe-design/tests/test-design.py" -v` -> 19 testes OK
+- Prova: `bash "docs/vibe-design/tests/test-design.sh"` -> pass=6 fail=0
+- Prova: `python "docs/tests/test-reparse-safety.py" -v` -> 12 testes OK
+- Prova extra: `python "docs/tests/test-distribuicao.py" -v` -> 12 testes OK, contagem em 7 skills preservada
+- Arquivos: `vibe-design/scripts/design.py`, `vibe-design/scripts/design.ps1`, `vibe-design/scripts/design.sh`, `docs/vibe-design/tests/test-design.py`, `docs/vibe-design/tests/test-design.sh`
+- Commit da task: pendente até o commit isolado, mensagem e hash serão registrados no resultado e no chat sem reabrir este artefato
+- Decisões críticas: omitir quando N/A
+
+### Feedback +
+
+- Suíte Python passou com 19 testes e launcher sh com 6 passos, com paridade PowerShell verde, sem diagnóstico de causa raiz. Reparse safety e distribuição permaneceram verdes.
+
+### Feedback -
+
+- `rg --files` e `rg -n` indisponíveis no host Windows. Seleção por leitura direta dos motores irmãos e das suítes, sem varredura cega.
+- Correção única de sintaxe no teste novo antes do verde, aspas em `report["actions"]`, sem impacto no motor.
+
+### Para a review
+
+- T5 prova motor e preservação, não pacote operacional. A3 e C1 finais dependem de T6 permanecer verde.
+
 ## Handoff
 
 próxima T*
 
-- Chat: recomende um novo chat focado na próxima T* elegível (T5). O `plan.md` e este `implement.md` vivos são a ponte. O commit da task já foi criado, sem push aqui.
+- Chat: recomende um novo chat focado na próxima T* elegível (T6). O `plan.md` e este `implement.md` vivos são a ponte. O commit da task já foi criado, sem push aqui.
 
 <!-- fatia seguinte: copie o bloco ## Fatia abaixo, não apague as anteriores -->
