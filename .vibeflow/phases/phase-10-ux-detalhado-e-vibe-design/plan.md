@@ -103,18 +103,19 @@ Entrega o pacote completo da spec com UX genérica nos templates, cadeia com des
 
 ### T4: Contrato transversal com design condicional
 
-- [ ] T4 concluída
+- [x] T4 concluída
 - **Spec:** A4, C1
 - **Decisões:** omitir quando N/A
 - **O quê:** Atualiza cadeia, handoffs e conferências para design entre spec e plan somente com UI visível, sem tocar na contagem de skills da distribuição.
 - **Aceite:**
-  - [ ] Cadeia registra design condicional e N/A explícito sem tela
-  - [ ] Plan exige design.md aprovado com UI visível e analyze cruza design no max
-  - [ ] Fluxo MVP e contrato visual continuam verdes
+  - [x] Cadeia registra design condicional e N/A explícito sem tela
+  - [x] Plan exige design.md aprovado com UI visível e analyze cruza design no max
+  - [x] Fluxo MVP e contrato visual continuam verdes
 - **Verificação:**
-  - [ ] `python "docs/tests/test-mvp-flow.py" -v`
-  - [ ] `python "docs/tests/test-visual-contract.py" -v`
+  - [x] `python "docs/tests/test-mvp-flow.py" -v`
+  - [x] `python "docs/tests/test-visual-contract.py" -v`
 - **Deps:** T2, T3
+- **Prova:** `python "docs/tests/test-mvp-flow.py" -v` -> 2 testes OK; `python "docs/tests/test-visual-contract.py" -v` -> 4 testes OK
 - **Arquivos:** `.vibeflow/REGRAS.md`, `vibe-plan/SKILL.md`, `vibe-analyze/SKILL.md`, `docs/ESCOPO.md`
 - **Size:** `medium, 6/10, vários subsistemas com contrato compartilhado e verificação por integração`
 - **Risk:** `medium, contrato compartilhado com regressão relevante em cadeia`

@@ -48,6 +48,8 @@ modo: reuse · alvo: phase-1-lock-bloco · spec: sim · spec-status: aprovado ·
 | Spec rascunho sem pedido de plan | Parar. Pedir leitura e aprovação da spec |
 | Intenção, sucesso ou limites frouxos | Devolver para `vibe-interview` ou `vibe-spec`. Não completar no chute |
 | Dúvida pontual de ordem técnica | Resolver via chat (Q + RECOMENDO) |
+| Com UI visível sem `design.md` aprovado na mesma pasta | Parar. Encaminhar para `vibe-design` |
+| Sem UI visível | Registrar N/A explícito no plan, sem bloqueio |
 | `analyze.md` já existente no alvo | Não sobrescrever. Pedido novo exige outra fase |
 
 ```text
@@ -61,7 +63,7 @@ RECOMENDO: <opção>, <1 linha explicando o porquê e impacto>
 Antes de fatiar, audite a spec e o ambiente:
 
 
-1. **Spec sólida:** A*/C* observáveis, limites claros de Fora, direção visual definida se houver UI, caminhos existentes ou acordados.
+1. **Spec sólida:** A*/C* observáveis, limites claros de Fora, direção visual definida se houver UI, caminhos existentes ou acordados. Com UI visível, exige `design.md` aprovado na mesma pasta como entrada do fatiamento; sem UI, registra N/A explícito.
 2. **Validação de Ferramentas de Teste e Suporte:**
    - **Gitleaks:** Se o repositório/CI prevê varredura de segredos ou verificação de credenciais, verificar se o executável `gitleaks` está disponível no ambiente. Se ausente, o plano DEVE alocar uma task inicial (ex.: T1 de setup) para instalar/configurar o gitleaks.
    - **Validação visual:** Se a entrega envolver frontend, interface web, renderização DOM ou testes de ponta a ponta em navegador, selecionar nesta ordem, navegador integrado (`@Browser` ou equivalente) primeiro quando disponível, MCP Server `chrome-devtools` para snapshot, screenshot, DOM, estilos, console, rede e assets, ou Playwright somente se já existir no repositório ou for solicitado para fluxos repetíveis e assertions.

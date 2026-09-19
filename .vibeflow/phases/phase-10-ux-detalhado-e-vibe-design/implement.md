@@ -72,10 +72,34 @@
 
 - T3 prova contrato de template, não comportamento de motor. A1, A2 e C1 finais dependem de T4 a T6 permanecerem verdes.
 
+## Fatia T4
+
+- Feito: cadeia com design entre spec e plan somente com UI visível e N/A explícito sem tela, com handoff da spec para vibe-design e da design para vibe-plan. Plan exige design.md aprovado com UI visível, analyze no max cruza design, e ESCOPO registra vibe-design pendente sem mudar a contagem da distribuição. Reutilizados bloco cadeia existente, gate de plan e varredura de analyze, sem motor novo e sem dependência nova.
+- Marcado: T4 em `plan.md` com aceite e verificação em `[x]`, mais `Prova` sob a seção. `spec.md` não marcado, A4 e C1 seguem pendentes de fechamento na review.
+- Prova: `python "docs/tests/test-mvp-flow.py" -v` -> 2 testes OK
+- Prova: `python "docs/tests/test-visual-contract.py" -v` -> 4 testes OK
+- Prova extra: `python "docs/tests/test-distribuicao.py" -v` -> 12 testes OK, contagem em 7 skills preservada
+- Arquivos: `.vibeflow/REGRAS.md`, `vibe-plan/SKILL.md`, `vibe-analyze/SKILL.md`, `docs/ESCOPO.md`
+- Commit da task: pendente até o commit isolado, mensagem e hash serão registrados no resultado e no chat sem reabrir este artefato
+- Decisões críticas: omitir quando N/A
+
+### Feedback +
+
+- Suítes de fluxo MVP e contrato visual passaram de primeira, sem diagnóstico de causa raiz. Distribuição confirmou 7 skills, sem toque na contagem.
+
+### Feedback -
+
+- `rg --files` e `rg -n` indisponíveis no host Windows. Seleção por leitura direta dos 4 paths da T4 e das suítes, sem varredura cega.
+- Bloco `VIBEFLOW:CADEIA` preservado dentro dos marcadores para o init não reverter; nota condicional gravada fora dos marcadores.
+
+### Para a review
+
+- T4 prova contrato transversal, não pacote vibe-design. A4 e C1 finais dependem de T5 e T6 permanecerem verdes.
+
 ## Handoff
 
 próxima T*
 
-- Chat: recomende um novo chat focado na próxima T* elegível (T4). O `plan.md` e este `implement.md` vivos são a ponte. O commit da task já foi criado, sem push aqui.
+- Chat: recomende um novo chat focado na próxima T* elegível (T5). O `plan.md` e este `implement.md` vivos são a ponte. O commit da task já foi criado, sem push aqui.
 
 <!-- fatia seguinte: copie o bloco ## Fatia abaixo, não apague as anteriores -->

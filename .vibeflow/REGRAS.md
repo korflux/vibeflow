@@ -11,6 +11,8 @@
 | max | interview → spec → plan → analyze → implement → review | pedido toca auth, pagamento, segredo, perda de dados, produção, alto blast radius ou baseline MVP de software |
 <!-- VIBEFLOW:CADEIA end -->
 
+Design (`vibe-design`, artefato `design.md` na mesma pasta) entra entre spec e plan somente com UI visível. Sem UI visível, registra N/A explícito em vez de bloqueio. Com UI visível, o handoff da spec é `vibe-design` e o da design é `vibe-plan`. Toda rota com spec exige UX detalhada F*, e o analyze no max cruza design com UI visível.
+
 ## Projeto
 
 Cadeia de skills para inicializar e conduzir o trabalho de agentes num repo. Este repositório é a fonte canônica das skills `vibe-*` e do contrato `.vibeflow/`. Não é um app de produção.
