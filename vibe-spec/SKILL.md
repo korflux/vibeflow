@@ -90,7 +90,7 @@ Não pergunte se pode salvar e não cole o corpo do documento no chat.
    - Modo MVP:
      `pwsh "<skill>/scripts/spec.ps1" -Apply -Mvp`
      `bash "<skill>/scripts/spec.sh" --apply --mvp`
-2. Escreva ou atualize diretamente o arquivo vivo. Omita seções não aplicáveis. Comandos de teste somente se existirem no repo. Sem `FR-00N`, sem mural de user stories e sem CSS/paleta: a spec fecha comportamento e aceite.
+2. Escreva ou atualize diretamente o arquivo vivo. Omita seções não aplicáveis. Comandos de teste somente se existirem no repo. Sem `FR-00N`, sem mural de user stories e sem CSS/paleta: a spec fecha comportamento e aceite. Quando a entrega tem fluxo ou UX, descreva cada fluxo como `F*` com Jornada, Rota, Gatilho, Pré-condição, Superfície por passo, Passos numerados com ação e resposta, Validações, Erros com código e mensagem segura, Estados com vazio, loading, erro, sucesso e sem permissão, e Aceite `A*`. Passo sem superfície é defeito. Superfície por passo é exatamente uma de tela, popup, drawer, inline, redirect ou toast.
 3. Responda no chat apenas:
 
 ```text
@@ -119,6 +119,6 @@ Rascunho sem "aprovado" e sem pedido explícito de plan não autoriza avançar p
 ## 6. Fechar
 
 Não commite no git. Não dispare a próxima skill a menos que o usuário tenha pedido explicitamente para avançar (§5).
-Informe que o arquivo vivo `spec.md` entra no git e que `spec-report.json` fica de fora. Recomende abrir um novo chat para `vibe-plan`; continuar no mesmo chat é permitido somente por escolha consciente do humano. O `spec.md` vivo e o handoff são a ponte entre chats.
-Handoff registrado no arquivo: `vibe-plan`.
+Informe que o arquivo vivo `spec.md` entra no git e que `spec-report.json` fica de fora. Recomende abrir um novo chat para `vibe-design` com UI visível, senão `vibe-plan`; continuar no mesmo chat é permitido somente por escolha consciente do humano. O `spec.md` vivo e o handoff são a ponte entre chats.
+Handoff registrado no arquivo: `vibe-design` com UI visível, senão `vibe-plan`. Não pular design em silêncio. `plan.md` existente bloqueia nova escrita, pedido novo exige outra phase.
 

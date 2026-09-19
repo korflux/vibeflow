@@ -15,6 +15,8 @@ from pathlib import Path
 SKILL_DIR = Path(__file__).resolve().parents[3] / "vibe-spec"
 SCRIPT = SKILL_DIR / "scripts" / "spec.py"
 POWERSHELL_SCRIPT = SKILL_DIR / "scripts" / "spec.ps1"
+# Caminho do template vivo; os contratos abaixo garantem molde F* com superfície e handoff condicional.
+TEMPLATE = SKILL_DIR / "templates" / "spec.md"
 
 
 # Executa o motor Python e devolve processo e relatório, quando produzido.
@@ -194,6 +196,36 @@ class PythonContracts(unittest.TestCase):
         self.assertNotEqual(0, process.returncode)
         self.assertIn("MODO_INVALIDO", process.stderr)
 
+
+
+# Contratos do template vivo; garantem molde F* com superfície por passo e handoff condicional.
+class TemplateContracts(unittest.TestCase):
+    """Verifica que o template exige F*, superfície e design ou plan conforme UI."""
+
+    # Lê o template canônico sem depender de .vibeflow ou do motor.
+    def read_template(self) -> str:
+        return TEMPLATE.read_text(encoding="utf-8")
+
+    # Confirma que cada F* exige os dez campos do contrato.
+    def test_fluxo_f_exige_dez_campos(self) -> None:
+        text = self.read_template()
+        for campo in ("Jornada", "Rota", "Gatilho", "Pré-condição", "Superfície por passo", "Passos", "Validações", "Erros", "Estados", "Aceite"):
+            self.assertIn(campo, text)
+
+    # Confirma que passo sem superfície é defeito com as seis superfícies fechadas.
+    def test_passo_sem_superficie_e_defeito(self) -> None:
+        text = self.read_template()
+        self.assertIn("sem superfície", text.lower())
+        self.assertIn("defeito", text.lower())
+        for superficie in ("tela", "popup", "drawer", "inline", "redirect", "toast"):
+            self.assertIn(superficie, text.lower())
+
+    # Confirma que o handoff aponta design com UI visível e plan sem UI.
+    def test_handoff_condicional_aponta_design_ou_plan(self) -> None:
+        text = self.read_template()
+        self.assertIn("vibe-design", text)
+        self.assertIn("vibe-plan", text)
+        self.assertIn("UI visível", text)
 
 
 # Verifica se existe uma versão real de PowerShell 7, única suportada pelo motor gêmeo.

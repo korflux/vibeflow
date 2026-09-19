@@ -50,10 +50,32 @@
 
 - T2 prova contrato de template, não comportamento de motor. A2 e C1 finais dependem de T3 a T6 permanecerem verdes.
 
+## Fatia T3
+
+- Feito: área genérica trocada por molde F* com Jornada, Rota, Gatilho, Pré-condição, Superfície por passo, Passos com ação e resposta, Validações, Erros com código e mensagem segura, Estados e Aceite A*, com invariante de passo sem superfície como defeito. Handoff condicional para vibe-design com UI visível e vibe-plan sem UI, com token visual como dono da design e bloqueio de nova escrita com plan existente. Reutilizados estrutura atual do template, catálogo de erros SPEC_JA_PLANEJADA e padrão TemplateContracts da T2, sem motor novo e sem dependência nova.
+- Marcado: T3 em `plan.md` com aceite e verificação em `[x]`, mais `Prova` sob a seção. `spec.md` não marcado, A1, A2 e C1 seguem pendentes de fechamento na review.
+- Prova: `python "docs/vibe-spec/tests/test-spec.py" -v` -> 22 testes OK (19 anteriores + 3 novos de template)
+- Prova: `bash "docs/vibe-spec/tests/test-spec.sh"` -> pass=6 fail=0
+- Arquivos: `vibe-spec/templates/spec.md`, `vibe-spec/SKILL.md`, `vibe-spec/references/ui-visual-direction.md`, `docs/vibe-spec/ARQUITETURA.md`, `docs/vibe-spec/tests/test-spec.py`
+- Commit da task: pendente até o commit isolado, mensagem e hash serão registrados no resultado e no chat sem reabrir este artefato
+- Decisões críticas: omitir quando N/A
+
+### Feedback +
+
+- Suíte Python passou com 22 testes e launcher sh com 6 passos, sem diagnóstico de causa raiz. Motor já bloqueava SPEC_JA_PLANEJADA, sem correção de causa raiz necessária.
+
+### Feedback -
+
+- `rg --files` e `rg -n` indisponíveis no host Windows. Seleção por `glob` dos 5 paths da T3 e leitura direta das suítes, sem varredura cega.
+
+### Para a review
+
+- T3 prova contrato de template, não comportamento de motor. A1, A2 e C1 finais dependem de T4 a T6 permanecerem verdes.
+
 ## Handoff
 
 próxima T*
 
-- Chat: recomende um novo chat focado na próxima T* elegível (T3). O `plan.md` e este `implement.md` vivos são a ponte. O commit da task já foi criado, sem push aqui.
+- Chat: recomende um novo chat focado na próxima T* elegível (T4). O `plan.md` e este `implement.md` vivos são a ponte. O commit da task já foi criado, sem push aqui.
 
 <!-- fatia seguinte: copie o bloco ## Fatia abaixo, não apague as anteriores -->

@@ -10,7 +10,9 @@ Fechar o que plan/implement **não** inventam. Não é CSS. Sem UI user-visible:
 | Copy | empty/erro, vocabulário do usuário | Só se a fatia expõe |
 | Prova | E2E + screenshot do alvo | Sempre se UI web |
 
-Não fechar na spec: paleta hex, type pairing, “signature” artística.
+Não fechar na spec: paleta hex, type pairing, “signature” artística. Token visual pertence à design.
+
+Handoff condicional: com UI visível a spec entrega para `vibe-design`, sem UI visível entrega para `vibe-plan`. Design e plan não inventam comportamento.
 
 A*/C* de UI são observáveis. Não usar “bonito” / “moderno” como C*.
 

@@ -84,18 +84,19 @@ Entrega o pacote completo da spec com UX genérica nos templates, cadeia com des
 
 ### T3: Molde F* na spec com handoff condicional
 
-- [ ] T3 concluída
+- [x] T3 concluída
 - **Spec:** A1, A2, C1
 - **Decisões:** omitir quando N/A
 - **O quê:** Troca área genérica por fluxo F* com superfície por passo e handoff condicional para design ou plan, e ajusta SKILL, referência e testes.
 - **Aceite:**
-  - [ ] Cada F* tem Jornada, Rota, Gatilho, Pré-condição, Superfície por passo, Passos, Validações, Erros, Estados e Aceite
-  - [ ] Passo sem superfície é defeito e plan existente bloqueia nova escrita
-  - [ ] Handoff aponta vibe-design com UI visível e vibe-plan sem UI
+  - [x] Cada F* tem Jornada, Rota, Gatilho, Pré-condição, Superfície por passo, Passos, Validações, Erros, Estados e Aceite
+  - [x] Passo sem superfície é defeito e plan existente bloqueia nova escrita
+  - [x] Handoff aponta vibe-design com UI visível e vibe-plan sem UI
 - **Verificação:**
-  - [ ] `python "docs/vibe-spec/tests/test-spec.py" -v`
-  - [ ] `bash "docs/vibe-spec/tests/test-spec.sh"`
+  - [x] `python "docs/vibe-spec/tests/test-spec.py" -v`
+  - [x] `bash "docs/vibe-spec/tests/test-spec.sh"`
 - **Deps:** T1
+- **Prova:** `python "docs/vibe-spec/tests/test-spec.py" -v` -> 22 testes OK (19 anteriores + 3 novos de template); `bash "docs/vibe-spec/tests/test-spec.sh"` -> pass=6 fail=0
 - **Arquivos:** `vibe-spec/templates/spec.md`, `vibe-spec/SKILL.md`, `vibe-spec/references/ui-visual-direction.md`, `docs/vibe-spec/ARQUITETURA.md`, `docs/vibe-spec/tests/test-spec.py`
 - **Size:** `medium, 4/10, template mais SKILL e referência com investigação pequena de handoff`
 - **Risk:** `low`

@@ -53,6 +53,8 @@ O script não escolhe comportamento, não pergunta, não preenche markdown e nã
 
 Seções: Objetivo, Inventário quando houver lista, Suposições e decisões, Escopo e comportamento, Fora, Direção visual quando aplicável, Checklist de entrega, Implementação delta, Como provar, Boundaries e Handoff.
 
+Quando a entrega tem fluxo ou UX, o Escopo usa o molde `F*` com Jornada, Rota, Gatilho, Pré-condição, Superfície por passo, Passos numerados com ação e resposta, Validações, Erros com código e mensagem segura, Estados com vazio, loading, erro, sucesso e sem permissão, e Aceite `A*`. Passo sem superfície é defeito. Handoff é `vibe-design` com UI visível, senão `vibe-plan`. `plan.md` existente bloqueia nova escrita, pedido novo exige outra phase.
+
 Sem Open Questions, mural de user story ou CSS na spec. IDs de decisões críticas do MVP atravessam o plan; publicação de decisão vigente só ocorre após review aprovada e confirmação humana.
 
 ## 6. Erros e testes

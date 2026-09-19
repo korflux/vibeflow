@@ -28,14 +28,24 @@
 
 ## Escopo e comportamento
 
-### 1. <área>
+### 1. Fluxo F*:<nome>
 
-<!-- paths canônicos só se forem âncora da fatia -->
+<!-- Obrigatório quando a rota tem spec. Passo sem superfície é defeito. Superfície por passo é exatamente uma de tela, popup, drawer, inline, redirect ou toast. Use N/A explícito sem UI. -->
 
-- comportamento observável (dado X, sistema faz Y)
-- invariantes
-- vazio / erro / sem permissão, se importar
-- o que reutilizar
+- Jornada: <jornada da interview ou N/A com motivo>
+- Rota: <rota da cadeia ou N/A>
+- Gatilho: <o que inicia>
+- Pré-condição: <estado exigido antes do passo 1>
+- Superfície por passo: <tela, popup, drawer, inline, redirect ou toast por passo>
+- Passos:
+  1. <ação> -> <resposta> [superfície: <uma das seis>]
+- Validações: <regra por passo>
+- Erros: <CÓDIGO> (<mensagem segura e causa>)
+- Estados: <vazio, loading, erro, sucesso, sem permissão>
+- Aceite: <A* observável>
+- Reutilizar: <seção atual, helper ou contrato existente>
+
+<!-- Repita o bloco F* por fluxo. Área genérica sem F* só quando a entrega não tem fluxo nem UX. -->
 
 ### Fora
 
@@ -43,7 +53,7 @@
 
 ## Direção visual
 
-<!-- omitir se a entrega não for user-visible -->
+<!-- omitir se a entrega não for user-visible. Spec fecha comportamento e superfície, nunca hex ou token, token pertence à design. -->
 
 - Modo: reuso DS em `…` | greenfield | redesign de …
 - Tom: …
@@ -126,9 +136,11 @@ path/arquivo    # papel na entrega
 
 ## Handoff
 
-vibe-plan
+<!-- Com UI visível: vibe-design. Sem UI visível: vibe-plan. Não pular design em silêncio. Plan existente bloqueia nova escrita, pedido novo exige outra phase. -->
+
+vibe-design com UI visível, senão vibe-plan
 <!-- No MVP, acrescentar: rota: max -->
 
-- Chat: recomende novo chat para `vibe-plan`; continuidade no mesmo chat só por escolha consciente. O `spec.md` vivo é a ponte.
+- Chat: recomende novo chat para `vibe-design` com UI visível, senão `vibe-plan`; continuidade no mesmo chat só por escolha consciente. O `spec.md` vivo é a ponte.
 
 - [ ] Aprovação humana (leu o arquivo e confirmou)
