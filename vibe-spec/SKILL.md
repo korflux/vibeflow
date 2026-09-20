@@ -74,6 +74,7 @@ RECOMENDO: <opção>, <1 linha explicando motivo e impacto>
 - No MVP, decisões críticas da interview entram em **Decisões críticas** mantendo o ID: `mantém` para preservar, `cria` para novas decisões necessárias e `substitui` citando o ID e explicando o delta.
 - Se houver UI visível ao usuário, consulte `references/ui-visual-direction.md` antes de gravar.
 - Se a entrega envolver banco de dados, persistência ou valores monetários/cálculos exatos, consulte `references/database-and-migrations.md` (DECIMAL/NUMERIC para dinheiro, TIMESTAMPTZ para datas, constraints no banco e índices em FKs).
+- Se a entrega tocar API, handle ou token, segredo, dado pessoal ou rota autenticada, fechar TTL e invalidação, autorização no servidor com anti-IDOR, rate limit, validação na borda com allowlist e limite de tamanho, CSRF e CORS com allowlist, mais headers e CSP. Registrar o decidido em Suposições e decisões, Contratos e Boundaries. Sem isso, não aprovar.
 
 ## 4. Escrever e salvar
 
@@ -90,7 +91,7 @@ Não pergunte se pode salvar e não cole o corpo do documento no chat.
    - Modo MVP:
      `pwsh "<skill>/scripts/spec.ps1" -Apply -Mvp`
      `bash "<skill>/scripts/spec.sh" --apply --mvp`
-2. Escreva ou atualize diretamente o arquivo vivo. Omita seções não aplicáveis. Comandos de teste somente se existirem no repo. Sem `FR-00N`, sem mural de user stories e sem CSS, paleta ou token visual: a spec fecha comportamento e aceite. Nome de token público existente pode aparecer como limite de escopo a preservar, sem definir valor. A restrição não trata de token de autenticação ou API. Quando a entrega tem fluxo ou UX, descreva cada fluxo como `F*` com Jornada, Rota, Gatilho, Pré-condição, Superfície por passo, Passos numerados com ação e resposta, Validações, Erros com código e mensagem segura, Estados com vazio, loading, erro, sucesso e sem permissão, e Aceite `A*`. Passo sem superfície é defeito. Superfície por passo é exatamente uma de tela, popup, drawer, inline, redirect ou toast.
+2. Escreva ou atualize diretamente o arquivo vivo. Omita seções não aplicáveis. Comandos de teste somente se existirem no repo. Sem `FR-00N`, sem mural de user stories e sem CSS, paleta ou token visual: a spec fecha comportamento e aceite. Nome de token público existente pode aparecer como limite de escopo a preservar, sem definir valor. A restrição não trata de token de autenticação ou API. Quando a entrega tem fluxo ou UX, descreva cada fluxo como `F*` com Jornada, Rota, Gatilho, Pré-condição, Superfície por passo, Passos numerados com ação e resposta, Validações, Erros com código e mensagem segura, Estados com vazio, loading, erro, sucesso e sem permissão, e Aceite `A*`. Passo sem superfície é defeito. Superfície por passo é exatamente uma de tela, popup, drawer, inline, redirect ou toast. Se listar N telas e detalhar só o shell, declarar em uma linha que o visual por tela vai para o design. Se criar fato em mock que é contrato, fixar nome, forma, janela e escopo ou delegar explicitamente ao design com Ask first. Sem runner, listar em Como provar um passo manual por A com viewport e local de screenshot, e comando grep exato quando prometer zero literal novo.
 3. Responda no chat apenas:
 
 ```text

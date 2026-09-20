@@ -30,7 +30,7 @@
 
 ### 1. Fluxo F*:<nome>
 
-<!-- Obrigatório quando a rota tem spec. Passo sem superfície é defeito. Superfície por passo é exatamente uma de tela, popup, drawer, inline, redirect ou toast. Use N/A explícito sem UI. -->
+<!-- Obrigatório quando a rota tem spec. Passo sem superfície é defeito. Superfície por passo é exatamente uma de tela, popup, drawer, inline, redirect ou toast. Use N/A explícito sem UI. Se listar N telas e detalhar só o shell, declarar em uma linha que o visual por tela vai para o design. -->
 
 - Jornada: <jornada da interview ou N/A com motivo>
 - Rota: <rota da cadeia ou N/A>
@@ -98,11 +98,15 @@ path/arquivo    # papel na entrega
 
 ### Contratos e módulos
 
+<!-- Com API, handle, segredo ou dado pessoal: fechar TTL e invalidação, autorização no servidor, rate limit, validação na borda e headers. Com fato novo em mock que é contrato: fixar nome, forma, janela e escopo ou delegar ao design com Ask first. -->
+
 - limites: …
 - API / schema / eventos fechados: …
 - Catálogo de erros na borda: CODE_EXEMPLO (status HTTP/CLI, mensagem segura e causa)
 
 ## Como provar
+
+<!-- Sem runner: um passo manual por A com viewport e local de screenshot. Com promessa de zero literal novo: comando grep exato nos paths tocados. -->
 
 ### Seams
 
