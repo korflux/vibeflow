@@ -38,6 +38,7 @@
 - Componente por zona: <zona mais componente permitido>
 - Tokens: <cor, tipo, espaço e raio aplicados>
 - Iconografia: <ícone por ação, texto obrigatório em ação ambígua>
+- Motion: <frequência, propósito, easing, duração ou N/A com motivo, ver references/motion.md>
 - Responsivo: <viewport estreita, overflow, truncamento e quebra de texto>
 - Estados: <vazio, loading, erro, sucesso e sem permissão>
 - Prova visual esperada: <rota, viewport, estado, ações e evidência para a review>
@@ -52,6 +53,15 @@
 - Viewport estreita: <o que muda>
 - Overflow e truncamento: <regra por zona>
 - Estados globais: <loading, empty, error, success e sem permissão>
+
+## Motion e baseline mobile
+
+<!-- Opcional. Omitir somente sem motion nem alvo mobile. Campos não aplicáveis recebem N/A. Forma em references/motion.md. -->
+
+- Motion por tela: <frequência, propósito, easing, duração ou N/A>
+- Física: <scale, origin, preferência por transform e opacity, cor permitida, clip-path e filter só com necessidade, interrupção, stagger>
+- Acessibilidade: <reduced motion suave, hover com media query, active para touch>
+- Baseline mobile: <dvh ou svh, tap-highlight, touch-action, input 16px, overscroll quando app shell, safe-area, theme-color>
 
 ## Prova visual esperada
 

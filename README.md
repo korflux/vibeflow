@@ -218,6 +218,7 @@ PR contra `main`. Mudança de contrato (path, schema do relatório, flag públic
 
 - [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills)
 - [dietrichgebert/ponytail](https://github.com/dietrichgebert/ponytail)
+- [emilkowalski/skills](https://github.com/emilkowalski/skills)
 - [github/spec-kit](https://github.com/github/spec-kit)
 - [mattpocock/skills](https://github.com/mattpocock/skills)
 

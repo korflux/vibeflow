@@ -75,7 +75,7 @@ Modo B só se o humano pediu: `auto`, “faz o todo”, “não para”, “run 
 Execute cada task seguindo rigorosamente as 6 etapas:
 
 1. **Reconhecer (O que já existe?):**
-   Formule a pergunta da T*, localize com `rg --files` e `rg -n` os pontos de entrada, símbolos, chamadas e testes da fatia, e trace somente as dependências do fluxo real. Reutilize helpers, utilitários, componentes visuais, types e módulos existentes da standard library ou do projeto. Não reescreva o que já existe.
+   Formule a pergunta da T*, localize com `rg --files` e `rg -n` os pontos de entrada, símbolos, chamadas e testes da fatia, e trace somente as dependências do fluxo real. Com UI, inclua o `design.md` aprovado do alvo como entrada e siga tokens, motion e prova por tela. No Express (ajuste fino sem comportamento novo, low ou medium), reuse a mesma phase e siga só o recorte existente e alterado do design quando houver, sem exigir design ausente, sem rodar apply de design, sem plan novo e sem reabrir tasks antigas. Reutilize helpers, utilitários, componentes visuais, types e módulos existentes da standard library ou do projeto. Não reescreva o que já existe.
 2. **Codar:**
    Implemente a solução de forma direta, enxuta e estritamente focada nos requisitos da task (`T*`). Deixe comentários semânticos em todas as funções.
 3. **Testar (comando real do repo; prova visual quando houver UI):**

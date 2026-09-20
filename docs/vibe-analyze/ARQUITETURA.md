@@ -1,6 +1,6 @@
 # vibe-analyze, arquitetura
 
-`/vibe-analyze` cruza interview, spec e plan do mesmo alvo, registra a certificação de consistência e encaminha para implementação. A IA faz a análise semântica e corrige lacunas óbvias em `spec.md` ou `plan.md`; o motor inventaria predecessores e prepara `analyze.md`.
+`/vibe-analyze` cruza interview, spec e plan do mesmo alvo, mais `design.md` quando há UI visível, registra a certificação de consistência e encaminha para implementação. A IA faz a análise semântica e corrige lacunas óbvias em `spec.md`, `design.md` ou `plan.md`; o motor inventaria predecessores e prepara `analyze.md`.
 
 ```text
 .vibeflow/phases/phase-<n>-<slug>/analyze.md
@@ -38,7 +38,7 @@ O relatório contém `vibeflow`, `phases`, `next_n`, `existing`, `plan_pendente`
 5. Grava o relatório.
 6. A IA escreve ou atualiza diretamente o certificado, mantendo `# Status: rascunho` até o veredito ser revisado.
 
-O motor não corrige as fontes, não escreve prosa e não publica decisões vigentes. A IA pode aplicar patches corretivos em `spec.md` e `plan.md` quando a análise encontrar erro óbvio, registrando o path e a resolução no vivo.
+O motor não corrige as fontes, não escreve prosa e não publica decisões vigentes. A IA pode aplicar patches corretivos em `spec.md`, `design.md` e `plan.md` quando a análise encontrar erro óbvio, registrando o path e a resolução no vivo.
 
 ## 5. Conteúdo e veredito
 

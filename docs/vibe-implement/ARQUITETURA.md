@@ -52,7 +52,7 @@ O apply não substitui histórico acumulativo. Plan, spec e review recebem apena
 
 Cada T*/R* segue: reconhecer o fluxo real, codar a solução mínima, testar com comando real, simplificar, re-testar e registrar. Falha de teste exige diagnóstico da causa raiz e nova execução.
 
-Em UI, a seleção é navegador integrado quando disponível, MCP Server `chrome-devtools` para snapshot, screenshot, DOM, estilos, console, rede e assets, e Playwright somente se já existir no repositório ou for solicitado. A prova registra rota, viewport, estado, ações e evidência; sem capacidade visual, a limitação impede marcar a validação visual.
+Em UI, a seleção é navegador integrado quando disponível, MCP Server `chrome-devtools` para snapshot, screenshot, DOM, estilos, console, rede e assets, e Playwright somente se já existir no repositório ou for solicitado. Com UI, o `design.md` aprovado do alvo é entrada do reconhecer, com tokens, motion e prova por tela. No Express, a implement segue só o recorte existente e alterado do design quando houver, sem exigir design ausente, sem apply de design, sem plan novo e sem reabrir tasks antigas. A prova registra rota, viewport, estado, ações e evidência; sem capacidade visual, a limitação impede marcar a validação visual.
 
 ## 6. Artefato, modos e handoff
 

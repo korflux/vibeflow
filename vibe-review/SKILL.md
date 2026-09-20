@@ -60,7 +60,7 @@ RECOMENDO: <opção>, <1 linha>
 (ok / outra?)
 ```
 
-Barra de Approve: saúde do código + convenção do repo. Não bloquear gosto.
+Barra de Approve: saúde do código + convenção do repo. Não bloquear gosto. No Express, julgue só rastreabilidade mais visual, incluindo acessibilidade afetada. Segurança e banco só abrem se o diff tocar essas superfícies.
 
 ## 3. Protocolo Implacável de Auditoria (Julgar antes de gravar)
 

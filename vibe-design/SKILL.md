@@ -68,7 +68,7 @@ Sem referência, não improvise DS externo. Com referência, primitivo novo na p
 
 ## 4. Usos
 
-Leia `references/kit-e-tokens.md` quando faltar forma de kit, token, ícone, responsivo, estado ou prova. Os três usos gravam no mesmo vivo, sem código.
+Leia `references/kit-e-tokens.md` quando faltar forma de kit, token, ícone, responsivo, estado ou prova. Leia `references/motion.md` quando a tela tiver motion ou alvo mobile. Os três usos gravam no mesmo vivo, sem código.
 
 | Uso | Entrada | Saída no vivo |
 |---|---|---|

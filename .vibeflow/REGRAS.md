@@ -13,6 +13,10 @@
 
 Design (`vibe-design`, artefato `design.md` na mesma pasta) entra entre spec e plan somente com UI visível. Sem UI visível, registra N/A explícito em vez de bloqueio. Com UI visível, o handoff da spec é `vibe-design` e o da design é `vibe-plan`. Toda rota com spec exige UX detalhada F*, e o analyze no max cruza design com UI visível.
 
+Faixa Express para ajuste fino visual sem comportamento novo (texto, cor, espaçamento, ícone com texto mantido) usa low ou medium. Reusa a mesma phase, com patch direto no `design.md` existente quando houver, sem exigir spec nova, design completo ou plan novo. Comportamento novo, rota nova ou regra fora do `F*` aprovado sai do Express e volta para spec.
+
+Review leve no Express cobra só rastreabilidade mais visual. Segurança e banco só abrem se o diff tocar essas superfícies.
+
 ## Projeto
 
 Cadeia de skills para inicializar e conduzir o trabalho de agentes num repo. Este repositório é a fonte canônica das skills `vibe-*` e do contrato `.vibeflow/`. Não é um app de produção.

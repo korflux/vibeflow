@@ -55,7 +55,7 @@ Seções: Objetivo, Inventário quando houver lista, Suposições e decisões, E
 
 Quando a entrega tem fluxo ou UX, o Escopo usa o molde `F*` com Jornada, Rota, Gatilho, Pré-condição, Superfície por passo, Passos numerados com ação e resposta, Validações, Erros com código e mensagem segura, Estados com vazio, loading, erro, sucesso e sem permissão, e Aceite `A*`. Passo sem superfície é defeito. Handoff é `vibe-design` com UI visível, senão `vibe-plan`. `plan.md` existente bloqueia nova escrita, pedido novo exige outra phase.
 
-Sem Open Questions, mural de user story ou CSS na spec. IDs de decisões críticas do MVP atravessam o plan; publicação de decisão vigente só ocorre após review aprovada e confirmação humana.
+Sem Open Questions, mural de user story ou CSS, paleta ou token visual na spec. Nome de token público existente pode aparecer como limite de escopo, sem definir valor. A restrição não trata de token de autenticação ou API. IDs de decisões críticas do MVP atravessam o plan; publicação de decisão vigente só ocorre após review aprovada e confirmação humana.
 
 ## 6. Erros e testes
 

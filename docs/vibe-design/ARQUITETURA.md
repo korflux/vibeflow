@@ -16,6 +16,7 @@
 | `templates/design.md` | Forma de entrada, inventário de telas, kit, disposição por tela, tokens, responsivo, estados e prova. |
 | `references/modos-entrada.md` | Catálogo dos dois modos de entrada, consultado conforme a origem do desenho. |
 | `references/kit-e-tokens.md` | Catálogo de kit mínimo, tokens, iconografia, responsivo, estados e prova visual. |
+| `references/motion.md` | Catálogo de frequência, propósito, easing, duração, física, acessibilidade e baseline mobile, consultado quando a tela tem motion ou alvo mobile. |
 | `.vibeflow/design-report.json` | Evidência operacional, fora do Git. |
 | `design.md` | Restrição executável para plan, implement e review. Texto versionado, sem código e sem imagem final. |
 
@@ -60,7 +61,7 @@ O script não escolhe modo, não preenche markdown e não dispara plan. Ajuste o
 
 ## 6. Contrato do artefato
 
-Seções: Entrada, Inventário de telas, Kit mínimo quando greenfield, Disposição por tela, Tokens e iconografia, Responsivo e estados, Prova visual esperada, Decisões e Handoff.
+Seções: Entrada, Inventário de telas, Kit mínimo quando greenfield, Disposição por tela, Tokens e iconografia, Responsivo e estados, Motion e baseline mobile quando houver motion ou alvo mobile, Prova visual esperada, Decisões e Handoff.
 
 Cada tela contém hierarquia de cima para baixo, layout e grid, ordem de leitura, componente por zona, tokens, regra de ícone com texto obrigatório em ação ambígua, responsivo com viewport estreita, overflow e truncamento, e estados por tela. Primitivo novo na página com DS existente é defeito. Design não cria comportamento novo.
 

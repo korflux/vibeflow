@@ -7,7 +7,7 @@ description: >
 # vibe-analyze
 
 Não invente `n`, slug ou path. Sem plan no alvo, não há analyze. Sem `.vibeflow/`, pare e mande `/vibe-init`.
-Erros óbvios e lacunas determinísticas identificados no cruzamento devem ser corrigidos diretamente nos artefatos (`spec.md` ou `plan.md`). Ambiguidades reais de negócio ou arquitetura devem ser esclarecidas com o usuário via chat.
+Erros óbvios e lacunas determinísticas identificados no cruzamento devem ser corrigidos diretamente nos artefatos (`spec.md`, `design.md` ou `plan.md`). Ambiguidades reais de negócio ou arquitetura devem ser esclarecidas com o usuário via chat.
 Não atualize decisões vigentes nem `REGRAS.md`. No MVP, conflito crítico sem `substitui` explícito bloqueia a implementação.
 
 A investigação começa pela pergunta de consistência que precisa ser respondida. Use `rg --files` para localizar interview, spec, plan, analyze, regras e paths citados; use `rg -n` para localizar A*/C*, T*, IDs, símbolos e comandos. Abra somente as entradas e dependências que sustentam o cruzamento e expanda a leitura quando uma lacuna bloquear a prova. O inventário é mapa de seleção, não autorização para ler a árvore inteira.
@@ -61,7 +61,7 @@ Audite, cruze e resolva:
 1. **Interview → spec:** Resultado da interview (o quê, sucesso, fora) contra Objetivo, A*/C* e Fora da spec.
 2. **Spec → plan:** Cada A*/C* possui T* correspondente no campo `Spec:`; cada T* referencia A*/C* ou é infraestrutura justificada.
 3. **Plan → spec:** Nenhuma T* inventa comportamento, caminhos ou módulos fora do escopo aprovado.
-4. **Design condicional (max com UI visível):** Cruza `design.md` além de interview, spec e plan. Com UI visível, design ausente ou não aprovado bloqueia o veredito limpo. Sem UI visível, registra N/A explícito em vez de bloqueio.
+4. **Design condicional (com UI visível):** Cruza `design.md` além de interview, spec e plan. Com UI visível, design ausente ou não aprovado bloqueia o veredito limpo. Sem UI visível, registra N/A explícito em vez de bloqueio.
 5. **Qualidade dos Testes e Executabilidade:**
    - A T1 do plan estabelece um *Smoke Test / Walking Skeleton* real validando a subida/ponto de entrada do sistema? Se faltar, corrija diretamente no `plan.md` inserindo o teste na T1.
    - As tasks possuem comandos reais de teste no repositório? Se houver verificação puramente manual sem comando, converta para comando executável real no `plan.md`.
@@ -70,14 +70,14 @@ Audite, cruze e resolva:
 7. **Conformidade com REGRAS.md:** Violação de regras mandatórias (segurança, auth, dados, segredos, CSP) = aplicar patch corretivo imediato nos artefatos.
 8. **Passes de Consistência:** Duplicação, ambiguidade de adjetivos, furos de aceite e inconsistências de termos = aplicar correção direta.
 
-Para cada ajuste aplicado diretamente em `spec.md` ou `plan.md`, registre a entrada na seção **Achados e Resoluções** do `analyze.md`.
+Para cada ajuste aplicado diretamente em `spec.md`, `design.md` ou `plan.md`, registre a entrada na seção **Achados e Resoluções** do `analyze.md`.
 Gravidade: `CRITICAL` · `HIGH` · `MEDIUM` · `LOW`. IDs: `F1`, `F2`... na ordem da tabela.
 
 ## 4. Clarificações
 
 Quando houver ambiguidade que não seja um erro óbvio e dependa de decisão humana:
 - Pergunte diretamente no chat (Q + RECOMENDO), uma por vez.
-- Aplique a resposta do usuário no arquivo correspondente (`spec.md` ou `plan.md`).
+- Aplique a resposta do usuário no arquivo correspondente (`spec.md`, `design.md` ou `plan.md`).
 - Registre o resumo da pergunta e resposta na seção **Clarificações com o Usuário** do `analyze.md`.
 - Não há limite arbitrário de perguntas; pergunte o que for estritamente necessário para eliminar ambiguidades.
 
@@ -104,7 +104,7 @@ Analyze gravado: <created.path>/analyze.md
 - Veredito: limpo | bloqueado
 - Cobertura: <A*/C* com T* / total>
 - Qualidade de testes: <smoke test na T1 e comandos de teste validados>
-- Correções aplicadas: <F1... no spec.md / plan.md ou nenhuma necessária>
+- Correções aplicadas: <F1... no spec.md / design.md / plan.md ou nenhuma necessária>
 - Handoff: vibe-implement
 
 Arquivo disponível em <created.path>/analyze.md. Responda "aprovado" para confirmar, "pode ir pro implement" (ou "pode ir para a próxima fase") para avançar imediatamente, ou indique os ajustes desejados.
@@ -119,12 +119,12 @@ Arquivo disponível em <created.path>/analyze.md. Responda "aprovado" para confi
 | Pedido de alteração | Patch direto no arquivo vivo; até 5 bullets no chat; solicitar nova conferência |
 | "Parece bom" sem pedir implementação | Perguntar: "Aprovado no arquivo ou deseja algum ajuste?" |
 | Veredito `bloqueado` e usuário pede implementação | Recusar. Exibir os achados bloqueantes pendentes |
-| Spec, plan ou intenção quebrou | Devolver para a skill responsável. Não forçar implementação |
+| Spec, design, plan ou intenção quebrou | Devolver para a skill responsável. Não forçar implementação |
 
 Rascunho sem "aprovado" e sem pedido da próxima porta não autoriza iniciar o código.
 
 ## 7. Fechar
 
 Não commite no git. Não dispare a próxima skill a menos que o usuário tenha pedido explicitamente para avançar (§6).
-Informe que os arquivos vivos `analyze.md`, `plan.md` e `spec.md` atualizados entram no git e que `analyze-report.json` fica de fora. Recomende abrir um novo chat para `vibe-implement`; continuar no mesmo chat é permitido somente por escolha consciente do humano. O `analyze.md` e os artefatos vivos são a ponte entre chats.
+Informe que os arquivos vivos `analyze.md`, `spec.md`, `design.md` e `plan.md` atualizados entram no git e que `analyze-report.json` fica de fora. Recomende abrir um novo chat para `vibe-implement`; continuar no mesmo chat é permitido somente por escolha consciente do humano. O `analyze.md` e os artefatos vivos são a ponte entre chats.
 Handoff registrado no arquivo: `vibe-implement`. Zero implementação nesta execução.

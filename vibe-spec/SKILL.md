@@ -90,7 +90,7 @@ Não pergunte se pode salvar e não cole o corpo do documento no chat.
    - Modo MVP:
      `pwsh "<skill>/scripts/spec.ps1" -Apply -Mvp`
      `bash "<skill>/scripts/spec.sh" --apply --mvp`
-2. Escreva ou atualize diretamente o arquivo vivo. Omita seções não aplicáveis. Comandos de teste somente se existirem no repo. Sem `FR-00N`, sem mural de user stories e sem CSS/paleta: a spec fecha comportamento e aceite. Quando a entrega tem fluxo ou UX, descreva cada fluxo como `F*` com Jornada, Rota, Gatilho, Pré-condição, Superfície por passo, Passos numerados com ação e resposta, Validações, Erros com código e mensagem segura, Estados com vazio, loading, erro, sucesso e sem permissão, e Aceite `A*`. Passo sem superfície é defeito. Superfície por passo é exatamente uma de tela, popup, drawer, inline, redirect ou toast.
+2. Escreva ou atualize diretamente o arquivo vivo. Omita seções não aplicáveis. Comandos de teste somente se existirem no repo. Sem `FR-00N`, sem mural de user stories e sem CSS, paleta ou token visual: a spec fecha comportamento e aceite. Nome de token público existente pode aparecer como limite de escopo a preservar, sem definir valor. A restrição não trata de token de autenticação ou API. Quando a entrega tem fluxo ou UX, descreva cada fluxo como `F*` com Jornada, Rota, Gatilho, Pré-condição, Superfície por passo, Passos numerados com ação e resposta, Validações, Erros com código e mensagem segura, Estados com vazio, loading, erro, sucesso e sem permissão, e Aceite `A*`. Passo sem superfície é defeito. Superfície por passo é exatamente uma de tela, popup, drawer, inline, redirect ou toast.
 3. Responda no chat apenas:
 
 ```text
