@@ -29,11 +29,11 @@ Faça os seis. Ache **instância**, não padrão genérico.
 | Cobertura | `cobertura` | A*/C* com zero T*; T* sem requisito; sucesso da interview sem C* |
 | Inconsistência | `inconsistencia` | Nome diferente para a mesma coisa; entidade só num arquivo; ordem de T* que fura Deps; A* e T* se anulam |
 | Decisão crítica | `decisao` | ID órfão; opção muda sem `substitui`; task implementa decisão diferente. Sempre `CRITICAL` quando altera lógica, acesso, dados, infraestrutura, segurança ou operação |
-| Qualidade de Teste | `qualidade_teste` | T1 sem smoke test/walking skeleton; task com verificação puramente manual/passiva; ferramenta essencial (gitleaks, chrome-devtools) ausente no host sem task de setup alocada |
+| Qualidade de Teste | `qualidade_teste` | Task sem comando executável ou só com verificação manual/passiva; resultado que cria ou altera ponto de entrada executável sem smoke test; ferramenta exigida pela prova indisponível sem preparo ou bloqueio registrado |
 
 ## 3. Resolução de Achados e Clarificações
 
-Erros óbvios e determinísticos (falta de smoke test na T1, ausência de task de setup de ferramentas essenciais, comandos de teste ausentes, IDs órfãos) são **corrigidos diretamente** pela IA em `spec.md` ou `plan.md`.
+Erros óbvios e determinísticos (smoke ausente na task que entrega ponto de entrada executável, comandos de prova ausentes, IDs órfãos) são **corrigidos diretamente** pela IA em `spec.md` ou `plan.md`. Uma ausência local simples é tratada no preparo; não crie T* só para instalar ou conectar uma ferramenta.
 
 Pergunte ao usuário no chat (uma por vez com recomendação e impacto) quando:
 1. O achado apontar uma ambiguidade real de negócio, escopo ou arquitetura.
@@ -47,7 +47,7 @@ Não há limite arbitrário de perguntas; faça as necessárias para sanar as am
 | Nível | Quando | Ação Resolutiva |
 |---|---|---|
 | CRITICAL | Violação de REGRAS; divergência de decisão de MVP sem substitui; A* sem T* correspondente | Corrigir no artefato imediatamente ou alinhar com o usuário |
-| HIGH | T1 sem smoke test; task sem comando executável; ferramenta essencial ausente sem setup | Aplicar patch corretivo direto no `plan.md` |
+| HIGH | Task sem comando executável; resultado que entrega ponto de entrada sem smoke test; prova bloqueada por ferramenta sem mitigação ou limitação registrada | Corrigir o `plan.md` ou registrar o bloqueio real; não criar task de setup local artificial |
 | MEDIUM | Drift de termo; inconsistência de nomes; entidade órfã | Normalizar termos no artefato afetado |
 | LOW | Redundância de redação | Ajustar redação para concisão |
 

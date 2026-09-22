@@ -256,14 +256,18 @@ class PythonContracts(unittest.TestCase):
 
     # Garante que texto de organização fora de T* não altera a fila mecânica.
     def test_fila_ignores_texto_fora_do_contrato(self) -> None:
+        """Prova que preparo, paralelização e checkpoints não deslocam a fila compacta."""
         vf = seed_vibeflow(self.repo)
         phase = seed_phase(vf, "phase-1-a", "plan.md")
         write_plan(
             phase,
-            "# Plan\n\n## Ordem\n\n### Grupo de validação\n\n- texto livre sem efeito na fila\n\n"
-            "### T1: primeira\n\n- [ ] T1 concluída\n- **Deps:** nenhuma\n\n"
-            "## Conferência\n\n- repetir a prova na task\n\n"
-            "### T2: segunda\n\n- [ ] T2 concluída\n- **Deps:** T1\n",
+            "# Plan\n\n## Preparo (checklist curta, não é task)\n\n- [ ] comandos disponíveis\n\n"
+            "## Tasks\n\n### T1: entrega inicial\n\n- [ ] T1 concluída\n"
+            "- **Spec:** A1\n- **O quê:** resultado inicial\n- **Aceite:** observável\n"
+            "- **Verificação:** `python -m unittest`\n- **Deps:** nenhuma\n\n"
+            "## Paralelização (opcional)\n\n- texto sem efeito na fila\n\n"
+            "## Checkpoint de review (opcional)\n\n- revisar contrato compartilhado\n\n"
+            "### T2: entrega dependente\n\n- [ ] T2 concluída\n- **Deps:** T1\n",
         )
         _, report = invoke(self.repo)
         fila = report["fila"]

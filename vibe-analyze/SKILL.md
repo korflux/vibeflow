@@ -63,9 +63,9 @@ Audite, cruze e resolva:
 3. **Plan → spec:** Nenhuma T* inventa comportamento, caminhos ou módulos fora do escopo aprovado.
 4. **Design condicional (com UI visível):** Cruza `design.md` além de interview, spec e plan. Com UI visível, design ausente ou não aprovado bloqueia o veredito limpo. Sem UI visível, registra N/A explícito em vez de bloqueio.
 5. **Qualidade dos Testes e Executabilidade:**
-   - A T1 do plan estabelece um *Smoke Test / Walking Skeleton* real validando a subida/ponto de entrada do sistema? Se faltar, corrija diretamente no `plan.md` inserindo o teste na T1.
+   - Cada T* tem comando executável de prova? Se a task criar ou alterar um ponto de entrada executável, a prova dessa mesma T* inclui o smoke test real. Não exija uma T1 de baseline para entregas sem ponto de entrada.
    - As tasks possuem comandos reais de teste no repositório? Se houver verificação puramente manual sem comando, converta para comando executável real no `plan.md`.
-   - Ferramentas essenciais (`gitleaks`, MCP `chrome-devtools`) foram validadas ou possuem task de setup? Se faltar, adicione a task de setup necessária no `plan.md`.
+   - Confira apenas ferramentas exigidas pelas provas escolhidas, como `gitleaks` ou MCP `chrome-devtools`. Resolva preparo local simples quando disponível e autorizado; só proponha T* para setup persistente que faça parte da entrega do projeto. Registre bloqueio externo sem criar task artificial de instalação.
 6. **Decisões Críticas (MVP):** Cruze cada ID entre interview, spec e plan. Se houver divergência sem declaração de `substitui` ou ID órfão, ajuste a consistência nos artefatos ou pergunte ao usuário se for mudança intencional.
 7. **Conformidade com REGRAS.md:** Violação de regras mandatórias (segurança, auth, dados, segredos, CSP) = aplicar patch corretivo imediato nos artefatos.
 8. **Passes de Consistência:** Duplicação, ambiguidade de adjetivos, furos de aceite e inconsistências de termos = aplicar correção direta.
@@ -103,7 +103,7 @@ Analyze gravado: <created.path>/analyze.md
 
 - Veredito: limpo | bloqueado
 - Cobertura: <A*/C* com T* / total>
-- Qualidade de testes: <smoke test na T1 e comandos de teste validados>
+- Qualidade de testes: <provas executáveis proporcionais; smoke do ponto de entrada na T* que o entrega; ferramentas ou limitações registradas>
 - Correções aplicadas: <F1... no spec.md / design.md / plan.md ou nenhuma necessária>
 - Handoff: vibe-implement
 

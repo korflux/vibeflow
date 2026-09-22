@@ -9,8 +9,8 @@ Os modelos históricos descreviam plan técnico, tasks e checklists como arquivo
 ```text
 spec.md aprovado
   → inventário do mesmo alvo
-  → validação de ferramentas e seams
-  → fatiamento vertical com Size/Risk
+  → preparo curto das ferramentas exigidas pelas provas
+  → fatiamento por resultados e dependências reais
   → apply prepara plan.md
   → IA escreve tasks diretamente, cada uma com sua prova
   → humano aprova o arquivo
@@ -25,11 +25,11 @@ A investigação começa pela pergunta de fatiamento e pela dependência que pre
 
 Para UI, a ordem é navegador integrado, MCP Server `chrome-devtools`, Playwright existente ou explicitamente solicitado. Uma tarefa sem UI não recebe um gate de browser.
 
-## Size, Risk e fila
+## Resultados, dependências e fila
 
-Size mede complexidade estrutural, não tempo ou número de arquivos. Cinco dimensões pontuadas de 0 a 2 classificam `0–3 low`, `4–6 medium`, `7–8 high`; `9–10` exige quebra. Risk permanece separado para registrar impacto e blast radius.
+Cada T* reúne um resultado coeso verificável. Uma nova T* só aparece para um resultado separado, uma dependência real de execução, isolamento de risco ou impossibilidade de verificar a fatia como unidade. Número de arquivos, sessões, critérios de aceite, uma pontuação ou a conjunção no título não acionam quebras automáticas. Arquivos e risco são registrados quando ajudam a executar, isolar ou revisar.
 
-Deps são apenas dependências reais de execução. Cada `T*` tem sua verificação e vira a unidade de execução e commit após a prova verde. T1 deve conter smoke test ou walking skeleton no ponto de entrada real.
+O preparo local lista as ferramentas necessárias para as provas e resolve ausências simples quando disponível e autorizado. Uma ferramenta ausente só vira T* quando o setup persistente faz parte da entrega do projeto; bloqueios externos ficam registrados. `Deps` contém apenas dependências de execução e define a fila. Paralelização e checkpoints são omitidos quando não alteram execução ou review. Se uma T* criar ou alterar um ponto de entrada executável, o smoke test fica na prova dessa mesma T*.
 
 ## Chat e continuidade
 
@@ -43,6 +43,8 @@ Plan é uma porta de maior risco cognitivo e recomenda novo chat no handoff. O h
 | Escrita do plan pelo script | Mantém o motor mecânico e a prosa sob responsabilidade da IA. |
 | Verificação somente manual | A implement precisa de comando executável. |
 | Instalação automática de navegador | Não adiciona dependência apenas para preencher um gate. |
+| Task para preparar ferramenta local simples | O preparo é checklist; só setup persistente do projeto vira T*. |
+| Quebra por score, sessão, tamanho da lista ou título | A unidade vem do resultado e das dependências reais. |
 | Disparo automático de implement | Handoff é explícito e fica no arquivo. |
 
 ## Impacto

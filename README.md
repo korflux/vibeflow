@@ -130,7 +130,7 @@ O bloco de cadeia em `.vibeflow/REGRAS.md` escolhe o esforço da rota. A IA não
 | xhigh | interview → spec → plan → implement → review | Pedido ambíguo, confiança baixa, intenção ou sucesso em aberto |
 | max | interview → spec → plan → analyze → implement → review | Auth, pagamento, segredo, perda de dados, produção ou alto blast radius |
 
-Esforço da rota e `Size` da task são dimensões diferentes. A rota define o rigor da cadeia para o pedido; cada T* recebe `low`, `medium` ou `high` por um score de complexidade, e uma rota `high` pode conter tasks `low` ou `medium`. A matriz canônica e o limite de quebra ficam em [`vibe-plan/SKILL.md`](vibe-plan/SKILL.md).
+O esforço da rota define o rigor da cadeia para o pedido. As T* são agrupadas por resultados verificáveis e dependências reais; quantidade de arquivos, sessões, critérios de aceite ou pontuação não provocam quebras automáticas. O contrato de fatiamento fica em [`vibe-plan/SKILL.md`](vibe-plan/SKILL.md).
 
 Todo MVP de projeto novo usa a rota `max` em `.vibeflow/mvp/`. Feature chamada de MVP dentro de produto existente continua usando uma phase normal. Depois de concluído, o baseline não é sobrescrito; pivôs e reconstruções posteriores entram como phase `max`.
 

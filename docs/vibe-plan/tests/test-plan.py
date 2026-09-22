@@ -252,54 +252,61 @@ class PowershellParity(unittest.TestCase):
 class TemplateContracts(unittest.TestCase):
     """Trava as linhas que a implement parseia e a Verificação como comando."""
 
-    def test_template_freezes_concluida_deps_and_command(self) -> None:
+    def test_template_freezes_task_queue_and_keeps_preparation_outside_it(self) -> None:
+        """Confirma que o preparo é checklist e que a T* mantém o contrato da fila."""
         template = (SKILL_DIR / "templates" / "plan.md").read_text(encoding="utf-8")
         self.assertIn("- [ ] T1 concluída", template)
         self.assertIn("- **Deps:** nenhuma", template)
         self.assertIn("comando do repo", template)
         self.assertNotIn("passo manual", template)
-        self.assertIn("cada task tem sua própria verificação e commit", template)
-        self.assertNotIn("checkpoint", template.lower())
+        self.assertIn("não é task", template.lower())
+        self.assertIn("<path aprovado ou n/a>", template.lower())
+        self.assertIn("checkpoint de review (opcional", template.lower())
+        self.assertNotIn("## ordem", template.lower())
+        self.assertNotIn("## conferência", template.lower())
 
     def test_skill_requires_real_deps_and_command_verification(self) -> None:
+        """Confirma os gates de dependência, comandos executáveis e preparo local."""
         skill = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("gitleaks", skill.lower())
         self.assertIn("chrome-devtools", skill.lower())
         self.assertIn("smoke test", skill.lower())
         self.assertIn("deps", skill.lower())
-        self.assertIn("manual recusa", skill.lower())
+        self.assertIn("verificação só manual", skill.lower())
+        self.assertIn("preparo local", skill.lower())
+        self.assertIn("não crie t* apenas para repetir baseline", skill.lower())
 
-    # Contrato A1: a regra de tamanho usa cinco dimensões com escala reproduzível.
-    def test_size_uses_five_dimensions_and_break_limit(self) -> None:
+    def test_task_splitting_uses_results_real_dependencies_and_isolation(self) -> None:
+        """Impede que score, título, duração ou volume imponham quebras automáticas."""
         skill = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
-        for dimension in ("Superfície", "Acoplamento", "Verificação", "Incerteza", "Coordenação"):
-            self.assertIn(dimension, skill)
-        for interval in ("0–3", "4–6", "7–8", "9–10"):
-            self.assertIn(interval, skill)
-        self.assertIn("Quebrar obrigatoriamente", skill)
-        self.assertNotIn("| Size | Files |", skill)
-        self.assertNotIn("| xhigh / max | 5+ ou alto risco", skill)
+        self.assertIn("resultado coeso", skill.lower())
+        self.assertIn("dependência real de execução", skill.lower())
+        self.assertIn("um risco que exija isolamento", skill.lower())
+        self.assertNotIn("cinco dimensões", skill.lower())
+        self.assertNotIn("quebre obrigatoriamente", skill.lower())
+        self.assertNotIn("9–10", skill)
 
-    # Contrato A2: cada T* registra tamanho calculado e risco sem criar xhigh/max como tamanho.
-    def test_template_requires_size_score_and_separate_risk(self) -> None:
+    def test_template_keeps_only_execution_fields_and_optional_coordination(self) -> None:
+        """Confirma os campos necessários e torna tamanho e coordenação não obrigatórios."""
         template = (SKILL_DIR / "templates" / "plan.md").read_text(encoding="utf-8")
-        self.assertIn("**Size:**", template)
-        self.assertIn("<score>/10", template)
-        self.assertIn("**Risk:**", template)
-        self.assertIn("<low | medium | high>", template)
-        self.assertNotIn("Size:** xhigh", template)
-        self.assertNotIn("Size:** max", template)
+        for field in ("**O quê:**", "**Spec:**", "**Aceite:**", "**Verificação:**", "**Deps:**"):
+            self.assertIn(field, template)
+        self.assertIn("paralelização (opcional", template.lower())
+        self.assertIn("checkpoint de review (opcional", template.lower())
+        self.assertNotIn("**Size:**", template)
+        self.assertNotIn("<score>/10", template)
 
-    # Contrato A3/A4: a documentação secundária mantém os conceitos alinhados e não revive a regra antiga.
-    def test_size_documentation_keeps_route_risk_and_size_distinct(self) -> None:
+    def test_plan_documentation_describes_result_based_splitting(self) -> None:
+        """Alinha arquitetura, análise e README ao fatiamento por resultado."""
         architecture = (Path.cwd() / "docs" / "vibe-plan" / "ARQUITETURA.md").read_text(encoding="utf-8")
         analysis = (Path.cwd() / "docs" / "vibe-plan" / "ANALISE.md").read_text(encoding="utf-8")
         readme = (Path.cwd() / "README.md").read_text(encoding="utf-8")
         for text in (architecture, analysis, readme):
-            self.assertIn("Size", text)
-        self.assertIn("Risk", architecture)
-        self.assertIn("Esforço da rota e `Size`", readme)
-        self.assertNotIn("Size ≤ high; quebrar xhigh/max", analysis)
+            self.assertIn("resultado", text.lower())
+            self.assertNotIn("cinco dimensões", text.lower())
+            self.assertNotIn("9–10", text)
+        self.assertIn("esforço da rota", readme.lower())
+        self.assertIn("dependências reais", analysis.lower())
 
 
 if __name__ == "__main__":

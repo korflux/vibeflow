@@ -11,9 +11,9 @@
 
 | Peça | Responsabilidade |
 |---|---|
-| `SKILL.md` | Validar a spec, ferramentas, ordem, dependências, Size/Risk e unidade por task. |
+| `SKILL.md` | Validar a spec, preparo das provas, resultados, dependências e paralelismo seguro. |
 | `scripts/plan.py`, `plan.ps1`, `plan.sh` | Inventário, seleção do alvo, gates mecânicos, preparação do vivo e relatório. |
-| `templates/plan.md` | Forma de Overview, Ordem, Tasks e handoff. |
+| `templates/plan.md` | Forma compacta de Overview, preparo opcional, Tasks e handoff. |
 | `.vibeflow/plan-report.json` | Evidência operacional, fora do Git. |
 | `plan.md` | Fila executável e fonte da próxima T*. |
 
@@ -35,7 +35,7 @@ bash plan.sh [--root PATH] [--apply] [--dir phase-N-slug] [--mvp]
 
 A IA verifica `gitleaks` quando o repositório prevê essa prova. Se a spec toca UI, escolhe navegador integrado quando disponível, depois MCP Server `chrome-devtools`, e Playwright somente se já existir no repositório ou tiver sido solicitado. Ausência de capacidade visual é limitação explícita, não passe silencioso.
 
-Tasks devem conter aceite observável, comando real de verificação, `Deps`, `Spec: A*/C*`, `Size` com score e `Risk` separado. T1 funcional deve validar o ponto de entrada real.
+Tasks devem conter um resultado coeso, aceite observável, comando executável de verificação, `Deps` e `Spec: A*/C*`. `Arquivos` e `Risco` são opcionais quando orientam execução, isolamento ou review. Se a task criar ou alterar um ponto de entrada executável, a prova de smoke entra nessa mesma task.
 
 ## 4. Relatório
 
@@ -52,11 +52,11 @@ O relatório mantém `vibeflow`, `phases`, `next_n`, `existing`, `spec_pendente`
 5. Grava o relatório.
 6. A IA escreve ou atualiza diretamente `plan.md`, mantendo `# Status: rascunho` até aprovação.
 
-O script não escreve prosa, não classifica Size, não escolhe ordem e não dispara implement. Ajuste ou aprovação posterior é patch no arquivo vivo.
+O script não escreve prosa, não escolhe a semântica da fila e não dispara implement. Ajuste ou aprovação posterior é patch no arquivo vivo.
 
 ## 6. Contrato do artefato
 
-Seções: Overview, Ordem, Riscos, Paralelização, Tasks, Conferência e Handoff. Cada task usa `T1`, `T2` em sequência, tem dependências reais, comando próprio de verificação e é a unidade que a implement pode commitar. Não usar `todo.md`, `tasks.md`, `T001`, `[P]`, `[US1]`, `checklists/` ou verificação apenas manual.
+Seções: Overview, preparo local opcional, Tasks e Handoff. `Paralelização` e checkpoint de review aparecem somente quando mudam a execução. `Deps` é a única declaração da fila. Cada task usa `T1`, `T2` em sequência, tem um resultado coeso, comando próprio de verificação e é a unidade que a implement pode commitar. Não usar `todo.md`, `tasks.md`, `T001`, `[P]`, `[US1]`, `checklists/` ou verificação apenas manual.
 
 ## 7. Erros, testes e handoff
 

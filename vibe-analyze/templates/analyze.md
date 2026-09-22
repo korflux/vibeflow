@@ -62,7 +62,7 @@
 - A*/C* na spec:
 - T* no plan:
 - Cobertura (A*/C* com >= 1 T*):
-- Qualidade de Testes: T1 smoke test ok, comandos executáveis ok, ferramentas essenciais ok
+- Qualidade de Testes: provas executáveis e proporcionais; smoke na T* que entrega o ponto de entrada; ferramentas necessárias ou limitações registradas
 - Achados corrigidos / resolvidos:
 - Achados bloqueantes pendentes: 0
 

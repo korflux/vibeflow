@@ -8,56 +8,35 @@
 ## Overview
 
 <1 parágrafo: o que esta entrega realiza, apontando a spec>
+- **Design:** <path aprovado ou N/A>
 
-## Ordem
+## Preparo (opcional, checklist curta, não é task)
 
-### Fase 1: <nome>
-
-- T1-... (corpo em Tasks; cada task tem sua própria verificação e commit)
-
-### Fase 2: <nome>
-
-- T3-...
-
-## Riscos
-
-| Risco | Impacto | Mitigação |
-|---|---|---|
-| ... | alto / médio / baixo | ... |
-
-## Paralelização
-
-- Paralelo ok: ...
-- Sequencial: ...
-- Contrato primeiro, depois paralelo: ...
+- [ ] <comandos e ferramentas necessários à prova: disponíveis, limitação ou bloqueio>
 
 ## Tasks
 
-### T1: <verbo + outcome (smoke test / walking skeleton ou setup de ferramentas)>
+### T1: <verbo + resultado coeso>
 
 - [ ] T1 concluída
 - **Spec:** A1, C1
-- **Decisões:** <AUTH-01 (mantém), INFRA-01 (cria); omitir quando N/A>
-- **O quê:** <1–3 frases>
+- **O quê:** <resultado observável>
 - **Aceite:**
   - [ ] <condição testável>
 - **Verificação:**
   - [ ] `<comando do repo>`
 - **Deps:** nenhuma
-- **Arquivos:** `path/...`
-- **Size:** `<low | medium | high>, <score>/10, <justificativa curta>`
-- **Risk:** `<low | medium | high>, <motivo curto quando não for low>`
+- **Decisões:** <ID (ação); omitir quando N/A>
+- **Arquivos:** `path/...` <!-- opcional, quando orientar execução ou ownership -->
+- **Risco:** <somente se alterar isolamento, verificação ou review>
 
-## Conferência
+## Paralelização (opcional, omitir quando não aplicável)
 
-- [x] Spec aprovada como fonte; mesma pasta
-- [x] Fatias verticais; score de Size ≤ 8; Risk separado
-- [x] Toda T* tem aceite + verificação + Spec: A*/C* quando couber
-- [x] Ferramentas essenciais (gitleaks, chrome-devtools) validadas ou com task de setup
-- [x] T1 estabelece ponto de entrada real (smoke test / walking skeleton)
-- [x] UI greenfield/sem DS → T* de kit antes das telas (ou N/A)
-- [x] Cada T* possui unidade de execução, verificação e commit própria
-- [ ] Aprovação humana (leu o arquivo e confirmou)
+- T* que podem executar juntas: <grupo e condição de isolamento, sem repetir a fila de Deps>
+
+## Checkpoint de review (opcional, omitir quando não houver justificativa)
+
+- <marco, superfície a revisar e risco ou contrato compartilhado que justifica o checkpoint>
 
 ## Handoff
 

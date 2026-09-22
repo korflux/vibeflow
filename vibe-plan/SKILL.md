@@ -13,7 +13,7 @@ Não invente `n`, slug ou path. Sem spec aprovada no alvo, não há plan. Sem `.
 Um único arquivo. Não escreva código nesta skill. Open Questions no arquivo é defeito.
 No MVP, preserve a ação e os IDs das decisões críticas nas tasks que as implementam.
 
-A investigação começa pela pergunta de fatiamento e pela dependência que precisa ser provada. Use `rg --files` para localizar `spec.md`, `interview.md`, `REGRAS.md`, entradas e testes; use `rg -n` para localizar A*/C*, decisões, símbolos e comandos de verificação. Abra somente esses paths e as dependências do fluxo; expanda a leitura apenas quando uma lacuna bloquear a ordem. O inventário é mapa de seleção, não autorização para ler a árvore inteira.
+A investigação começa pelo resultado pedido e pelas dependências reais de execução. Use `rg --files` para localizar `spec.md`, `interview.md`, `REGRAS.md`, entradas e testes; use `rg -n` para localizar A*/C*, decisões, símbolos e comandos de verificação. Abra somente esses paths e as dependências do fluxo; expanda a leitura apenas quando uma lacuna bloquear o fatiamento. O inventário é mapa de seleção, não autorização para ler a árvore inteira.
 
 
 ## 0. Entender e usar o script
@@ -23,7 +23,7 @@ A investigação começa pela pergunta de fatiamento e pela dependência que pre
    - Windows: `pwsh "<skill>/scripts/plan.ps1"`.
    - Unix: `bash "<skill>/scripts/plan.sh"`.
    - Alvo MVP: acrescente `-Mvp` ou `--mvp`.
-3. Leia `.vibeflow/plan-report.json` como evidência operacional. Use `rg --files` e `rg -n` para localizar `spec.md` (obrigatório), `interview.md` se houver, `plan.md` e `.vibeflow/REGRAS.md`, além dos caminhos necessários para desenhar a ordem. Abra somente as entradas e dependências do fluxo, não a árvore inteira.
+3. Leia `.vibeflow/plan-report.json` como evidência operacional. Use `rg --files` e `rg -n` para localizar `spec.md` (obrigatório), `interview.md` se houver, `plan.md` e `.vibeflow/REGRAS.md`, além dos caminhos necessários para definir resultados, dependências e provas. Abra somente as entradas e dependências do fluxo, não a árvore inteira.
 
 Erros determinísticos previstos: `INIT_AUSENTE` exige `/vibe-init`. `PLAN_SEM_SPEC` exige spec prévia. `MVP_INESPERADO`, `MODO_INVALIDO`, `PLAN_JA_ANALISADO` e `FASE_AUSENTE` exigem diagnosticar a causa e não devem ser contornados.
 
@@ -58,59 +58,31 @@ RECOMENDO: <opção>, <1 linha explicando o porquê e impacto>
 (ok / outra?)
 ```
 
-## 3. Conferência de Pré-requisitos e Ferramentas
+## 3. Preparo e ferramentas
 
-Antes de fatiar, audite a spec e o ambiente:
+Antes de fatiar, confira a spec, a superfície da entrega e somente as ferramentas exigidas pelas provas escolhidas:
 
+1. **Spec sólida:** A*/C* observáveis, limites claros de Fora, direção visual definida se houver UI e caminhos existentes ou acordados. Com UI visível, exige `design.md` aprovado na mesma pasta; sem UI, registra `Design: N/A`.
+2. **Preparo local:** Faça uma checklist curta dos comandos, ferramentas e serviços necessários para executar as provas. Confira `gitleaks` quando o repositório ou CI exigir varredura de segredos. Resolva uma instalação ou conexão local simples durante o preparo quando estiver disponível e autorizada. Ausência local, por si só, não cria T*: planeje uma task somente se o setup persistente fizer parte da entrega do projeto. Se uma dependência externa impedir uma prova e não houver solução local, registre o bloqueio ou a limitação.
+3. **Validação visual:** Se a entrega envolver interface ou DOM, escolha navegador integrado (`@Browser` ou equivalente), depois MCP Server `chrome-devtools`, ou Playwright somente se já existir no repositório ou for solicitado para fluxos repetíveis e assertions. Ausência de capacidade visual é limitação explícita; não obriga navegador em tasks sem UI nem instalação automática.
+4. **Decisões críticas (MVP):** Toda decisão da spec possui ação explícita e as tasks correspondentes citam seus IDs.
 
-1. **Spec sólida:** A*/C* observáveis, limites claros de Fora, direção visual definida se houver UI, caminhos existentes ou acordados. Com UI visível, exige `design.md` aprovado na mesma pasta como entrada do fatiamento; sem UI, registra N/A explícito.
-2. **Validação de Ferramentas de Teste e Suporte:**
-   - **Gitleaks:** Se o repositório/CI prevê varredura de segredos ou verificação de credenciais, verificar se o executável `gitleaks` está disponível no ambiente. Se ausente, o plano DEVE alocar uma task inicial (ex.: T1 de setup) para instalar/configurar o gitleaks.
-   - **Validação visual:** Se a entrega envolver frontend, interface web, renderização DOM ou testes de ponta a ponta em navegador, selecionar nesta ordem, navegador integrado (`@Browser` ou equivalente) primeiro quando disponível, MCP Server `chrome-devtools` para snapshot, screenshot, DOM, estilos, console, rede e assets, ou Playwright somente se já existir no repositório ou for solicitado para fluxos repetíveis e assertions.
-   - Ausência de capacidade visual deve ser registrada como limitação da verificação. Não transformar a ausência em passe, não obrigar navegador a tasks sem UI e não instalar ferramenta automaticamente só para preencher o gate.
-   - Para controles compactos, planejar `icon-only` somente para ações universalmente reconhecíveis, como lixeira para apagar, mantendo nome acessível, área de interação adequada, foco visível e tooltip quando aplicável. Ações ambíguas continuam com texto.
-   - Outras dependências críticas de teste e execução devem ser identificadas previamente para garantir que os comandos de verificação sejam executáveis.
-3. **Decisões críticas (MVP):** Toda decisão da spec possui ação explícita e as tasks correspondentes citam seus IDs.
+## 4. Fatiar por resultado
 
-## 4. Fatiar
+Agrupe o trabalho em fatias verticais verificáveis, com um resultado coeso por T*. Uma T* pode tocar vários arquivos e durar mais de uma sessão quando continua entregando o mesmo resultado.
 
-Fatia **vertical** (um caminho usável de ponta a ponta), nunca horizontal (ex.: criar todas as tabelas, depois toda a API, depois toda a UI).
+Crie outra T* somente quando houver um resultado entregável separado, uma dependência real de execução, um risco que exija isolamento ou uma fatia que não possa ser verificada como unidade. Quantidade de arquivos ou critérios de aceite, duração estimada, pontuação e a conjunção "e" no título não justificam uma quebra por si sós.
 
-### Regra de Size
+### Regras das Tasks
 
-`Size` mede a complexidade estrutural para entregar uma única fatia vertical verde. Não é duração, volume de texto nem contagem isolada de arquivos. Para cada T*, pontue as cinco dimensões abaixo com `0`, `1` ou `2` e some os valores:
-
-| Dimensão | 0 | 1 | 2 |
-|---|---|---|---|
-| Superfície | Um módulo ou artefato | Vários arquivos do mesmo módulo | Vários subsistemas |
-| Acoplamento | Isolado | Contrato interno compartilhado | API, schema, auth ou serviço externo |
-| Verificação | Unitário ou estático | Integração ou serviço | E2E, navegador, hardware ou dependência externa |
-| Incerteza | Padrão conhecido | Investigação pequena | Comportamento ou solução desconhecida |
-| Coordenação | Independente e reversível | Uma dependência ou migração | Ordem crítica, rollout ou efeito irreversível |
-
-| Score | Size final | Ação |
-|---|---|---|
-| 0–3 | low | Uma T* |
-| 4–6 | medium | Uma T* |
-| 7–8 | high | Uma T*, com justificativa explícita |
-| 9–10 | — | Quebrar obrigatoriamente antes de gravar o plan |
-
-`Risk` é separado do score de `Size` e registra impacto potencial: `low` para mudança local e reversível, `medium` para contrato compartilhado ou regressão relevante, e `high` para autenticação, autorização, pagamento, segredo, dado pessoal, produção, perda de dados ou alto blast radius. `Risk: high` pode exigir uma rota e validações mais rigorosas, mas não transforma automaticamente `Size` em `high`.
-
-O campo `Arquivos` continua listando paths prováveis e ajudando a explicar a superfície, mas não define sozinho o tamanho. Não estime minutos no plan. Se o tempo real for observado depois, use-o apenas para calibrar a regra em outra revisão, nunca para classificar uma task individual. O esforço da rota (`low`, `medium`, `high`, `xhigh`, `max`) é independente do `Size`; uma rota `high` pode conter T* `low` ou `medium`.
-
-Quebre obrigatoriamente se: score `9–10`; mais de uma sessão focada; aceite com mais de 3 bullets; múltiplos subsistemas independentes; ou "e" no título indicando mais de um outcome.
-
-### Regras das Tasks:
-
-1. **Walking Skeleton / Smoke Test Inicial:** A primeira task funcional (T1 ou logo após o setup de ferramentas) deve validar o ponto de entrada real (subir a aplicação, executar `--help` no CLI ou rodar o bootstrap inicial).
-2. **Estrutura de cada T\*:** Título com verbo + outcome, `Spec: A*/C*`, aceite testável, verificação com comando real do repo, dependências explícitas (`Deps`), arquivos prováveis, `Size` com score e `Risk` separado.
-3. **Decisões Críticas:** Quando a task implementar ou substituir decisão crítica, adicionar `Decisões: <ID> (<ação>)`.
-4. **Comandos de Verificação Reais:** Toda task exige pelo menos um comando de teste executável no repositório. Teste apenas manual recusa o aceite; leitura de arquivo não conta como verificação.
-5. **Dependências (`Deps`):** Declarar apenas dependências reais de execução. Fatias independentes usam `Deps: nenhuma`.
-6. **Unidade de execução:** Cada `T*` deve ser uma fatia verificável e independente para execução, commit e handoff. Não criar agrupamentos ou portas intermediárias fora das dependências reais.
-7. **UI Greenfield:** Criar uma task de tokens/kit antes das telas caso não haja Design System já existente.
-8. **Banco de Dados e Migrations:** Alocar migrations e schemas dentro das respectivas fatias verticais (`T*`) que os consom, com comandos executáveis de migration e seed mínimo para testes. Migrations devem ser não destrutivas (padrão expand/contract).
+1. **Ponto de entrada:** Quando o resultado criar ou alterar um ponto de entrada executável, inclua o smoke test desse ponto na mesma T*. Não crie T* apenas para repetir baseline ou smoke test genérico.
+2. **Estrutura de cada T\*:** Título com verbo e resultado, `Spec: A*/C*`, aceite observável, verificação com comando executável do repo e dependências explícitas (`Deps`). Inclua `Arquivos` ou `Risco` somente quando ajudarem a implementar, isolar ou revisar a fatia.
+3. **Decisões críticas:** Quando a task implementar ou substituir decisão crítica, adicionar `Decisões: <ID> (<ação>)`.
+4. **Verificação:** Toda task exige comando executável que prove seu aceite. Verificação só manual ou leitura de arquivo não conta como prova suficiente.
+5. **Dependências (`Deps`):** Declarar apenas predecessores reais de execução. Fatias independentes usam `Deps: nenhuma`; a linha de dependências define a fila, sem repetir a ordem em outra seção.
+6. **Paralelização e checkpoint:** Indique grupos paralelizáveis somente quando independência, ownership dos arquivos e ausência de conflito estiverem claros. Registre checkpoint de review apenas quando um risco ou contrato compartilhado precisar ser julgado antes de outra T*.
+7. **UI Greenfield:** Entregue componentes e tokens dentro de fatias de resultado; não crie task de preparo visual sem entrega verificável.
+8. **Banco de dados e migrations:** Mantenha migrations e schemas nas respectivas fatias verticais e inclua comandos executáveis de migration e seed mínimo. Migrations devem ser não destrutivas (padrão expand/contract).
 
 IDs estáveis: `T1`, `T2`, `T3`... em ordem sequencial. Sem prefixos arbitrários como `T001`, `[P]` ou `[US1]`.
 
@@ -133,9 +105,9 @@ Não pergunte se pode salvar e não cole o corpo do documento no chat.
 Plan gravado: <created.path>/plan.md
 
 - Overview: <1 linha>
-- Ordem: Fase 1 ... → Fase 2 ... (N tasks, cada uma com sua verificação)
-- Ferramentas essenciais: <gitleaks / chrome-devtools validados ou task de setup alocada>
-- Primeira T*: <título do smoke test / walking skeleton>
+- Resultados e dependências: <resumo curto da fila, sem repetir cada Deps>
+- Preparo: <ferramentas necessárias disponíveis ou bloqueio registrado>
+- Execução conjunta/checkpoint: <somente se aplicável>
 
 Arquivo disponível em <created.path>/plan.md. Responda "aprovado" para confirmar, "pode ir pro implement" (ou "pode ir para a próxima fase") para avançar imediatamente, ou indique os ajustes desejados.
 ```
