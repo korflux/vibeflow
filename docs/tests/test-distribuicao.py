@@ -157,7 +157,8 @@ class DistribuicaoContracts(unittest.TestCase):
             self.assertIn("rg -n", text, name)
             self.assertIn("árvore inteira", text, name)
             self.assertNotIn("wip", text.lower(), name)
-            self.assertNotIn("checkpoint", text.lower(), name)
+            if name not in ("vibe-plan", "vibe-review"):
+                self.assertNotIn("checkpoint", text.lower(), name)
 
         for name in ("vibe-plan", "vibe-analyze", "vibe-implement", "vibe-review"):
             self.assertIn("novo chat", skill_texts[name].lower(), name)
@@ -179,8 +180,9 @@ class DistribuicaoContracts(unittest.TestCase):
             self.assertIn("# Status: rascunho", template, name)
             self.assertIn("artefato vivo", template.lower(), name)
             self.assertIn("chat", template.lower(), name)
-            self.assertNotIn("checkpoint", template.lower(), name)
-        self.assertNotIn("wip", template.lower(), name)
+            self.assertNotIn("wip", template.lower(), name)
+            if name not in ("vibe-plan", "vibe-review"):
+                self.assertNotIn("checkpoint", template.lower(), name)
 
     # C5: o contrato Git fica distribuído entre implement, review e o template de execução.
     def test_task_commit_and_phase_push_contract(self) -> None:
@@ -192,24 +194,42 @@ class DistribuicaoContracts(unittest.TestCase):
         self.assertIn("git push", review)
         self.assertIn("sem `--force`", review)
         self.assertNotIn("checkpoint", implement.lower())
-        self.assertNotIn("checkpoint", review.lower())
+        self.assertIn("checkpoint nunca abre finalização git", review.lower())
 
-    # C5: a remoção cobre a documentação operacional atual, não apenas as duas skills executoras.
-    def test_checkpoint_removed_from_canonical_contract(self) -> None:
+    # C5: checkpoint fica no plan e na review, com publicação reservada à etapa final.
+    def test_checkpoint_contract_is_declared_and_scoped(self) -> None:
         paths = [
             ROOT / "README.md",
-            ROOT / "docs" / "ESCOPO.md",
             ROOT / ".vibeflow" / "REGRAS.md",
         ]
         for name in SKILLS:
-            paths.append(ROOT / name / "SKILL.md")
-            paths.append(ROOT / "docs" / name / "ARQUITETURA.md")
-            paths.append(ROOT / "docs" / name / "ANALISE.md")
-        for name in ("interview", "spec", "plan", "analyze", "implement", "review"):
-            paths.append(ROOT / f"vibe-{name}" / "templates" / f"{name}.md")
+            if name in ("vibe-plan", "vibe-review"):
+                continue
+            paths.extend((ROOT / name / "SKILL.md", ROOT / "docs" / name / "ARQUITETURA.md", ROOT / "docs" / name / "ANALISE.md"))
+            if name != "vibe-init":
+                stem = name.removeprefix("vibe-")
+                paths.append(ROOT / name / "templates" / f"{stem}.md")
+            else:
+                paths.append(ROOT / name / "templates" / "REGRAS.md")
         for path in paths:
             content = path.read_text(encoding="utf-8-sig").lower()
             self.assertNotIn("checkpoint", content, str(path))
+            self.assertNotIn("check point", content, str(path))
+
+        allowed = (
+            ROOT / "docs" / "ESCOPO.md",
+            ROOT / "vibe-plan" / "SKILL.md",
+            ROOT / "vibe-plan" / "templates" / "plan.md",
+            ROOT / "docs" / "vibe-plan" / "ARQUITETURA.md",
+            ROOT / "docs" / "vibe-plan" / "ANALISE.md",
+            ROOT / "vibe-review" / "SKILL.md",
+            ROOT / "vibe-review" / "templates" / "review.md",
+            ROOT / "docs" / "vibe-review" / "ARQUITETURA.md",
+            ROOT / "docs" / "vibe-review" / "ANALISE.md",
+        )
+        for path in allowed:
+            content = path.read_text(encoding="utf-8-sig").lower()
+            self.assertIn("checkpoint", content, str(path))
             self.assertNotIn("check point", content, str(path))
 
     # C4: o transporte temporário removido não pode reaparecer no ignore operacional.

@@ -268,7 +268,7 @@ class PowershellParity(unittest.TestCase):
 
 
 class SkillContracts(unittest.TestCase):
-    """Trava a sincronização semântica na IA e os 5 pilares do protocolo de auditoria."""
+    """Trava os gates semânticos, a cobertura da auditoria e o fechamento Git."""
 
     def test_sync_requires_human_approval_and_has_no_motor_flag(self) -> None:
         skill = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
@@ -278,14 +278,28 @@ class SkillContracts(unittest.TestCase):
         for script in (SCRIPT, POWERSHELL_SCRIPT, SKILL_DIR / "scripts" / "review.sh"):
             self.assertNotIn("--sync", script.read_text(encoding="utf-8-sig").lower())
 
+    # Confirma que os eixos obrigatórios continuam disponíveis na review.
     def test_review_requires_five_audit_pillars(self) -> None:
         skill = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("Rastreabilidade e Verificação Anti-Alucinação", skill)
-        self.assertIn("Re-execução e Integridade dos Testes", skill)
+        self.assertIn("Provas e Integridade dos Testes", skill)
         self.assertIn("Auditoria Implacável de Segurança e Hardening", skill)
         self.assertIn("Inspeção Visual e Interface", skill)
         self.assertIn("Simplificação e Qualidade de Código", skill)
         self.assertIn("chrome-devtools", skill)
+
+    # Garante que checkpoint e review final não compartilhem o gate de conclusão da phase.
+    def test_checkpoint_and_final_review_have_separate_gates(self) -> None:
+        skill = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
+        template = (SKILL_DIR / "templates" / "review.md").read_text(encoding="utf-8")
+        architecture = (Path.cwd() / "docs" / "vibe-review" / "ARQUITETURA.md").read_text(encoding="utf-8")
+        self.assertIn("todas as T* do marco estão concluídas", skill)
+        self.assertIn("Nunca declare a feature concluída", skill)
+        self.assertIn("sincronize decisões, crie commit residual ou publique a phase", skill)
+        self.assertIn("Não rode automaticamente a matriz de comandos de cada T*", skill)
+        self.assertIn("Provas reaproveitadas", template)
+        self.assertIn("Checkpoint registra o resultado do marco", template)
+        self.assertIn("Review final exige a fila do plan concluída", architecture)
 
     # Garante que a review é a única porta de commit residual e push da phase.
     def test_review_owns_final_phase_commit_and_push(self) -> None:
@@ -296,7 +310,8 @@ class SkillContracts(unittest.TestCase):
             self.assertIn("git push", text)
             self.assertIn("sem `--force`", text)
             self.assertIn("Approve", text)
-            self.assertNotIn("checkpoint", text.lower())
+        self.assertIn("Checkpoint nunca abre finalização Git", skill)
+        self.assertIn("Omitir em checkpoint", template)
         self.assertIn("Critical ou Required", skill)
         self.assertIn("Não faça `git push`", (Path.cwd() / "vibe-implement" / "SKILL.md").read_text(encoding="utf-8"))
 

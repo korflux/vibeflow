@@ -96,7 +96,7 @@ Reduzir o número e o tamanho das tasks e a repetição de testes na cadeia `vib
 - [x] A4: implement reconhece o fluxo relevante, entrega código já enxuto e executa a prova final sem repetição quando não houve edição.
 - [x] A5: delegação disponível acelera trabalho independente, com isolamento de edição e integração pelo coordenador; a mesma fase funciona sem subagentes.
 - [x] A6: execução paralela não mistura alterações, marcações, provas ou commits entre T*.
-- [ ] A7: review intermediária, quando indicada, avalia o marco; review final verifica a integração sem reexecutar automaticamente toda a matriz por T*.
+- [x] A7: review intermediária, quando indicada, avalia o marco; review final verifica a integração sem reexecutar automaticamente toda a matriz por T*.
 - [ ] A8: relatórios operacionais têm necessidade justificada ou são substituídos por saída transitória suficiente, preservando seleção, recusas e fila; não restam JSONs redundantes no workspace.
 
 ### Critérios de sucesso

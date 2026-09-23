@@ -32,12 +32,12 @@ Apply:
 - MVP: `… -Apply -Mvp`, sem slug ou dir
 - Unix: `review.sh --apply` / `--apply --slug "…"`
 
-## 1. Abrir (5 linhas)
+## 1. Abrir (6 linhas)
 
-rota · etapa · alvo · plan · spec · analyze · diff
+rota · tipo · alvo · plan/fila · spec · analyze · diff
 
 ```text
-etapa 1 first-pass · alvo: phase-2-vibe-review · plan: sim · spec: sim · analyze: sim · diff: working tree
+final · etapa 1 first-pass · alvo: phase-2-vibe-review · fila: concluída · spec: sim · analyze: sim · diff: working tree
 ```
 
 `modo_sugerido=criar` e sem `--slug` = não há pasta. Não grude review nova no N de outro pedido.
@@ -49,6 +49,10 @@ Já existe `review.md` = próxima etapa no **mesmo** arquivo.
 |---|---|
 | Sem alvo e sem diff | **Para.** Peça path, branch, PR ou `--dir` |
 | T* obrigatórias em `[ ]` e o humano pediu “pronto da feature” | Recuse Approve de feature. Pode revisar o diff e listar o que falta no plan |
+| Plan declara checkpoint e todas as T* do marco estão concluídas | Faça checkpoint somente do marco, das provas relevantes e do contrato ou risco declarado; registre as T* restantes |
+| Plan declara checkpoint, mas alguma T* do marco está aberta | **Para.** Informe a dependência aberta e faça handoff para `vibe-implement` |
+| Há T* abertas e não existe checkpoint aplicável no plan | Não faça review final nem invente checkpoint; informe a fila e faça handoff para `vibe-implement` |
+| Todas as T* do plan estão concluídas | Faça review final da integração e dos riscos alterados |
 | Intenção/sucesso/fora frouxos | Devolve interview/spec. Finding de código não reabre plan |
 | Etapa 2+ | Mesmo `review.md`. Edite o vivo diretamente e acrescente a etapa sem substituir o histórico |
 | “Já corrige” | Grave o veredito **primeiro**. Handoff implement. Não patche aqui |
@@ -62,20 +66,33 @@ RECOMENDO: <opção>, <1 linha>
 
 Barra de Approve: saúde do código + convenção do repo. Não bloquear gosto. No Express, julgue só rastreabilidade mais visual, incluindo acessibilidade afetada. Segurança e banco só abrem se o diff tocar essas superfícies.
 
-## 3. Protocolo Implacável de Auditoria (Julgar antes de gravar)
+## 3. Checkpoint, review final e prova proporcional
 
-A review é um processo cético e investigativo. A IA não confia cegamente em checkboxes nem em logs passados. Inspecione o código real e execute as verificações nos 5 pilares obrigatórios:
+A review é um processo cético e investigativo. Não confie cegamente em checkboxes nem em logs passados. Escolha o tipo pela fila e pelo checkpoint explícito do `plan.md`; não transforme uma revisão parcial em veredito de fase.
+
+| Tipo | Escopo | Veredito e efeitos |
+|---|---|---|
+| Checkpoint | Somente as T* concluídas do marco declarado, suas provas, o contrato compartilhado ou risco que justifica a revisão. Registre as T* que continuam abertas. | A etapa pode concluir “Marco aprovado” ou “Request changes”. Nunca declare a feature concluída, marque Approve final, sincronize decisões, crie commit residual ou publique a phase. Com fila aberta e sem bloqueios, mantenha `# Status: rascunho` e faça handoff para `vibe-implement`. |
+| Final | Fila do plan concluída; julgue critérios de aceite, código integrado e riscos que o diff alterou. | Approve só depois de comprovar a integração e fechar bloqueios. A finalização Git continua sujeita à confirmação humana explícita. |
+
+### Selecionar e executar provas
+
+1. Confira no `implement.md` as provas registradas por T* e compare os paths cobertos com o estado integrado. Reaproveite prova verde quando não houve edição posterior nos paths cobertos e ela continua relevante para o resultado atual.
+2. Execute somente a menor prova que falta para julgar o marco ou a integração. Reexecute uma prova quando estiver ausente, falhou, ficou desatualizada por edição posterior, não cobre a integração entre tasks, ou quando um risco alterado exigir cobertura adicional.
+3. Não rode automaticamente a matriz de comandos de cada T*. Na review final, prefira uma verificação agregada existente quando ela comprovar a integração; rode o Smoke Test somente quando a entrada real tiver mudado, sua prova estiver ausente/desatualizada ou for necessária para cobrir o fluxo integrado.
+4. Registre em cada etapa as provas reaproveitadas, os comandos executados e o motivo. Se uma prova necessária falhar, abra `R*` `Required` com comando e remédio; não aprove silenciosamente.
+
+Inspecione o código integrado e aplique estes pilares ao escopo da etapa:
 
 1. **Rastreabilidade e Verificação Anti-Alucinação (Audit Trail):**
-   - Cruze o pedido original (`interview.md`), os critérios de aceite (`spec.md` `A*`/`C*`) e as tasks (`plan.md` `T*`).
-   - Inspecione o código-fonte de cada task `T*` concluída: valide se a funcionalidade foi realmente implementada de ponta a ponta ou se há stubs, `pass`, `TODO`, mocks falsos ou código incompleto. Task marcada sem código correspondente vira `R*` `gap: missing` (`Critical`).
-2. **Re-execução e Integridade dos Testes:**
-   - Re-execute os testes do repositório no ambiente real (incluindo o Smoke Test / Walking Skeleton da T1 no ponto de entrada).
+   - Cruze o pedido (`interview.md` quando houver), os critérios `A*`/`C*` e o `plan.md`. No checkpoint, julgue só o marco declarado; no final, confirme que as tasks concluídas produziram a integração pedida.
+   - Inspecione os paths e o fluxo real que comprovam esse escopo. T* marcada sem código correspondente vira `R*` `gap: missing` (`Critical`).
+2. **Provas e Integridade dos Testes:**
    - Cace falsos positivos: testes sem asserções reais, testes que dão `assert True`, testes que apenas testam mocks sem exercitar a implementação real.
-   - Verifique se os testes cobrem casos de borda, entradas vazias, nulas, limites numéricos e caminhos de erro.
-   - Se os testes não passarem ou forem falsos positivos: registre `R*` `Required`.
+   - Verifique casos de borda e caminhos de erro relevantes às superfícies alteradas. Use a seleção de provas acima; não repita suites de T* sem lacuna ou risco que o justifique.
+   - Se uma prova necessária falhar ou for falso positivo: registre `R*` `Required`.
 3. **Auditoria Implacável de Segurança e Hardening:**
-   - Inspecione cada entrada externa, formulário, parâmetro de URL e body de request (`references/security-and-hardening.md`):
+   - Nas superfícies tocadas pelo diff, inspecione entradas externas, formulários, parâmetros de URL e bodies de request (`references/security-and-hardening.md`):
      - Há risco de Injeção (SQL, XSS, Command/Shell Injection, SSRF)?
      - Há limite de caracteres e tamanho de payload para prevenir DoS e travamentos?
      - IDOR: o servidor valida se o usuário autenticado tem permissão sobre o recurso manipulado?
@@ -113,42 +130,47 @@ Molde: `templates/review.md`. Uma casa por fato. Omita seção que esta etapa n�
 
 | Campo | Abre | Fecha / some |
 |---|---|---|
+| Tipo de review | Toda etapa | Registre checkpoint ou final e, no checkpoint, a referência exata do marco no plan |
 | Cobertura | Há `spec.md` | Sem spec: omitir |
 | R* | Achado com path + evidência | `[x]` quando implement provou. Lista vazia some. Sem bloqueio: “nenhum bloqueio” |
+| Provas | Toda etapa | Liste provas reaproveitadas, executadas e o motivo; N/A só quando não há prova aplicável |
 | Visual | Diff desta etapa toca UI | Sem UI: omitir |
 | Segurança | Diff toca superfície listada no §3 | Sem isso: omitir |
 | DoD / Notas | Há o que aplicar ou anotar | Vazio / N/A: omitir |
 | Etapa N | Toda run desta skill no pedido | Etapa antiga **não** apaga |
 
-Status: `rascunho` na etapa 1; `request-changes` enquanto houver R* bloqueante em `[ ]`; `aprovado` quando o veredito vigente for Approve e o humano confirmou.
+Status: `rascunho` durante checkpoints e enquanto o veredito final aguarda confirmação; `request-changes` enquanto houver R* bloqueante em `[ ]`; `aprovado` somente após Approve final, fila concluída e confirmação humana.
 
 Não pergunte se pode salvar. Não cole o corpo no chat.
 
-**Etapa 1 (não há `review.md`):** execute o apply para preparar o `review.md` vivo e escreva nele diretamente (§0).
+**Etapa 1 (não há `review.md`):** execute o apply para preparar o `review.md` vivo e escreva nele diretamente (§0). Registre o tipo e o escopo antes de julgar.
 
-**Etapa 2+ (já há `review.md`):** edite o vivo diretamente. Acrescente `### Etapa N` e atualize a checklist e o **veredito vigente** sem substituir o histórico.
+**Etapa 2+ (já há `review.md`):** edite o vivo diretamente. Acrescente `### Etapa N` e atualize checklist e provas sem substituir o histórico. Só a review final atualiza o veredito vigente para Approve; checkpoint registra o resultado do marco na própria etapa.
 
-3. Chat, **só**:
+### Resposta no chat
+
+Responda, **só**:
 
 ```text
 Review gravada: <created.path>/review.md
 
-- Etapa: <N> · Veredito vigente: Approve | Request changes | Approve com defer
+- Etapa: <N> · Tipo: checkpoint | final · Resultado: Marco aprovado | Request changes | Approve final | Approve com defer
+- Fila: <T* restantes | concluída>
 - Abriu: <R* ou nenhum>
 - Fechou: <R* ou nenhum>
 - Handoff: vibe-implement | volta vibe-spec | finalização Git da phase
 
-Arquivo disponível em <created.path>/review.md. Responda "aprovado" para sincronizar decisões e encerrar, ou indique os ajustes desejados.
+Arquivo disponível em <created.path>/review.md. Em checkpoint, a fase continua aberta; na review final, responda "aprovado" para sincronizar decisões e encerrar, ou indique os ajustes desejados.
 ```
 
 
 
 ## 5. Fechar
 
-Commitável: o `review.md` vivo e, no fechamento aprovado, os artefatos residuais autorizados da phase. Fora: `review-report.json`. Request changes → handoff `vibe-implement` (arquivo + R* em `[ ]`), com recomendação de novo chat focado na correção. Se o usuário pedir para corrigir imediatamente, inicia `vibe-implement`. Continuar no mesmo chat é permitido somente por escolha consciente do humano; o `review.md` e o diff são a ponte.
-Approve sem R* bloqueantes em `[ ]` ainda é proposta até o humano ler e confirmar.
+Commitável: o `review.md` vivo e, somente no fechamento final aprovado, os artefatos residuais autorizados da phase. Checkpoint não cria commit residual nem publica a phase. Fora: `review-report.json`. Request changes → handoff `vibe-implement` (arquivo + R* em `[ ]`), com recomendação de novo chat focado na correção. Se o usuário pedir para corrigir imediatamente, inicia `vibe-implement`. Continuar no mesmo chat é permitido somente por escolha consciente do humano; o `review.md` e o diff são a ponte.
+Approve final sem R* bloqueantes em `[ ]` ainda é proposta até o humano ler e confirmar.
 
-Após aprovação humana explícita:
+Após aprovação humana explícita da review final, com a fila concluída:
 
 1. Marque `# Status: aprovado`, o veredito Approve e a aprovação humana no `review.md` vivo.
 2. Se **Decisões para vigência** estiver vazia, feche a cadeia sem tocar regras.
@@ -158,9 +180,9 @@ Após aprovação humana explícita:
 
 ### Finalização Git da phase
 
-Depois da aprovação humana explícita e somente quando não houver Critical ou Required em `[ ]`:
+Esta seção só se aplica à review final, depois da aprovação humana explícita, com todas as T* concluídas e sem Critical ou Required em `[ ]`. Checkpoint nunca abre finalização Git.
 
-1. Execute a suíte final da phase, `git diff --check` e gitleaks quando previsto pelo repositório.
+1. Execute a prova final necessária para a integração conforme §3, sem repetir automaticamente a matriz de cada T*. Execute `git diff --check` e gitleaks quando previsto pelo repositório.
 2. Compare o estado atual com o snapshot da review. Se houver path fora da phase, das decisões aprovadas ou da correção registrada, pare e peça isolamento; não misture trabalho pré-existente.
 3. Adicione somente os paths residuais autorizados, com `git add -- path/da/phase .vibeflow/REGRAS.md` quando a sincronização foi aprovada. Nunca use `git add -A` ou `git add .`.
 4. Valide `git diff --cached --check` e a lista de paths. Crie `chore(phase-N): finalize review` sem `Co-Authored-By` quando houver mudanças residuais. Não crie commit vazio; se não houver residual, o último commit da task é o HEAD da phase.

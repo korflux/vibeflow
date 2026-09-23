@@ -34,6 +34,22 @@
 
 - A primeira execução do teste de contrato detectou a remoção acidental da frase “Sem teste verde executável”; a regra foi restaurada e as duas verificações foram repetidas com sucesso.
 
+## Fatia T3
+
+- Feito: Separados checkpoint declarado no plan e review final. Checkpoint julga só o marco e mantém a phase aberta; review final avalia a integração e os riscos alterados, reaproveitando provas válidas e executando apenas o que falta. Template, arquitetura, análise e testes cobrem os limites de conclusão e publicação.
+- Marcado: T3 em `plan.md`; A7 em `spec.md`. A3 e C3 já estavam provados nas tasks anteriores.
+- Prova: `python docs/vibe-review/tests/test-review.py -v` -> 21 testes OK; `python docs/tests/test-mvp-flow.py -v` -> 2 testes OK; `python docs/tests/test-distribuicao.py -v` -> 12 testes OK.
+- Commit da task: `task(T3): limitar review a marcos e riscos`; hash registrado no chat após o commit.
+- Decisões críticas: N/A.
+
+### Feedback +
+
+- Checkpoint não pode sincronizar decisões, criar commit residual ou publicar a phase; o gate humano e a finalização permanecem exclusivos da review final.
+
+### Feedback -
+
+- A primeira execução encontrou expectativas de contrato antigas que proibiam checkpoint na review e exigiam reexecução total. Os testes foram alinhados ao novo contrato e as três suítes passaram.
+
 ## Handoff
 
-`vibe-implement` para T3, próxima task elegível. T4 continua bloqueada por T3. Recomende um novo chat focado na T3; o `plan.md` e este histórico são a ponte.
+Checkpoint `vibe-review` após T1-T3, conforme declarado no plan, antes de iniciar T4. Recomende um novo chat para o checkpoint; o `plan.md` e este histórico são a ponte.

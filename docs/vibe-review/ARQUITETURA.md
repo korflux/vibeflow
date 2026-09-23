@@ -17,7 +17,7 @@
 | `references/ui-visual-quality.md` | Checklist visual renderizada quando o diff toca UI. |
 | `references/security-and-hardening.md` | Catálogo sob demanda para superfícies sensíveis. |
 | `.vibeflow/review-report.json` | Evidência operacional, fora do Git. |
-| `review.md` | Veredito vivo, histórico de etapas e itens R*. |
+| `review.md` | Tipo e escopo de cada etapa, provas, histórico, veredito final e itens R*. |
 
 O motor não julga o diff, não edita source, não escreve a prosa e não sincroniza `REGRAS.md`.
 
@@ -41,17 +41,23 @@ O relatório contém `vibeflow`, `phases`, `next_n`, `existing`, `plan_pendente`
 4. A IA escreve diretamente a primeira etapa ou acrescenta a próxima etapa no mesmo arquivo.
 5. O script não substitui o histórico, não toca source e não altera `REGRAS.md`.
 
-Status: `rascunho` na primeira etapa, `request-changes` com R* bloqueante aberto, `aprovado` quando o veredito for Approve e o humano confirmar. A sincronização de decisões vigentes ocorre somente depois dessa confirmação, por patch mínimo da IA.
+Status: `rascunho` durante checkpoints e enquanto o veredito final aguarda confirmação, `request-changes` com R* bloqueante aberto, `aprovado` somente após review final, fila concluída, Approve e confirmação humana. A sincronização de decisões vigentes ocorre somente depois dessa confirmação, por patch mínimo da IA.
 
-## 5. Auditoria e prova visual
+## 5. Tipos de review e seleção de provas
 
-A review cruza pedido, spec, plan, analyze e código real. Reexecuta testes, verifica falsos positivos, segurança, funções alteradas, dados e migrations quando aplicável.
+Checkpoint só é permitido quando `plan.md` declarar o marco e sua justificativa e todas as T* desse marco estiverem concluídas. A etapa julga apenas o marco, suas provas e o contrato ou risco compartilhado indicado. Registra T* ainda abertas, não declara a feature concluída, não marca Approve final e não autoriza sincronização de decisões, commit residual ou push.
 
-Se o diff tocar UI, seleciona navegador integrado quando disponível, MCP Server `chrome-devtools` para snapshot, screenshot, DOM, estilos, console, rede e assets, e Playwright somente se já existir ou for solicitado. Registra rota, viewport, estado, ações e evidência. Sem capacidade visual, abre `R* Required` e não aprova silenciosamente.
+Review final exige a fila do plan concluída e julga critérios de aceite, código integrado e riscos alterados. Confere as provas registradas por T* no estado atual; reaproveita evidência verde que ainda cobre paths sem edição posterior e executa apenas a verificação necessária que falta para integração ou risco. Não repete automaticamente cada comando da matriz de T*. Toda prova executada ou reaproveitada fica registrada no `review.md` com seu motivo.
+
+## 6. Auditoria e prova visual
+
+A review cruza pedido, spec, plan, analyze e código real. Confere as provas registradas e segue a seleção proporcional da seção anterior para executar apenas as verificações que faltam; também verifica falsos positivos, segurança, funções alteradas, dados e migrations quando aplicável.
+
+Aplica os pilares de auditoria ao diff e às superfícies relevantes para o marco ou para a integração final. Se o diff tocar UI, seleciona navegador integrado quando disponível, MCP Server `chrome-devtools` para snapshot, screenshot, DOM, estilos, console, rede e assets, e Playwright somente se já existir ou for solicitado. Registra rota, viewport, estado, ações e evidência. Sem capacidade visual, abre `R* Required` e não aprova silenciosamente.
 
 `icon-only` só é aceito para ação universalmente reconhecível, como lixeira para apagar, com nome acessível, foco visível, área de interação e tooltip quando aplicável. Ações ambíguas permanecem textuais.
 
-## 6. Chat, testes e handoff
+## 7. Chat, testes e handoff
 
 Recomenda-se novo chat para review, especialmente em re-review ou Request changes. O `review.md`, o diff e o plan são a ponte; continuidade no mesmo chat exige escolha consciente.
 
@@ -59,9 +65,10 @@ Suítes: `docs/vibe-review/tests/test-review.py` e `docs/vibe-review/tests/test-
 
 Handoff: `vibe-implement` com R* bloqueante, retorno à spec quando a intenção quebrou, ou finalização Git da phase após aprovação humana.
 
-## 7. Limites
+## 8. Limites
 
 - Um alvo possui um `review.md`; cada nova execução acrescenta `### Etapa N`.
+- Checkpoint depende de marco explícito no plan; somente a review final pode concluir fase e abrir a finalização Git.
 - Review não edita source, testes, lockfile ou artefatos anteriores.
 - O motor não interpreta Status, veredito ou diff.
-- O arquivo vivo entra no Git; relatório fica fora. Review não corrige source. Após Approve confirmado e sem R* bloqueante, a review valida a suíte final, cria o commit residual quando houver e executa `git push` do upstream atual sem force.
+- O arquivo vivo entra no Git; relatório fica fora. Review não corrige source. Após Approve final confirmado, fila concluída e sem R* bloqueante, a review executa a prova necessária da integração, cria o commit residual quando houver e executa `git push` do upstream atual sem force.

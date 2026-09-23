@@ -10,6 +10,14 @@
 - Cadeia: interview? / spec.md / plan.md / analyze.md
 - O que muda: <1-3 frases>
 
+## Tipo de review
+
+- Tipo: <checkpoint | final>
+- Marco e justificativa: <referência exata ao plan.md | integração final>
+- T* abertas fora do marco: <IDs ou nenhuma>
+- Provas reaproveitadas: <T* e resultado | nenhuma>
+- Provas executadas: <comando, motivo e resultado | nenhuma>
+
 ## Cobertura
 
 <!-- omitir se não houver spec.md -->
@@ -65,13 +73,15 @@
 
 ## Veredito vigente
 
+<!-- Preencher somente na review final. Checkpoint registra o resultado do marco em Etapas e nunca aprova nem conclui a phase. -->
+
 - [ ] **Approve**: nenhum Critical/Required em `[ ]`
 - [ ] **Request changes**: há Critical/Required em `[ ]`
 - [ ] **Approve com defer**: <qual R* e por quê>
 
 ## Decisões para vigência
 
-<!-- Omitir se a entrega não cria nem substitui decisão crítica. Esta tabela é proposta até aprovação humana. -->
+<!-- Omitir em checkpoint e quando a entrega não cria nem substitui decisão crítica. Esta tabela só é proposta na review final e continua sujeita à aprovação humana. -->
 
 | ID | Ação | Decisão aprovada | Fonte da decisão | Evidência de implementação |
 |---|---|---|---|---|
@@ -83,13 +93,16 @@ vibe-implement | finalização Git da phase
 
 <!-- ou: volta vibe-spec | cadeia fechada -->
 
+<!-- Aprovação humana só se aplica à review final, depois do Approve e da fila concluída. -->
 - [ ] Aprovação humana (leu o arquivo e confirmou)
 
 - Chat: a review deve recomendar novo chat para correções em `vibe-implement`; após Approve e confirmação humana, o handoff é a finalização Git da phase. O `review.md` vivo e o diff são a ponte.
 
 ## Finalização Git da phase
 
-- Pré-condições: Approve confirmado, todas as `T*` concluídas, Critical/Required fechados, suíte final verde, `git diff --check` e gitleaks quando previsto.
+<!-- Omitir em checkpoint. Só a review final, com fila concluída e aprovação humana, abre este gate. -->
+
+- Pré-condições: Approve final confirmado, todas as `T*` concluídas, Critical/Required fechados, prova necessária da integração verde, `git diff --check` e gitleaks quando previsto.
 - Commit final: `chore(phase-N): finalize review`, somente com paths residuais autorizados e sem `Co-Authored-By`; sem mudanças residuais, manter o último commit da task.
 - Push: `git push` para o upstream atual, sem `--force`. Registrar hash/HEAD, paths e resultado; falha mantém o handoff bloqueado.
 
@@ -97,9 +110,14 @@ vibe-implement | finalização Git da phase
 
 ### Etapa 1 - first-pass - <o que olhou: T* / diff / provas>
 
+- Tipo: <checkpoint | final>
+- Marco e justificativa: <referência ao plan.md | integração final>
+- T* abertas fora do marco: <IDs ou nenhuma>
+- Provas reaproveitadas: <IDs e resultado | nenhuma>
+- Provas executadas: <comando, motivo e resultado | nenhuma>
 - Leu: plan.md <sim | não havia>
 - Abriu: R1, R2 (ou nenhum)
 - Fechou: nenhum
-- Veredito desta etapa: Request changes | Approve | Approve com defer
+- Veredito desta etapa: Marco aprovado | Request changes | Approve final | Approve com defer
 
 <!-- etapa seguinte: copie ### Etapa N abaixo. Não apague as anteriores. -->

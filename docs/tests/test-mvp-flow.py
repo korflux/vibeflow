@@ -51,14 +51,15 @@ class MvpFlow(unittest.TestCase):
     def tearDown(self) -> None:
         shutil.rmtree(self.repo, ignore_errors=True)
 
+    # Prova que uma review checkpoint com T* aberta no plan continua sem Approve de fase.
     def test_full_max_chain_uses_only_mvp_target(self) -> None:
         artifacts = {
             "interview": "# MVP\n\n## Decisões críticas\n\n| ID | Estado | Decisão | Motivo |\n|---|---|---|---|\n| AUTH-01 | DECIDIDO | sessão segura | acesso |\n",
             "spec": "# Spec: MVP\n# Status: aprovado\n\n## Decisões críticas\n\n| ID | Ação | Decisão | Motivo | Fonte |\n|---|---|---|---|---|\n| AUTH-01 | mantém | sessão segura | acesso | interview |\n",
-            "plan": "# Plan: MVP\n# Status: aprovado\n\n### T1: implementar acesso\n\n- [ ] T1 concluída\n- **Decisões:** AUTH-01 (mantém)\n- **Deps:** nenhuma\n",
+            "plan": "# Plan: MVP\n# Status: aprovado\n\n### T1: implementar acesso\n\n- [x] T1 concluída\n- **Decisões:** AUTH-01 (mantém)\n- **Deps:** nenhuma\n\n### T2: integrar sessão\n\n- [ ] T2 concluída\n- **Deps:** T1\n",
             "analyze": "# Analyze: MVP\n# Status: aprovado\n\n## Veredito\n\nlimpo\n",
             "implement": "# Implement: MVP\n# Status: em-curso\n\n## Fatia T1\n\n- Feito: acesso\n- Prova: teste ok\n",
-            "review": "# Review: MVP\n# Status: rascunho\n\n## Veredito vigente\n\n- [x] **Approve**\n",
+            "review": "# Review: MVP\n# Status: rascunho\n\n## Tipo de review\n- Tipo: checkpoint\n- Marco: T1, implementar acesso\n- T* abertas fora do marco: T2\n\n## Veredito vigente\n\n- [ ] **Approve**\n\n## Etapas\n\n### Etapa 1 - checkpoint - T1\n- Veredito desta etapa: Marco aprovado\n",
         }
 
         for skill in SKILLS:
@@ -75,6 +76,12 @@ class MvpFlow(unittest.TestCase):
         self.assertEqual([], phase_dirs)
         self.assertEqual(self.rules, (self.vf / "REGRAS.md").read_bytes())
         self.assertEqual([], list(self.vf.glob("*-wip.md")))
+        review = (self.vf / "mvp" / "review.md").read_text(encoding="utf-8")
+        self.assertIn("Tipo: checkpoint", review)
+        self.assertIn("T* abertas fora do marco: T2", review)
+        self.assertIn("# Status: rascunho", review)
+        self.assertNotIn("- [x] **Approve**", review)
+        self.assertNotIn("## Finalização Git da phase", review)
 
     def test_decision_sync_contract_is_after_human_approval_and_ai_only(self) -> None:
         skill = (ROOT / "vibe-review" / "SKILL.md").read_text(encoding="utf-8")

@@ -59,17 +59,19 @@ Atualizar o contrato de `plan`, `implement` e `review` para trabalhar por result
 
 ### T3: Limitar review aos marcos e riscos relevantes
 
-- [ ] T3 concluída
+- [x] T3 concluída
 - **Spec:** A3, A7, C3
 - **O quê:** Definir review intermediária do diff de um marco justificado e review final da integração, sem repetir por padrão todas as verificações de cada T*. Preservar achados bloqueantes e o gate humano para o push final.
 - **Aceite:**
-  - [ ] Checkpoint com T* ainda abertas não declara a feature concluída nem publica a fase.
-  - [ ] Review final julga aceite, código integrado e riscos alterados; executa a prova necessária sem matriz automática redundante.
+  - [x] Checkpoint com T* ainda abertas não declara a feature concluída nem publica a fase.
+  - [x] Review final julga aceite, código integrado e riscos alterados; executa a prova necessária sem matriz automática redundante.
 - **Verificação:**
-  - [ ] `python docs/vibe-review/tests/test-review.py -v`
-  - [ ] `python docs/tests/test-mvp-flow.py -v`
+  - [x] `python docs/vibe-review/tests/test-review.py -v`
+  - [x] `python docs/tests/test-mvp-flow.py -v`
+  - [x] `python docs/tests/test-distribuicao.py -v` (contrato de distribuição afetado)
+- **Prova:** `test-review.py` -> 21 testes OK; `test-mvp-flow.py` -> 2 testes OK; `test-distribuicao.py` -> 12 testes OK.
 - **Deps:** nenhuma
-- **Arquivos:** `vibe-review/SKILL.md`, `vibe-review/templates/review.md`, `docs/vibe-review/`, testes de contrato afetados.
+- **Arquivos:** `vibe-review/SKILL.md`, `vibe-review/templates/review.md`, `docs/vibe-review/ARQUITETURA.md`, `docs/vibe-review/ANALISE.md`, `docs/vibe-review/tests/test-review.py`, `docs/tests/test-mvp-flow.py`, `docs/tests/test-distribuicao.py`.
 - **Risk:** `medium, review parcial não pode disparar fechamento Git`
 
 ### T4: Reduzir relatórios operacionais e provar a cadeia
