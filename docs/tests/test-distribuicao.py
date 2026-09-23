@@ -22,6 +22,7 @@ SKILLS = (
 )
 CANONICAL_SKILL_PATHS = [f"./{name}" for name in SKILLS]
 ANTIGRAVITY_SCHEMA = "https://antigravity.google/schemas/v1/plugin.json"
+CONTRACT_VERSION = "2.0.0"
 
 
 # Lê o name do frontmatter YAML; é o identificador que o CLI e o slash usam.
@@ -73,7 +74,8 @@ class DistribuicaoContracts(unittest.TestCase):
         self.assertEqual(entry["source"], "./")
         self.assertEqual(entry["skills"], CANONICAL_SKILL_PATHS)
         self.assertEqual(plugin["name"], "vibeflow")
-        self.assertEqual(plugin["version"], "1.0.0")
+        self.assertEqual(plugin["version"], CONTRACT_VERSION)
+        self.assertEqual(entry["version"], CONTRACT_VERSION)
         self.assertEqual(plugin["skills"], CANONICAL_SKILL_PATHS)
         self.assertNotIn("commands", plugin)
         self.assertNotIn("commands", entry)
@@ -83,11 +85,12 @@ class DistribuicaoContracts(unittest.TestCase):
         plugin = load_json(".codex-plugin/plugin.json")
         marketplace = load_json(".agents/plugins/marketplace.json")
         self.assertEqual(plugin["name"], "vibeflow")
-        self.assertEqual(plugin["version"], "1.0.0")
+        self.assertEqual(plugin["version"], CONTRACT_VERSION)
         self.assertEqual(plugin["skills"], "./skills/")
         self.assertNotIn("commands", plugin)
         entry = marketplace["plugins"][0]
         self.assertEqual(entry["name"], "vibeflow")
+        self.assertEqual(entry["version"], CONTRACT_VERSION)
         self.assertEqual(entry["source"]["path"], "./")
 
     # C3: Grok indexa o plugin na raiz; Antigravity usa plugin.json da raiz.
@@ -97,9 +100,21 @@ class DistribuicaoContracts(unittest.TestCase):
         entry = grok["plugins"][0]
         self.assertEqual(grok["name"], "vibeflow")
         self.assertEqual(entry["name"], "vibeflow")
+        self.assertEqual(entry["version"], CONTRACT_VERSION)
         self.assertEqual(entry["source"]["path"], "./")
         self.assertEqual(antigravity["name"], "vibeflow")
         self.assertFalse((ROOT / "commands").exists(), "commands/ de alias não entra nesta fatia")
+
+    # T4: todos os manifests versionáveis anunciam a mesma versão major do contrato.
+    def test_manifest_contract_versions_match(self) -> None:
+        manifests = (
+            load_json(".claude-plugin/plugin.json")["version"],
+            load_json(".claude-plugin/marketplace.json")["plugins"][0]["version"],
+            load_json(".codex-plugin/plugin.json")["version"],
+            load_json(".agents/plugins/marketplace.json")["plugins"][0]["version"],
+            load_json(".grok-plugin/marketplace.json")["plugins"][0]["version"],
+        )
+        self.assertEqual((CONTRACT_VERSION,) * 5, manifests)
 
     # C2: o manifest Antigravity usa somente o schema mínimo e não declara componentes por alias.
     def test_antigravity_manifest_minimal(self) -> None:
@@ -142,6 +157,8 @@ class DistribuicaoContracts(unittest.TestCase):
             "agy plugin install https://github.com/korflux/vibeflow.git",
             "grok plugin marketplace add korflux/vibeflow",
             "grok plugin install vibeflow --trust",
+            "Versão dos manifests: `2.0.0`",
+            "Só `.vibeflow/init-report.json` persiste",
         )
         missing = [line for line in required if line not in readme]
         self.assertEqual(missing, [], f"README sem: {missing}")
@@ -232,10 +249,10 @@ class DistribuicaoContracts(unittest.TestCase):
             self.assertIn("checkpoint", content, str(path))
             self.assertNotIn("check point", content, str(path))
 
-    # C4: o transporte temporário removido não pode reaparecer no ignore operacional.
-    def test_vibeflow_gitignore_has_no_wip_entry(self) -> None:
+    # C4: apenas o estado persistido do init permanece no ignore operacional do Vibeflow.
+    def test_vibeflow_gitignore_keeps_only_init_state(self) -> None:
         gitignore = (ROOT / ".vibeflow" / ".gitignore").read_text(encoding="utf-8-sig")
-        self.assertEqual([], [line for line in gitignore.splitlines() if "wip" in line.lower()])
+        self.assertEqual(["init-report.json", "init-pending.json"], gitignore.splitlines())
 
     # C5: o workflow de contrato executa esta suíte.
     def test_ci_runs_this_suite(self) -> None:

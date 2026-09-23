@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import shutil
 import subprocess
 import sys
@@ -17,6 +18,7 @@ INIT_POWERSHELL_SCRIPT = ROOT / "vibe-init" / "scripts" / "init.ps1"
 ENGINES = (
     ("interview", "interview.md", ()),
     ("spec", "spec.md", ("interview.md",)),
+    ("design", "design.md", ("spec.md",)),
     ("plan", "plan.md", ("spec.md",)),
     ("analyze", "analyze.md", ("spec.md", "plan.md")),
     ("implement", "implement.md", ("plan.md",)),
@@ -93,6 +95,16 @@ def invoke_engine(skill: str, repo: Path, arguments: list[str], powershell: bool
     return subprocess.run(command, capture_output=True, text=True, check=False)
 
 
+# Decodifica o inventário JSON transitório para confirmar o contrato dos motores.
+def output_payload(process: subprocess.CompletedProcess[str]) -> dict:
+    if process.returncode != 0:
+        raise AssertionError(process.stderr)
+    payload = json.loads(process.stdout)
+    if not isinstance(payload, dict):
+        raise AssertionError("stdout do motor não contém um objeto JSON.")
+    return payload
+
+
 # Executa o init isolado para provar que a raiz .vibeflow linkada é recusada antes da escrita.
 def invoke_init(repo: Path, powershell: bool) -> subprocess.CompletedProcess[str]:
     if powershell:
@@ -102,7 +114,7 @@ def invoke_init(repo: Path, powershell: bool) -> subprocess.CompletedProcess[str
     return subprocess.run(command, capture_output=True, text=True, check=False)
 
 
-# Prepara um alvo válido para alcançar a escrita do relatório de cada motor.
+# Prepara um alvo válido para alcançar a emissão transitória do inventário.
 def prepare_engine_target(phases: Path, skill: str, prerequisites: tuple[str, ...]) -> list[str]:
     if skill == "interview":
         return ["--slug", "nova fase"]
@@ -178,8 +190,8 @@ class PythonReparseSafety(unittest.TestCase):
                     shutil.rmtree(repo, ignore_errors=True)
                     shutil.rmtree(outside, ignore_errors=True)
 
-    # R5: relatório linkado não pode redirecionar a escrita para fora do repositório.
-    def test_report_link_is_rejected(self) -> None:
+    # R5: o caminho legado de relatório não é escrito nem redireciona saída para fora do repo.
+    def test_legacy_report_link_is_ignored(self) -> None:
         for skill, _artifact, prerequisites in ENGINES:
             with self.subTest(skill=skill):
                 repo, outside, phases = seed_repo(Path.cwd())
@@ -190,15 +202,15 @@ class PythonReparseSafety(unittest.TestCase):
                     external_file.write_bytes(sentinel)
                     create_link(repo / ".vibeflow" / f"{skill}-report.json", external_file, directory=False)
                     process = invoke_engine(skill, repo, arguments, powershell=False)
-                    self.assertNotEqual(0, process.returncode)
-                    self.assertIn("RELATORIO_INESPERADO", process.stderr)
+                    output_payload(process)
+                    self.assertTrue((repo / ".vibeflow" / f"{skill}-report.json").is_symlink())
                     self.assertEqual(sentinel, external_file.read_bytes())
                 finally:
                     shutil.rmtree(repo, ignore_errors=True)
                     shutil.rmtree(outside, ignore_errors=True)
 
-    # R5: .gitignore linkado não pode receber exclusões operacionais fora do repositório.
-    def test_gitignore_link_is_rejected(self) -> None:
+    # R5: os motores de inventário não alteram o gitignore operacional.
+    def test_gitignore_link_is_ignored_by_inventory(self) -> None:
         for skill, _artifact, prerequisites in ENGINES:
             with self.subTest(skill=skill):
                 repo, outside, phases = seed_repo(Path.cwd())
@@ -210,8 +222,8 @@ class PythonReparseSafety(unittest.TestCase):
                     (repo / ".vibeflow" / ".gitignore").unlink()
                     create_link(repo / ".vibeflow" / ".gitignore", external_file, directory=False)
                     process = invoke_engine(skill, repo, arguments, powershell=False)
-                    self.assertNotEqual(0, process.returncode)
-                    self.assertIn("GITIGNORE_INESPERADO", process.stderr)
+                    output_payload(process)
+                    self.assertTrue((repo / ".vibeflow" / ".gitignore").is_symlink())
                     self.assertEqual(sentinel, external_file.read_bytes())
                 finally:
                     shutil.rmtree(repo, ignore_errors=True)
@@ -305,8 +317,8 @@ class PowershellReparseSafety(unittest.TestCase):
                     shutil.rmtree(repo, ignore_errors=True)
                     shutil.rmtree(outside, ignore_errors=True)
 
-    # R5: relatório linkado não pode redirecionar a escrita para fora do repositório.
-    def test_report_link_is_rejected(self) -> None:
+    # R5: o caminho legado de relatório não é escrito nem redireciona saída para fora do repo.
+    def test_legacy_report_link_is_ignored(self) -> None:
         for skill, _artifact, prerequisites in ENGINES:
             with self.subTest(skill=skill):
                 repo, outside, phases = seed_repo(Path.cwd())
@@ -317,15 +329,15 @@ class PowershellReparseSafety(unittest.TestCase):
                     external_file.write_bytes(sentinel)
                     create_link(repo / ".vibeflow" / f"{skill}-report.json", external_file, directory=False)
                     process = invoke_engine(skill, repo, arguments, powershell=True)
-                    self.assertNotEqual(0, process.returncode)
-                    self.assertIn("RELATORIO_INESPERADO", process.stderr)
+                    output_payload(process)
+                    self.assertTrue((repo / ".vibeflow" / f"{skill}-report.json").is_symlink())
                     self.assertEqual(sentinel, external_file.read_bytes())
                 finally:
                     shutil.rmtree(repo, ignore_errors=True)
                     shutil.rmtree(outside, ignore_errors=True)
 
-    # R5: .gitignore linkado não pode receber exclusões operacionais fora do repositório.
-    def test_gitignore_link_is_rejected(self) -> None:
+    # R5: os motores de inventário não alteram o gitignore operacional.
+    def test_gitignore_link_is_ignored_by_inventory(self) -> None:
         for skill, _artifact, prerequisites in ENGINES:
             with self.subTest(skill=skill):
                 repo, outside, phases = seed_repo(Path.cwd())
@@ -337,8 +349,8 @@ class PowershellReparseSafety(unittest.TestCase):
                     (repo / ".vibeflow" / ".gitignore").unlink()
                     create_link(repo / ".vibeflow" / ".gitignore", external_file, directory=False)
                     process = invoke_engine(skill, repo, arguments, powershell=True)
-                    self.assertNotEqual(0, process.returncode)
-                    self.assertIn("GITIGNORE_INESPERADO", process.stderr)
+                    output_payload(process)
+                    self.assertTrue((repo / ".vibeflow" / ".gitignore").is_symlink())
                     self.assertEqual(sentinel, external_file.read_bytes())
                 finally:
                     shutil.rmtree(repo, ignore_errors=True)

@@ -12,9 +12,9 @@
 | Peça | Responsabilidade |
 |---|---|
 | `SKILL.md` | Validar a spec, preparo das provas, resultados, dependências e paralelismo seguro. |
-| `scripts/plan.py`, `plan.ps1`, `plan.sh` | Inventário, seleção do alvo, gates mecânicos, preparação do vivo e relatório. |
+| `scripts/plan.py`, `plan.ps1`, `plan.sh` | Inventário, seleção do alvo, gates mecânicos, preparação do vivo e JSON operacional no stdout. |
 | `templates/plan.md` | Forma compacta de Overview, preparo opcional, Tasks e handoff. |
-| `.vibeflow/plan-report.json` | Evidência operacional, fora do Git. |
+| `stdout (JSON)` | Evidência operacional transitória, consumida na mesma execução. |
 | `plan.md` | Fila executável e fonte da próxima T*. |
 
 ## 2. Dependências e seleção
@@ -37,9 +37,9 @@ A IA verifica `gitleaks` quando o repositório prevê essa prova. Se a spec toca
 
 Tasks devem conter um resultado coeso, aceite observável, comando executável de verificação, `Deps` e `Spec: A*/C*`. `Arquivos` e `Risco` são opcionais quando orientam execução, isolamento ou review. Se a task criar ou alterar um ponto de entrada executável, a prova de smoke entra nessa mesma task.
 
-## 4. Relatório
+## 4. JSON operacional no stdout
 
-O relatório mantém `vibeflow`, `phases`, `next_n`, `existing`, `spec_pendente`, `rascunho`, `alvo`, `mvp`, `modo_sugerido`, `created`, `modo`, `actions` e `avisos`. Não existe estado de arquivo temporário no contrato.
+O JSON transitório mantém `vibeflow`, `phases`, `next_n`, `existing`, `spec_pendente`, `rascunho`, `alvo`, `mvp`, `modo_sugerido`, `created`, `modo`, `actions` e `avisos`. Não existe estado de arquivo temporário no contrato.
 
 `actions` registra criação de `phases/.gitkeep` ou do arquivo vivo. `files` lista os seis artefatos da cadeia.
 
@@ -49,7 +49,7 @@ O relatório mantém `vibeflow`, `phases`, `next_n`, `existing`, `spec_pendente`
 2. Valida predecessor, `--dir`, status mecânico e ausência de `analyze.md`.
 3. Prepara `plan.md` vazio quando ausente.
 4. Preserva bytes do vivo existente.
-5. Grava o relatório.
+5. Emite o JSON operacional no stdout para leitura imediata da IA.
 6. A IA escreve ou atualiza diretamente `plan.md`, mantendo `# Status: rascunho` até aprovação.
 
 O script não escreve prosa, não escolhe a semântica da fila e não dispara implement. Ajuste ou aprovação posterior é patch no arquivo vivo.
@@ -70,5 +70,5 @@ O handoff normal é `vibe-implement`; no MVP é `vibe-analyze`. Recomenda-se nov
 
 - Plan não contém código nem abre fase por conta própria.
 - O inventário não autoriza ler a árvore inteira. A IA localiza evidências com `rg --files` e `rg -n`.
-- O relatório fica fora do Git; `plan.md` entra no Git.
+- O JSON operacional é transitório no stdout; `plan.md` entra no Git.
 - Plan não commita; o commit começa somente quando a implement fecha uma task verde. Não há disparo automático da próxima skill.

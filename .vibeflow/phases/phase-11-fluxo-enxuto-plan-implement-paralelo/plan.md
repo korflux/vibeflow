@@ -76,22 +76,23 @@ Atualizar o contrato de `plan`, `implement` e `review` para trabalhar por result
 
 ### T4: Reduzir relatórios operacionais e provar a cadeia
 
-- [ ] T4 concluída
+- [x] T4 concluída
 - **Spec:** A8, C1, C3
 - **O quê:** Inventariar consumidores dos `*-report.json` da cadeia e manter apenas dados operacionais necessários. Onde couber, entregar inventário e fila pela saída transitória dos motores sem gravar JSON no workspace; ajustar Python, PowerShell, skill e testes consumidores juntos. Preservar init ou outro relatório cuja persistência seja necessária, registrando o motivo. Consolidar o exemplo de três T* e a versão do contrato.
 - **Aceite:**
-  - [ ] Nenhum relatório redundante permanece; os mantidos têm motivo documentado.
-  - [ ] Seleção de alvo, recusas, fila, preservação do vivo e paridade dos motores continuam provadas.
-  - [ ] Exemplo sequencial e paralelo isolado termina com mesma cobertura e commits atribuíveis; suítes da cadeia passam.
+  - [x] Nenhum relatório redundante permanece; o `init-report.json` mantido tem motivo documentado.
+  - [x] Seleção de alvo, recusas, fila, preservação do vivo e paridade dos motores continuam provadas.
+  - [x] Exemplo sequencial e paralelo isolado termina com mesma cobertura e commits atribuíveis; suítes da cadeia passam.
 - **Verificação:**
-  - [ ] `python docs/vibe-plan/tests/test-plan.py -v`
-  - [ ] `python docs/vibe-implement/tests/test-implement.py -v`
-  - [ ] `python docs/vibe-review/tests/test-review.py -v`
-  - [ ] `python docs/tests/test-mvp-flow.py -v`
+  - [x] `python docs/vibe-plan/tests/test-plan.py -v`
+  - [x] `python docs/vibe-implement/tests/test-implement.py -v`
+  - [x] `python docs/vibe-review/tests/test-review.py -v`
+  - [x] `python docs/tests/test-mvp-flow.py -v`
+- **Prova:** plan 21, implement 37, review 21 e MVP-flow 2 testes passaram. Interview 22, spec 22, design 19, analyze 18, distribuição 13, reparse-safety 12 e init 32 também passaram. Os launchers Unix passaram com 6 casos de interview e 8 de implement. Somente `init-report.json` permaneceu em `.vibeflow/`; ele carrega o `apply_token` necessário para retomar um merge pendente.
 - **Deps:** T1, T2, T3
-- **Arquivos:** motores e testes dos relatórios efetivamente removidos, documentação e consumidores da cadeia; sem criar novo arquivo de estado.
+- **Arquivos:** motores Python/PowerShell e skills de interview, spec, design, plan, analyze, implement e review; arquiteturas, testes, README, manifests, `.vibeflow/.gitignore`, template de design e artefatos desta phase; sem criar novo arquivo de estado.
 - **Risk:** `medium, regressão de inventário, fila ou path público`
 
 ## Handoff
 
-`vibe-implement` após aprovação. `plan.md` é a fila; `plan-report.json` permanece fora do Git.
+Fila concluída. Handoff para `vibe-review`; `plan.md` é a fonte da fila e o inventário de plan é JSON transitório no stdout.

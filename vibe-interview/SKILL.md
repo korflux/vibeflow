@@ -14,12 +14,12 @@ A investigação começa pela pergunta ainda aberta e pelo fluxo real que precis
 
 ## 0. Entender e usar o script
 
-1. Resolva o diretório desta skill e leia o motor que vai executar: `scripts/interview.ps1` no Windows ou `scripts/interview.py` no fluxo Unix. Entenda flags, relatório, recusas, preparação do destino e preservação do arquivo vivo antes de chamá-lo. Se encontrar defeito, corrija o motor e prove o contrato antes de continuar.
+1. Resolva o diretório desta skill e leia o motor que vai executar: `scripts/interview.ps1` no Windows ou `scripts/interview.py` no fluxo Unix. Entenda flags, JSON operacional no stdout, recusas, preparação do destino e preservação do arquivo vivo antes de chamá-lo. Se encontrar defeito, corrija o motor e prove o contrato antes de continuar.
 2. No cwd do repo:
    - Windows: `pwsh "<skill>/scripts/interview.ps1"`.
    - Unix: `bash "<skill>/scripts/interview.sh"`.
    - Modo MVP: acrescente `-Mvp` ou `--mvp`.
-3. Leia `.vibeflow/interview-report.json` como evidência operacional. Use `rg --files` e `rg -n` para localizar o alvo indicado em `alvo`, as referências e os paths citados pelo humano. Abra somente as entradas e dependências que sustentam a pergunta atual.
+3. Leia o JSON operacional emitido no stdout pelo comando acima. Use `rg --files` e `rg -n` para localizar o alvo indicado em `alvo`, as referências e os paths citados pelo humano. Abra somente as entradas e dependências que sustentam a pergunta atual.
 
 `INIT_AUSENTE` exige `/vibe-init`. `PHASES_INESPERADO`, `MVP_INESPERADO` e `MODO_INVALIDO` não são contornados.
 
@@ -100,10 +100,10 @@ bash "<skill>/scripts/interview.sh" --apply --mvp
 
 No MVP, preencha também Cobertura, Mapa do produto, Direção técnica, Direção visual, Operação e Decisões críticas no artefato vivo. No modo normal, omita todas essas seções.
 
-Leia `created.path` no relatório e apresente o caminho do arquivo vivo no chat com resumo factual. `SLUG_INVALIDO`, `FASE_EXISTE`, `MVP_EXISTE` e `MODO_INVALIDO` exigem diagnosticar a causa e executar novamente. Não crie arquivo auxiliar para contornar o motor.
+Leia `created.path` no JSON do stdout e apresente o caminho do arquivo vivo no chat com resumo factual. `SLUG_INVALIDO`, `FASE_EXISTE`, `MVP_EXISTE` e `MODO_INVALIDO` exigem diagnosticar a causa e executar novamente. Não crie arquivo auxiliar para contornar o motor.
 
 ## 6. Fechar
 
 Handoff padrão é `vibe-spec` (ou geração direta do texto/documento se o objetivo for puramente editorial/conteúdo). Para MVP de software, registre também `rota: max`. `init → interview → spec` pode permanecer no mesmo chat; se um novo chat for aberto, use o `interview.md` vivo como ponte e não o contexto anterior.
 Não commite no git. Não dispare a próxima etapa a menos que o usuário tenha autorizado explicitamente o avanço (ex.: "pode ir para a próxima fase", "segue pro spec", "pode gerar").
-Informe que o artefato vivo entra no git e `interview-report.json` fica de fora.
+Informe que o JSON do inventário foi consumido do stdout e não gerou arquivo persistido.

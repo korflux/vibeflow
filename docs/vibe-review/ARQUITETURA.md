@@ -12,11 +12,11 @@
 | Peça | Responsabilidade |
 |---|---|
 | `SKILL.md` | Gate, auditoria, cobertura A*/C*, eixos, visual, segurança, veredito e finalização Git da phase. |
-| `scripts/review.py`, `review.ps1`, `review.sh` | Inventário, cadeia, alvo, preparação do vivo e relatório. |
+| `scripts/review.py`, `review.ps1`, `review.sh` | Inventário, cadeia, alvo, preparação do vivo e JSON operacional no stdout. |
 | `templates/review.md` | Checklist e forma de etapas no mesmo arquivo. |
 | `references/ui-visual-quality.md` | Checklist visual renderizada quando o diff toca UI. |
 | `references/security-and-hardening.md` | Catálogo sob demanda para superfícies sensíveis. |
-| `.vibeflow/review-report.json` | Evidência operacional, fora do Git. |
+| `stdout (JSON)` | Evidência operacional transitória, consumida na mesma execução. |
 | `review.md` | Tipo e escopo de cada etapa, provas, histórico, veredito final e itens R*. |
 
 O motor não julga o diff, não edita source, não escreve a prosa e não sincroniza `REGRAS.md`.
@@ -27,11 +27,11 @@ Sem `.vibeflow/`, `INIT_AUSENTE`. Com plan, o alvo é a maior phase com plan sem
 
 No MVP, `--mvp` exige `interview.md`, `spec.md`, `plan.md` e `analyze.md`, recusa slug/dir e usa somente `.vibeflow/mvp/`.
 
-## 3. Relatório
+## 3. JSON operacional no stdout
 
-O relatório contém `vibeflow`, `phases`, `next_n`, `existing`, `plan_pendente`, `rascunho`, `alvo`, `mvp`, `modo_sugerido`, `created`, `modo`, `actions` e `avisos`. `files` lista os artefatos vivos.
+O JSON transitório contém `vibeflow`, `phases`, `next_n`, `existing`, `plan_pendente`, `rascunho`, `alvo`, `mvp`, `modo_sugerido`, `created`, `modo`, `actions` e `avisos`. `files` lista os artefatos vivos.
 
-`actions` registra apenas criação de phase ou de `review.md`. O relatório não contém conteúdo do julgamento.
+`actions` registra apenas criação de phase ou de `review.md`. O JSON do stdout não contém conteúdo do julgamento.
 
 ## 4. Apply e etapas
 
@@ -71,4 +71,4 @@ Handoff: `vibe-implement` com R* bloqueante, retorno à spec quando a intenção
 - Checkpoint depende de marco explícito no plan; somente a review final pode concluir fase e abrir a finalização Git.
 - Review não edita source, testes, lockfile ou artefatos anteriores.
 - O motor não interpreta Status, veredito ou diff.
-- O arquivo vivo entra no Git; relatório fica fora. Review não corrige source. Após Approve final confirmado, fila concluída e sem R* bloqueante, a review executa a prova necessária da integração, cria o commit residual quando houver e executa `git push` do upstream atual sem force.
+- O arquivo vivo entra no Git; o JSON operacional é transitório no stdout. Review não corrige source. Após Approve final confirmado, fila concluída e sem R* bloqueante, a review executa a prova necessária da integração, cria o commit residual quando houver e executa `git push` do upstream atual sem force.

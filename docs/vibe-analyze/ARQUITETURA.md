@@ -12,9 +12,9 @@
 | Peça | Responsabilidade |
 |---|---|
 | `SKILL.md` | Cruzar fontes, resolver achados, perguntar ambiguidades reais e definir o veredito. |
-| `scripts/analyze.py`, `analyze.ps1`, `analyze.sh` | Inventário, validação de predecessores, preparação do vivo e relatório. |
+| `scripts/analyze.py`, `analyze.ps1`, `analyze.sh` | Inventário, validação de predecessores, preparação do vivo e JSON operacional no stdout. |
 | `references/coverage.md` | Taxonomia de passes e severidades, consultada sob demanda. |
-| `.vibeflow/analyze-report.json` | Evidência operacional, fora do Git. |
+| `stdout (JSON)` | Evidência operacional transitória, consumida na mesma execução. |
 | `analyze.md` | Certificação viva e commitável. |
 
 ## 2. Dependências e alvo
@@ -23,11 +23,11 @@ Sem `.vibeflow/`, `INIT_AUSENTE`. No modo phase, o alvo é a maior phase com `sp
 
 No modo MVP, `--mvp` exige `interview.md`, `spec.md` e `plan.md` em `.vibeflow/mvp/`, recusa `--dir` e mantém o gate de decisões críticas. Não há `n` novo.
 
-## 3. Relatório
+## 3. JSON operacional no stdout
 
-O relatório contém `vibeflow`, `phases`, `next_n`, `existing`, `plan_pendente`, `rascunho`, `alvo`, `mvp`, `modo_sugerido`, `created`, `modo`, `actions` e `avisos`. `files` lista os artefatos vivos.
+O JSON transitório contém `vibeflow`, `phases`, `next_n`, `existing`, `plan_pendente`, `rascunho`, `alvo`, `mvp`, `modo_sugerido`, `created`, `modo`, `actions` e `avisos`. `files` lista os artefatos vivos.
 
-`actions` registra apenas criação de infraestrutura ou do arquivo vivo. Não existe estado de transporte temporário no relatório.
+`actions` registra apenas criação de infraestrutura ou do arquivo vivo. Não existe estado de transporte temporário no JSON.
 
 ## 4. Apply e escrita direta
 
@@ -35,7 +35,7 @@ O relatório contém `vibeflow`, `phases`, `next_n`, `existing`, `plan_pendente`
 2. Valida `plan.md`, `spec.md` e, no MVP, `interview.md`.
 3. Prepara `analyze.md` vazio quando ausente.
 4. Preserva bytes do `analyze.md` existente.
-5. Grava o relatório.
+5. Emite o JSON operacional no stdout para leitura imediata da IA.
 6. A IA escreve ou atualiza diretamente o certificado, mantendo `# Status: rascunho` até o veredito ser revisado.
 
 O motor não corrige as fontes, não escreve prosa e não publica decisões vigentes. A IA pode aplicar patches corretivos em `spec.md`, `design.md` e `plan.md` quando a análise encontrar erro óbvio, registrando o path e a resolução no vivo.
@@ -59,4 +59,4 @@ Suítes: `docs/vibe-analyze/tests/test-analyze.py` e `docs/vibe-analyze/tests/te
 - Não cria phase, `n`, slug ou arquivo auxiliar.
 - Não edita interview, não publica `REGRAS.md` e não substitui a review.
 - O script não interpreta Status, aceite ou veredito.
-- O arquivo vivo entra no Git; o relatório fica fora; não há commit automático.
+- O arquivo vivo entra no Git; o JSON operacional é transitório no stdout; não há commit automático.

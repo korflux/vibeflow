@@ -22,7 +22,7 @@ A investigação começa pela pergunta de auditoria e pelo T*/diff que precisa s
    - Windows: `pwsh "<skill>/scripts/review.ps1"`
    - Unix: `bash "<skill>/scripts/review.sh"` (Python 3, senão pwsh 7)
    - Alvo MVP: acrescente `-Mvp` ou `--mvp`.
-3. Leia `.vibeflow/review-report.json`. Use `rg --files` e `rg -n` para localizar o alvo, o que `files` listar, `plan.md` com as provas, `spec.md`, `analyze.md` se houver, `REGRAS.md` e o diff apontado pelo humano ou da sessão. Abra somente os paths que sustentam o veredito; não leia a árvore inteira.
+3. Leia o JSON operacional emitido no stdout pelo comando acima. Use `rg --files` e `rg -n` para localizar o alvo, o que `files` listar, `plan.md` com as provas, `spec.md`, `analyze.md` se houver, `REGRAS.md` e o diff apontado pelo humano ou da sessão. Abra somente os paths que sustentam o veredito; não leia a árvore inteira.
 
 `INIT_AUSENTE` exige init. `REVIEW_SEM_ALVO`, `REVIEW_CADEIA_INCOMPLETA`, `MVP_INESPERADO`, `MODO_INVALIDO`, `FASE_AUSENTE` e `SLUG_INVALIDO` não são contornados.
 
@@ -167,7 +167,7 @@ Arquivo disponível em <created.path>/review.md. Em checkpoint, a fase continua 
 
 ## 5. Fechar
 
-Commitável: o `review.md` vivo e, somente no fechamento final aprovado, os artefatos residuais autorizados da phase. Checkpoint não cria commit residual nem publica a phase. Fora: `review-report.json`. Request changes → handoff `vibe-implement` (arquivo + R* em `[ ]`), com recomendação de novo chat focado na correção. Se o usuário pedir para corrigir imediatamente, inicia `vibe-implement`. Continuar no mesmo chat é permitido somente por escolha consciente do humano; o `review.md` e o diff são a ponte.
+Commitável: o `review.md` vivo e, somente no fechamento final aprovado, os artefatos residuais autorizados da phase. Checkpoint não cria commit residual nem publica a phase. O inventário é transitório no stdout. Request changes → handoff `vibe-implement` (arquivo + R* em `[ ]`), com recomendação de novo chat focado na correção. Se o usuário pedir para corrigir imediatamente, inicia `vibe-implement`. Continuar no mesmo chat é permitido somente por escolha consciente do humano; o `review.md` e o diff são a ponte.
 Approve final sem R* bloqueantes em `[ ]` ainda é proposta até o humano ler e confirmar.
 
 Após aprovação humana explícita da review final, com a fila concluída:
@@ -187,4 +187,4 @@ Esta seção só se aplica à review final, depois da aprovação humana explíc
 3. Adicione somente os paths residuais autorizados, com `git add -- path/da/phase .vibeflow/REGRAS.md` quando a sincronização foi aprovada. Nunca use `git add -A` ou `git add .`.
 4. Valide `git diff --cached --check` e a lista de paths. Crie `chore(phase-N): finalize review` sem `Co-Authored-By` quando houver mudanças residuais. Não crie commit vazio; se não houver residual, o último commit da task é o HEAD da phase.
 5. Execute `git push` para o upstream do branch atual, sem `--force`. Ausência de upstream, falha de commit ou falha de push mantém o handoff bloqueado e precisa ser informada com a causa segura.
-6. Registre no `review.md` e no chat o hash do commit final ou o HEAD já existente, o resultado do push e os paths enviados. Relatórios operacionais ficam fora.
+6. Registre no `review.md` e no chat o hash do commit final ou o HEAD já existente, o resultado do push e os paths enviados. O inventário é JSON transitório no stdout.

@@ -12,10 +12,10 @@
 | Peça | Responsabilidade |
 |---|---|
 | `SKILL.md` | Entender a intenção, fechar dúvidas e redigir comportamento, aceite e limites. |
-| `scripts/spec.py`, `spec.ps1`, `spec.sh` | Inventário, resolução phase/MVP, validação de predecessores, preparação do vivo e relatório. |
+| `scripts/spec.py`, `spec.ps1`, `spec.sh` | Inventário, resolução phase/MVP, validação de predecessores, preparação do vivo e JSON operacional no stdout. |
 | `templates/spec.md` | Estrutura do documento. O motor não preenche prosa. |
 | `references/ui-visual-direction.md` | Catálogo consultado somente quando a spec toca UI. |
-| `.vibeflow/spec-report.json` | Evidência operacional, fora do Git. |
+| `stdout (JSON)` | Evidência operacional transitória, consumida na mesma execução. |
 | `spec.md` | Fonte viva, rascunho ou aprovada, commitável. |
 
 ## 2. Dependências e seleção
@@ -32,18 +32,18 @@ pwsh spec.ps1 [-Root PATH] [-Apply] [-Slug TEXTO] [-Dir phase-N-slug] [-Mvp]
 bash spec.sh [--root PATH] [--apply] [--slug TEXTO] [--dir phase-N-slug] [--mvp]
 ```
 
-## 3. Relatório
+## 3. JSON operacional no stdout
 
-O relatório mantém `vibeflow`, `phases`, `next_n`, `existing`, `interview_pendente`, `rascunho`, `alvo`, `mvp`, `modo_sugerido`, `created`, `modo`, `actions` e `avisos`. O campo `files` lista apenas artefatos vivos da cadeia.
+O JSON transitório mantém `vibeflow`, `phases`, `next_n`, `existing`, `interview_pendente`, `rascunho`, `alvo`, `mvp`, `modo_sugerido`, `created`, `modo`, `actions` e `avisos`. O campo `files` lista apenas artefatos vivos da cadeia.
 
-`actions` registra criação de `phases/.gitkeep`, phase, MVP ou do arquivo vivo. O relatório não descreve conteúdo semântico nem uma etapa de transporte temporário.
+`actions` registra criação de `phases/.gitkeep`, phase, MVP ou do arquivo vivo. O JSON não descreve conteúdo semântico nem uma etapa de transporte temporário.
 
 ## 4. Apply e escrita direta
 
 1. Reexecuta o inventário e valida `spec.md` predecessor, slug e colisões.
 2. Prepara `spec.md` vazio quando o destino ainda não possui o arquivo.
 3. Preserva byte a byte o arquivo vivo existente.
-4. Grava o relatório operacional.
+4. Emite o JSON operacional no stdout para leitura imediata da IA.
 5. A IA escreve ou atualiza diretamente o `spec.md`, mantendo `# Status: rascunho` durante a elaboração.
 6. A aprovação é um patch no vivo; um novo apply não é necessário para mudar o status.
 
@@ -65,8 +65,8 @@ Suítes: `docs/vibe-spec/tests/test-spec.py` e `docs/vibe-spec/tests/test-spec.s
 
 ## 7. Limites
 
-- A IA é dona da prosa; o script é dono de path, inventário e relatório.
+- A IA é dona da prosa; o script é dono de path e inventário mecânico.
 - Um alvo possui um `spec.md`; pedido novo usa outra phase.
-- O inventário e o relatório são mapas de seleção. A IA usa `rg --files` e `rg -n` para abrir somente as entradas e dependências relevantes.
+- O inventário emitido no stdout é um mapa de seleção. A IA usa `rg --files` e `rg -n` para abrir somente as entradas e dependências relevantes.
 - A continuidade pode permanecer no chat de `interview`; `plan` deve receber o caminho e o status do arquivo vivo.
-- O arquivo vivo entra no Git; `spec-report.json` fica fora. Não há commit automático.
+- O arquivo vivo entra no Git; o JSON do inventário é transitório no stdout. Não há commit automático.

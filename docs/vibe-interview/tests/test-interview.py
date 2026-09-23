@@ -19,7 +19,7 @@ POWERSHELL_SCRIPT = SKILL_DIR / "scripts" / "interview.ps1"
 TEMPLATE = SKILL_DIR / "templates" / "interview.md"
 
 
-# Executa o motor Python e devolve processo e relatório, quando produzido.
+# Executa o motor Python e decodifica o inventário transitório enviado no stdout.
 def invoke(repo: Path, *arguments: str, check: bool = True) -> tuple[subprocess.CompletedProcess[str], dict | None]:
     process = subprocess.run(
         [sys.executable, str(SCRIPT), "--root", str(repo), *arguments],
@@ -27,8 +27,7 @@ def invoke(repo: Path, *arguments: str, check: bool = True) -> tuple[subprocess.
         text=True,
         check=check,
     )
-    report_path = repo / ".vibeflow" / "interview-report.json"
-    report = json.loads(report_path.read_text(encoding="utf-8")) if report_path.is_file() else None
+    report = json.loads(process.stdout) if process.returncode == 0 and process.stdout.strip() else None
     return process, report
 
 
@@ -134,14 +133,14 @@ class PythonContracts(unittest.TestCase):
         self.assertNotEqual(0, process.returncode)
         self.assertIn("FASE_EXISTE", process.stderr)
 
-    # Confirma que o motor adiciona somente seu relatório ao gitignore operacional.
-    def test_gitignore_preserves_init_entries(self) -> None:
+    # Confirma que o JSON transitório não cria relatório nem altera o gitignore de init.
+    def test_stdout_report_does_not_mutate_workspace(self) -> None:
         vf = seed_vibeflow(self.repo)
-        invoke(self.repo)
-        text = (vf / ".gitignore").read_text(encoding="utf-8")
-        self.assertIn("init-report.json", text)
-        self.assertIn("interview-report.json", text)
-        self.assertNotIn("interview-wip.md", text)
+        original = (vf / ".gitignore").read_bytes()
+        _, report = invoke(self.repo)
+        self.assertIsNotNone(report)
+        self.assertEqual(original, (vf / ".gitignore").read_bytes())
+        self.assertEqual([], list(vf.glob("*-report.json")))
 
     def test_aberta_requires_interview_without_spec(self) -> None:
         vf = seed_vibeflow(self.repo)
@@ -268,6 +267,7 @@ class PowershellParity(unittest.TestCase):
         self.assertTrue(dest.is_file())
         self.assertEqual(b"", dest.read_bytes())
 
+    # Confirma que o motor PowerShell entrega a seleção MVP no stdout sem persistir relatório.
     def test_mvp_apply_same_path(self) -> None:
         vf = seed_vibeflow(self.repo)
         process = subprocess.run(
@@ -286,7 +286,8 @@ class PowershellParity(unittest.TestCase):
         self.assertEqual(0, process.returncode, process.stderr)
         dest = vf / "mvp" / "interview.md"
         self.assertEqual(b"", dest.read_bytes())
-        report = json.loads((vf / "interview-report.json").read_text(encoding="utf-8"))
+        report = json.loads(process.stdout)
+        self.assertFalse((vf / "interview-report.json").exists())
         self.assertEqual("mvp", report["created"]["kind"])
 
     # Confirma que o motor PowerShell também preserva um interview vivo já existente.
@@ -306,7 +307,8 @@ class PowershellParity(unittest.TestCase):
         )
         self.assertEqual(0, process.returncode, process.stderr)
         self.assertEqual(original, dest.read_bytes())
-        report = json.loads((vf / "interview-report.json").read_text(encoding="utf-8"))
+        report = json.loads(process.stdout)
+        self.assertFalse((vf / "interview-report.json").exists())
         self.assertNotIn("wip", report)
         self.assertEqual([], report["actions"])
 

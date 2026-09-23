@@ -20,7 +20,7 @@ A investigação começa pela pergunta de apresentação que a spec deixou abert
    - Windows: `pwsh "<skill>/scripts/design.ps1"`.
    - Unix: `bash "<skill>/scripts/design.sh"`.
    - Alvo MVP: acrescente `-Mvp` ou `--mvp`.
-3. Leia `.vibeflow/design-report.json` como evidência operacional. Use `rg --files` e `rg -n` para localizar `spec.md` (obrigatória), `interview.md` se houver, `design.md` e `.vibeflow/REGRAS.md`, além das referências de leitura citadas. Abra somente as entradas e dependências do fluxo, não a árvore inteira.
+3. Leia o JSON operacional emitido no stdout pelo comando acima. Use `rg --files` e `rg -n` para localizar `spec.md` (obrigatória), `interview.md` se houver, `design.md` e `.vibeflow/REGRAS.md`, além das referências de leitura citadas. Abra somente as entradas e dependências do fluxo, não a árvore inteira.
 
 Erros determinísticos previstos: `INIT_AUSENTE` exige `/vibe-init`. `DESIGN_SEM_SPEC` exige spec prévia. `DESIGN_JA_PLANEJADO` exige outra phase. `DESIGN_SEM_ALVO`, `PHASES_INESPERADO`, `MVP_INESPERADO`, `FASE_AUSENTE`, `FASE_EXISTE`, `SLUG_INVALIDO` e `MODO_INVALIDO` exigem diagnosticar a causa e não devem ser contornados.
 
@@ -122,5 +122,5 @@ Rascunho sem "aprovado" e sem pedido da próxima porta não autoriza iniciar o p
 ## 7. Fechar
 
 Não commite no git nesta porta. O commit começa na `vibe-implement`, depois da prova verde de cada task. Não dispare a próxima skill a menos que o usuário tenha pedido explicitamente para avançar (§6).
-Informe que o arquivo vivo `design.md` entra no git e que `design-report.json` fica de fora. Recomende abrir um novo chat para `vibe-plan`; continuar no mesmo chat é permitido somente por escolha consciente do humano. O `design.md` vivo e o handoff são a ponte entre chats.
+Informe que o JSON do inventário foi consumido do stdout e não gerou arquivo persistido. Recomende abrir um novo chat para `vibe-plan`; continuar no mesmo chat é permitido somente por escolha consciente do humano. O `design.md` vivo e o handoff são a ponte entre chats.
 Handoff normal: `vibe-plan`. Sem UI visível, o handoff da spec segue direto para `vibe-plan` com N/A explícito. `plan.md` existente bloqueia nova escrita, pedido novo exige outra phase.

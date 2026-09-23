@@ -15,25 +15,25 @@
 | Peça | Responsabilidade |
 |---|---|
 | `SKILL.md` | Gate, escolha de T*/R*, delegação opcional por capacidade do host, ciclo de seis passos, prova final, commit da task, registro e handoff. |
-| `scripts/implement.py`, `implement.ps1`, `implement.sh` | Inventário, alvo, fila, gate MVP, preparação do vivo e relatório. |
+| `scripts/implement.py`, `implement.ps1`, `implement.sh` | Inventário, alvo, fila, gate MVP, preparação do vivo e JSON operacional no stdout. |
 | `templates/implement.md` | Forma da trilha por fatia, com registro opcional de entrega delegada. |
 | `references/chrome-devtools.md` | Checklist de prova renderizada, consultada quando a task toca UI. |
-| `.vibeflow/implement-report.json` | Evidência operacional, fora do Git. |
+| `stdout (JSON)` | Inventário e fila transitórios, consumidos na mesma execução. |
 | `implement.md` | Histórico acumulativo da execução, incluindo a mensagem do commit e o handoff; o hash fica no resultado da execução e no chat para evitar um residual pós-commit. |
 
 O script não codifica, não escreve a prosa da implementação, não marca aceite e não escolhe semântica.
 
 ## 2. Alvo e fila
 
-Sem `.vibeflow/`, `INIT_AUSENTE`. Com plan, o alvo é a maior phase com `plan.md`; `--dir` força uma phase existente. Sem plan, o relatório deixa a fila nula e a skill encaminha `high+` para `vibe-plan`; uma execução avulsa `low/medium` pode usar `--slug`.
+Sem `.vibeflow/`, `INIT_AUSENTE`. Com plan, o alvo é a maior phase com `plan.md`; `--dir` força uma phase existente. Sem plan, o JSON deixa a fila nula e a skill encaminha `high+` para `vibe-plan`; uma execução avulsa `low/medium` pode usar `--slug`.
 
 O parser lê somente `### T{n}:`, a linha `T{n} concluída` e `Deps`. `fila.elegiveis` contém tasks abertas cujas dependências estão concluídas; `fila.bloqueadas` expõe as dependências faltantes. R* Critical/Required abertos têm prioridade sem alterar o plan.
 
 No MVP, `--mvp` fixa `.vibeflow/mvp/`, exige plan e analyze aprovado com veredito limpo, e não aceita slug ou dir.
 
-## 3. Relatório
+## 3. JSON operacional no stdout
 
-O relatório contém `vibeflow`, `phases`, `next_n`, `existing`, `plan_pendente`, `rascunho`, `alvo`, `mvp`, `modo_sugerido`, `created`, `modo`, `actions`, `avisos` e `fila`. `files` lista os seis artefatos vivos.
+O JSON transitório contém `vibeflow`, `phases`, `next_n`, `existing`, `plan_pendente`, `rascunho`, `alvo`, `mvp`, `modo_sugerido`, `created`, `modo`, `actions`, `avisos` e `fila`. `files` lista os seis artefatos vivos.
 
 `actions` registra criação de phase ou de `implement.md`. Não há estado de arquivo temporário, promoção, cópia ou hash de conteúdo semântico.
 
@@ -44,7 +44,8 @@ O relatório contém `vibeflow`, `phases`, `next_n`, `existing`, `plan_pendente`
 3. Cria a phase avulsa quando `--slug` for permitido.
 4. Prepara `implement.md` vazio somente quando ausente.
 5. Preserva bytes do vivo existente.
-6. A IA executa a task e grava diretamente a nova seção em `implement.md`.
+6. Emite o JSON operacional no stdout para leitura imediata da IA.
+7. A IA executa a task e grava diretamente a nova seção em `implement.md`.
 
 O apply não substitui histórico acumulativo. Plan, spec e review recebem apenas os patches semânticos que a skill autoriza, depois da prova verde.
 
@@ -75,4 +76,4 @@ Suítes: `docs/vibe-implement/tests/test-implement.py` e `docs/vibe-implement/te
 - Não interpreta a prosa do plan para montar a fila.
 - Agentes delegados não escrevem artefatos vivos, não operam o índice Git e não criam commits.
 - Não publica decisões vigentes em `REGRAS.md`.
-- Código e artefatos vivos da task entram no commit path-scoped; relatório fica fora. Cada task verde gera commit sem push; o push só ocorre no fechamento aprovado da phase pela review.
+- Código e artefatos vivos da task entram no commit path-scoped; o JSON do inventário é transitório no stdout. Cada task verde gera commit sem push; o push só ocorre no fechamento aprovado da phase pela review.

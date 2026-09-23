@@ -19,7 +19,7 @@ A investigação começa pela pergunta de consistência que precisa ser respondi
    - Windows: `pwsh "<skill>/scripts/analyze.ps1"`.
    - Unix: `bash "<skill>/scripts/analyze.sh"`.
    - Alvo MVP: acrescente `-Mvp` ou `--mvp`.
-3. Leia `.vibeflow/analyze-report.json` como evidência operacional. Use `rg --files` e `rg -n` para localizar `spec.md` e `plan.md` (obrigatórios), `interview.md` se houver, `analyze.md`, `.vibeflow/REGRAS.md` e os paths de código necessários. Abra somente os arquivos que sustentam o cruzamento, não a árvore inteira.
+3. Leia o JSON operacional emitido no stdout pelo comando acima. Use `rg --files` e `rg -n` para localizar `spec.md` e `plan.md` (obrigatórios), `interview.md` se houver, `analyze.md`, `.vibeflow/REGRAS.md` e os paths de código necessários. Abra somente os arquivos que sustentam o cruzamento, não a árvore inteira.
 
 Erros determinísticos previstos: `INIT_AUSENTE` exige `/vibe-init`. `ANALYZE_SEM_PLAN` exige plan. `ANALYZE_SEM_SPEC`, `ANALYZE_SEM_INTERVIEW`, `MVP_INESPERADO`, `MODO_INVALIDO` e `FASE_AUSENTE` exigem diagnosticar a causa e não devem ser contornados.
 
@@ -126,5 +126,5 @@ Rascunho sem "aprovado" e sem pedido da próxima porta não autoriza iniciar o c
 ## 7. Fechar
 
 Não commite no git. Não dispare a próxima skill a menos que o usuário tenha pedido explicitamente para avançar (§6).
-Informe que os arquivos vivos `analyze.md`, `spec.md`, `design.md` e `plan.md` atualizados entram no git e que `analyze-report.json` fica de fora. Recomende abrir um novo chat para `vibe-implement`; continuar no mesmo chat é permitido somente por escolha consciente do humano. O `analyze.md` e os artefatos vivos são a ponte entre chats.
+Informe que o JSON do inventário foi consumido do stdout e não gerou arquivo persistido; os arquivos vivos atualizados entram no git. Recomende abrir um novo chat para `vibe-implement`; continuar no mesmo chat é permitido somente por escolha consciente do humano. O `analyze.md` e os artefatos vivos são a ponte entre chats.
 Handoff registrado no arquivo: `vibe-implement`. Zero implementação nesta execução.

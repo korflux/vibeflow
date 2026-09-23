@@ -24,7 +24,7 @@ A investigação começa pela pergunta da T* elegível. Use `rg --files` para lo
    - Windows: `pwsh "<skill>/scripts/implement.ps1"`
    - Unix: `bash "<skill>/scripts/implement.sh"` (Python 3, senão pwsh 7)
    - Alvo MVP: acrescente `-Mvp` ou `--mvp`.
-3. Leia `.vibeflow/implement-report.json`. A escolha da T* sai de `fila.elegiveis` no JSON. Use `rg --files` e `rg -n` para localizar `.vibeflow/REGRAS.md`, os paths da T* e os símbolos do fluxo. Abra somente as entradas e dependências relevantes; não leia a árvore inteira.
+3. Leia o JSON operacional emitido no stdout pelo comando acima. A escolha da T* sai de `fila.elegiveis` no JSON. Use `rg --files` e `rg -n` para localizar `.vibeflow/REGRAS.md`, os paths da T* e os símbolos do fluxo. Abra somente as entradas e dependências relevantes; não leia a árvore inteira.
 
 `INIT_AUSENTE` exige init. `IMPLEMENT_SEM_ALVO`, `IMPLEMENT_SEM_PLAN`, `IMPLEMENT_ANALYZE_AUSENTE`, `IMPLEMENT_ANALYZE_RASCUNHO`, `IMPLEMENT_ANALYZE_BLOQUEADO`, `MVP_INESPERADO`, `MODO_INVALIDO`, `FASE_AUSENTE` e `PHASES_INESPERADO` não são contornados.
 
@@ -124,7 +124,7 @@ No MVP, certifique-se de registrar quais IDs críticos foram implementados. Não
 Depois de atualizar os artefatos e antes de declarar a fatia concluída:
 
 1. Compare o estado do Git com o snapshot capturado antes da task. Se um path da task já estava alterado, pare e peça isolamento ou decisão humana; não misture alterações.
-2. Em execução delegada, somente o coordenador altera artefatos vivos e o índice Git. Liste os paths integrados e provados pela task e adicione-os explicitamente, por exemplo `git add -- path/da/task outro/path`. Nunca use `git add -A`, `git add .` ou inclua `*-report.json`.
+2. Em execução delegada, somente o coordenador altera artefatos vivos e o índice Git. Liste os paths integrados e provados pela task e adicione-os explicitamente, por exemplo `git add -- path/da/task outro/path`. Nunca use `git add -A` ou `git add .`; o inventário é transitório no stdout e não cria arquivo no workspace.
 3. Confira `git diff --cached --check` e `git diff --cached --name-only`. Se o diff indexado contiver path fora da task, remova-o do índice e pare se a origem não for clara.
 4. Crie um commit sem `Co-Authored-By`, com mensagem no formato `task(Tn): <outcome curto>`. Não faça `git push` nesta etapa.
 5. Registre a mensagem e o hash retornado por `git rev-parse HEAD` no resultado da execução e no chat. Não reabra `implement.md` apenas para anexar o hash, pois isso criaria um residual fora do commit da task. O próximo estado começa no commit criado.
@@ -155,5 +155,5 @@ Fila zerada (T* da run, ou R* bloqueantes) → handoff `vibe-review`; recomende 
 
 ## 7. Fechar
 
-Avise o commit criado e o que entrou nele. O push fica fora desta porta e só ocorre no fechamento aprovado da phase. Fora do commit: `implement-report.json` e qualquer path pré-existente ou não autorizado.
+Avise o commit criado e o que entrou nele. O push fica fora desta porta e só ocorre no fechamento aprovado da phase. Fora do commit: qualquer path pré-existente ou não autorizado.
 Handoff no chat e no arquivo. Não invente work extra.

@@ -24,8 +24,8 @@ seed_vibeflow "$s"
 root=$(native_root "$s")
 run_sh bash "$LAUNCHER" --root "$root"
 next=""
-[ -f "$s/.vibeflow/interview-report.json" ] && next=$(json_field "$s/.vibeflow/interview-report.json" next_n)
-assert "$( [ "$last_rc" -eq 0 ] && [ "$next" = 1 ] && echo 1 || echo 0 )" \
+if [ "$last_rc" -eq 0 ]; then next=$(json_field_output next_n); fi
+assert "$( [ "$last_rc" -eq 0 ] && [ "$next" = 1 ] && [ ! -e "$s/.vibeflow/interview-report.json" ] && echo 1 || echo 0 )" \
   "2-root-inventario" "rc=$last_rc next=$next err=$(cat "$last_err")"
 rm -rf "$s"
 

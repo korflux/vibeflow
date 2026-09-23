@@ -17,7 +17,7 @@ SCRIPT = SKILL_DIR / "scripts" / "plan.py"
 POWERSHELL_SCRIPT = SKILL_DIR / "scripts" / "plan.ps1"
 
 
-# Executa o motor Python e devolve processo e relatório, quando produzido.
+# Executa o motor Python e decodifica o inventário transitório enviado no stdout.
 def invoke(repo: Path, *arguments: str, check: bool = True) -> tuple[subprocess.CompletedProcess[str], dict | None]:
     process = subprocess.run(
         [sys.executable, str(SCRIPT), "--root", str(repo), *arguments],
@@ -25,8 +25,7 @@ def invoke(repo: Path, *arguments: str, check: bool = True) -> tuple[subprocess.
         text=True,
         check=check,
     )
-    report_path = repo / ".vibeflow" / "plan-report.json"
-    report = json.loads(report_path.read_text(encoding="utf-8")) if report_path.is_file() else None
+    report = json.loads(process.stdout) if process.returncode == 0 and process.stdout.strip() else None
     return process, report
 
 
@@ -34,7 +33,7 @@ def invoke(repo: Path, *arguments: str, check: bool = True) -> tuple[subprocess.
 def seed_vibeflow(repo: Path) -> Path:
     vf = repo / ".vibeflow"
     vf.mkdir()
-    (vf / ".gitignore").write_text("init-report.json\nspec-report.json\n", encoding="utf-8")
+    (vf / ".gitignore").write_text("init-report.json\ninit-pending.json\n", encoding="utf-8")
     return vf
 
 
@@ -119,14 +118,14 @@ class PythonContracts(unittest.TestCase):
         self.assertEqual("atualizar", report["modo"])
         self.assertEqual([], report["actions"])
 
-    # Confirma que o gitignore recebe apenas o relatório desta skill e preserva os irmãos.
-    def test_gitignore_preserves_siblings(self) -> None:
+    # Confirma que o JSON transitório não cria relatório nem altera o gitignore de init.
+    def test_stdout_report_does_not_mutate_workspace(self) -> None:
         vf = seed_vibeflow(self.repo)
-        invoke(self.repo)
-        text = (vf / ".gitignore").read_text(encoding="utf-8")
-        self.assertIn("spec-report.json", text)
-        self.assertIn("plan-report.json", text)
-        self.assertNotIn("plan-wip.md", text)
+        original = (vf / ".gitignore").read_bytes()
+        _, report = invoke(self.repo)
+        self.assertIsNotNone(report)
+        self.assertEqual(original, (vf / ".gitignore").read_bytes())
+        self.assertEqual([], list(vf.glob("*-report.json")))
 
     def test_phases_file_is_unexpected(self) -> None:
         vf = seed_vibeflow(self.repo)
@@ -211,6 +210,7 @@ class PowershellParity(unittest.TestCase):
         self.assertEqual(b"", dest.read_bytes())
         self.assertTrue((phase / "spec.md").is_file())
 
+    # Confirma que o motor PowerShell entrega a seleção MVP no stdout sem persistir relatório.
     def test_mvp_apply_same_path(self) -> None:
         vf = seed_vibeflow(self.repo)
         mvp = vf / "mvp"
@@ -224,7 +224,8 @@ class PowershellParity(unittest.TestCase):
         )
         self.assertEqual(0, process.returncode, process.stderr)
         self.assertEqual(b"", (mvp / "plan.md").read_bytes())
-        report = json.loads((vf / "plan-report.json").read_text(encoding="utf-8"))
+        report = json.loads(process.stdout)
+        self.assertFalse((vf / "plan-report.json").exists())
         self.assertEqual("mvp", report["created"]["kind"])
 
     # Confirma que o motor PowerShell também preserva um plan vivo já existente.
@@ -244,7 +245,8 @@ class PowershellParity(unittest.TestCase):
         )
         self.assertEqual(0, process.returncode, process.stderr)
         self.assertEqual(original, dest.read_bytes())
-        report = json.loads((vf / "plan-report.json").read_text(encoding="utf-8"))
+        report = json.loads(process.stdout)
+        self.assertFalse((vf / "plan-report.json").exists())
         self.assertNotIn("wip", report)
         self.assertEqual([], report["actions"])
 

@@ -17,7 +17,7 @@ SCRIPT = SKILL_DIR / "scripts" / "analyze.py"
 POWERSHELL_SCRIPT = SKILL_DIR / "scripts" / "analyze.ps1"
 
 
-# Executa o motor Python e devolve processo e relatório, quando produzido.
+# Executa o motor Python e decodifica o inventário transitório enviado no stdout.
 def invoke(repo: Path, *arguments: str, check: bool = True) -> tuple[subprocess.CompletedProcess[str], dict | None]:
     process = subprocess.run(
         [sys.executable, str(SCRIPT), "--root", str(repo), *arguments],
@@ -25,8 +25,7 @@ def invoke(repo: Path, *arguments: str, check: bool = True) -> tuple[subprocess.
         text=True,
         check=check,
     )
-    report_path = repo / ".vibeflow" / "analyze-report.json"
-    report = json.loads(report_path.read_text(encoding="utf-8")) if report_path.is_file() else None
+    report = json.loads(process.stdout) if process.returncode == 0 and process.stdout.strip() else None
     return process, report
 
 
@@ -34,7 +33,7 @@ def invoke(repo: Path, *arguments: str, check: bool = True) -> tuple[subprocess.
 def seed_vibeflow(repo: Path) -> Path:
     vf = repo / ".vibeflow"
     vf.mkdir()
-    (vf / ".gitignore").write_text("init-report.json\nplan-report.json\n", encoding="utf-8")
+    (vf / ".gitignore").write_text("init-report.json\ninit-pending.json\n", encoding="utf-8")
     return vf
 
 
@@ -117,13 +116,14 @@ class PythonContracts(unittest.TestCase):
         self.assertEqual([], report["actions"])
         self.assertNotIn("wip", report)
 
-    def test_gitignore_preserves_siblings(self) -> None:
+    # Confirma que o JSON transitório não cria relatório nem altera o gitignore de init.
+    def test_stdout_report_does_not_mutate_workspace(self) -> None:
         vf = seed_vibeflow(self.repo)
-        invoke(self.repo)
-        text = (vf / ".gitignore").read_text(encoding="utf-8")
-        self.assertIn("plan-report.json", text)
-        self.assertIn("analyze-report.json", text)
-        self.assertNotIn("analyze-wip.md", text)
+        original = (vf / ".gitignore").read_bytes()
+        _, report = invoke(self.repo)
+        self.assertIsNotNone(report)
+        self.assertEqual(original, (vf / ".gitignore").read_bytes())
+        self.assertEqual([], list(vf.glob("*-report.json")))
 
     def test_phases_file_is_unexpected(self) -> None:
         vf = seed_vibeflow(self.repo)
@@ -198,6 +198,7 @@ class PowershellParity(unittest.TestCase):
     def tearDown(self) -> None:
         shutil.rmtree(self.repo, ignore_errors=True)
 
+    # Confirma que o motor PowerShell entrega o inventário no stdout sem persistir relatório.
     def test_apply_reuse_same_path(self) -> None:
         vf = seed_vibeflow(self.repo)
         phase = vf / "phases" / "phase-1-lock-bloco"
@@ -215,7 +216,8 @@ class PowershellParity(unittest.TestCase):
         self.assertTrue(dest.is_file())
         self.assertEqual(b"", dest.read_bytes())
         self.assertTrue((phase / "plan.md").is_file())
-        report = json.loads((vf / "analyze-report.json").read_text(encoding="utf-8"))
+        report = json.loads(process.stdout)
+        self.assertFalse((vf / "analyze-report.json").exists())
         self.assertNotIn("wip", report)
 
     # Confirma que o motor PowerShell preserva o conteúdo do analyze já existente.
@@ -235,10 +237,12 @@ class PowershellParity(unittest.TestCase):
         )
         self.assertEqual(0, process.returncode, process.stderr)
         self.assertEqual(original, (phase / "analyze.md").read_bytes())
-        report = json.loads((vf / "analyze-report.json").read_text(encoding="utf-8"))
+        report = json.loads(process.stdout)
+        self.assertFalse((vf / "analyze-report.json").exists())
         self.assertEqual([], report["actions"])
         self.assertNotIn("wip", report)
 
+    # Confirma que o motor PowerShell entrega a seleção MVP no stdout sem persistir relatório.
     def test_mvp_apply_same_path(self) -> None:
         vf = seed_vibeflow(self.repo)
         mvp = vf / "mvp"
@@ -253,7 +257,8 @@ class PowershellParity(unittest.TestCase):
         )
         self.assertEqual(0, process.returncode, process.stderr)
         self.assertEqual(b"", (mvp / "analyze.md").read_bytes())
-        report = json.loads((vf / "analyze-report.json").read_text(encoding="utf-8"))
+        report = json.loads(process.stdout)
+        self.assertFalse((vf / "analyze-report.json").exists())
         self.assertEqual("mvp", report["created"]["kind"])
         self.assertNotIn("wip", report)
 

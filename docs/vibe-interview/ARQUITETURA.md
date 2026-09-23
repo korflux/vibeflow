@@ -14,9 +14,9 @@ Alvos:
 | Peça | Responsabilidade |
 |---|---|
 | `SKILL.md` | Classificar produto ou feature, entrevistar e conduzir a escrita semântica. |
-| `scripts/interview.py`, `interview.ps1`, `interview.sh` | Inventário, slug, validação do alvo, preparação do arquivo e relatório. |
+| `scripts/interview.py`, `interview.ps1`, `interview.sh` | Inventário, slug, validação do alvo, preparação do arquivo e JSON operacional no stdout. |
 | `templates/interview.md` | Forma do artefato; não é preenchido pelo motor. |
-| `.vibeflow/interview-report.json` | Evidência operacional, sempre fora do Git. |
+| `stdout (JSON)` | Evidência operacional transitória, consumida na mesma execução. |
 | `interview.md` | Registro vivo e commitável da entrevista. |
 
 O script não detecta MVP pelo texto, não escolhe stack, não faz perguntas e não escreve a prosa da entrevista.
@@ -37,11 +37,11 @@ bash interview.sh [--root PATH] [--apply] [--slug TEXTO] [--mvp]
 
 `--mvp` combinado com `--slug` é `MODO_INVALIDO`. Slug inválido é recusado antes da criação da fase.
 
-## 3. Relatório
+## 3. JSON operacional no stdout
 
-O relatório contém `rota`, `modo`, `vibeflow`, `phases`, `next_n`, `existing`, `aberta`, `mvp`, `alvo`, `created`, `actions` e `avisos`. `files` lista somente os seis artefatos da cadeia.
+O JSON transitório contém `rota`, `modo`, `vibeflow`, `phases`, `next_n`, `existing`, `aberta`, `mvp`, `alvo`, `created`, `actions` e `avisos`. `files` lista somente os seis artefatos da cadeia.
 
-Quando o apply cria um arquivo, `actions` registra `criar_arquivo`. Quando o destino já existe, a ação não substitui bytes e o relatório mantém o estado observado. O relatório não carrega estado de rascunho temporário nem contrato de promoção.
+Quando o apply cria um arquivo, `actions` registra `criar_arquivo`. Quando o destino já existe, a ação não substitui bytes e o JSON mantém o estado observado. O JSON não carrega estado de rascunho temporário nem contrato de promoção.
 
 ## 4. Apply e escrita direta
 
@@ -49,7 +49,7 @@ Quando o apply cria um arquivo, `actions` registra `criar_arquivo`. Quando o des
 2. No modo phase, cria a pasta calculada e prepara `interview.md` vazio.
 3. No modo MVP, prepara `.vibeflow/mvp/interview.md` sem criar uma phase.
 4. Se o arquivo vivo já existir e for regular, preserva seus bytes.
-5. O motor grava o relatório operacional e não escreve markdown semântico.
+5. O motor emite o JSON operacional no stdout e não escreve markdown semântico.
 6. A IA escreve ou atualiza diretamente `interview.md`, mantendo `# Status: rascunho` enquanto houver elaboração.
 
 O apply não usa arquivo intermediário, não transporta conteúdo entre arquivos e não remove o vivo. A escrita é concorrente-segura no ponto de criação: se outra operação criar o arquivo primeiro, o conteúdo é preservado.
@@ -74,4 +74,4 @@ Suítes: `docs/vibe-interview/tests/test-interview.py` e `docs/vibe-interview/te
 - O script não preenche, aprova ou interpreta o markdown.
 - O inventário seleciona paths; a IA abre somente as entradas e dependências necessárias, usando `rg --files` e `rg -n` quando precisar localizar evidência.
 - `init → interview → spec` pode permanecer no mesmo chat. A troca de chat é opcional nesta porta; o arquivo vivo é a fonte de continuidade.
-- Sem commit automático. O arquivo vivo entra no Git; o relatório fica fora.
+- Sem commit automático. O arquivo vivo entra no Git; o JSON operacional é transitório no stdout.

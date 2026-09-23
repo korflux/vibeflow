@@ -24,14 +24,6 @@ function Test-IsReparsePoint($Item) {
     return $Item.Attributes.ToString() -match 'ReparsePoint' -or $Item.LinkType -eq 'SymbolicLink'
 }
 
-# Recusa caminhos operacionais linkados ou de tipo incompatível antes de qualquer escrita.
-function Assert-SafeOperationalFile([string]$Path, [string]$Code) {
-    $item = Get-FsItem $Path
-    if ($item -and ((Test-IsReparsePoint $item) -or $item.PSIsContainer)) {
-        throw "${Code}: $([System.IO.Path]::GetFileName($Path)) não é um arquivo operacional regular."
-    }
-}
-
 # Resolve a raiz por parâmetro, Git ou cwd sem exigir que Git esteja instalado.
 function Get-RepoRoot {
     if ($Root) { return (Resolve-Path -LiteralPath $Root).Path }
@@ -40,27 +32,6 @@ function Get-RepoRoot {
         if ($LASTEXITCODE -eq 0 -and $git) { return $git.Trim() }
     }
     return (Get-Location).Path
-}
-
-# Acrescenta exclusões operacionais preservando regras existentes e evitando duplicação.
-function Add-GitignoreEntry([string]$Path, [string]$Entry) {
-    Assert-SafeOperationalFile $Path 'GITIGNORE_INESPERADO'
-    $body = ''
-    if (Test-Path -LiteralPath $Path) { $body = [System.IO.File]::ReadAllText($Path) }
-    $lines = @()
-    if ($body) { $lines = $body -split '\r?\n' }
-    foreach ($line in $lines) {
-        if ($line.Trim() -eq $Entry) { return }
-    }
-    $prefix = ''
-    if ($body -and -not $body.EndsWith("`n")) { $prefix = "`n" }
-    [System.IO.File]::AppendAllText($Path, "$prefix$Entry`n")
-}
-
-# Garante que o relatório operacional não entre no Git sem apagar as entradas existentes.
-function Assert-InterviewGitignore([string]$Vf) {
-    $gi = Join-Path $Vf '.gitignore'
-    Add-GitignoreEntry $gi 'interview-report.json'
 }
 
 # Transforma a frase curta da fase em slug ASCII [a-z0-9-], 2–48 chars.
@@ -184,14 +155,10 @@ function ConvertTo-PhaseMap($Item) {
     }
 }
 
-# Monta o JSON que a skill lê; stdout só o path do relatório.
-function Write-InterviewReport([string]$Vf, [hashtable]$Payload) {
-    $reportPath = Join-Path $Vf 'interview-report.json'
+# Serializa o inventário como JSON transitório para o consumidor imediato, sem criar estado no workspace.
+function Write-InterviewOutput([hashtable]$Payload) {
     $json = [string](ConvertTo-Json -InputObject $Payload -Depth 8)
-    $utf8 = New-Object System.Text.UTF8Encoding $false
-    Assert-SafeOperationalFile $reportPath 'RELATORIO_INESPERADO'
-    [System.IO.File]::WriteAllText($reportPath, $json, $utf8)
-    Write-Output $reportPath
+    [Console]::Out.WriteLine($json)
 }
 
 # Inventaria o disco, cria phases/ se faltar e prepara o arquivo vivo no apply.
@@ -229,7 +196,6 @@ function Invoke-Interview {
         $phState = 'ok'
     }
 
-    Assert-InterviewGitignore $vf
     $listed = Get-PhaseList $phases
     $existing = @($listed.existing)
     $warnings = New-Object System.Collections.Generic.List[string]
@@ -316,7 +282,7 @@ function Invoke-Interview {
         actions  = $actions.ToArray()
         avisos   = $warnings.ToArray()
     }
-    Write-InterviewReport $vf $payload
+    Write-InterviewOutput $payload
 }
 
 try {

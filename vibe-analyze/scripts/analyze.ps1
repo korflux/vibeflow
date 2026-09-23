@@ -23,14 +23,6 @@ function Test-IsReparsePoint($Item) {
     return $Item.Attributes.ToString() -match 'ReparsePoint' -or $Item.LinkType -eq 'SymbolicLink'
 }
 
-# Recusa caminhos operacionais linkados ou de tipo incompatível antes de qualquer escrita.
-function Assert-SafeOperationalFile([string]$Path, [string]$Code) {
-    $item = Get-FsItem $Path
-    if ($item -and ((Test-IsReparsePoint $item) -or $item.PSIsContainer)) {
-        throw "${Code}: $([System.IO.Path]::GetFileName($Path)) não é um arquivo operacional regular."
-    }
-}
-
 # Resolve a raiz por parâmetro, Git ou cwd sem exigir que Git esteja instalado.
 function Get-RepoRoot {
     if ($Root) { return (Resolve-Path -LiteralPath $Root).Path }
@@ -39,27 +31,6 @@ function Get-RepoRoot {
         if ($LASTEXITCODE -eq 0 -and $git) { return $git.Trim() }
     }
     return (Get-Location).Path
-}
-
-# Acrescenta exclusões operacionais preservando regras existentes e evitando duplicação.
-function Add-GitignoreEntry([string]$Path, [string]$Entry) {
-    Assert-SafeOperationalFile $Path 'GITIGNORE_INESPERADO'
-    $body = ''
-    if (Test-Path -LiteralPath $Path) { $body = [System.IO.File]::ReadAllText($Path) }
-    $lines = @()
-    if ($body) { $lines = $body -split '\r?\n' }
-    foreach ($line in $lines) {
-        if ($line.Trim() -eq $Entry) { return }
-    }
-    $prefix = ''
-    if ($body -and -not $body.EndsWith("`n")) { $prefix = "`n" }
-    [System.IO.File]::AppendAllText($Path, "$prefix$Entry`n")
-}
-
-# Garante que o relatório operacional não entre no Git sem apagar as entradas das outras skills.
-function Assert-AnalyzeGitignore([string]$Vf) {
-    $gi = Join-Path $Vf '.gitignore'
-    Add-GitignoreEntry $gi 'analyze-report.json'
 }
 
 # Lista pastas que batem o padrão phase-N-slug e ignora o restante.
@@ -176,14 +147,10 @@ function ConvertTo-PhaseMap($Item) {
     }
 }
 
-# Monta o JSON que a skill lê; stdout só o path do relatório.
-function Write-AnalyzeReport([string]$Vf, [hashtable]$Payload) {
-    $reportPath = Join-Path $Vf 'analyze-report.json'
+# Serializa o inventário como JSON transitório para o consumidor imediato, sem criar estado no workspace.
+function Write-AnalyzeOutput([hashtable]$Payload) {
     $json = [string](ConvertTo-Json -InputObject $Payload -Depth 8)
-    $utf8 = New-Object System.Text.UTF8Encoding $false
-    Assert-SafeOperationalFile $reportPath 'RELATORIO_INESPERADO'
-    [System.IO.File]::WriteAllText($reportPath, $json, $utf8)
-    Write-Output $reportPath
+    [Console]::Out.WriteLine($json)
 }
 
 # Inventaria o disco e opcionalmente prepara o artefato vivo analyze.md.
@@ -219,7 +186,6 @@ function Invoke-Analyze {
         $phState = 'ok'
     }
 
-    Assert-AnalyzeGitignore $vf
     $listed = Get-PhaseList $phases
     $existing = @($listed.existing)
     $warnings = New-Object System.Collections.Generic.List[string]
@@ -322,7 +288,7 @@ function Invoke-Analyze {
         actions            = $actions.ToArray()
         avisos             = $warnings.ToArray()
     }
-    Write-AnalyzeReport $vf $payload
+    Write-AnalyzeOutput $payload
 }
 
 try {

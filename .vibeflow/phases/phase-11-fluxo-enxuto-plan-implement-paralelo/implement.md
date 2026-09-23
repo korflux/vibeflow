@@ -50,6 +50,25 @@
 
 - A primeira execução encontrou expectativas de contrato antigas que proibiam checkpoint na review e exigiam reexecução total. Os testes foram alinhados ao novo contrato e as três suítes passaram.
 
+## Fatia T4
+
+- Feito: Os sete motores de cadeia agora emitem o inventário JSON no stdout sem gravar relatório ou editar `.vibeflow/.gitignore`. O `init-report.json` permanece por transportar `apply_token` para retomar merges interrompidos. Skills, arquiteturas e consumidores foram alinhados; manifests versionáveis avançaram para 2.0.0. JSONs legados redundantes foram removidos do workspace.
+- Marcado: T4 em `plan.md`; A8 em `spec.md`. C1 e C3 já estavam provados nas tasks anteriores; a fixture T1/T2/T3 agora compara também paths e mensagens de commit atribuídos a cada task em ordem serial ou paralela isolada.
+- Prova: plan 21, implement 37, review 21, MVP-flow 2, interview 22, spec 22, design 19, analyze 18, distribuição 13, reparse-safety 12 e init 32 testes OK. Launchers Unix: interview 6/6 e implement 8/8. Python e PowerShell em paridade nos testes dos motores.
+- Arquivos: motores Python e PowerShell das sete skills de cadeia; SKILLs e arquiteturas correspondentes; suítes afetadas em `docs/`; `docs/tests/launcher-harness.sh`, `README.md`, manifests Claude/Codex/Grok, `.vibeflow/.gitignore`, `vibe-design/templates/design.md` e artefatos da phase 11.
+- Commit da task: criar `task(T4): reduzir relatórios operacionais`; registrar o hash no chat sem reabrir este artefato após o commit.
+- Decisões críticas: N/A.
+
+### Feedback +
+
+- A busca de consumidores confirmou que nenhum fluxo posterior lê os inventários transitórios; somente o init precisa persistir `apply_token` durante um merge pendente.
+
+### Feedback -
+
+- Os aliases WSL e Git Bash foram bloqueados pelo sandbox. A execução dos launchers foi concluída com Git Bash após a autorização automática de acesso.
+
 ## Handoff
 
 Checkpoint `vibe-review` após T1-T3, conforme declarado no plan, antes de iniciar T4. Recomende um novo chat para o checkpoint; o `plan.md` e este histórico são a ponte.
+
+Fila zerada após T4. Handoff atual: `vibe-review`; a conferência de compatibilidade pré-T4 não encontrou conflito no parser da fila, nos gates da review nem no isolamento de commits.

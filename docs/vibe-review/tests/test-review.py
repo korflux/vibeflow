@@ -17,7 +17,7 @@ SCRIPT = SKILL_DIR / "scripts" / "review.py"
 POWERSHELL_SCRIPT = SKILL_DIR / "scripts" / "review.ps1"
 
 
-# Executa o motor Python e devolve processo e relatório, quando produzido.
+# Executa o motor Python e decodifica o inventário transitório enviado no stdout.
 def invoke(repo: Path, *arguments: str, check: bool = True) -> tuple[subprocess.CompletedProcess[str], dict | None]:
     process = subprocess.run(
         [sys.executable, str(SCRIPT), "--root", str(repo), *arguments],
@@ -25,8 +25,7 @@ def invoke(repo: Path, *arguments: str, check: bool = True) -> tuple[subprocess.
         text=True,
         check=check,
     )
-    report_path = repo / ".vibeflow" / "review-report.json"
-    report = json.loads(report_path.read_text(encoding="utf-8")) if report_path.is_file() else None
+    report = json.loads(process.stdout) if process.returncode == 0 and process.stdout.strip() else None
     return process, report
 
 
@@ -34,7 +33,7 @@ def invoke(repo: Path, *arguments: str, check: bool = True) -> tuple[subprocess.
 def seed_vibeflow(repo: Path) -> Path:
     vf = repo / ".vibeflow"
     vf.mkdir()
-    (vf / ".gitignore").write_text("init-report.json\nplan-report.json\n", encoding="utf-8")
+    (vf / ".gitignore").write_text("init-report.json\ninit-pending.json\n", encoding="utf-8")
     return vf
 
 
@@ -142,13 +141,14 @@ class PythonContracts(unittest.TestCase):
         self.assertIn("implement.md", report["alvo"]["files"])
         self.assertIn("plan.md", report["alvo"]["files"])
 
-    def test_gitignore_preserves_siblings(self) -> None:
+    # Confirma que o JSON transitório não cria relatório nem altera o gitignore de init.
+    def test_stdout_report_does_not_mutate_workspace(self) -> None:
         vf = seed_vibeflow(self.repo)
-        invoke(self.repo)
-        text = (vf / ".gitignore").read_text(encoding="utf-8")
-        self.assertIn("plan-report.json", text)
-        self.assertIn("review-report.json", text)
-        self.assertNotIn("review-wip.md", text)
+        original = (vf / ".gitignore").read_bytes()
+        _, report = invoke(self.repo)
+        self.assertIsNotNone(report)
+        self.assertEqual(original, (vf / ".gitignore").read_bytes())
+        self.assertEqual([], list(vf.glob("*-report.json")))
 
     def test_phases_file_is_unexpected(self) -> None:
         vf = seed_vibeflow(self.repo)
@@ -210,6 +210,7 @@ class PowershellParity(unittest.TestCase):
     def tearDown(self) -> None:
         shutil.rmtree(self.repo, ignore_errors=True)
 
+    # Confirma que o motor PowerShell entrega o inventário no stdout sem persistir relatório.
     def test_apply_reuse_same_path(self) -> None:
         vf = seed_vibeflow(self.repo)
         phase = vf / "phases" / "phase-1-lock-bloco"
@@ -226,7 +227,8 @@ class PowershellParity(unittest.TestCase):
         self.assertTrue(dest.is_file())
         self.assertEqual(b"", dest.read_bytes())
         self.assertTrue((phase / "plan.md").is_file())
-        report = json.loads((vf / "review-report.json").read_text(encoding="utf-8"))
+        report = json.loads(process.stdout)
+        self.assertFalse((vf / "review-report.json").exists())
         self.assertNotIn("wip", report)
 
     # Confirma que o motor PowerShell preserva o conteúdo da review já existente.
@@ -245,10 +247,12 @@ class PowershellParity(unittest.TestCase):
         )
         self.assertEqual(0, process.returncode, process.stderr)
         self.assertEqual(original, (phase / "review.md").read_bytes())
-        report = json.loads((vf / "review-report.json").read_text(encoding="utf-8"))
+        report = json.loads(process.stdout)
+        self.assertFalse((vf / "review-report.json").exists())
         self.assertEqual([], report["actions"])
         self.assertNotIn("wip", report)
 
+    # Confirma que o alvo MVP e REGRAS são preservados e o relatório segue só no stdout.
     def test_mvp_apply_same_path_preserves_regras(self) -> None:
         vf = seed_vibeflow(self.repo)
         mvp = seed_mvp(vf)
@@ -263,7 +267,8 @@ class PowershellParity(unittest.TestCase):
         self.assertEqual(0, process.returncode, process.stderr)
         self.assertEqual(b"", (mvp / "review.md").read_bytes())
         self.assertEqual(rules, (vf / "REGRAS.md").read_bytes())
-        report = json.loads((vf / "review-report.json").read_text(encoding="utf-8"))
+        report = json.loads(process.stdout)
+        self.assertFalse((vf / "review-report.json").exists())
         self.assertNotIn("wip", report)
 
 

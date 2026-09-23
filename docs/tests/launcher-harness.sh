@@ -47,6 +47,11 @@ json_field() {
   host_python -c "import json,sys; print(json.load(open(sys.argv[1], encoding='utf-8-sig'))[sys.argv[2]])" "$1" "$2"
 }
 
+# Lê um campo, inclusive um caminho com pontos, do JSON temporário capturado no stdout.
+json_field_output() {
+  host_python -c 'import json,sys; from functools import reduce; print(reduce(lambda value,key:value[key], sys.argv[1].split("."), json.loads(sys.stdin.read())))' "$1" <"$last_out"
+}
+
 # Roda o launcher e grava rc/stdout/stderr em variáveis da suíte.
 run_sh() {
   last_out=$(mktemp)

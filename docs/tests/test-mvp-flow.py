@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SKILLS = ("interview", "spec", "plan", "analyze", "implement", "review")
 
 
-# Executa o motor canônico da porta e devolve o relatório produzido para a IA.
+# Executa o motor canônico e decodifica seu inventário transitório do stdout.
 def invoke(repo: Path, skill: str, *arguments: str) -> dict:
     script = ROOT / f"vibe-{skill}" / "scripts" / f"{skill}.py"
     process = subprocess.run(
@@ -27,8 +27,7 @@ def invoke(repo: Path, skill: str, *arguments: str) -> dict:
     )
     if process.returncode != 0:
         raise AssertionError(f"{skill} falhou: {process.stderr}")
-    report_path = repo / ".vibeflow" / f"{skill}-report.json"
-    return json.loads(report_path.read_text(encoding="utf-8"))
+    return json.loads(process.stdout)
 
 
 # Escreve o conteúdo semântico depois que o motor prepara o arquivo vivo vazio.

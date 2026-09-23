@@ -12,12 +12,12 @@
 | Peça | Responsabilidade |
 |---|---|
 | `SKILL.md` | Validar spec aprovada, escolher modo de entrada, aplicar os três usos, redigir telas, kit, tokens e handoff para plan. |
-| `scripts/design.py`, `design.ps1`, `design.sh` | Inventário, seleção do alvo, gates mecânicos, preparação do vivo e relatório. |
+| `scripts/design.py`, `design.ps1`, `design.sh` | Inventário, seleção do alvo, gates mecânicos, preparação do vivo e JSON operacional no stdout. |
 | `templates/design.md` | Forma de entrada, inventário de telas, kit, disposição por tela, tokens, responsivo, estados e prova. |
 | `references/modos-entrada.md` | Catálogo dos dois modos de entrada, consultado conforme a origem do desenho. |
 | `references/kit-e-tokens.md` | Catálogo de kit mínimo, tokens, iconografia, responsivo, estados e prova visual. |
 | `references/motion.md` | Catálogo de frequência, propósito, easing, duração, física, acessibilidade e baseline mobile, consultado quando a tela tem motion ou alvo mobile. |
-| `.vibeflow/design-report.json` | Evidência operacional, fora do Git. |
+| `stdout (JSON)` | Evidência operacional transitória, consumida na mesma execução. |
 | `design.md` | Restrição executável para plan, implement e review. Texto versionado, sem código e sem imagem final. |
 
 O motor não desenha tela, não escolhe tokens, não escreve prosa e não edita source ou teste.
@@ -42,11 +42,11 @@ Dois modos de entrada. Com referência, DS, DESIGN.md ou Figma entram como leitu
 
 Três usos no mesmo contrato. Criar páginas novas, corrigir UI com R da review, e analisar UI existente contra o contrato. Os três gravam disposição técnica e decisão no vivo, sem gerar imagem final e sem editar código.
 
-## 4. Relatório
+## 4. JSON operacional no stdout
 
-O relatório mantém `vibeflow`, `phases`, `next_n`, `existing`, `spec_pendente`, `rascunho`, `alvo`, `mvp`, `modo_sugerido`, `created`, `modo`, `actions` e `avisos`. Não existe estado de arquivo temporário no contrato.
+O JSON transitório mantém `vibeflow`, `phases`, `next_n`, `existing`, `spec_pendente`, `rascunho`, `alvo`, `mvp`, `modo_sugerido`, `created`, `modo`, `actions` e `avisos`. Não existe estado de arquivo temporário no contrato.
 
-`actions` registra criação de `phases/.gitkeep`, de phase ou do arquivo vivo. `files` lista os sete artefatos da cadeia, incluindo `design.md`. O relatório não descreve conteúdo semântico.
+`actions` registra criação de `phases/.gitkeep`, de phase ou do arquivo vivo. `files` lista os sete artefatos da cadeia, incluindo `design.md`. O JSON do stdout não descreve conteúdo semântico.
 
 ## 5. Apply e escrita direta
 
@@ -54,7 +54,7 @@ O relatório mantém `vibeflow`, `phases`, `next_n`, `existing`, `spec_pendente`
 2. Valida predecessor com `spec.md`, `--dir`, slug e ausência de `plan.md`.
 3. Prepara `design.md` vazio quando ausente.
 4. Preserva byte a byte o vivo existente.
-5. Grava o relatório.
+5. Emite o JSON operacional no stdout para leitura imediata da IA.
 6. A IA escreve ou atualiza diretamente `design.md`, mantendo `# Status: rascunho` até aprovação.
 
 O script não escolhe modo, não preenche markdown e não dispara plan. Ajuste ou aprovação posterior é patch no arquivo vivo. Em falha de gate, pasta nova vazia é removida para não deixar fase vazia no disco.
@@ -79,5 +79,5 @@ O handoff normal é `vibe-plan`. Recomenda-se novo chat para a porta seguinte. O
 - Design não gera imagem final e não sincroniza Figma automaticamente.
 - Design não inventa comportamento, rota, regra de negócio ou token fora do modo declarado.
 - O inventário não autoriza ler a árvore inteira. A IA localiza evidências com `rg --files` e `rg -n`.
-- O relatório fica fora do Git; `design.md` entra no Git.
+- O JSON operacional é transitório no stdout; `design.md` entra no Git.
 - Design não commita; o commit começa somente quando a implement fecha uma task verde. Não há disparo automático da próxima skill.

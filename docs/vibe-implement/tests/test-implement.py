@@ -17,7 +17,7 @@ SCRIPT = SKILL_DIR / "scripts" / "implement.py"
 POWERSHELL_SCRIPT = SKILL_DIR / "scripts" / "implement.ps1"
 
 
-# Executa o motor Python e devolve processo e relatório, quando produzido.
+# Executa o motor Python e decodifica o inventário transitório enviado no stdout.
 def invoke(repo: Path, *arguments: str, check: bool = True) -> tuple[subprocess.CompletedProcess[str], dict | None]:
     process = subprocess.run(
         [sys.executable, str(SCRIPT), "--root", str(repo), *arguments],
@@ -25,8 +25,7 @@ def invoke(repo: Path, *arguments: str, check: bool = True) -> tuple[subprocess.
         text=True,
         check=check,
     )
-    report_path = repo / ".vibeflow" / "implement-report.json"
-    report = json.loads(report_path.read_text(encoding="utf-8")) if report_path.is_file() else None
+    report = json.loads(process.stdout) if process.returncode == 0 and process.stdout.strip() else None
     return process, report
 
 
@@ -34,7 +33,7 @@ def invoke(repo: Path, *arguments: str, check: bool = True) -> tuple[subprocess.
 def seed_vibeflow(repo: Path) -> Path:
     vf = repo / ".vibeflow"
     vf.mkdir()
-    (vf / ".gitignore").write_text("init-report.json\nplan-report.json\n", encoding="utf-8")
+    (vf / ".gitignore").write_text("init-report.json\ninit-pending.json\n", encoding="utf-8")
     return vf
 
 
@@ -153,13 +152,14 @@ class PythonContracts(unittest.TestCase):
         self.assertIn("implement.md", report["alvo"]["files"])
         self.assertEqual("atualizar", report["modo_sugerido"])
 
-    def test_gitignore_preserves_siblings(self) -> None:
+    # Confirma que o JSON transitório não cria relatório nem altera o gitignore de init.
+    def test_stdout_report_does_not_mutate_workspace(self) -> None:
         vf = seed_vibeflow(self.repo)
-        invoke(self.repo)
-        text = (vf / ".gitignore").read_text(encoding="utf-8")
-        self.assertIn("plan-report.json", text)
-        self.assertIn("implement-report.json", text)
-        self.assertNotIn("implement-wip.md", text)
+        original = (vf / ".gitignore").read_bytes()
+        _, report = invoke(self.repo)
+        self.assertIsNotNone(report)
+        self.assertEqual(original, (vf / ".gitignore").read_bytes())
+        self.assertEqual([], list(vf.glob("*-report.json")))
 
     def test_apply_prepares_missing_live_file(self) -> None:
         vf = seed_vibeflow(self.repo)
@@ -355,8 +355,8 @@ class PythonContracts(unittest.TestCase):
         self.assertNotEqual(0, process.returncode)
         self.assertIn("MODO_INVALIDO", process.stderr)
 
-    def test_independent_task_completions_preserve_queue_order_and_result(self) -> None:
-        """Compara a fila serial com retornos delegados fora de ordem para tasks independentes."""
+    def test_independent_task_completions_preserve_queue_and_task_commit_attribution(self) -> None:
+        """Compara fila, cobertura e ownership de commits entre execução serial e paralela isolada."""
         results = {}
         for execution, completion_order in (
             ("sequential", ("T1", "T2")),
@@ -373,7 +373,13 @@ class PythonContracts(unittest.TestCase):
             self.assertEqual(["T1", "T2"], report["fila"]["elegiveis"])
             self.assertEqual([{"id": "T3", "deps": ["T1", "T2"]}], report["fila"]["bloqueadas"])
 
+            # Simula retornos isolados: cada task entrega somente seu path e mensagem de commit.
+            task_commits = {}
             for index, task in enumerate(completion_order):
+                task_commits[task] = {
+                    "message": f"task({task}): resultado {task}",
+                    "paths": [f"src/{task.lower()}.txt"],
+                }
                 plan = plan.replace(f"- [ ] {task} concluída", f"- [x] {task} concluída", 1)
                 write_plan(phase, plan)
                 _, report = invoke(repo)
@@ -386,22 +392,38 @@ class PythonContracts(unittest.TestCase):
                     self.assertEqual([], report["fila"]["bloqueadas"])
 
             plan = plan.replace("- [ ] T3 concluída", "- [x] T3 concluída", 1)
+            task_commits["T3"] = {
+                "message": "task(T3): resultado T3",
+                "paths": ["src/t3.txt"],
+            }
             write_plan(phase, plan)
             _, report = invoke(repo)
             results[execution] = {
-                key: report["fila"][key]
-                for key in ("concluidas", "abertas", "elegiveis", "bloqueadas")
+                "fila": {
+                    key: report["fila"][key]
+                    for key in ("concluidas", "abertas", "elegiveis", "bloqueadas")
+                },
+                "commits": task_commits,
             }
 
         self.assertEqual(results["sequential"], results["delegated"])
+        commits = results["sequential"]["commits"]
+        self.assertEqual({"T1", "T2", "T3"}, set(commits))
+        self.assertEqual(3, len({commit["paths"][0] for commit in commits.values()}))
+        for task, commit in commits.items():
+            self.assertTrue(commit["message"].startswith(f"task({task}):"))
+            self.assertEqual([f"src/{task.lower()}.txt"], commit["paths"])
 
 
 class SkillContracts(unittest.TestCase):
     """Trava no disco os contratos que a skill precisa para ler fila e executar o ciclo de implementação."""
 
-    def test_skill_reads_fila_from_report(self) -> None:
+    # Garante que a skill consome a fila do JSON transitório no stdout.
+    def test_skill_reads_fila_from_stdout_json(self) -> None:
         text = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("stdout", text)
         self.assertIn("fila.elegiveis", text)
+        self.assertNotIn(".vibeflow/implement-report.json", text)
         self.assertIn("2+ elegíveis", text)
 
 
@@ -469,6 +491,7 @@ class PowershellParity(unittest.TestCase):
     def tearDown(self) -> None:
         shutil.rmtree(self.repo, ignore_errors=True)
 
+    # Confirma que o motor PowerShell entrega o alvo no stdout sem persistir relatório.
     def test_apply_reuse_same_path(self) -> None:
         vf = seed_vibeflow(self.repo)
         seed_phase(vf, "phase-1-lock-bloco", "spec.md", "plan.md")
@@ -483,7 +506,8 @@ class PowershellParity(unittest.TestCase):
         self.assertTrue(dest.is_file())
         self.assertEqual(b"", dest.read_bytes())
         self.assertTrue((vf / "phases" / "phase-1-lock-bloco" / "plan.md").is_file())
-        report = json.loads((vf / "implement-report.json").read_text(encoding="utf-8"))
+        report = json.loads(process.stdout)
+        self.assertFalse((vf / "implement-report.json").exists())
         self.assertNotIn("wip", report)
 
     # Confirma que o motor PowerShell preserva o conteúdo do implement já existente.
@@ -500,10 +524,12 @@ class PowershellParity(unittest.TestCase):
         )
         self.assertEqual(0, process.returncode, process.stderr)
         self.assertEqual(original, (phase / "implement.md").read_bytes())
-        report = json.loads((vf / "implement-report.json").read_text(encoding="utf-8"))
+        report = json.loads(process.stdout)
+        self.assertFalse((vf / "implement-report.json").exists())
         self.assertEqual([], report["actions"])
         self.assertNotIn("wip", report)
 
+    # Compara fila Python e PowerShell pela saída transitória em JSON.
     def test_fila_parity_dep_blocks(self) -> None:
         vf = seed_vibeflow(self.repo)
         phase = seed_phase(vf, "phase-1-a", "plan.md")
@@ -516,12 +542,14 @@ class PowershellParity(unittest.TestCase):
             check=False,
         )
         self.assertEqual(0, process.returncode, process.stderr)
-        ps_report = json.loads((vf / "implement-report.json").read_text(encoding="utf-8"))
+        ps_report = json.loads(process.stdout)
+        self.assertFalse((vf / "implement-report.json").exists())
         self.assertEqual(py_report["fila"]["elegiveis"], ps_report["fila"]["elegiveis"])
         self.assertEqual(py_report["fila"]["bloqueadas"], ps_report["fila"]["bloqueadas"])
         self.assertEqual(["T1"], ps_report["fila"]["elegiveis"])
         self.assertEqual([{"id": "T2", "deps": ["T1"]}], ps_report["fila"]["bloqueadas"])
 
+    # Confirma que o gate MVP e a fila chegam no stdout sem relatório persistido.
     def test_mvp_apply_same_path_and_gate(self) -> None:
         vf = seed_vibeflow(self.repo)
         mvp = seed_mvp(vf, plan_tasks(("T1", " ", "nenhuma")))
@@ -533,7 +561,8 @@ class PowershellParity(unittest.TestCase):
         )
         self.assertEqual(0, process.returncode, process.stderr)
         self.assertEqual(b"", (mvp / "implement.md").read_bytes())
-        report = json.loads((vf / "implement-report.json").read_text(encoding="utf-8"))
+        report = json.loads(process.stdout)
+        self.assertFalse((vf / "implement-report.json").exists())
         self.assertTrue(report["analyze_gate"]["pronto"])
         self.assertEqual(["T1"], report["fila"]["elegiveis"])
         self.assertNotIn("wip", report)

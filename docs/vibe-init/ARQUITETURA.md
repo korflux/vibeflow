@@ -391,7 +391,7 @@ A IA lê: este JSON + `REGRAS.md` atual + **cada path em `merges[].sources`** (p
 
 Falha prevista depois da primeira escrita (`SYMLINK_RECUSADO`, `OLD_HASH_MISMATCH`…) grava **relatório parcial** antes de propagar o erro: mesmo schema, com `run interrompida: <erro>` em `avisos` e sem `scan`/`filled`. A IA nunca fica sem contrato de disco num repositório meio convertido.
 
-Quando há merge, o script grava `init-pending.json` com hashes das fontes, hash inicial do alvo e o token exposto no relatório. A finalização exige `-ApplyPointers -MergeToken <apply_token>` ou `init.sh --apply-pointers --merge-token <apply_token>`. O script recusa token inválido, fonte alterada e alvo que ainda tenha o hash inicial. Só depois remove leftovers e converte os legados.
+O `init-report.json` é o único relatório da cadeia que permanece no disco: ele transporta `apply_token`, necessário para finalizar um merge interrompido sem reaproveitar autorização antiga. Quando há merge, o script grava `init-pending.json` com hashes das fontes, hash inicial do alvo e o token exposto no relatório. A finalização exige `-ApplyPointers -MergeToken <apply_token>` ou `init.sh --apply-pointers --merge-token <apply_token>`. O script recusa token inválido, fonte alterada e alvo que ainda tenha o hash inicial. Só depois remove leftovers e converte os legados.
 
 Saída de emergência do `MERGE_PENDENTE`: se o relatório com o token se perdeu (ele é gitignored), apagar `.vibeflow/init-pending.json` e rodar o script de novo. O inventário recomeça, os olds continuam intactos e nenhum ponteiro foi convertido. Não existe `--force`, e a única forma de sair do estado pendente é essa ou a finalização normal.
 

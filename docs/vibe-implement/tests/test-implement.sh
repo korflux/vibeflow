@@ -26,10 +26,8 @@ printf 's\n' >"$s/.vibeflow/phases/phase-1-so-spec/spec.md"
 root=$(native_root "$s")
 run_sh bash "$LAUNCHER" --root "$root" --dir phase-1-so-spec
 alvo=""
-if [ -f "$s/.vibeflow/implement-report.json" ]; then
-  alvo=$(host_python -c "import json,sys; print(json.load(open(sys.argv[1], encoding='utf-8-sig'))['alvo']['dir'])" "$s/.vibeflow/implement-report.json")
-fi
-assert "$( [ "$last_rc" -eq 0 ] && [ "$alvo" = phase-1-so-spec ] && echo 1 || echo 0 )" \
+if [ "$last_rc" -eq 0 ]; then alvo=$(json_field_output alvo.dir); fi
+assert "$( [ "$last_rc" -eq 0 ] && [ "$alvo" = phase-1-so-spec ] && [ ! -e "$s/.vibeflow/implement-report.json" ] && echo 1 || echo 0 )" \
   "2-dir-sem-plan" "rc=$last_rc alvo=$alvo err=$(cat "$last_err")"
 rm -rf "$s"
 

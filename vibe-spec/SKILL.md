@@ -23,7 +23,7 @@ A investigação começa pela pergunta de comportamento e aceite que a spec prec
    - Windows: `pwsh "<skill>/scripts/spec.ps1"`.
    - Unix: `bash "<skill>/scripts/spec.sh"`.
    - Modo MVP: acrescente `-Mvp` ou `--mvp`.
-3. Leia `.vibeflow/spec-report.json` como evidência operacional. Use `rg --files` e `rg -n` para localizar `interview.md`, `spec.md`, `.vibeflow/REGRAS.md` e somente os paths do codebase necessários para entender o comportamento pretendido. Abra as entradas e dependências do fluxo; o inventário não é uma ordem para ler a árvore inteira.
+3. Leia o JSON operacional emitido no stdout pelo comando acima. Use `rg --files` e `rg -n` para localizar `interview.md`, `spec.md`, `.vibeflow/REGRAS.md` e somente os paths do codebase necessários para entender o comportamento pretendido. Abra as entradas e dependências do fluxo; o inventário não é uma ordem para ler a árvore inteira.
 
 Erros determinísticos previstos: `INIT_AUSENTE` exige `/vibe-init`. `PHASES_INESPERADO`, `MVP_INESPERADO`, `MVP_INTERVIEW_AUSENTE`, `SPEC_JA_PLANEJADA`, `SPEC_SEM_ALVO`, `FASE_AUSENTE`, `FASE_EXISTE`, `SLUG_INVALIDO` e `MODO_INVALIDO` exigem diagnosticar a causa e não devem ser contornados.
 
@@ -120,6 +120,6 @@ Rascunho sem "aprovado" e sem pedido explícito de plan não autoriza avançar p
 ## 6. Fechar
 
 Não commite no git. Não dispare a próxima skill a menos que o usuário tenha pedido explicitamente para avançar (§5).
-Informe que o arquivo vivo `spec.md` entra no git e que `spec-report.json` fica de fora. Recomende abrir um novo chat para `vibe-design` com UI visível, senão `vibe-plan`; continuar no mesmo chat é permitido somente por escolha consciente do humano. O `spec.md` vivo e o handoff são a ponte entre chats.
+Informe que o JSON do inventário foi consumido do stdout e não gerou arquivo persistido. Recomende abrir um novo chat para `vibe-design` com UI visível, senão `vibe-plan`; continuar no mesmo chat é permitido somente por escolha consciente do humano. O `spec.md` vivo e o handoff são a ponte entre chats.
 Handoff registrado no arquivo: `vibe-design` com UI visível, senão `vibe-plan`. Não pular design em silêncio. `plan.md` existente bloqueia nova escrita, pedido novo exige outra phase.
 

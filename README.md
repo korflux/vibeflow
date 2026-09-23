@@ -210,7 +210,9 @@ vibe-<nome>/
 3. Teste de contrato em `docs/vibe-<nome>/tests/`, `unittest`, pasta isolada. Depois: `python docs/vibe-<nome>/tests/test-<nome>.py -v`.
 4. Distribuição: `python docs/tests/test-distribuicao.py -v`.
 5. Não inventar path de artefato fora de `.vibeflow/phases/phase-N-slug/`; a única exceção é o baseline fixo `.vibeflow/mvp/`. Não copiar `REGRAS.md` para `AGENTS.md` / `CLAUDE.md`.
-6. Relatórios `*-report.json` ficam fora do git; os artefatos vivos entram no git.
+6. Só `.vibeflow/init-report.json` persiste, pois carrega `apply_token` para retomar um merge pendente; os inventários das demais skills são JSON transitório no stdout. Relatórios e pendências do init ficam fora do git; os artefatos vivos entram no git.
+
+Versão dos manifests: `2.0.0`. O Antigravity mantém o schema mínimo sem campo de versão.
 
 PR contra `main`. Mudança de contrato (path, schema do relatório, flag pública) é Major; o resto segue o semver em `.vibeflow/REGRAS.md`.
 

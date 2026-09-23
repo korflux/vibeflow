@@ -59,36 +59,6 @@ def repo_root(explicit: str | None) -> Path:
     return Path.cwd().resolve()
 
 
-# Lê texto operacional que precisa ser preservado integralmente.
-def read_text(path: Path) -> str | None:
-    if not path.is_file():
-        return None
-    return path.read_text(encoding="utf-8-sig")
-
-
-# Recusa caminhos operacionais linkados ou de tipo incompatível antes de qualquer escrita.
-def assert_safe_operational_path(path: Path, code: str) -> None:
-    if is_reparse_point(path) or (path.exists() and not path.is_file()):
-        raise RuntimeError(f"{code}: {path.name} não é um arquivo operacional regular.")
-
-
-# Acrescenta exclusões operacionais preservando regras existentes e evitando duplicação.
-def add_gitignore_entry(path: Path, entry: str) -> None:
-    assert_safe_operational_path(path, "GITIGNORE_INESPERADO")
-    body = read_text(path) or ""
-    if entry in {line.strip() for line in body.splitlines()}:
-        return
-    prefix = "\n" if body and not body.endswith("\n") else ""
-    with path.open("a", encoding="utf-8", newline="\n") as stream:
-        stream.write(f"{prefix}{entry}\n")
-
-
-# Garante que o relatório operacional não entre no Git sem apagar as entradas das outras skills.
-def ensure_gitignore(vf: Path) -> None:
-    gitignore = vf / ".gitignore"
-    add_gitignore_entry(gitignore, "review-report.json")
-
-
 # Classifica .vibeflow antes de qualquer escrita.
 def vibeflow_state(path: Path) -> str:
     if is_reparse_point(path):
@@ -217,21 +187,13 @@ def prepare_live_file(dest_file: Path) -> bool:
     return True
 
 
-# Monta o JSON que a skill lê; stdout só o path do relatório.
-def write_report(vf: Path, payload: dict[str, Any]) -> Path:
-    report_path = vf / "review-report.json"
-    assert_safe_operational_path(report_path, "RELATORIO_INESPERADO")
-    report_path.write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-        newline="\n",
-    )
-    print(report_path)
-    return report_path
+# Serializa o inventário como JSON transitório para o consumidor imediato, sem criar estado no workspace.
+def emit_report(payload: dict[str, Any]) -> None:
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
 
 
 # Inventaria o disco e opcionalmente prepara o artefato vivo review.md.
-def run(args: argparse.Namespace) -> Path:
+def run(args: argparse.Namespace) -> None:
     if args.mvp and (args.slug is not None or args.dir is not None):
         raise RuntimeError("MODO_INVALIDO: o alvo MVP não aceita --slug nem --dir.")
 
@@ -255,7 +217,6 @@ def run(args: argparse.Namespace) -> Path:
         actions.append({"op": "criar_phases", "alvo": ".vibeflow/phases"})
         ph_state = "ok"
 
-    ensure_gitignore(vf)
     existing, warnings = list_phases(phases)
     next_n = (existing[-1]["n"] + 1) if existing else 1
     pending = find_plan_pendente(existing)
@@ -345,7 +306,7 @@ def run(args: argparse.Namespace) -> Path:
         "actions": actions,
         "avisos": warnings,
     }
-    return write_report(vf, payload)
+    emit_report(payload)
 
 
 # Converte falhas previstas em mensagens curtas, sem stack trace operacional.
