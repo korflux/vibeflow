@@ -468,6 +468,27 @@ class PythonContracts(unittest.TestCase):
 class SkillContracts(unittest.TestCase):
     """Trava no disco os contratos que a skill precisa para ler fila e executar o ciclo de implementação."""
 
+    def test_express_precedes_init_and_routes_same_phase_adjustments(self) -> None:
+        """Mantém o Express sem fase antes dos motores e retém ajustes na entrega atual."""
+        skill = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
+        express_start = skill.index("1. Antes de exigir `.vibeflow/`")
+        script_start = skill.index("2. Para todo pedido fora do Express")
+        express = skill[express_start:script_start]
+
+        self.assertLess(express_start, script_start)
+        self.assertIn("pedido claro e localizado", express)
+        self.assertIn("Não rode `vibe-init`", express)
+        self.assertIn("não crie ou exija `.vibeflow/`", express)
+        self.assertIn("atualize a T* aberta", express)
+        self.assertIn("uma T* curta ao `plan.md` existente", express)
+        self.assertIn("o R* existente", express)
+        for trigger in (
+            "privacidade", "obrigação jurídica", "autenticação", "autorização",
+            "pagamento", "segredo", "persistência", "perda de dados",
+        ):
+            with self.subTest(trigger=trigger):
+                self.assertIn(trigger, express)
+
     # Garante que a skill consome a fila do JSON transitório no stdout.
     def test_skill_reads_fila_from_stdout_json(self) -> None:
         text = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
@@ -492,7 +513,8 @@ class SkillContracts(unittest.TestCase):
         """Trava entrega delimitada e exclusividade do coordenador sobre estado compartilhado."""
         skill = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
         template = (SKILL_DIR / "templates" / "implement.md").read_text(encoding="utf-8")
-        self.assertIn("Use delegação nativa somente se o host a oferecer", skill)
+        self.assertIn("Só após o humano aprovar a execução paralela", skill)
+        self.assertIn("use delegação nativa se o host oferecer", skill)
         self.assertIn("resultado, aceite, dependências, paths exclusivos e comando de verificação", skill)
         self.assertIn("Agentes não alteram `plan.md`, `spec.md`, `implement.md` ou `review.md`", skill)
         self.assertIn("somente o coordenador altera artefatos vivos e o índice Git", skill)

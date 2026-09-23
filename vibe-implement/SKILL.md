@@ -17,16 +17,22 @@ No MVP, não execute código sem analyze `aprovado` e `limpo`; a fila vem soment
 
 A investigação começa pela pergunta da T* elegível. Use `rg --files` para localizar os paths da task, seus testes e dependências; use `rg -n` para localizar símbolos, chamadas e contratos que formam o fluxo real. Abra somente essas entradas e expanda a leitura quando uma lacuna bloquear a prova. O inventário é mapa de seleção, não autorização para ler a árvore inteira. `implement.md` é o artefato vivo da execução; a IA o escreve diretamente.
 
-## 0. Entender e usar o script
+## 0. Classificar Express e usar o script
 
-1. Resolva o diretório desta skill e leia o motor que vai executar (`scripts/implement.ps1` no Windows ou `scripts/implement.py` no Unix). Ele realiza inventário determinístico e projeta a fila de dependências, preparando o artefato vivo sem substituir conteúdo existente.
-2. No cwd do repo:
+1. Antes de exigir `.vibeflow/`, consultar a fila ou executar um motor, classifique o pedido como Express ou fluxo padrão.
+   - **Express:** pedido claro e localizado, sem comportamento novo, como copy, rótulo, nome de tela ou ajuste visual pequeno. Inspecione somente os arquivos e chamadas ligados ao recorte.
+   - Se elegível, faça o patch direto e a checagem proporcional no arquivo ou tela afetada. Não rode `vibe-init` nem `implement.ps1`/`implement.py`; não crie ou exija `.vibeflow/`, phase ou artefato VibeFlow. O usuário pode pedir o fluxo completo mesmo quando Express for elegível.
+   - Em ajuste da entrega atual, preserve a phase: atualize a T* aberta ou adicione uma T* curta ao `plan.md` existente; achado formal de review atualiza o R* existente. Não crie phase, spec ou plan só pelo ajuste. Reuse o `design.md` existente quando o ajuste for visual.
+   - Express não pode alterar comportamento, critério de aceite, rota, interação, acessibilidade, consentimento ou obrigação. Se o pedido ou a investigação tocar privacidade, dado pessoal, consentimento, retenção, direitos, obrigação jurídica, autenticação, autorização, pagamento, segredo, persistência ou perda de dados, saia do Express e use a cadeia aplicável.
+   - Se aparecer ambiguidade, risco ou comportamento novo durante o trabalho, pare antes de ampliar o patch e informe o encaminhamento recomendado.
+2. Para todo pedido fora do Express, resolva o diretório desta skill e leia o motor que vai executar (`scripts/implement.ps1` no Windows ou `scripts/implement.py` no Unix). Ele realiza inventário determinístico e projeta a fila de dependências, preparando o artefato vivo sem substituir conteúdo existente.
+3. No cwd do repo:
    - Windows: `pwsh "<skill>/scripts/implement.ps1"`
    - Unix: `bash "<skill>/scripts/implement.sh"` (Python 3, senão pwsh 7)
    - Alvo MVP: acrescente `-Mvp` ou `--mvp`.
-3. Leia o JSON operacional emitido no stdout pelo comando acima. A escolha da T* sai de `fila.elegiveis` no JSON. Use `rg --files` e `rg -n` para localizar `.vibeflow/REGRAS.md`, os paths da T* e os símbolos do fluxo. Abra somente as entradas e dependências relevantes; não leia a árvore inteira.
+4. Leia o JSON operacional emitido no stdout pelo comando acima. A escolha da T* sai de `fila.elegiveis` no JSON. Use `rg --files` e `rg -n` para localizar `.vibeflow/REGRAS.md`, os paths da T* e os símbolos do fluxo. Abra somente as entradas e dependências relevantes; não leia a árvore inteira.
 
-`INIT_AUSENTE` exige init. `IMPLEMENT_SEM_ALVO`, `IMPLEMENT_SEM_PLAN`, `IMPLEMENT_ANALYZE_AUSENTE`, `IMPLEMENT_ANALYZE_RASCUNHO`, `IMPLEMENT_ANALYZE_BLOQUEADO`, `MVP_INESPERADO`, `MODO_INVALIDO`, `FASE_AUSENTE` e `PHASES_INESPERADO` não são contornados.
+No fluxo padrão, `INIT_AUSENTE` exige init. `IMPLEMENT_SEM_ALVO`, `IMPLEMENT_SEM_PLAN`, `IMPLEMENT_ANALYZE_AUSENTE`, `IMPLEMENT_ANALYZE_RASCUNHO`, `IMPLEMENT_ANALYZE_BLOQUEADO`, `MVP_INESPERADO`, `MODO_INVALIDO`, `FASE_AUSENTE` e `PHASES_INESPERADO` não são contornados.
 
 ## 1. Abrir (5 linhas)
 
@@ -44,7 +50,7 @@ Declare `ROUTE: low|medium|high|xhigh|max` e modo A ou B. Default = **A**.
 
 | Sinal | Ação |
 |---|---|
-| Typo / rename / uma linha sem runtime | **Não** usar |
+| Copy, typo, título ou ajuste visual localizado, sem comportamento novo e sem risco sensível | Classificar como Express antes de exigir init, fila ou script |
 | `high+` sem `plan.md` | **Para.** `/vibe-plan` |
 | `max` sem `analyze.md` | **Para.** `/vibe-analyze` |
 | Analyze ausente, rascunho ou veredito `bloqueado` no MVP | **Para.** Não flipa nem executa. Volta ao analyze |
