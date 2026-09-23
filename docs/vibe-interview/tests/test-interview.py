@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -17,6 +18,7 @@ SCRIPT = SKILL_DIR / "scripts" / "interview.py"
 POWERSHELL_SCRIPT = SKILL_DIR / "scripts" / "interview.ps1"
 # Caminho do template vivo; os contratos abaixo garantem jornadas e acesso obrigatórios.
 TEMPLATE = SKILL_DIR / "templates" / "interview.md"
+DISCOVERY = SKILL_DIR / "references" / "mvp-discovery.md"
 
 
 # Executa o motor Python e decodifica o inventário transitório enviado no stdout.
@@ -231,6 +233,26 @@ class TemplateContracts(unittest.TestCase):
         self.assertIn("sem saída", text)
         self.assertIn("sem estado crítico", text)
         self.assertIn("Texto livre sem tabela é defeito", text)
+
+
+# Confere que as referências condicionais e os gatilhos de descoberta continuam utilizáveis.
+class DiscoveryReferenceContracts(unittest.TestCase):
+    """Protege os caminhos dos módulos e os gatilhos de privacidade e requisitos legais."""
+
+    # Garante que cada caminho de módulo citado no roteador aponta para um arquivo real.
+    def test_referencias_de_modulo_apontam_para_arquivos(self) -> None:
+        text = DISCOVERY.read_text(encoding="utf-8")
+        references = re.findall(r"`(modules/[^`]+\.md)`", text)
+        self.assertTrue(references, "o roteador MVP não cita caminhos de módulos")
+        for reference in references:
+            with self.subTest(reference=reference):
+                self.assertTrue((DISCOVERY.parent / reference).is_file(), f"referência sem arquivo: {reference}")
+
+    # Garante que riscos de dados pessoais e obrigações legais acionem perguntas próprias.
+    def test_discovery_define_gatilhos_de_privacidade_e_juridico(self) -> None:
+        text = DISCOVERY.read_text(encoding="utf-8").lower()
+        for gatilho in ("privacidade", "dados pessoais ou sensíveis", "jurídico", "setor é regulado"):
+            self.assertIn(gatilho, text)
 
 
 # Verifica se existe uma versão real de PowerShell 7, única suportada pelo motor gêmeo.

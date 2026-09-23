@@ -13,6 +13,20 @@
 
 Design (`vibe-design`, artefato `design.md` na mesma pasta) entra entre spec e plan somente com UI visível. Sem UI visível, registra N/A explícito em vez de bloqueio. Com UI visível, o handoff da spec é `vibe-design` e o da design é `vibe-plan`. Toda rota com spec exige UX F* suficiente para fechar o comportamento real; página informativa simples usa F* curto e N/A fundamentado para regras inexistentes. O analyze no max cruza design com UI visível.
 
+### Continuidade entre chats (recomendação)
+
+| Transição | Recomendação |
+|---|---|
+| `init → interview → spec → design` | Pode continuar no mesmo chat. |
+| `spec/design → plan` | Recomende novo chat para o plan. |
+| `plan → analyze` (MVP/max) | Recomende novo chat para o analyze, separado do plan. |
+| `plan/analyze → implement` | Recomende novo chat; na execução em sequência, use um chat por `T*`. |
+| Grupo paralelo aprovado | Exceção ao chat por `T*`: um chat coordenador pode conduzir o grupo junto, mantendo isolamento, prova e commit próprios por task. |
+| `implement → review` | Recomende novo chat para review. |
+| `review → implement` | Recomende novo chat para correções. |
+
+Separar chats é uma recomendação, nunca um gate. Se o humano preferir continuar no mesmo chat, prossiga e use os artefatos vivos como fonte de contexto. Não crie chats automaticamente. O plan registra grupos paralelizáveis com `T*` e motivo; ao iniciar implement, informe o grupo e pergunte se o humano quer executá-lo em paralelo. Só paralelize após resposta afirmativa e com dependências, ownership e isolamento seguros. Sem isso, execute em sequência.
+
 Faixa Express (low ou medium) atende pedidos claros e localizados sem comportamento novo, como copy, rótulo, nome de tela, cor, espaçamento ou ícone com texto mantido. Classifique antes de exigir `.vibeflow/`, `vibe-init`, inventário de phase ou script. Sem phase ativa para a entrega, implemente direto, faça a checagem proporcional e não crie init, phase ou artefato VibeFlow. Com phase ativa, reutilize-a: atualize a T* aberta ou acrescente uma T* curta no `plan.md` existente; achado formal de review atualiza o R* existente. Para ajuste visual, atualize o `design.md` existente quando houver. Não crie spec, plan ou design só para o ajuste. Comportamento, rota, interação, critério de aceite ou acessibilidade alterados saem do Express. Também saem mudanças que toquem privacidade, dado pessoal, consentimento, retenção, direitos, obrigação jurídica, autenticação, autorização, pagamento, segredo, persistência ou risco de perda de dados, seguindo a cadeia aplicável.
 
 Review leve no Express cobra só rastreabilidade mais visual. Segurança e banco só abrem se o diff tocar essas superfícies.

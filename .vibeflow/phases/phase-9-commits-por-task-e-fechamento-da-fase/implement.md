@@ -1,6 +1,6 @@
 # Implement: commits por task e fechamento da fase
 # Alvo: phase-9-commits-por-task-e-fechamento-da-fase
-# Status: aprovado
+# Status: em-curso
 
 ## Fatia T1: Migrar o fluxo Git para commits isolados por task
 
@@ -18,7 +18,7 @@
 - Prova: `python docs/tests/test-mvp-flow.py -v`, `python docs/tests/test-visual-contract.py -v` e `python docs/tests/test-reparse-safety.py -v` -> todos OK.
 - Prova: `git diff --check` -> sem erro de whitespace; apenas avisos de conversão LF/CRLF do ambiente Windows.
 - Prova: `gitleaks detect --source . --verbose --redact --no-banner` -> nenhum segredo encontrado.
-- Commit da task: não executado nesta sessão. O worktree já continha alterações não relacionadas, inclusive nos mesmos paths canônicos; sem snapshot confiável para separar as origens, qualquer staging poderia misturar trabalho existente. O commit seguro fica pendente de isolamento humano do worktree.
+- Commit da task: não há commit isolado. A implementação consta no commit amplo `fe68e31`, que altera 79 arquivos e mistura paths da phase 8 e da T1; não é atribuível somente à task. Não recriar por amend ou reescrita do histórico. O critério de commit por task permanece pendente.
 - Decisões críticas: nenhuma decisão de produto nova; a correção de seleção por slug explícito está coberta pelos testes Python e PowerShell.
 
 ### Feedback +

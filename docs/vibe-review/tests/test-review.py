@@ -84,6 +84,25 @@ class PythonContracts(unittest.TestCase):
         self.assertEqual("reuse", report["modo"])
         self.assertNotIn("wip", report)
 
+    # Confirma que --dir escolhe e reporta a phase do diff em vez da pendente mais recente.
+    def test_dir_overrides_newer_unreviewed_plan(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        for name in ("phase-2-outro", "phase-9-pendente"):
+            phase = vf / "phases" / name
+            phase.mkdir(parents=True)
+            (phase / "plan.md").write_text("plan\n", encoding="utf-8")
+
+        _, automatic = invoke(self.repo)
+        _, targeted = invoke(self.repo, "--dir", "phase-2-outro")
+
+        self.assertEqual("phase-9-pendente", automatic["alvo"]["dir"])
+        self.assertEqual("phase-2-outro", targeted["alvo"]["dir"])
+
+        _, applied = invoke(self.repo, "--apply", "--dir", "phase-2-outro")
+        self.assertTrue((vf / "phases" / "phase-2-outro" / "review.md").is_file())
+        self.assertFalse((vf / "phases" / "phase-9-pendente" / "review.md").exists())
+        self.assertEqual("phase-2-outro", applied["alvo"]["dir"])
+
     def test_apply_without_alvo_or_slug(self) -> None:
         vf = seed_vibeflow(self.repo)
         process, _ = invoke(self.repo, "--apply", check=False)
@@ -230,6 +249,25 @@ class PowershellParity(unittest.TestCase):
         report = json.loads(process.stdout)
         self.assertFalse((vf / "review-report.json").exists())
         self.assertNotIn("wip", report)
+
+    # Confirma que -Dir seleciona e reporta a phase explícita apesar de outra pendente mais recente.
+    def test_dir_overrides_newer_unreviewed_plan(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        for name in ("phase-2-outro", "phase-9-pendente"):
+            phase = vf / "phases" / name
+            phase.mkdir(parents=True)
+            (phase / "plan.md").write_text("plan\n", encoding="utf-8")
+        process = subprocess.run(
+            [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo), "-Dir", "phase-2-outro", "-Apply"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(0, process.returncode, process.stderr)
+        report = json.loads(process.stdout)
+        self.assertEqual("phase-2-outro", report["alvo"]["dir"])
+        self.assertTrue((vf / "phases" / "phase-2-outro" / "review.md").is_file())
+        self.assertFalse((vf / "phases" / "phase-9-pendente" / "review.md").exists())
 
     # Confirma que o motor PowerShell preserva o conteúdo da review já existente.
     def test_apply_preserves_existing_file(self) -> None:

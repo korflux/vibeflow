@@ -79,10 +79,10 @@
 
 - Dados e invariantes: <o que precisa permanecer verdadeiro ou N/A>
 - Integrações e interfaces: <entradas, saídas e falhas necessárias ou N/A>
-- Segurança e operação: <limites que afetam a entrega ou N/A>
+- Segurança e operação: <para entradas externas, campos e valores aceitos por allowlist e tamanho máximo; para acesso cross-origin, allowlist de origens CORS; outros controles aplicáveis ou N/A fundamentado>
 - Tecnologia imposta: <restrição existente e motivo ou N/A>
 
-<!-- Com API, handle, segredo ou dado pessoal, fechar as proteções aplicáveis. Fato novo em mock que é contrato exige nome, forma, janela e escopo ou delegação ao design com Ask first. -->
+<!-- Para entradas externas, declarar allowlist de campos/valores e tamanho máximo por entrada. Com API, handle, segredo, dado pessoal ou rota autenticada, fechar os demais controles aplicáveis. Se houver acesso browser cross-origin, declarar a allowlist de origens CORS e nunca combinar * com credenciais; sem necessidade, justificar N/A. Fato novo em mock que é contrato exige nome, forma, janela e escopo ou delegação ao design com Ask first. -->
 
 ## Como provar
 
@@ -113,6 +113,6 @@
 vibe-design com UI visível, senão vibe-plan
 <!-- No MVP, acrescentar: rota: max -->
 
-- Chat: recomende novo chat para `vibe-design` com UI visível, senão `vibe-plan`; continuidade no mesmo chat só por escolha consciente. O `spec.md` vivo é a ponte.
+- Chat: `interview`, `spec` e, com UI, `design` podem continuar no mesmo chat. Recomende novo chat para `vibe-plan`; se o humano preferir, continuar no mesmo chat não bloqueia. O `spec.md` vivo é a ponte.
 
 - [ ] Aprovação humana (leu o arquivo e confirmou)

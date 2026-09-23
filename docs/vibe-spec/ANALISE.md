@@ -25,7 +25,7 @@ A IA começa pela pergunta que a spec precisa responder, localiza `interview.md`
 A escrita segue cobertura da origem → comportamento → aceite → contratos necessários. Essa ordem impede que uma spec detalhada ignore uma página ou jornada da interview e evita antecipar lista de arquivos, comandos e tarefas que pertencem ao plan. Para página informativa, o `F*` continua rastreável, mas usa somente o detalhe real do comportamento e N/A fundamentado para regras inexistentes.
 O aceite é agrupado pelo resultado da capacidade, não pela futura quantidade de testes. O plan escolhe uma prova relevante, que pode cobrir vários `A*` ou ser reutilizada entre tasks.
 
-`init → interview → spec` pode seguir no mesmo chat. Se o contexto ficar ambíguo, o caminho do arquivo vivo permite abrir novo chat sem transportar o histórico como autoridade.
+`init → interview → spec` pode seguir no mesmo chat, e `design` também pode continuar nele quando houver UI. Recomende novo chat para iniciar `plan`; se o humano preferir ficar, prossiga e use o arquivo vivo sem tratar o histórico como autoridade.
 
 ## MVP
 

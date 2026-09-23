@@ -56,7 +56,7 @@ O apply não usa arquivo intermediário, não transporta conteúdo entre arquivo
 
 ## 5. Artefato e MVP
 
-O template é único. A entrevista phase usa Solicitação, Hipótese inicial, Trilha, Resultado e Handoff. O modo MVP acrescenta cobertura, mapa do produto, direção técnica, direção visual, operação e decisões críticas; seções exclusivas são omitidas no modo phase. `references/mvp-discovery.md` define o núcleo e roteia módulos de completude em `references/modules/`, lidos somente quando o gatilho se aplica.
+O template é único. A entrevista phase usa Solicitação, Hipótese inicial, Trilha, Resultado e Handoff. Cada entrada da Trilha mantém `ANOTEI` (interpretação registrada), `Q` (uma pergunta), `GUESS` (resposta provisória) e `R` (resposta humana, incluindo se confirmou ou corrigiu o guess). O modo MVP acrescenta cobertura, mapa do produto, direção técnica, direção visual, operação e decisões críticas; seções exclusivas são omitidas no modo phase. `references/mvp-discovery.md` define o núcleo, roteia módulos de completude em `references/modules/` somente quando acionados e explicita gatilhos para privacidade e requisitos legais.
 
 Em MVP com interface, o Mapa do produto exige tabela de jornadas com entrada, saída e estado crítico, mais tabela de páginas/telas com caminho de chegada, próximo destino e retorno. O checklist de acesso registra cadastro, dados mínimos, verificação, login, recuperação, sessão, papéis, primeiro usuário, bloqueio e logout, com N/A fundamentado quando não aplicável. Site institucional ou estático novo também usa a rota MVP quando exige descoberta; login, banco e painel não são presumidos. Jornada sem saída ou estado crítico, ou página sem caminho de navegação, não fecha.
 
@@ -68,12 +68,12 @@ O interview MVP não publica decisões em `REGRAS.md`. O handoff da entrevista �
 
 Falhas previstas usam `CODIGO: descrição` no stderr, sem stack operacional. Os contratos cobrem ausência de init, tipos inesperados, slug, criação phase/MVP, idempotência, preservação byte a byte, ponteiros de alvo e paridade Python/PowerShell quando disponível.
 
-Suítes: `docs/vibe-interview/tests/test-interview.py` e `docs/vibe-interview/tests/test-interview.sh`.
+Suítes: `docs/vibe-interview/tests/test-interview.py` e `docs/vibe-interview/tests/test-interview.sh`. A suíte Python confere que cada caminho de módulo citado existe e que os gatilhos de privacidade e requisitos legais permanecem descritos.
 
 ## 7. Limites
 
 - Uma entrevista pertence a uma única phase ou ao baseline MVP.
 - O script não preenche, aprova ou interpreta o markdown.
 - O inventário seleciona paths; a IA abre somente as entradas e dependências necessárias, usando `rg --files` e `rg -n` quando precisar localizar evidência.
-- `init → interview → spec` pode permanecer no mesmo chat. A troca de chat é opcional nesta porta; o arquivo vivo é a fonte de continuidade.
+- `init → interview → spec → design` pode permanecer no mesmo chat. Recomende novo chat para iniciar `plan`; a separação nunca é gate e o arquivo vivo é a fonte de continuidade.
 - Sem commit automático. O arquivo vivo entra no Git; o JSON operacional é transitório no stdout.

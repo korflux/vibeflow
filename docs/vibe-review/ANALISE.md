@@ -44,7 +44,7 @@ Controles compactos reduzem ruído apenas quando a ação é universalmente reco
 
 ## Chat
 
-Review recomenda novo chat para evitar que a conclusão seja influenciada pela própria implementação. O humano pode continuar conscientemente; review.md e diff carregam o contexto verificável.
+Review recomenda novo chat, separado da implementação, para avaliar o resultado com contexto focado. Se o humano preferir continuar na conversa atual, prossiga sem bloquear; `review.md` e diff carregam o contexto verificável.
 
 ## Cortes
 

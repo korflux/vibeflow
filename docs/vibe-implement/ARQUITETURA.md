@@ -61,7 +61,7 @@ Em UI, a seleção é navegador integrado quando disponível, MCP Server `chrome
 
 `implement.md` mantém uma seção por T*/R* com feito, marcado, prova, feedback, commit e pontos para review; quando há delegação, registra o escopo e o retorno integrado. Modo A executa exatamente uma task elegível, cria seu commit e para. Modo B exige autorização explícita; pode delegar T*s independentes, recalcula a fila após cada conclusão e cria um commit por task. O coordenador serializa as marcações e operações no índice Git. A mensagem e o hash do commit são registrados no resultado da execução e no chat, sem reabrir o artefato vivo apenas para anexar o hash.
 
-Quando a fila da run termina, o handoff é `vibe-review`. Recomenda-se um novo chat focado por T* e outro para review. O plan e o implement vivos são a ponte; continuar no mesmo chat é escolha consciente.
+Quando a fila da run termina, o handoff é `vibe-review`. Recomende um chat por T* em execução sequencial e novo chat para review. Um grupo paralelo aprovado pode ser conduzido por um chat coordenador, mantendo isolamento e commit próprio por task. Se o humano preferir o mesmo chat, continue sem bloquear; o plan e o implement vivos são a ponte.
 
 ## 7. Erros e testes
 

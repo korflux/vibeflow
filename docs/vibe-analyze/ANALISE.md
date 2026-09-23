@@ -32,7 +32,7 @@ No MVP, a interview é obrigatória e IDs críticos precisam atravessar spec e p
 
 ## Chat
 
-Analyze recomenda novo chat porque cruza vários documentos e pode corrigir decisões. Continuidade no mesmo chat é permitida, mas o arquivo vivo, não a memória do chat, é a fonte de verdade.
+Analyze recomenda começar em chat novo após o plan e também recomenda novo chat no handoff para implement. Se o humano preferir manter o chat, prossiga sem bloquear; o arquivo vivo, não a memória do chat, é a fonte de verdade.
 
 ## Cortes
 

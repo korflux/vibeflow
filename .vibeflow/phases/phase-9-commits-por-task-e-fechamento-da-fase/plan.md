@@ -46,7 +46,7 @@ Migrar o contrato operacional para que a task seja a única unidade de execuçã
   - [x] `python docs/tests/test-distribuicao.py -v`
   - [x] `git diff --check`
   - [x] `gitleaks detect --source . --verbose --redact --no-banner`
-- **Prova:** implementação e regressão final verdes. O commit da task não foi criado nesta sessão porque o worktree já tinha alterações anteriores nos mesmos paths; o isolamento é pré-condição para concluir T1 sem mistura.
+- **Prova:** implementação e regressão final verdes. O conteúdo entrou no commit amplo `fe68e31`, com 79 arquivos, sem isolamento path-scoped da T1. Não há commit `task(T1)` identificável; os critérios de commit por task continuam abertos e T1 permanece `[ ]`.
 - **Deps:** nenhuma
 - **Arquivos:** `vibe-plan/SKILL.md`, `vibe-plan/templates/plan.md`, `vibe-implement/SKILL.md`, `vibe-implement/templates/implement.md`, `vibe-implement/scripts/implement.py`, `vibe-implement/scripts/implement.ps1`, `vibe-review/SKILL.md`, `vibe-review/templates/review.md`, `vibe-spec/scripts/spec.py`, `vibe-spec/scripts/spec.ps1`, `docs/vibe-plan/`, `docs/vibe-implement/`, `docs/vibe-review/`, `docs/vibe-spec/tests/test-spec.py`, `docs/vibe-implement/tests/test-implement.py`, `docs/tests/test-distribuicao.py`, `README.md`, `docs/ESCOPO.md`, `.vibeflow/REGRAS.md`
 - **Size:** high, 8/10, contrato transversal em quatro skills, documentação e testes, com verificação de fila, paridade de motores e operação Git controlada

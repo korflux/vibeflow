@@ -30,9 +30,10 @@ Erros determinísticos previstos: `INIT_AUSENTE` exige `/vibe-init`. `PLAN_SEM_S
 ## 1. Abrir
 
 Declare em cerca de cinco linhas: rota, modo, alvo, spec, status da spec e estado do artefato vivo.
+Ao iniciar após `vibe-spec` ou `vibe-design`, recomende um chat novo. Se o humano preferir continuar no chat atual, prossiga sem bloquear.
 
 ```text
-modo: reuse · alvo: phase-1-lock-bloco · spec: sim · spec-status: aprovado · artefato vivo: presente
+modo: reuse · alvo: phase-1-lock-bloco · spec: sim · spec-status: aprovado · artefato vivo: presente · chat: novo recomendado
 ```
 
 - `modo_sugerido=criar`: não há pasta com spec. Não invente fase; mande `/vibe-spec`.
@@ -80,7 +81,7 @@ Crie outra T* somente quando houver um resultado entregável separado, uma depen
 3. **Decisões críticas:** Quando a task implementar ou substituir decisão crítica, adicionar `Decisões: <ID> (<ação>)`.
 4. **Verificação:** Toda task exige comando executável relevante para seu aceite. Organize a cobertura por capacidade ou jornada (ex.: login, cadastro), reutilizando testes existentes quando comprovarem a alteração. Um comando por task não exige teste novo por task nem um teste por critério de aceite. Crie teste específico quando comportamento novo, regressão, caso de borda ou risco não estiver coberto. Verificação só manual ou leitura de arquivo não conta como prova suficiente.
 5. **Dependências (`Deps`):** Declarar apenas predecessores reais de execução. Fatias independentes usam `Deps: nenhuma`; a linha de dependências define a fila, sem repetir a ordem em outra seção.
-6. **Paralelização e checkpoint:** Indique grupos paralelizáveis somente quando independência, ownership dos arquivos e ausência de conflito estiverem claros. Registre checkpoint de review apenas quando um risco ou contrato compartilhado precisar ser julgado antes de outra T*.
+6. **Paralelização e checkpoint:** Indique no `plan.md` os IDs das T* que podem executar juntas e um motivo curto, somente quando dependências, ownership dos arquivos e ausência de conflito estiverem claros. No chat, mostre os grupos ao humano e diga que `vibe-implement` perguntará se ele quer executá-los em paralelo. Registre checkpoint de review apenas quando um risco ou contrato compartilhado precisar ser julgado antes de outra T*.
 7. **UI Greenfield:** Entregue componentes e tokens dentro de fatias de resultado; não crie task de preparo visual sem entrega verificável.
 8. **Banco de dados e migrations:** Mantenha migrations e schemas nas respectivas fatias verticais e inclua comandos executáveis de migration e seed mínimo. Migrations devem ser não destrutivas (padrão expand/contract).
 
@@ -107,9 +108,11 @@ Plan gravado: <created.path>/plan.md
 - Overview: <1 linha>
 - Resultados e dependências: <resumo curto da fila, sem repetir cada Deps>
 - Preparo: <ferramentas necessárias disponíveis ou bloqueio registrado>
-- Execução conjunta/checkpoint: <somente se aplicável>
+- Paralelizáveis: <IDs + motivo curto ou “nenhum grupo seguro”; se houver grupo, diga que implement perguntará se o humano quer executá-lo junto>
+- Checkpoint: <somente se aplicável>
+- Chat: recomende novo chat para a próxima porta; continuar aqui é válido se o humano preferir.
 
-Arquivo disponível em <created.path>/plan.md. Responda "aprovado" para confirmar, "pode ir pro implement" (ou "pode ir para a próxima fase") para avançar imediatamente, ou indique os ajustes desejados.
+Arquivo disponível em <created.path>/plan.md. Responda "aprovado" para confirmar, "pode ir pro analyze" no MVP, "pode ir pro implement" nas demais rotas (ou "pode ir para a próxima fase") para avançar imediatamente, ou indique os ajustes desejados.
 ```
 
 ## 6. Ajuste ou Aprovação
@@ -117,7 +120,7 @@ Arquivo disponível em <created.path>/plan.md. Responda "aprovado" para confirma
 | Resposta | Ação |
 |---|---|
 | Aprovado (sem pedir próxima porta) | Alterar `# Status: aprovado` diretamente no vivo; parar e aguardar próximo comando |
-| "Pode ir pro implement" / "pode ir para a próxima fase" / pede código / `vibe-implement` | Alterar `# Status: aprovado` no vivo; iniciar imediatamente `vibe-implement` (ou `vibe-analyze` se rota MVP) |
+| "Pode ir pro analyze" no MVP / "pode ir pro implement" nas demais rotas / pede a próxima porta | Alterar `# Status: aprovado` no vivo; iniciar a próxima porta aplicável |
 | Pedido de alteração | Patch direto no arquivo vivo; até 5 bullets no chat; solicitar nova conferência |
 | "Parece bom" sem pedir implementação | Perguntar: "Aprovado no arquivo ou deseja algum ajuste?" |
 | Spec ou intenção quebrou | Devolver para `vibe-spec` ou `vibe-interview`. Não forçar implementação |
@@ -127,7 +130,7 @@ Rascunho sem "aprovado" e sem pedido da próxima porta não autoriza iniciar o c
 ## 7. Fechar
 
 Não commite no git nesta porta. O commit começa na `vibe-implement`, depois da prova verde de cada task. Não dispare a próxima skill a menos que o usuário tenha pedido explicitamente para avançar (§6).
-Informe que o JSON do inventário foi consumido do stdout e não gerou arquivo persistido. Recomende abrir um novo chat para `vibe-implement`; continuar no mesmo chat é permitido somente por escolha consciente do humano. O `plan.md` vivo e o handoff são a ponte entre chats.
+No handoff, recomende novo chat para `vibe-analyze` no MVP ou `vibe-implement` nas demais rotas. Se o humano preferir continuar, siga sem bloquear; o `plan.md` vivo e o handoff são a ponte.
 Handoff normal: `vibe-implement`. Handoff MVP: `vibe-analyze` (pois o modo max exige análise antes do código).
 Zero código nesta execução.
 

@@ -77,6 +77,6 @@ limpo | bloqueado
 vibe-implement
 <!-- No MVP, acrescentar: rota: max -->
 
-- Chat: recomende novo chat para `vibe-implement`; continuidade no mesmo chat só por escolha consciente. O `analyze.md` e os artefatos vivos são a ponte.
+- Chat: recomende novo chat para iniciar `vibe-analyze` após `vibe-plan` e para o handoff a `vibe-implement`. Se o humano preferir continuar no mesmo chat, isso não bloqueia. O `analyze.md` e os artefatos vivos são a ponte.
 
 - [ ] Aprovação humana (leu o arquivo e confirmou)

@@ -171,6 +171,18 @@ def resolve_alvo(
     return None, "criar"
 
 
+# Resolve --dir no inventário, para que o relatório represente o destino explícito do diff.
+def resolve_dir(existing: list[dict[str, Any]], raw_dir: str) -> tuple[dict[str, Any], str]:
+    name = Path(raw_dir).name
+    if not PHASE_RE.fullmatch(name):
+        raise RuntimeError(f"FASE_AUSENTE: {name} não é uma pasta de fase existente.")
+    for item in existing:
+        if item["dir"] == name:
+            mode = "atualizar" if "review.md" in item["files"] else "reuse"
+            return item, mode
+    raise RuntimeError(f"FASE_AUSENTE: .vibeflow/phases/{name} não é uma pasta de fase existente.")
+
+
 # Cria o artefato vivo vazio somente quando ele ainda não existe, sem sobrescrever histórico.
 def prepare_live_file(dest_file: Path) -> bool:
     if dest_file.is_symlink() or dest_file.exists():
@@ -221,7 +233,10 @@ def run(args: argparse.Namespace) -> None:
     next_n = (existing[-1]["n"] + 1) if existing else 1
     pending = find_plan_pendente(existing)
     draft = find_rascunho(existing)
-    alvo, modo_sugerido = resolve_alvo(existing)
+    if args.dir:
+        alvo, modo_sugerido = resolve_dir(existing, args.dir)
+    else:
+        alvo, modo_sugerido = resolve_alvo(existing)
     mvp = get_mvp(vf)
     if args.mvp:
         required = [name for name in ("interview.md", "spec.md", "plan.md", "analyze.md") if mvp is None or name not in mvp["files"]]
@@ -286,7 +301,10 @@ def run(args: argparse.Namespace) -> None:
             next_n = (existing[-1]["n"] + 1) if existing else 1
             pending = find_plan_pendente(existing)
             draft = find_rascunho(existing)
-            alvo, modo_sugerido = resolve_alvo(existing)
+            if args.dir:
+                alvo, modo_sugerido = resolve_dir(existing, args.dir)
+            else:
+                alvo, modo_sugerido = resolve_alvo(existing)
             created = next((item for item in existing if item["dir"] == dest_dir.name), None)
 
     payload = {

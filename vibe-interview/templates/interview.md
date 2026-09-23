@@ -18,9 +18,10 @@ CONFIDENCE: ~<N>%, falta: <gaps>
 
 ### 1
 
-Q: <pergunta ou bloco pequeno no modo MVP>
-GUESS: <hipótese e motivo>
-R: <resposta do humano>
+ANOTEI: <interpretação fiel do pedido ou da resposta anterior; diferencie fatos de hipóteses>
+Q: <uma pergunta focada>
+GUESS: <resposta provisória, motivo e confiança quando a base for limitada>
+R: <resposta do humano e se confirmou, corrigiu ou rejeitou o guess>
 
 ## Resultado
 
@@ -106,4 +107,4 @@ Entendi assim:
 vibe-spec
 <!-- No MVP, acrescentar na linha seguinte: rota: max -->
 
-- Chat: `init → interview → spec` pode continuar no mesmo chat. Se abrir outro, use este arquivo vivo como ponte.
+- Chat: `init → interview → spec → design` pode continuar no mesmo chat. Recomende novo chat ao iniciar `vibe-plan`; se o humano preferir, a continuidade não bloqueia. Use este arquivo vivo como ponte.

@@ -50,7 +50,7 @@ Em MVP, conflito crítico sem `substitui` explícito bloqueia. `analyze.md` não
 
 A IA começa pela pergunta de consistência, localiza entradas com `rg --files`, procura A*/C*, T*, IDs e comandos com `rg -n` e abre somente as dependências do cruzamento. O inventário não autoriza ler a árvore inteira.
 
-Recomenda-se novo chat para analyze. Continuidade no mesmo chat é uma escolha consciente; o `analyze.md` vivo e o handoff são a ponte.
+Recomende novo chat para iniciar analyze após plan e para o handoff a implement. A escolha de continuar no mesmo chat não bloqueia; o `analyze.md` vivo e o handoff são a ponte.
 
 Suítes: `docs/vibe-analyze/tests/test-analyze.py` e `docs/vibe-analyze/tests/test-analyze.sh`. Elas cobrem predecessores, phase/MVP, atualização, preservação e paridade.
 

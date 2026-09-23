@@ -41,7 +41,7 @@ Essa decisão reduz cópia e estados concorrentes. A limitação é que a IA pre
 
 ## Chat e modos
 
-Implement recomenda um chat focado por T* quando há fila. O modo A para após uma task e seu commit; o modo B exige autorização explícita e pode delegar tasks independentes. O coordenador serializa atualizações dos artefatos vivos e do índice Git para manter cada prova e commit atribuíveis a uma única task. O plan e o implement carregam o contexto verificável para um novo chat.
+Implement recomenda um chat por T* na execução em sequência e um novo chat para review. Se o plan apontar um grupo independente, o agente mostra as tasks e pergunta antes de paralelizá-las. Com autorização, um chat coordenador conduz apenas aquele grupo, com isolamento, prova e commit próprios por task. A recomendação de chat não bloqueia a preferência do humano; o plan e o implement carregam o contexto verificável.
 
 ## MVP
 

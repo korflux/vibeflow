@@ -103,6 +103,7 @@ Design gravado: <created.path>/design.md
 - Uso: <criar | corrigir | analisar>
 - Telas: <nomes das telas cobertas>
 - Handoff: vibe-plan
+- Chat: recomende novo chat para plan; continuar neste chat é válido se o humano preferir.
 
 Arquivo disponível em <created.path>/design.md. Responda "aprovado" para confirmar, "pode ir pro plan" (ou "pode ir para a próxima fase") para avançar imediatamente, ou indique os ajustes desejados.
 ```
@@ -122,5 +123,5 @@ Rascunho sem "aprovado" e sem pedido da próxima porta não autoriza iniciar o p
 ## 7. Fechar
 
 Não commite no git nesta porta. O commit começa na `vibe-implement`, depois da prova verde de cada task. Não dispare a próxima skill a menos que o usuário tenha pedido explicitamente para avançar (§6).
-Informe que o JSON do inventário foi consumido do stdout e não gerou arquivo persistido. Recomende abrir um novo chat para `vibe-plan`; continuar no mesmo chat é permitido somente por escolha consciente do humano. O `design.md` vivo e o handoff são a ponte entre chats.
+`interview`, `spec` e `design` podem continuar no mesmo chat. Recomende novo chat para `vibe-plan`; se o humano preferir, continuar no chat atual não bloqueia. O `design.md` vivo e o handoff são a ponte.
 Handoff normal: `vibe-plan`. Sem UI visível, o handoff da spec segue direto para `vibe-plan` com N/A explícito. `plan.md` existente bloqueia nova escrita, pedido novo exige outra phase.

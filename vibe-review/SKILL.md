@@ -12,6 +12,7 @@ description: >
 Não invente `n` se há plan. Não edite source, teste nem lockfile. Sem `review.md` não há veredito.
 Um arquivo por alvo. Sem `.vibeflow/`: `/vibe-init`. Open Questions no arquivo = defeito. Correções ficam na `vibe-implement`; o Git só é finalizado após Approve e confirmação humana.
 Decisões vigentes em `REGRAS.md` só são sincronizadas após Approve sem bloqueios e confirmação humana explícita.
+Recomende iniciar a review em um chat novo, separado da implementação. Se o humano preferir o chat atual, prossiga sem bloquear.
 
 A investigação começa pela pergunta de auditoria e pelo T*/diff que precisa ser provado. Use `rg --files` para localizar os artefatos, paths alterados, testes e referências aplicáveis; use `rg -n` para localizar símbolos, contratos e evidências. Abra somente as entradas e dependências do fluxo real e expanda a leitura quando uma lacuna bloquear o veredito. O inventário é mapa de seleção, não autorização para ler a árvore inteira.
 
@@ -32,12 +33,12 @@ Apply:
 - MVP: `… -Apply -Mvp`, sem slug ou dir
 - Unix: `review.sh --apply` / `--apply --slug "…"`
 
-## 1. Abrir (6 linhas)
+## 1. Abrir (7 linhas)
 
-rota · tipo · alvo · plan/fila · spec · analyze · diff
+rota · tipo · alvo · plan/fila · spec · analyze · diff · chat
 
 ```text
-final · etapa 1 first-pass · alvo: phase-2-vibe-review · fila: concluída · spec: sim · analyze: sim · diff: working tree
+final · etapa 1 first-pass · alvo: phase-2-vibe-review · fila: concluída · spec: sim · analyze: sim · diff: working tree · chat: novo recomendado
 ```
 
 `modo_sugerido=criar` e sem `--slug` = não há pasta. Não grude review nova no N de outro pedido.
@@ -48,6 +49,7 @@ Já existe `review.md` = próxima etapa no **mesmo** arquivo.
 | Sinal | Ação |
 |---|---|
 | Sem alvo e sem diff | **Para.** Peça path, branch, PR ou `--dir` |
+| Alvo do inventário difere da phase do diff/pedido | Não use o alvo automático. Identifique a phase existente do diff e rode com `--dir`; se ela não puder ser determinada, pare e peça o path |
 | T* obrigatórias em `[ ]` e o humano pediu “pronto da feature” | Recuse Approve de feature. Pode revisar o diff e listar o que falta no plan |
 | Plan declara checkpoint e todas as T* do marco estão concluídas | Faça checkpoint somente do marco, das provas relevantes e do contrato ou risco declarado; registre as T* restantes |
 | Plan declara checkpoint, mas alguma T* do marco está aberta | **Para.** Informe a dependência aberta e faça handoff para `vibe-implement` |
@@ -160,6 +162,7 @@ Review gravada: <created.path>/review.md
 - Abriu: <R* ou nenhum>
 - Fechou: <R* ou nenhum>
 - Handoff: vibe-implement | volta vibe-spec | finalização Git da phase
+- Chat: review recomendada em conversa separada da implementação; para correções, novo chat também é recomendado. A continuidade é livre.
 
 Arquivo disponível em <created.path>/review.md. Em checkpoint, a fase continua aberta; na review final, responda "aprovado" para sincronizar decisões e encerrar, ou indique os ajustes desejados.
 ```
@@ -168,7 +171,7 @@ Arquivo disponível em <created.path>/review.md. Em checkpoint, a fase continua 
 
 ## 5. Fechar
 
-Commitável: o `review.md` vivo e, somente no fechamento final aprovado, os artefatos residuais autorizados da phase. Checkpoint não cria commit residual nem publica a phase. O inventário é transitório no stdout. Request changes → handoff `vibe-implement` (arquivo + R* em `[ ]`), com recomendação de novo chat focado na correção. Se o usuário pedir para corrigir imediatamente, inicia `vibe-implement`. Continuar no mesmo chat é permitido somente por escolha consciente do humano; o `review.md` e o diff são a ponte.
+Commitável: o `review.md` vivo e, somente no fechamento final aprovado, os artefatos residuais autorizados da phase. Checkpoint não cria commit residual nem publica a phase. Request changes → handoff `vibe-implement` (arquivo + R* em `[ ]`), com recomendação de novo chat para a correção. Se o usuário pedir para corrigir imediatamente, inicie `vibe-implement`; se preferir permanecer neste chat, prossiga sem bloquear. O `review.md` e o diff são a ponte.
 Approve final sem R* bloqueantes em `[ ]` ainda é proposta até o humano ler e confirmar.
 
 Após aprovação humana explícita da review final, com a fila concluída:

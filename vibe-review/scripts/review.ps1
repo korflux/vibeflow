@@ -134,6 +134,21 @@ function Get-Alvo($Existing) {
     return @{ item = $null; modo = 'criar' }
 }
 
+# Resolve -Dir no inventário para que alvo e destino do diff permaneçam iguais.
+function Get-AlvoComDir($Existing, [string]$RawDir) {
+    $name = [System.IO.Path]::GetFileName($RawDir)
+    if (-not [regex]::IsMatch($name, '^phase-(\d+)-([a-z0-9]+(?:-[a-z0-9]+)*)$')) {
+        throw "FASE_AUSENTE: $name não é uma pasta de fase existente."
+    }
+    foreach ($item in $Existing) {
+        if ($item.dir -eq $name) {
+            $modo = if ($item.files -contains 'review.md') { 'atualizar' } else { 'reuse' }
+            return @{ item = $item; modo = $modo }
+        }
+    }
+    throw "FASE_AUSENTE: .vibeflow/phases/$name não é uma pasta de fase existente."
+}
+
 # Cria o artefato vivo vazio somente quando ele ainda não existe, sem sobrescrever histórico.
 function New-LiveFile([string]$Path) {
     $item = Get-FsItem $Path
@@ -214,7 +229,7 @@ function Invoke-Review {
     foreach ($w in $listed.warnings) { $warnings.Add($w) }
     $nextN = 1
     if ($existing.Count -gt 0) { $nextN = [int]$existing[-1].n + 1 }
-    $resolved = Get-Alvo $existing
+    $resolved = if (-not [string]::IsNullOrWhiteSpace($Dir)) { Get-AlvoComDir $existing $Dir } else { Get-Alvo $existing }
     $alvoItem = $resolved.item
     $modoSugerido = $resolved.modo
     $mvpMap = Get-MvpMap $vf
@@ -296,7 +311,7 @@ function Invoke-Review {
             foreach ($w in $listed.warnings) { $warnings.Add($w) }
             $nextN = 1
             if ($existing.Count -gt 0) { $nextN = [int]$existing[-1].n + 1 }
-            $resolved = Get-Alvo $existing
+            $resolved = if (-not [string]::IsNullOrWhiteSpace($Dir)) { Get-AlvoComDir $existing $Dir } else { Get-Alvo $existing }
             $alvoItem = $resolved.item
             $modoSugerido = $resolved.modo
             foreach ($item in $existing) {

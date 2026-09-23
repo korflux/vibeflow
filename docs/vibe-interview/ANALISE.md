@@ -9,7 +9,7 @@ Entrevista é uma porta semântica. O script não tenta inferir se o pedido é u
 ```text
 pergunta de bootstrap
   → inventário do alvo phase ou MVP
-  → perguntas curtas e recomendações
+  → Anotei → pergunta focada → guess explícito → resposta ou correção
   → decisões críticas e lacunas reversíveis
   → apply prepara interview.md
   → IA registra a entrevista no vivo
@@ -33,7 +33,9 @@ Essa separação reduz o risco de substituir uma entrevista em andamento e torna
 
 ## Política de perguntas e chat
 
-Perguntas devem fechar decisões que o disco não sustenta. Recomendações precisam declarar escolha, motivo e impacto. A continuidade entre `init`, `interview` e `spec` pode permanecer no mesmo chat; abrir outro chat é opcional e não é gate.
+Cada turno mostra primeiro `Anotei`, uma leitura fiel do pedido ou da resposta anterior; em seguida destaca uma pergunta focada e apresenta abaixo um `Meu guess` provisório, com motivo curto. A pessoa pode dizer “sim” para confirmar somente aquele guess ou corrigi-lo. A Trilha preserva separadamente a interpretação registrada, a pergunta, o palpite e a resposta humana. Isso torna visível o entendimento do agente e reduz ambiguidade sobre o que “sim” confirma. Não invente evidência nem use palpite como decisão em temas sensíveis, legais, caros ou irreversíveis.
+
+Perguntas devem fechar decisões que o disco não sustenta. Recomendações precisam declarar escolha, motivo e impacto. `init`, `interview`, `spec` e `design` podem permanecer no mesmo chat; a partir de `plan`, recomende chat novo para cada porta indicada em `.vibeflow/REGRAS.md`. Nenhuma troca de chat é gate.
 
 Para um produto digital novo, a descoberta percorre primeiro solicitação, solução, jornadas completas e páginas. Só então consulta módulos de completude por gatilho: hospedagem e dados, acesso, permissões, identidade, SEO, planos e elementos transversais de tela. Assim o núcleo expressa o que o usuário quer construir; os módulos revelam requisitos de sustentação sem impor autenticação, banco ou CMS a um site estático. A infraestrutura existente é levantada antes da recomendação técnica.
 

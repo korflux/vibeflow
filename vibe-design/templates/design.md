@@ -80,6 +80,6 @@
 
 vibe-plan
 
-- Chat: recomende novo chat para `vibe-plan`; continuidade no mesmo chat só por escolha consciente. O `design.md` vivo é a ponte. O artefato vivo entra no git; o inventário é transitório no stdout.
+- Chat: `interview`, `spec` e `design` podem continuar no mesmo chat. Recomende novo chat para `vibe-plan`; se o humano preferir, continuar aqui não bloqueia. O `design.md` vivo é a ponte e entra no git.
 
 - [ ] Aprovação humana (leu o arquivo e confirmou)

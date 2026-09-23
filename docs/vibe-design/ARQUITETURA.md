@@ -71,7 +71,7 @@ Falhas previstas usam `CODIGO: descricao`, incluindo `INIT_AUSENTE`, `PHASES_INE
 
 Suítes: `docs/vibe-design/tests/test-design.py` e `docs/vibe-design/tests/test-design.sh`. Elas cobrem criação, reuse, MVP, `--dir`, colisões, gates de plan, paridade e preservação do vivo.
 
-O handoff normal é `vibe-plan`. Recomenda-se novo chat para a porta seguinte. O `design.md` vivo carrega a restrição verificável.
+O handoff normal é `vibe-plan`. Recomende novo chat para iniciar o plan, mas continue no chat atual se o humano preferir; o `design.md` vivo carrega a restrição verificável.
 
 ## 8. Limites
 

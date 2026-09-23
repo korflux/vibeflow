@@ -38,8 +38,10 @@ No fluxo padrão, `INIT_AUSENTE` exige init. `IMPLEMENT_SEM_ALVO`, `IMPLEMENT_SE
 
 ROUTE · modo A/B · alvo · fila · plan · analyze
 
+Ao iniciar após `vibe-plan` ou `vibe-analyze`, recomende chat novo. Na execução em sequência, recomende um chat por `T*`; se o humano preferir o chat atual, prossiga sem bloquear. Grupo paralelo aprovado é a única exceção e usa um chat coordenador.
+
 ```text
-ROUTE: high · modo: A · alvo: phase-1-lock-bloco · fila: T2|T4 elegíveis · plan: sim · implement: vivo
+ROUTE: high · modo: A · alvo: phase-1-lock-bloco · fila: T2|T4 elegíveis · plan: sim · implement: vivo · chat: novo recomendado por T*
 ```
 
 `modo_sugerido=criar` = não há fase com `plan.md`. Não invente pasta. `high+` para e manda `/vibe-plan`. `fila` nulo = avulsa. `parse=ausente` = plan sem T*.
@@ -57,6 +59,7 @@ Declare `ROUTE: low|medium|high|xhigh|max` e modo A ou B. Default = **A**.
 | Plan/analyze `# Status: rascunho` e o humano pediu **esta** skill | Flip para `aprovado` (1 linha) e siga, se o veredito não for `bloqueado` |
 | `low`/`medium` claro sem plan | Avulso: prova mínima no código/teste |
 | `review.md` com R* Critical/Required em `[ ]` | Fila = R* primeiro. Q só se houver mais de um |
+| Plan registra grupo paralelo e há 2+ T*s desse grupo elegíveis agora | Antes de codar, mostre os IDs, por que são independentes e como serão isoladas; pergunte se o humano quer executá-las em paralelo ou em sequência. Aguarde a escolha |
 | `fila` com 2+ elegíveis e o humano não nomeou T* | **Para.** Q. Recomenda a de menor `n`. Sem código |
 | `fila` com 1 elegível | Executa essa. Sem Q de escolha |
 | `fila` com 0 elegíveis e 0 abertas | Handoff `vibe-review`. Não dispara |
@@ -73,7 +76,9 @@ RECOMENDO: <opção>, <1 linha explicando motivo e impacto>
 (ok / outra?)
 ```
 
-Modo B só se o humano pediu: `auto`, “faz o todo”, “não para”, “run completa” ou execução paralela das T*s independentes elegíveis.
+Ao apresentar um grupo paralelo, explique antes da pergunta: quais `T*` o plan agrupou e por quê; que um chat coordenador acompanha as fatias isoladas, integra os resultados e mantém prova e commit por task; e que a execução conjunta pode reduzir espera, mas exige integração. Pergunte usando os IDs reais: “Quer executar o grupo `<T*>` em paralelo ou prefere sequência?”. Só inicie a execução paralela após resposta afirmativa. Se não houver isolamento seguro ou suporte do host, explique e siga em sequência.
+
+Modo B completo só se o humano pediu: `auto`, “faz o todo”, “não para” ou “run completa”. Um “sim” para um grupo paralelo autoriza somente as T*s nomeadas naquele grupo, não o plano inteiro.
 “Pode seguir” no modo A = próxima `T*` elegível. Não existe agrupamento intermediário.
 
 ## 3. Ciclo da fatia
@@ -83,7 +88,7 @@ Execute cada task seguindo as 6 etapas. O coordenador responde pela integração
 1. **Reconhecer (O que já existe?):**
    Formule a pergunta da T*, localize com `rg --files` e `rg -n` os pontos de entrada, símbolos, chamadas e testes da fatia, e trace somente as dependências do fluxo real. Com UI, inclua o `design.md` aprovado do alvo como entrada e siga tokens, motion e prova por tela. No Express (ajuste fino sem comportamento novo, low ou medium), reuse a mesma phase e siga só o recorte existente e alterado do design quando houver, sem exigir design ausente, sem rodar apply de design, sem plan novo e sem reabrir tasks antigas. Reutilize helpers, utilitários, componentes visuais, types e módulos existentes da standard library ou do projeto. Não reescreva o que já existe.
 2. **Escolher execução e delegar quando fizer sentido:**
-   Use delegação nativa somente se o host a oferecer. Recalcule a fila e delegue apenas T*s elegíveis e independentes; respeite `Deps` e só libere uma dependente depois que o coordenador registrar suas dependências como concluídas. Sem capacidade de delegação ou isolamento seguro, execute a mesma fila em sequência.
+   Recalcule a fila e valide se os grupos do plan continuam independentes, com ownership não sobreposto e isolamento seguro. Só após o humano aprovar a execução paralela, use delegação nativa se o host oferecer. Sem capacidade de delegação ou isolamento seguro, explique a limitação e execute em sequência. Respeite `Deps` e só libere uma dependente depois que o coordenador registrar suas dependências como concluídas.
    Delimite cada entrega por resultado, aceite, dependências, paths exclusivos e comando de verificação. Use worktree/branch isolada ou ownership sem sobreposição. Se não houver isolamento nem ownership exclusivo, não delegue escrita. Agentes não alteram `plan.md`, `spec.md`, `implement.md` ou `review.md`, nem operam o índice Git, criam commits ou fazem push. Peça que retornem os paths alterados, resumo do diff, prova executada e pendências.
 3. **Codar e integrar:**
    Implemente de forma direta, enxuta e restrita ao aceite da T*. Antes de criar teste, localize a prova existente da capacidade ou jornada afetada e estenda-a somente se houver comportamento, regressão, caso de borda ou risco sem cobertura. Não crie um teste por alteração, por task ou por `A*` quando a mesma prova já valida o resultado. O coordenador confere cada retorno, integra somente paths autorizados e resolve conflitos antes de prosseguir. Prova relatada por um agente ajuda no diagnóstico, mas não substitui a prova do estado integrado.
@@ -146,17 +151,20 @@ Implementação registrada: <alvo>/plan.md
 - Prova: <comando> -> <resultado>
 - Arquivos: <paths alterados>
 - Handoff: vibe-review | próxima T* | Q
+- Chat recomendado: novo para a próxima T* em sequência ou para review; grupo paralelo aprovado pode continuar neste chat coordenador.
 
 Fatia concluída e registrada em <alvo>/plan.md.
 ```
 
 ## 6. Modos
 
-**A (default):** executa exatamente a `T*` escolhida ou única elegível, cria o commit dessa task e para. Se o usuário disser apenas "aprovado" ou "ok", permanece parado aguardando a próxima instrução. Se o usuário disser "pode seguir", "segue" ou "pode ir para a próxima fase", avança imediatamente para a próxima task elegível do plano ou para `vibe-review` se a fila estiver concluída. Quando houver fila, use um chat por T* como recomendação de isolamento e abra um novo chat focado na próxima T*; o `plan.md` e o `implement.md` vivos carregam o contexto verificável. Continue no mesmo chat somente se o humano escolher conscientemente.
+**A (default):** executa exatamente a `T*` escolhida ou única elegível, cria o commit dessa task e para. Se o usuário disser apenas "aprovado" ou "ok", permanece parado aguardando a próxima instrução. Se o usuário disser "pode seguir", "segue" ou "pode ir para a próxima fase", avança imediatamente para a próxima task elegível do plano ou para `vibe-review` se a fila estiver concluída. Em execução sequencial, recomende um novo chat por `T*`; se o humano preferir continuar neste chat, siga sem bloquear. O `plan.md` e o `implement.md` vivos carregam o contexto verificável.
 
-**B:** percorre `fila.elegiveis` recalculando após cada item concluído. Pode delegar T*s independentes quando houver capacidade no host e isolamento seguro; tasks dependentes só começam depois da integração, prova, marcação e commit das dependências. O coordenador serializa atualizações dos artefatos vivos e do índice Git, cria um commit por task e para em falha, bloqueio ou fila vazia.
+**Grupo paralelo aprovado:** é a única exceção à recomendação de um chat por `T*`. Use um chat coordenador para conduzir simultaneamente somente as tasks nomeadas e aprovadas pelo humano, com isolamento e ownership por task. Integre cada retorno, prove o estado integrado e mantenha um commit por task. Tasks dependentes só começam depois da integração, prova, marcação e commit das dependências.
 
-Fila zerada (T* da run, ou R* bloqueantes) → handoff `vibe-review`; recomende um novo chat para a review. Se o usuário autorizar avançar para a review, inicia `vibe-review` diretamente. O `plan.md` e o `implement.md` vivos são a ponte; continuar no mesmo chat exige escolha consciente.
+**B:** percorre o plano inteiro recalculando `fila.elegiveis` após cada item concluído. Só use após pedido explícito de execução completa. Pode delegar T*s independentes quando houver capacidade no host e isolamento seguro; o coordenador serializa atualizações dos artefatos vivos e do índice Git, cria um commit por task e para em falha, bloqueio ou fila vazia.
+
+Fila zerada (T* da run, ou R* bloqueantes) → handoff `vibe-review`; recomende novo chat para a review. Se o usuário autorizar avançar, inicie `vibe-review`; se preferir continuar aqui, não bloqueie. O `plan.md` e o `implement.md` vivos são a ponte.
 
 ## 7. Fechar
 

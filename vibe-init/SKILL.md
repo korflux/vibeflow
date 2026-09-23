@@ -89,6 +89,6 @@ O `.vibeflow/REGRAS.md` é um **Documento Vivo**. Sempre que novas fases adicion
 
 ## 6. Fechar
 
-Não commite no git. A fonte viva e o caminho do handoff são a ponte para a etapa seguinte. `init → interview` pode continuar no mesmo chat; abrir outro chat é opcional quando o humano quiser separar o bootstrap da definição do pedido.
+Não commite no git. A fonte viva e o caminho do handoff são a ponte para a etapa seguinte. `init → interview → spec → design` pode continuar no mesmo chat. Recomende novo chat para `vibe-plan`; se o humano preferir, continue no mesmo sem bloquear o fluxo.
 
 Handoff: `vibe-interview`.

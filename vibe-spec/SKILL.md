@@ -80,7 +80,8 @@ RECOMENDO: <opção>, <1 linha explicando motivo e impacto>
 - No MVP, decisões críticas da interview entram em **Decisões críticas** mantendo o ID: `mantém` para preservar, `cria` para novas decisões necessárias e `substitui` citando o ID e explicando o delta.
 - Se houver UI visível ao usuário, consulte `references/ui-visual-direction.md` antes de gravar.
 - Se a entrega envolver banco de dados, persistência ou valores monetários/cálculos exatos, consulte `references/database-and-migrations.md` para fechar invariantes de dados e precisão necessários ao comportamento. Índices, estratégia de migration e consultas ficam para o plan quando não forem restrições do produto.
-- Se a entrega tocar API, handle ou token, segredo, dado pessoal ou rota autenticada, feche as proteções aplicáveis: validade e invalidação de credenciais, autorização no servidor com anti-IDOR, rate limit, validação na borda, CSRF, CORS, headers e CSP. Registre apenas as regras relevantes em Suposições e decisões, Contratos e restrições necessárias e Boundaries. Ausência de proteção exigida pelo fluxo bloqueia aprovação.
+- Se a entrega receber dados externos (request, query, headers, arquivos ou input), declare a allowlist de campos e valores aceitos e o tamanho máximo por entrada. Registre N/A fundamentado somente quando não houver entrada externa.
+- Se a entrega tocar API, handle ou token, segredo, dado pessoal ou rota autenticada, feche as demais proteções aplicáveis: validade e invalidação de credenciais, autorização no servidor com anti-IDOR, rate limit, CSRF, CORS com allowlist de origens quando houver acesso cross-origin (nunca `*` junto com credenciais), headers e CSP. Declare N/A fundamentado para controles sem aplicação. Registre apenas as regras relevantes em Suposições e decisões, Contratos e restrições necessárias e Boundaries. Ausência de proteção exigida pelo fluxo bloqueia aprovação.
 
 ## 4. Escrever e salvar
 
@@ -107,8 +108,9 @@ Spec gravada: <created.path>/spec.md
 - Cobre: <2 a 4 bullets>
 - Fora: <1 linha>
 - Como provar: <1 linha>
+- Chat: com UI, continue neste chat para `vibe-design` e recomende novo chat para `vibe-plan`; sem UI, recomende novo chat para `vibe-plan`. Se o humano preferir, continuar aqui é válido.
 
-Arquivo disponível em <created.path>/spec.md. Responda "aprovado" para confirmar, "pode ir pro plan" (ou "pode ir para a próxima fase") para avançar imediatamente, ou indique os ajustes desejados.
+Arquivo disponível em <created.path>/spec.md. Responda "aprovado" para confirmar, "pode ir pro design" quando houver UI, "pode ir pro plan" sem UI (ou "pode ir para a próxima fase") para avançar imediatamente, ou indique os ajustes desejados.
 ```
 
 ## 5. Ajuste ou aprovação
@@ -116,16 +118,16 @@ Arquivo disponível em <created.path>/spec.md. Responda "aprovado" para confirma
 | Resposta | Ação |
 |---|---|
 | Aprovado (sem pedir plan) | `# Status: aprovado` no vivo; checklist humana `[x]`; parar e aguardar próximo comando |
-| "Pode ir pro plan" / "pode ir para a próxima fase" / pede `vibe-plan` | `# Status: aprovado` no vivo; checklist humana `[x]`; iniciar imediatamente `vibe-plan` |
+| "Pode ir pro design" com UI / "pode ir pro plan" sem UI / pede próxima porta aplicável | `# Status: aprovado` no vivo; checklist humana `[x]`; iniciar a próxima porta aplicável |
 | Pedido de alteração | Patch direto no arquivo vivo; até 5 bullets no chat; solicitar nova conferência |
 | "Parece bom" sem pedir plan | Perguntar: "Aprovado no arquivo ou deseja algum ajuste?" |
 | Intenção quebrou | Encaminhar para `vibe-interview`. Não forçar plan |
 
-Rascunho sem "aprovado" e sem pedido explícito de plan não autoriza avançar para o planejamento.
+Rascunho sem "aprovado" e sem pedido explícito da próxima porta aplicável não autoriza avançar.
 
 ## 6. Fechar
 
 Não commite no git. Não dispare a próxima skill a menos que o usuário tenha pedido explicitamente para avançar (§5).
-Informe que o JSON do inventário foi consumido do stdout e não gerou arquivo persistido. Recomende abrir um novo chat para `vibe-design` com UI visível, senão `vibe-plan`; continuar no mesmo chat é permitido somente por escolha consciente do humano. O `spec.md` vivo e o handoff são a ponte entre chats.
+`vibe-interview` e `vibe-spec` podem continuar no mesmo chat; com UI, também pode seguir para `vibe-design` nele. Recomende novo chat ao iniciar `vibe-plan`. Se o humano preferir manter o chat atual, continue sem bloquear e use o `spec.md` vivo e o handoff como ponte.
 Handoff registrado no arquivo: `vibe-design` com UI visível, senão `vibe-plan`. Não pular design em silêncio. `plan.md` existente bloqueia nova escrita, pedido novo exige outra phase.
 

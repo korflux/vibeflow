@@ -26,9 +26,10 @@ Erros determinísticos previstos: `INIT_AUSENTE` exige `/vibe-init`. `ANALYZE_SE
 ## 1. Abrir
 
 Declare em cerca de cinco linhas: rota, modo, alvo, plan, interview e estado do artefato vivo.
+Ao iniciar após `vibe-plan`, recomende um chat novo. Se o humano preferir continuar no chat atual, prossiga sem bloquear.
 
 ```text
-modo: reuse · alvo: phase-1-lock-bloco · plan: sim · interview: sim · artefato vivo: presente
+modo: reuse · alvo: phase-1-lock-bloco · plan: sim · interview: sim · artefato vivo: presente · chat: novo recomendado
 ```
 
 - `modo_sugerido=criar`: não há pasta com plan. Não invente fase; mande `/vibe-plan`.
@@ -106,6 +107,7 @@ Analyze gravado: <created.path>/analyze.md
 - Qualidade de testes: <provas executáveis proporcionais; smoke do ponto de entrada na T* que o entrega; ferramentas ou limitações registradas>
 - Correções aplicadas: <F1... no spec.md / design.md / plan.md ou nenhuma necessária>
 - Handoff: vibe-implement
+- Chat: recomende novo chat para implement; se o humano preferir, continuar aqui é válido.
 
 Arquivo disponível em <created.path>/analyze.md. Responda "aprovado" para confirmar, "pode ir pro implement" (ou "pode ir para a próxima fase") para avançar imediatamente, ou indique os ajustes desejados.
 ```
@@ -126,5 +128,5 @@ Rascunho sem "aprovado" e sem pedido da próxima porta não autoriza iniciar o c
 ## 7. Fechar
 
 Não commite no git. Não dispare a próxima skill a menos que o usuário tenha pedido explicitamente para avançar (§6).
-Informe que o JSON do inventário foi consumido do stdout e não gerou arquivo persistido; os arquivos vivos atualizados entram no git. Recomende abrir um novo chat para `vibe-implement`; continuar no mesmo chat é permitido somente por escolha consciente do humano. O `analyze.md` e os artefatos vivos são a ponte entre chats.
+Recomende novo chat para o handoff a `vibe-implement`. Se o humano preferir continuar no chat atual, siga sem bloquear. O `analyze.md` e os artefatos vivos são a ponte.
 Handoff registrado no arquivo: `vibe-implement`. Zero implementação nesta execução.

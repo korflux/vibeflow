@@ -64,7 +64,7 @@ Falhas previstas usam `CODIGO: descrição`, incluindo `INIT_AUSENTE`, `PLAN_SEM
 
 Suítes: `docs/vibe-plan/tests/test-plan.py` e `docs/vibe-plan/tests/test-plan.sh`.
 
-O handoff normal é `vibe-implement`; no MVP é `vibe-analyze`. Recomenda-se novo chat para a porta seguinte. O `plan.md` vivo carrega a fila verificável.
+O handoff normal é `vibe-implement`; no MVP é `vibe-analyze`. Recomende novo chat para iniciar plan após spec/design e para a porta seguinte, sem bloquear a continuidade se o humano preferir. Para grupos paralelizáveis, o `plan.md` nomeia as T*s e registra o motivo; o `plan.md` vivo carrega a fila verificável.
 
 ## 8. Limites
 

@@ -58,6 +58,8 @@ Quando a entrega tem fluxo ou UX, o Escopo usa o molde `F*` com Jornada, Rota, G
 A spec fecha contratos que afetam o resultado e indica a evidência observável de cada `A*`. Arquivos, comandos, ordem de execução, testes e escolhas internas reversíveis ficam no plan.
 `A*` e `C*` descrevem resultados, não unidades de teste. Uma prova por capacidade pode cobrir vários critérios sem fragmentá-los artificialmente.
 
+Para entradas externas, a spec fecha a allowlist de campos e valores aceitos e o tamanho máximo por entrada. Para acesso de navegador entre origens, declara a allowlist de origens CORS e nunca combina origem `*` com credenciais; quando CORS não se aplica, registra N/A com motivo. A skill registra esses limites junto dos demais controles de segurança exigidos pelo fluxo.
+
 Sem Open Questions, mural de user story ou CSS, paleta ou token visual na spec. Nome de token público existente pode aparecer como limite de escopo, sem definir valor. A restrição não trata de token de autenticação ou API. IDs de decisões críticas do MVP atravessam o plan; publicação de decisão vigente só ocorre após review aprovada e confirmação humana.
 
 ## 6. Erros e testes

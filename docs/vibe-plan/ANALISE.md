@@ -33,7 +33,7 @@ O preparo local lista as ferramentas necessárias para as provas e resolve ausê
 
 ## Chat e continuidade
 
-Plan é uma porta de maior risco cognitivo e recomenda novo chat no handoff. O humano pode continuar conscientemente no mesmo chat. O `plan.md` vivo, o status e a linha de handoff são a ponte; o histórico da conversa não é prova.
+Plan recomenda um novo chat quando começa após spec/design e no handoff para analyze (MVP) ou implement. Quando identifica tasks paralelizáveis, lista os IDs e o motivo; ao iniciar implement, o agente pergunta se o humano quer usar o grupo. Separar chats não é gate. O `plan.md` vivo, o status e a linha de handoff são a ponte; o histórico da conversa não é prova.
 
 ## Cortes
 

@@ -32,7 +32,9 @@
 
 ## Paralelização (opcional, omitir quando não aplicável)
 
-- T* que podem executar juntas: <grupo e condição de isolamento, sem repetir a fila de Deps>
+- Grupo: <IDs das T*>
+- Motivo: <por que as dependências e os paths permitem execução conjunta>
+- Isolamento: <ownership ou separação necessária para evitar conflito>
 
 ## Checkpoint de review (opcional, omitir quando não houver justificativa)
 
@@ -43,4 +45,4 @@
 <vibe-implement no phase sem analyze obrigatório; vibe-analyze no MVP>
 <!-- No MVP, acrescentar: rota: max -->
 
-- Chat: recomende novo chat para `vibe-implement` ou `vibe-analyze` no MVP; continuidade no mesmo chat só por escolha consciente. O `plan.md` vivo é a ponte.
+- Chat: recomende novo chat ao iniciar `vibe-plan` após spec/design e para `vibe-analyze` no MVP ou `vibe-implement` nas demais rotas. Recomende um chat por T* em sequência; grupo paralelo aprovado é a exceção coordenada. O humano pode continuar no chat atual; o `plan.md` vivo é a ponte.

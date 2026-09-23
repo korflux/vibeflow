@@ -41,6 +41,6 @@
 
 vibe-review | próxima T*
 
-- Chat: com fila restante, recomende um novo chat focado na próxima T*. Sem fila, recomende novo chat para `vibe-review`. O `plan.md` e o `implement.md` vivos são a ponte; continuidade no mesmo chat só por escolha consciente. O commit da task já foi criado; não faça push aqui.
+- Chat: em sequência, recomende um novo chat por T*; se o humano preferir, continuar aqui não bloqueia. Grupo paralelo aprovado é a exceção e usa este chat como coordenador das T*s isoladas. Sem fila, recomende novo chat para `vibe-review`. O `plan.md` e o `implement.md` vivos são a ponte. O commit da task já foi criado; não faça push aqui.
 
 <!-- fatia seguinte: copie o bloco ## Fatia abaixo, não apague as anteriores -->

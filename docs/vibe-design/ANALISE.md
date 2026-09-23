@@ -22,7 +22,7 @@ O script continua determinístico. A decisão semântica de phase ou MVP, de mod
 
 A IA começa pela pergunta de apresentação que a spec deixou aberta, localiza `spec.md`, `interview.md`, `REGRAS.md`, DS, DESIGN.md ou referência Figma com `rg --files`, confirma telas, componentes, tokens e comandos com `rg -n`, e abre somente as dependências do fluxo. O inventário não autoriza leitura integral da árvore.
 
-`spec → design → plan` pode seguir no mesmo chat quando o humano escolhe. Se o contexto ficar ambíguo, o caminho do arquivo vivo permite abrir novo chat sem transportar o histórico como autoridade.
+`interview → spec → design` pode seguir no mesmo chat. Recomende novo chat ao iniciar `plan`; a separação não é gate e o arquivo vivo permite continuar sem depender do histórico como autoridade.
 
 ## MVP
 
