@@ -51,9 +51,12 @@ O script não escolhe comportamento, não pergunta, não preenche markdown e nã
 
 ## 5. Artefato e decisões
 
-Seções: Objetivo, Inventário quando houver lista, Suposições e decisões, Escopo e comportamento, Fora, Direção visual quando aplicável, Checklist de entrega, Implementação delta, Como provar, Boundaries e Handoff.
+Seções: Objetivo, Cobertura da origem, Suposições e decisões, Escopo e comportamento, Fora, Direção visual quando aplicável, Checklist de entrega, Contratos e restrições necessárias quando houver, Como provar, Boundaries e Handoff. A cobertura liga jornadas, páginas e módulos aplicáveis da interview a `F*`, decisão, Fora ou N/A, sem copiar a entrevista. Sem interview, registra apenas partes da entrega que poderiam ficar esquecidas.
 
-Quando a entrega tem fluxo ou UX, o Escopo usa o molde `F*` com Jornada, Rota, Gatilho, Pré-condição, Superfície por passo, Passos numerados com ação e resposta, Validações, Erros com código e mensagem segura, Estados com vazio, loading, erro, sucesso e sem permissão, e Aceite `A*`. Passo sem superfície é defeito. Handoff é `vibe-design` com UI visível, senão `vibe-plan`. `plan.md` existente bloqueia nova escrita, pedido novo exige outra phase.
+Quando a entrega tem fluxo ou UX, o Escopo usa o molde `F*` com Jornada, Rota, Gatilho, Pré-condição, Superfície por passo, Passos numerados com ação e resposta, Validações, Erros com código e mensagem segura, Estados com vazio, loading, erro, sucesso e sem permissão, e Aceite `A*`. Página informativa simples aceita `F*` curto e N/A fundamentado para regras inexistentes. Passo sem superfície é defeito. Handoff é `vibe-design` com UI visível, senão `vibe-plan`. `plan.md` existente bloqueia nova escrita, pedido novo exige outra phase.
+
+A spec fecha contratos que afetam o resultado e indica a evidência observável de cada `A*`. Arquivos, comandos, ordem de execução, testes e escolhas internas reversíveis ficam no plan.
+`A*` e `C*` descrevem resultados, não unidades de teste. Uma prova por capacidade pode cobrir vários critérios sem fragmentá-los artificialmente.
 
 Sem Open Questions, mural de user story ou CSS, paleta ou token visual na spec. Nome de token público existente pode aparecer como limite de escopo, sem definir valor. A restrição não trata de token de autenticação ou API. IDs de decisões críticas do MVP atravessam o plan; publicação de decisão vigente só ocorre após review aprovada e confirmação humana.
 

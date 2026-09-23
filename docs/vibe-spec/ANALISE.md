@@ -22,6 +22,9 @@ O script continua determinístico. A decisão semântica de phase ou MVP é da I
 
 A IA começa pela pergunta que a spec precisa responder, localiza `interview.md`, `REGRAS.md`, entradas e testes com `rg --files`, confirma IDs, símbolos e comandos com `rg -n` e abre somente as dependências do fluxo. O inventário não autoriza leitura integral da árvore.
 
+A escrita segue cobertura da origem → comportamento → aceite → contratos necessários. Essa ordem impede que uma spec detalhada ignore uma página ou jornada da interview e evita antecipar lista de arquivos, comandos e tarefas que pertencem ao plan. Para página informativa, o `F*` continua rastreável, mas usa somente o detalhe real do comportamento e N/A fundamentado para regras inexistentes.
+O aceite é agrupado pelo resultado da capacidade, não pela futura quantidade de testes. O plan escolhe uma prova relevante, que pode cobrir vários `A*` ou ser reutilizada entre tasks.
+
 `init → interview → spec` pode seguir no mesmo chat. Se o contexto ficar ambíguo, o caminho do arquivo vivo permite abrir novo chat sem transportar o histórico como autoridade.
 
 ## MVP

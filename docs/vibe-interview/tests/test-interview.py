@@ -198,9 +198,9 @@ class PythonContracts(unittest.TestCase):
         self.assertIn("MODO_INVALIDO", process.stderr)
 
 
-# Contratos do template vivo; garantem jornadas genéricas e checklist de acesso obrigatórios.
+# Contratos do template vivo; garantem jornadas, navegação e checklist de acesso.
 class TemplateContracts(unittest.TestCase):
-    """Verifica que o template exige jornadas e acesso com N/A explícito."""
+    """Verifica que o template exige jornadas, navegação e acesso com N/A explícito."""
 
     # Lê o template canônico sem depender de .vibeflow ou do motor.
     def read_template(self) -> str:
@@ -209,13 +209,19 @@ class TemplateContracts(unittest.TestCase):
     # Confirma que a tabela de jornadas exige as 8 colunas do contrato.
     def test_jornadas_exigem_oito_colunas(self) -> None:
         text = self.read_template()
-        for coluna in ("Jornada", "Ator", "Gatilho", "Objetivo", "Telas envolvidas", "Entrada", "Saída", "Estado crítico"):
+        for coluna in ("Jornada", "Ator", "Gatilho", "Objetivo", "Páginas/telas", "Entrada", "Saída", "Estado crítico"):
             self.assertIn(coluna, text)
 
-    # Confirma que o checklist de acesso cobre os 8 itens com N/A explícito.
+    # Garante que cada página tenha um caminho de entrada, próximo destino e retorno.
+    def test_paginas_exigem_navegacao(self) -> None:
+        text = self.read_template()
+        for coluna in ("Páginas e navegação", "Como chega", "Ação e próximo destino", "Como volta"):
+            self.assertIn(coluna, text)
+
+    # Confirma que o checklist de acesso cobre os passos da conta com N/A explícito.
     def test_acesso_exige_checklist_com_na(self) -> None:
         text = self.read_template().lower()
-        for item in ("login", "cadastro", "recuperação", "sessão", "papéis", "primeiro usuário", "bloqueio", "logout"):
+        for item in ("login", "cadastro", "dados do cadastro", "verificação", "recuperação", "sessão", "papéis", "primeiro usuário", "bloqueio", "logout"):
             self.assertIn(item, text)
         self.assertIn("n/a", text)
 

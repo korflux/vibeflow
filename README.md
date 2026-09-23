@@ -6,7 +6,7 @@ Fonte canônica das skills `vibe-*` e do contrato `.vibeflow/`. Não é um app d
 
 ## O que é o repositório
 
-O vibeflow é a cadeia definitiva de skills para quem programa com agentes (Grok, Claude Code, Codex, Antigravity e qualquer cliente que leia `SKILL.md`): o pedido vira trilha no disco, não recap no chat.
+O vibeflow é uma cadeia de skills para quem programa com agentes (Grok Build, Claude Code, Codex, OpenCode, Pi, Antigravity e qualquer cliente que leia `SKILL.md`): o pedido vira trilha no disco, não recap no chat.
 
 Cada skill é um pacote instalável (`vibe-init/`, `vibe-interview/`, …) com `SKILL.md`, scripts e, quando precisa, templates e referências. No repo do consumidor, o trabalho da cadeia vive em disco:
 
@@ -46,6 +46,8 @@ npx skills add korflux/vibeflow -g -a grok -a claude-code -a codex -a antigravit
 ```
 
 Windows sem suporte a symlink no destino: acrescente `--copy` ao comando escolhido. Use `npx skills list` para conferir a instalação.
+
+OpenCode e Pi também descobrem skills globais em `~/.agents/skills/`. Portanto, uma cópia atualizada dos oito pacotes nesse diretório atende aos dois CLIs sem duplicar a instalação em `~/.config/opencode/skills/` ou `~/.pi/agent/skills/`. Se houver cópias nesses outros diretórios, mantenha-as sincronizadas ou remova a duplicação para evitar versões divergentes.
 
 ### Antigravity IDE
 
@@ -116,9 +118,9 @@ O bloco de cadeia em `.vibeflow/REGRAS.md` escolhe o esforço da rota. A IA não
                                │
           low                  │  implement
           medium               │  implement → review
-          high                 │  spec → plan → implement → review
-          xhigh                │  interview → spec → plan → implement → review
-          max                  │  interview → spec → plan → analyze → implement → review
+          high                 │  spec → [design] → plan → implement → review
+          xhigh                │  interview → spec → [design] → plan → implement → review
+          max                  │  interview → spec → [design] → plan → analyze → implement → review
 ```
 
 | Esforço | Fluxo | Quando |
@@ -129,6 +131,8 @@ O bloco de cadeia em `.vibeflow/REGRAS.md` escolhe o esforço da rota. A IA não
 | high | spec → plan → implement → review | Pedido claro, execução difícil, ou possibilidade de regressão |
 | xhigh | interview → spec → plan → implement → review | Pedido ambíguo, confiança baixa, intenção ou sucesso em aberto |
 | max | interview → spec → plan → analyze → implement → review | Auth, pagamento, segredo, perda de dados, produção ou alto blast radius |
+
+`[design]` entra entre spec e plan quando há UI visível. Sem UI, a etapa é N/A explícito.
 
 O esforço da rota define o rigor da cadeia para o pedido. As T* são agrupadas por resultados verificáveis e dependências reais; quantidade de arquivos, sessões, critérios de aceite ou pontuação não provocam quebras automáticas. O contrato de fatiamento fica em [`vibe-plan/SKILL.md`](vibe-plan/SKILL.md).
 
@@ -162,10 +166,10 @@ Efeito prático: as regras do projeto ficam numa fonte (`.vibeflow/REGRAS.md`), 
 | Skill | Slash | Faz | Grava |
 |---|---|---|---|
 | [`vibe-init`](vibe-init/SKILL.md) | `/vibe-init` | Inicializa ou repara a fonte única de regras. `AGENTS.md` e `CLAUDE.md` viram symlink para `.vibeflow/REGRAS.md`; `.agents/rules/vibeflow.md` vira uma inclusão mínima para Antigravity. Une legado em vez de escolher um arquivo e descartar o outro | `.vibeflow/REGRAS.md`, ponteiros e adaptador de host |
-| [`vibe-interview`](vibe-interview/SKILL.md) | `/vibe-interview` | Fecha intenção ambígua e inicia descoberta adaptativa de projeto MVP quando aplicável | `phase-N-slug/interview.md` ou `.vibeflow/mvp/interview.md` |
-| [`vibe-spec`](vibe-spec/SKILL.md) | `/vibe-spec` | Grava o decidido. Comportamento, aceite, fora, como provar. Sem mural de user story | `phase-N-slug/spec.md` |
+| [`vibe-interview`](vibe-interview/SKILL.md) | `/vibe-interview` | Descobre a solução, jornadas e páginas; usa módulos condicionais para completar o produto | `phase-N-slug/interview.md` ou `.vibeflow/mvp/interview.md` |
+| [`vibe-spec`](vibe-spec/SKILL.md) | `/vibe-spec` | Cobre a origem, fecha comportamento e aceite, e registra somente contratos necessários | `phase-N-slug/spec.md` ou `.vibeflow/mvp/spec.md` |
 | [`vibe-design`](vibe-design/SKILL.md) | `/vibe-design` | Desenha a apresentação com dois modos de entrada e três usos, sem código nem imagem final | `phase-N-slug/design.md` |
-| [`vibe-plan`](vibe-plan/SKILL.md) | `/vibe-plan` | Fatia a spec em T* verificáveis, com deps reais e comando de verificação por task | `phase-N-slug/plan.md` |
+| [`vibe-plan`](vibe-plan/SKILL.md) | `/vibe-plan` | Fatia a spec em T* verificáveis e reutiliza provas por capacidade quando cobrem a entrega | `phase-N-slug/plan.md` |
 | [`vibe-analyze`](vibe-analyze/SKILL.md) | `/vibe-analyze` | Cruza interview, spec e plan da mesma fase. Corrige lacunas óbvias em `spec.md` e `plan.md`; grava o certificado no vivo | `phase-N-slug/analyze.md` |
 | [`vibe-implement`](vibe-implement/SKILL.md) | `/vibe-implement` | Executa a T* elegível, prova, marca `[x]` e cria o commit isolado da task | `phase-N-slug/implement.md` |
 | [`vibe-review`](vibe-review/SKILL.md) | `/vibe-review` | Julga o patch, conduz correções e faz o commit/push final após aprovação | `phase-N-slug/review.md` |
@@ -212,7 +216,7 @@ vibe-<nome>/
 5. Não inventar path de artefato fora de `.vibeflow/phases/phase-N-slug/`; a única exceção é o baseline fixo `.vibeflow/mvp/`. Não copiar `REGRAS.md` para `AGENTS.md` / `CLAUDE.md`.
 6. Só `.vibeflow/init-report.json` persiste, pois carrega `apply_token` para retomar um merge pendente; os inventários das demais skills são JSON transitório no stdout. Relatórios e pendências do init ficam fora do git; os artefatos vivos entram no git.
 
-Versão dos manifests: `2.0.0`. O Antigravity mantém o schema mínimo sem campo de versão.
+Versão dos manifests: `2.1.0`. O Antigravity mantém o schema mínimo sem campo de versão.
 
 PR contra `main`. Mudança de contrato (path, schema do relatório, flag pública) é Major; o resto segue o semver em `.vibeflow/REGRAS.md`.
 

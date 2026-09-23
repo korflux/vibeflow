@@ -58,12 +58,12 @@ Leia `references/coverage.md` como mapa interno. Não copie a taxonomia no chat.
 
 Audite, cruze e resolva:
 
-1. **Interview → spec:** Resultado da interview (o quê, sucesso, fora) contra Objetivo, A*/C* e Fora da spec.
+1. **Interview → spec:** Cruze resultado, jornadas, páginas e módulos aplicáveis da interview com Cobertura da origem, `F*`, Objetivo, A*/C* e Fora da spec. Item omitido sem motivo não recebe veredito limpo; não exija detalhamento de módulo marcado N/A.
 2. **Spec → plan:** Cada A*/C* possui T* correspondente no campo `Spec:`; cada T* referencia A*/C* ou é infraestrutura justificada.
 3. **Plan → spec:** Nenhuma T* inventa comportamento, caminhos ou módulos fora do escopo aprovado.
 4. **Design condicional (com UI visível):** Cruza `design.md` além de interview, spec e plan. Com UI visível, design ausente ou não aprovado bloqueia o veredito limpo. Sem UI visível, registra N/A explícito em vez de bloqueio.
 5. **Qualidade dos Testes e Executabilidade:**
-   - Cada T* tem comando executável de prova? Se a task criar ou alterar um ponto de entrada executável, a prova dessa mesma T* inclui o smoke test real. Não exija uma T1 de baseline para entregas sem ponto de entrada.
+   - Cada T* tem comando executável de prova? O mesmo teste de capacidade pode servir a várias T* e a vários A*/C*; não exija um teste novo por task ou critério. Se a task criar ou alterar um ponto de entrada executável, a prova dessa mesma T* inclui o smoke test real. Não exija uma T1 de baseline para entregas sem ponto de entrada.
    - As tasks possuem comandos reais de teste no repositório? Se houver verificação puramente manual sem comando, converta para comando executável real no `plan.md`.
    - Confira apenas ferramentas exigidas pelas provas escolhidas, como `gitleaks` ou MCP `chrome-devtools`. Resolva preparo local simples quando disponível e autorizado; só proponha T* para setup persistente que faça parte da entrega do projeto. Registre bloqueio externo sem criar task artificial de instalação.
 6. **Decisões Críticas (MVP):** Cruze cada ID entre interview, spec e plan. Se houver divergência sem declaração de `substitui` ou ID órfão, ajuste a consistência nos artefatos ou pergunte ao usuário se for mudança intencional.

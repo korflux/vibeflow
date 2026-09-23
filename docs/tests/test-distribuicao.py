@@ -22,7 +22,7 @@ SKILLS = (
 )
 CANONICAL_SKILL_PATHS = [f"./{name}" for name in SKILLS]
 ANTIGRAVITY_SCHEMA = "https://antigravity.google/schemas/v1/plugin.json"
-CONTRACT_VERSION = "2.0.0"
+CONTRACT_VERSION = "2.1.0"
 
 
 # Lê o name do frontmatter YAML; é o identificador que o CLI e o slash usam.
@@ -157,7 +157,7 @@ class DistribuicaoContracts(unittest.TestCase):
             "agy plugin install https://github.com/korflux/vibeflow.git",
             "grok plugin marketplace add korflux/vibeflow",
             "grok plugin install vibeflow --trust",
-            "Versão dos manifests: `2.0.0`",
+            "Versão dos manifests: `2.1.0`",
             "Só `.vibeflow/init-report.json` persiste",
         )
         missing = [line for line in required if line not in readme]

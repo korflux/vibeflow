@@ -1,7 +1,7 @@
 ---
 name: vibe-interview
 description: >
-  Entrevista pedidos ambíguos e projetos novos até fechar intenção, sucesso, limites e decisões iniciais, gravando a trilha em `.vibeflow/phases/phase-N-slug/interview.md` ou `.vibeflow/mvp/interview.md`. Use when the user runs /vibe-interview, pede para refinar uma ideia, iniciar um produto ou MVP, ou ainda não definiu outcome, público, funcionamento ou restrições, mesmo que não diga vibe-interview.
+  Entrevista pedidos ambíguos e projetos novos até fechar intenção, jornadas, páginas e decisões iniciais, gravando a trilha em `.vibeflow/phases/phase-N-slug/interview.md` ou `.vibeflow/mvp/interview.md`. Use when the user runs /vibe-interview, pede para refinar uma ideia, iniciar um produto, site ou MVP, ou ainda não definiu público, funcionamento ou restrições, mesmo que não diga vibe-interview.
 ---
 
 # vibe-interview
@@ -43,7 +43,7 @@ No modo MVP, `.vibeflow/mvp/interview.md` existente é baseline fechado. Mudanç
 | Typo, rename, pedido inequívoco, velocidade pedida ou pergunta informativa | Não entrevistar |
 | Documento, briefing, artigo, proposta ou texto em Markdown | Usar modo phase (entrevista focada em público, tom, dor e estrutura; **não** acionar modo MVP de software nem catálogo de infra/banco) |
 | `/vibe-interview` explícito | Entrevistar |
-| Produto novo de software, repo ainda será criado, primeira versão operacional ou pedido descrito como app, plataforma ou sistema completo | Usar modo MVP |
+| Produto digital novo, incluindo app, sistema, site institucional, landing page ou site estático cujo escopo ainda precisa ser descoberto | Usar modo MVP |
 | Mudança delimitada num produto existente | Usar modo phase |
 | Dúvida real entre produto e feature | Perguntar uma vez, com recomendação |
 | CI, loop ou agendado sem humano e pedido subespecificado | Bloquear, sem chutar |
@@ -67,16 +67,16 @@ Várias respostas de uma vez são válidas: registre tudo e feche os gaps restan
 
 ## 4. Módulo MVP
 
-Leia `references/mvp-discovery.md` somente no modo MVP (software/sistema). O catálogo orienta a cobertura, não vira formulário nem é despejado no chat.
+Leia `references/mvp-discovery.md` somente no modo MVP, inclusive para sites novos. Primeiro feche o núcleo: solicitação, solução imaginada, jornadas e páginas. Depois escolha os módulos de completude pelo gatilho e leia apenas os arquivos indicados; não transforme os módulos em formulário.
 
 1. Comece por produto, público, dor, resultado e funcionamento esperado.
 2. Avance em blocos pequenos, normalmente de uma a três perguntas relacionadas. Não exiba uma lista extensa de pendências. Adapte o próximo bloco às respostas anteriores.
 3. Aceite “não sei”. Para lacuna reversível e de baixo risco, escolha o padrão mais adequado, informe recomendação e impacto e registre como `ASSUMIDO`. Pergunte diretamente decisões irreversíveis, caras, sensíveis ou que alterem a lógica central.
 4. Para cada recomendação, diga a escolha, por que serve a este caso e o impacto. Mencione contra apenas quando ele puder mudar a decisão ou a arquitetura.
-5. Cubra todos os domínios relevantes do catálogo. Marque cada um como `DECIDIDO`, `ASSUMIDO`, `N/A` ou `PENDENTE CRÍTICO`, com evidência. Não encerre com pendente crítico.
+5. Depois do núcleo, confira os gatilhos dos módulos. Na Cobertura, marque cada módulo como `DECIDIDO`, `ASSUMIDO`, `N/A` ou `PENDENTE CRÍTICO`, com evidência; aprofunde apenas os aplicáveis. Não encerre com pendente crítico.
 6. Identifique decisões críticas estáveis com IDs por domínio, por exemplo `AUTH-01`, `DATA-01` e `INFRA-01`. Registre opção, estado, motivo e impacto.
 7. Segurança entra desde o início. Recuperação administrativa pode usar break-glass temporário e auditado via ambiente. Nunca recomende senha master permanente.
-8. Em entrevista de fluxo ou software, o Mapa do produto exige tabela de jornadas com Jornada, Ator, Gatilho, Objetivo, Telas envolvidas, Entrada, Saída e Estado crítico, e checklist de acesso com login, cadastro, recuperação, sessão, papéis, primeiro usuário, bloqueio e logout, com N/A explícito. Jornada sem saída ou sem estado crítico não fecha. Texto livre sem tabela é defeito.
+8. No Mapa do produto, registre jornadas e páginas/telas nas tabelas do template. Fluxo essencial sem saída, estado crítico ou caminho de navegação não fecha. Registre as decisões dos módulos aplicáveis nas seções correspondentes, sem duplicar a trilha.
 
 O módulo prefere uma primeira versão pequena e operável, sem empurrar arquitetura sofisticada. Minimalismo não autoriza cortar validação, segurança, acessibilidade, backup ou recuperação necessários.
 

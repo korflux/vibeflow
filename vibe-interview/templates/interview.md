@@ -50,11 +50,19 @@ Entendi assim:
 
 ### Jornadas e telas
 
-<!-- Obrigatório para fluxo ou software. Jornada sem saída ou sem estado crítico não fecha. Texto livre sem tabela é defeito. Use N/A explícito quando não houver jornada. -->
+<!-- Obrigatório para MVP com interface. Jornada sem saída ou sem estado crítico não fecha. Texto livre sem tabela é defeito. Use N/A explícito quando não houver jornada. -->
 
-| Jornada | Ator | Gatilho | Objetivo | Telas envolvidas | Entrada | Saída | Estado crítico |
+| Jornada | Ator | Gatilho | Objetivo | Páginas/telas | Entrada | Saída | Estado crítico |
 |---|---|---|---|---|---|---|---|
 | <frase curta> | <quem executa> | <o que inicia> | <o que deve obter> | <telas> | <dado ou ação de entrada> | <resultado> | <estado crítico ou N/A com motivo> |
+
+### Páginas e navegação
+
+<!-- Para toda interface. Inclua menu, links, CTA, redirecionamentos e retorno; N/A fundamentado quando só existir uma superfície. -->
+
+| Página/tela | Como chega | Ação e próximo destino | Como volta | Estado relevante |
+|---|---|---|---|---|
+| <nome> | <menu, link, CTA ou evento> | <ação → destino> | <menu, link ou N/A> | <vazio, erro, sem permissão ou N/A> |
 
 ### Dados e integrações
 
@@ -66,6 +74,8 @@ Entendi assim:
 
 - login: <como entra ou N/A com motivo>
 - cadastro: <como cria conta ou N/A com motivo>
+- dados do cadastro: <campos mínimos e obrigatórios ou N/A>
+- verificação: <canal, validade, reenvio e falha ou N/A>
 - recuperação: <como recupera acesso ou N/A com motivo>
 - sessão: <duração, renovação e revogação ou N/A com motivo>
 - papéis: <papéis e capacidades ou N/A com motivo>
@@ -75,7 +85,7 @@ Entendi assim:
 
 ## Direção técnica
 
-<repositório, stack, validação, banco, infraestrutura, ambientes, deploy e justificativas>
+<repositório, stack, persistência e necessidade de banco, execução local/publicada, provedor e plano/VPS existentes, acesso e restrições, ambientes, deploy e justificativas; N/A fundamentado quando aplicável>
 
 ## Direção visual
 

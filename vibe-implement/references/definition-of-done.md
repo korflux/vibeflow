@@ -8,9 +8,10 @@ Abrir no fechamento da fatia, não no boot.
 
 - Aceite da T* (ou do R*) ok
 - Roda em runtime, não só typecheck
-- Comportamento novo coberto por teste que falha sem a mudança. Não rebaixe esta barra para leitura de arquivo
+- Comportamento novo coberto por prova executável capaz de detectar sua ausência, reutilizada ou ampliada quando possível. Não rebaixe esta barra para leitura de arquivo
 - Comando da Verificação da T* verde. Passo só manual não conta
 - Sem regressão na suite relevante
+- Testes redundantes da capacidade tocada podem ser consolidados apenas com preservação dos cenários e afirmações relevantes
 - UI web user-visible: prova no browser (ver `chrome-devtools.md`)
 
 ## Quality

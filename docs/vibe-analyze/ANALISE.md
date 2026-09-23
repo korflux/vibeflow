@@ -24,6 +24,8 @@ O `analyze.md` é a ponte entre o plan aprovado e o código. Se o arquivo fica p
 
 Correções óbvias em spec ou plan continuam permitidas porque são parte da consistência; elas são semânticas da IA e devem ser apontadas no certificado. O motor permanece sem interpretação.
 
+O cruzamento parte da Cobertura da origem da spec para detectar jornada, página ou módulo aplicável omitido. Na qualidade da prova, aceita reutilizar testes por capacidade em várias tasks e critérios; um comando por task não significa teste novo por task.
+
 ## MVP e decisões
 
 No MVP, a interview é obrigatória e IDs críticos precisam atravessar spec e plan com ação explícita. Mudança sem `substitui` é finding crítico. A tabela vigente de `REGRAS.md` permanece fora da análise até o ciclo implementação → review → confirmação humana.

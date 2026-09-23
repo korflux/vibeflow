@@ -24,7 +24,7 @@
 - **Aceite:**
   - [ ] <condição testável>
 - **Verificação:**
-  - [ ] `<comando do repo>`
+  - [ ] `<comando do repo que cobre a capacidade; pode ser reutilizado por outras T*>`
 - **Deps:** nenhuma
 - **Decisões:** <ID (ação); omitir quando N/A>
 - **Arquivos:** `path/...` <!-- opcional, quando orientar execução ou ownership -->

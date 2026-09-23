@@ -35,6 +35,8 @@ Essa separação reduz o risco de substituir uma entrevista em andamento e torna
 
 Perguntas devem fechar decisões que o disco não sustenta. Recomendações precisam declarar escolha, motivo e impacto. A continuidade entre `init`, `interview` e `spec` pode permanecer no mesmo chat; abrir outro chat é opcional e não é gate.
 
+Para um produto digital novo, a descoberta percorre primeiro solicitação, solução, jornadas completas e páginas. Só então consulta módulos de completude por gatilho: hospedagem e dados, acesso, permissões, identidade, SEO, planos e elementos transversais de tela. Assim o núcleo expressa o que o usuário quer construir; os módulos revelam requisitos de sustentação sem impor autenticação, banco ou CMS a um site estático. A infraestrutura existente é levantada antes da recomendação técnica.
+
 ## Cortes
 
 | Não entrou | Motivo |

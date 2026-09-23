@@ -85,10 +85,11 @@ A review é um processo cético e investigativo. Não confie cegamente em checkb
 Inspecione o código integrado e aplique estes pilares ao escopo da etapa:
 
 1. **Rastreabilidade e Verificação Anti-Alucinação (Audit Trail):**
-   - Cruze o pedido (`interview.md` quando houver), os critérios `A*`/`C*` e o `plan.md`. No checkpoint, julgue só o marco declarado; no final, confirme que as tasks concluídas produziram a integração pedida.
+   - Cruze o pedido (`interview.md` quando houver), a Cobertura da origem da spec, os critérios `A*`/`C*` e o `plan.md`. No checkpoint, julgue só o marco declarado; no final, confirme que as tasks concluídas produziram a integração pedida. Item aplicável da interview sem destino na spec é lacuna de escopo, inclusive em rota sem analyze.
    - Inspecione os paths e o fluxo real que comprovam esse escopo. T* marcada sem código correspondente vira `R*` `gap: missing` (`Critical`).
 2. **Provas e Integridade dos Testes:**
    - Cace falsos positivos: testes sem asserções reais, testes que dão `assert True`, testes que apenas testam mocks sem exercitar a implementação real.
+   - Se a task consolidou testes da capacidade alterada, confira se os cenários e afirmações removidos continuam cobertos por provas executáveis. Duplicação remanescente só vira achado quando causa custo material ou mascara uma lacuna; não peça limpeza ampla fora da entrega.
    - Verifique casos de borda e caminhos de erro relevantes às superfícies alteradas. Use a seleção de provas acima; não repita suites de T* sem lacuna ou risco que o justifique.
    - Se uma prova necessária falhar ou for falso positivo: registre `R*` `Required`.
 3. **Auditoria Implacável de Segurança e Hardening:**

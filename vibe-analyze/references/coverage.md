@@ -6,10 +6,10 @@ Abrir **só** na varredura da `vibe-analyze`. Não copiar esta tabela para o cha
 
 | De | Para | O que procurar |
 |---|---|---|
-| Interview Resultado (o quê, sucesso, fora) | Spec Objetivo, A*/C*, Fora | Spec que muda o pedido; Fora da interview que a spec/plan entregam |
+| Interview Resultado, jornadas, páginas e módulos aplicáveis | Spec Cobertura da origem, F*, Objetivo, A*/C*, Fora | Item sem destino ou N/A fundamentado; spec que muda o pedido; Fora da interview que a spec/plan entregam |
 | Spec A*/C* | Plan T* campo `Spec:` | A*/C* órfão; T* sem A*/C* (só ok se for infra justificada no Overview) |
 | Spec Fora | Plan T* / Escopo | Task que implementa o recusado |
-| Plan T* (o quê, arquivos) | Spec Escopo / Implementação | Comportamento, path ou módulo que a spec não topou |
+| Plan T* (o quê, arquivos) | Spec Escopo / Contratos e restrições necessárias | Comportamento ou módulo fora do escopo; path interno não precisa constar na spec |
 | Os três | `.vibeflow/REGRAS.md` | Choque com Never, Git, semver, política do repo |
 | Interview Decisões críticas | Spec Decisões críticas | Mesmo ID e opção, ou ação `substitui` explícita com motivo |
 | Spec Decisões críticas | Plan T* campo `Decisões:` | ID criado/substituído com task responsável; nenhuma task implementa opção divergente |
@@ -29,7 +29,7 @@ Faça os seis. Ache **instância**, não padrão genérico.
 | Cobertura | `cobertura` | A*/C* com zero T*; T* sem requisito; sucesso da interview sem C* |
 | Inconsistência | `inconsistencia` | Nome diferente para a mesma coisa; entidade só num arquivo; ordem de T* que fura Deps; A* e T* se anulam |
 | Decisão crítica | `decisao` | ID órfão; opção muda sem `substitui`; task implementa decisão diferente. Sempre `CRITICAL` quando altera lógica, acesso, dados, infraestrutura, segurança ou operação |
-| Qualidade de Teste | `qualidade_teste` | Task sem comando executável ou só com verificação manual/passiva; resultado que cria ou altera ponto de entrada executável sem smoke test; ferramenta exigida pela prova indisponível sem preparo ou bloqueio registrado |
+| Qualidade de Teste | `qualidade_teste` | Task sem comando executável ou só com verificação manual/passiva; ponto de entrada alterado sem smoke test; ferramenta exigida indisponível sem preparo ou bloqueio. Reutilizar o mesmo teste de capacidade em várias tasks ou critérios é válido |
 
 ## 3. Resolução de Achados e Clarificações
 

@@ -204,6 +204,14 @@ class TemplateContracts(unittest.TestCase):
     def read_template(self) -> str:
         return TEMPLATE.read_text(encoding="utf-8")
 
+    # Garante que a spec cobre a origem sem antecipar arquivos e comandos do plan.
+    def test_cobertura_e_limite_do_plan(self) -> None:
+        text = self.read_template()
+        for item in ("Cobertura da origem", "Destino na spec", "Contratos e restrições necessárias", "Evidência esperada"):
+            self.assertIn(item, text)
+        self.assertNotIn("### Estrutura tocada", text)
+        self.assertNotIn("### Comandos", text)
+
     # Confirma que cada F* exige os dez campos do contrato.
     def test_fluxo_f_exige_dez_campos(self) -> None:
         text = self.read_template()

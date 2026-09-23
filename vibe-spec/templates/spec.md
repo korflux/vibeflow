@@ -8,11 +8,13 @@
 
 <quem opera, o que esta entrega resolve, o que sucesso parece — 2–4 frases>
 
-## Inventário
+## Cobertura da origem
 
-<!-- omitir se a entrega for unitária sem lista -->
+<!-- Com interview: uma linha por jornada, página ou módulo aplicável; agrupe itens com o mesmo destino. Sem interview: liste somente partes da entrega que poderiam ficar esquecidas. Não copie a entrevista. -->
 
-1. …
+| Origem | Destino na spec | Motivo se fora/N/A |
+|---|---|---|
+| <jornada, página ou módulo> | <F* / decisão / Fora / N/A> | <motivo ou N/A> |
 
 ## Suposições e decisões
 
@@ -30,7 +32,7 @@
 
 ### 1. Fluxo F*:<nome>
 
-<!-- Obrigatório quando a rota tem spec. Passo sem superfície é defeito. Superfície por passo é exatamente uma de tela, popup, drawer, inline, redirect ou toast. Use N/A explícito sem UI. Se listar N telas e detalhar só o shell, declarar em uma linha que o visual por tela vai para o design. -->
+<!-- Obrigatório quando houver fluxo ou UX. Passo sem superfície é defeito. Escolha tela, popup, drawer, inline, redirect ou toast. Em página informativa simples, use F* curto e N/A fundamentado para regras inexistentes. Sem UI, use N/A explícito. -->
 
 - Jornada: <jornada da interview ou N/A com motivo>
 - Rota: <rota da cadeia ou N/A>
@@ -71,58 +73,24 @@
 
 - [ ] C1: <pronto testável, não adjetivo>
 
-## Implementação
+## Contratos e restrições necessárias
 
-### Stack
+<!-- Omitir quando não houver contrato técnico que altere comportamento, segurança ou integração. Não listar arquivos, tarefas, comandos ou escolhas internas reversíveis; isso pertence ao plan. -->
 
-<!-- omitir se zero decisão -->
+- Dados e invariantes: <o que precisa permanecer verdadeiro ou N/A>
+- Integrações e interfaces: <entradas, saídas e falhas necessárias ou N/A>
+- Segurança e operação: <limites que afetam a entrega ou N/A>
+- Tecnologia imposta: <restrição existente e motivo ou N/A>
 
-| Área | Escolha |
-|---|---|
-| … | existente: … / delta: … |
-| Dependências novas | Nenhuma / <nome + por quê topado> |
-
-### Estrutura tocada
-
-<!-- omitir se irrelevante; só paths da fatia -->
-
-```text
-path/arquivo    # papel na entrega
-```
-
-### Estilo e padrões
-
-<!-- só o que esta entrega deve obedecer -->
-
-- reutilizar: …
-
-### Contratos e módulos
-
-<!-- Com API, handle, segredo ou dado pessoal: fechar TTL e invalidação, autorização no servidor, rate limit, validação na borda e headers. Com fato novo em mock que é contrato: fixar nome, forma, janela e escopo ou delegar ao design com Ask first. -->
-
-- limites: …
-- API / schema / eventos fechados: …
-- Catálogo de erros na borda: CODE_EXEMPLO (status HTTP/CLI, mensagem segura e causa)
+<!-- Com API, handle, segredo ou dado pessoal, fechar as proteções aplicáveis. Fato novo em mock que é contrato exige nome, forma, janela e escopo ou delegação ao design com Ask first. -->
 
 ## Como provar
 
-<!-- Sem runner: um passo manual por A com viewport e local de screenshot. Com promessa de zero literal novo: comando grep exato nos paths tocados. -->
+<!-- Uma evidência observável por A*. O plan escolhe ferramentas, comandos e ordem de execução. -->
 
-### Seams
-
-- …
-
-### Estratégia
-
-- Unitário / componente: …
-- E2E / integração: …
-- Manual: …
-
-### Comandos
-
-```bash
-# só comandos que existem no repo ou foram acordados
-```
+| Aceite | Evidência esperada |
+|---|---|
+| A1 | <o que observar e onde> |
 
 ## Boundaries
 

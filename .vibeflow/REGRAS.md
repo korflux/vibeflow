@@ -11,7 +11,7 @@
 | max | interview → spec → plan → analyze → implement → review | pedido toca auth, pagamento, segredo, perda de dados, produção, alto blast radius ou baseline MVP de software |
 <!-- VIBEFLOW:CADEIA end -->
 
-Design (`vibe-design`, artefato `design.md` na mesma pasta) entra entre spec e plan somente com UI visível. Sem UI visível, registra N/A explícito em vez de bloqueio. Com UI visível, o handoff da spec é `vibe-design` e o da design é `vibe-plan`. Toda rota com spec exige UX detalhada F*, e o analyze no max cruza design com UI visível.
+Design (`vibe-design`, artefato `design.md` na mesma pasta) entra entre spec e plan somente com UI visível. Sem UI visível, registra N/A explícito em vez de bloqueio. Com UI visível, o handoff da spec é `vibe-design` e o da design é `vibe-plan`. Toda rota com spec exige UX F* suficiente para fechar o comportamento real; página informativa simples usa F* curto e N/A fundamentado para regras inexistentes. O analyze no max cruza design com UI visível.
 
 Faixa Express para ajuste fino visual sem comportamento novo (texto, cor, espaçamento, ícone com texto mantido) usa low ou medium. Reusa a mesma phase, com patch direto no `design.md` existente quando houver, sem exigir spec nova, design completo ou plan novo. Comportamento novo, rota nova ou regra fora do `F*` aprovado sai do Express e volta para spec.
 
