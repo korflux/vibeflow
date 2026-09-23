@@ -92,7 +92,6 @@ Execute cada task seguindo as 6 etapas. O coordenador responde pela integração
 Critérios adicionais:
 - DoD: `references/definition-of-done.md` no que couber.
 - Banco de dados: Se a fatia tocar banco de dados ou dinheiro, siga `references/database-and-migrations.md` (DECIMAL/NUMERIC para valores monetários, queries parametrizadas obrigatórias, sem N+1, índices em FKs, transações ACID curtas).
-- Ao fechar a task: confirme novamente o comando da própria task antes do commit.
 - Sem teste verde executável, sem marcação de conclusão no disco.
 
 ## 4. Marcar e Registrar no plan.md
