@@ -18,7 +18,7 @@ function Assert([bool]$Cond, [string]$Name, [string]$Why) {
 
 # Cria uma raiz descartável por cenário sem compartilhar estado entre testes.
 function New-Sandbox {
-    $d = Join-Path $env:TEMP ("vibe-init-" + [guid]::NewGuid().ToString('n'))
+    $d = Join-Path ([System.IO.Path]::GetTempPath()) ("vibe-init-" + [guid]::NewGuid().ToString('n'))
     New-Item -ItemType Directory -Path $d | Out-Null
     return $d
 }
