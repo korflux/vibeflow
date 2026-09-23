@@ -128,12 +128,16 @@ run_pwsh_only() {
     return 0
   fi
   bindir=$(mktemp -d)
-  # Wrapper preserva o diretório real do PowerShell, evitando que um symlink quebre a resolução de pwsh.dll no Windows.
-  printf '#!/usr/bin/env bash\nexec "%s" "$@"\n' "$pwsh_bin" >"$bindir/pwsh"
+  # Wrapper usa o bash absoluto para funcionar com PATH restrito e preserva a localização real de pwsh.dll.
+  bash_bin=$(command -v bash)
+  printf '#!%s\nexec "%s" "$@"\n' "$bash_bin" "$pwsh_bin" >"$bindir/pwsh"
   chmod +x "$bindir/pwsh"
   path="$bindir"
   if _is_msys; then
     path="$bindir:$(dirname "$(command -v bash)")"
+  else
+    # O launcher usa dirname; disponibilize só esse utilitário sem expor Python no PATH.
+    ln -s "$(command -v dirname)" "$bindir/dirname"
   fi
   _run_restricted "$path" "$@"
   rm -rf "$bindir"
