@@ -86,6 +86,16 @@ class PythonContracts(unittest.TestCase):
     def tearDown(self) -> None:
         shutil.rmtree(self.repo, ignore_errors=True)
 
+    # Executa Git no repositório temporário sem shell, preservando erros como evidência do teste.
+    def _git(self, repo: Path, *arguments: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            ["git", *arguments],
+            cwd=repo,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+
     def test_init_ausente(self) -> None:
         process, report = invoke(self.repo, check=False)
         self.assertNotEqual(0, process.returncode)
@@ -356,7 +366,7 @@ class PythonContracts(unittest.TestCase):
         self.assertIn("MODO_INVALIDO", process.stderr)
 
     def test_independent_task_completions_preserve_queue_and_task_commit_attribution(self) -> None:
-        """Compara fila, cobertura e ownership de commits entre execução serial e paralela isolada."""
+        """Compara fila, conteúdo final e commits Git reais após retornos serial ou fora de ordem."""
         results = {}
         for execution, completion_order in (
             ("sequential", ("T1", "T2")),
@@ -369,19 +379,28 @@ class PythonContracts(unittest.TestCase):
             plan = plan_tasks(("T1", " ", "nenhuma"), ("T2", " ", "nenhuma"), ("T3", " ", "T1, T2"))
             write_plan(phase, plan)
 
+            # Cada cenário usa Git real; o commit inicial separa o baseline das entregas das tasks.
+            self._git(repo, "init", "--quiet")
+            self._git(repo, "config", "user.name", "VibeFlow Test")
+            self._git(repo, "config", "user.email", "vibeflow-test@example.invalid")
+            self._git(repo, "add", "--", ".vibeflow")
+            self._git(repo, "commit", "--quiet", "-m", "fixture: baseline")
+
             _, report = invoke(repo)
             self.assertEqual(["T1", "T2"], report["fila"]["elegiveis"])
             self.assertEqual([{"id": "T3", "deps": ["T1", "T2"]}], report["fila"]["bloqueadas"])
 
-            # Simula retornos isolados: cada task entrega somente seu path e mensagem de commit.
-            task_commits = {}
+            # Integra cada retorno em path exclusivo e registra a alteração real no Git.
             for index, task in enumerate(completion_order):
-                task_commits[task] = {
-                    "message": f"task({task}): resultado {task}",
-                    "paths": [f"src/{task.lower()}.txt"],
-                }
+                source_path = f"src/{task.lower()}.txt"
+                source_file = repo / source_path
+                source_file.parent.mkdir(parents=True, exist_ok=True)
+                source_file.write_text(f"resultado de {task}\n", encoding="utf-8")
                 plan = plan.replace(f"- [ ] {task} concluída", f"- [x] {task} concluída", 1)
                 write_plan(phase, plan)
+                plan_path = ".vibeflow/phases/phase-1-fixture/plan.md"
+                self._git(repo, "add", "--", plan_path, source_path)
+                self._git(repo, "commit", "--quiet", "-m", f"task({task}): resultado {task}")
                 _, report = invoke(repo)
                 if index == 0:
                     remaining = completion_order[1]
@@ -391,28 +410,59 @@ class PythonContracts(unittest.TestCase):
                     self.assertEqual(["T3"], report["fila"]["elegiveis"])
                     self.assertEqual([], report["fila"]["bloqueadas"])
 
+            # A dependente só é liberada depois dos dois commits independentes.
+            source_path = "src/t3.txt"
+            source_file = repo / source_path
+            source_file.parent.mkdir(parents=True, exist_ok=True)
+            source_file.write_text("resultado de T3\n", encoding="utf-8")
             plan = plan.replace("- [ ] T3 concluída", "- [x] T3 concluída", 1)
-            task_commits["T3"] = {
-                "message": "task(T3): resultado T3",
-                "paths": ["src/t3.txt"],
-            }
             write_plan(phase, plan)
+            plan_path = ".vibeflow/phases/phase-1-fixture/plan.md"
+            self._git(repo, "add", "--", plan_path, source_path)
+            self._git(repo, "commit", "--quiet", "-m", "task(T3): resultado T3")
             _, report = invoke(repo)
+
+            # Lê mensagens e paths dos commits produzidos pelo Git, não de metadados montados no teste.
+            task_commits = {}
+            for line in self._git(repo, "log", "--format=%s%x09%H").stdout.splitlines():
+                message, commit_hash = line.split("\t", 1)
+                if not message.startswith("task("):
+                    continue
+                task = message[len("task("):].split(")", 1)[0]
+                changed_paths = sorted(
+                    path
+                    for path in self._git(repo, "show", "--format=", "--name-only", commit_hash).stdout.splitlines()
+                    if path
+                )
+                task_commits[task] = {"message": message, "paths": changed_paths}
+
+            self.assertEqual([], report["fila"]["abertas"])
+            self.assertEqual([], report["fila"]["elegiveis"])
+            self.assertEqual([], self._git(repo, "status", "--porcelain").stdout.splitlines())
+            expected_plan_path = ".vibeflow/phases/phase-1-fixture/plan.md"
+            for task in ("T1", "T2", "T3"):
+                self.assertEqual(
+                    [expected_plan_path, f"src/{task.lower()}.txt"],
+                    task_commits[task]["paths"],
+                )
+                self.assertEqual(f"task({task}): resultado {task}", task_commits[task]["message"])
+
+            final_state = {
+                path: (repo / path).read_bytes()
+                for path in (expected_plan_path, "src/t1.txt", "src/t2.txt", "src/t3.txt")
+            }
             results[execution] = {
                 "fila": {
                     key: report["fila"][key]
                     for key in ("concluidas", "abertas", "elegiveis", "bloqueadas")
                 },
                 "commits": task_commits,
+                "final_state": final_state,
             }
 
         self.assertEqual(results["sequential"], results["delegated"])
         commits = results["sequential"]["commits"]
         self.assertEqual({"T1", "T2", "T3"}, set(commits))
-        self.assertEqual(3, len({commit["paths"][0] for commit in commits.values()}))
-        for task, commit in commits.items():
-            self.assertTrue(commit["message"].startswith(f"task({task}):"))
-            self.assertEqual([f"src/{task.lower()}.txt"], commit["paths"])
 
 
 class SkillContracts(unittest.TestCase):

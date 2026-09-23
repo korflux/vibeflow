@@ -67,6 +67,22 @@
 
 - Os aliases WSL e Git Bash foram bloqueados pelo sandbox. A execução dos launchers foi concluída com Git Bash após a autorização automática de acesso.
 
+## Fatia R2
+
+- Feito: Substituída a fixture sintética de atribuição de commits por dois repositórios Git temporários reais. Cada task agora grava seu arquivo, atualiza o `plan.md`, cria commit com paths explícitos e confere mensagem, paths, estado final e árvore limpa nas ordens sequencial e delegada.
+- Marcado: R2 em `review.md`; C1 e C3 em `review.md` permanecem sustentados pela fixture integrada.
+- Prova: `python docs/vibe-implement/tests/test-implement.py -v` -> 37 testes OK, incluindo quatro verificações de paridade PowerShell.
+- Commit da task: `task(R2): provar commits reais na fixture`; hash registrado no chat sem reabrir este artefato após o commit.
+- Decisões críticas: N/A.
+
+### Feedback +
+
+- Git real valida a atribuição por commit e path; a comparação mantém equivalência entre as duas ordens de conclusão.
+
+### Feedback -
+
+- Nenhum bloqueio adicional na prova de R2.
+
 ## Handoff
 
 Checkpoint `vibe-review` após T1-T3, conforme declarado no plan, antes de iniciar T4. Recomende um novo chat para o checkpoint; o `plan.md` e este histórico são a ponte.
