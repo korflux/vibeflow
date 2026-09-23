@@ -83,8 +83,24 @@
 
 - Nenhum bloqueio adicional na prova de R2.
 
+## Fatia R1
+
+- Feito: Auditada retrospectivamente a compatibilidade do marco T1–T3 e comparado seu snapshot com T4. O resultado e a limitação temporal estão registrados em `review.md`; a auditoria ocorreu depois de T4 e não recria o checkpoint no momento planejado.
+- Marcado: R1 permanece aberto em `review.md` até a decisão humana sobre aceitar a exceção de sequência.
+- Prova: snapshot `b32d2e3` após T1–T3: plan 21, implement 37, review 21 e MVP flow 2 testes OK; comparação `b32d2e3..96dcb52` confirmou que os motores plan/implement/review mudaram a entrega do inventário para stdout sem alterar o contrato de fila nem os gates do checkpoint.
+- Commit da task: `task(R1): registrar avaliação retrospectiva do marco`; hash registrado no chat sem reabrir este artefato após o commit.
+- Decisões críticas: N/A.
+
+### Feedback +
+
+- As provas do snapshot sustentam que os contratos de formato compacto, fila e separação checkpoint/final já eram compatíveis no estado anterior a T4.
+
+### Feedback -
+
+- A ordem temporal original não pode ser recuperada. A decisão de aceitar a exceção continua com o humano.
+
 ## Handoff
 
 Checkpoint `vibe-review` após T1-T3, conforme declarado no plan, antes de iniciar T4. Recomende um novo chat para o checkpoint; o `plan.md` e este histórico são a ponte.
 
-Fila zerada após T4. Handoff atual: `vibe-review`; a conferência de compatibilidade pré-T4 não encontrou conflito no parser da fila, nos gates da review nem no isolamento de commits.
+Fila de implementação zerada. Handoff atual: decisão humana sobre R1; depois, `vibe-review`.
