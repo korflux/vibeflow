@@ -42,18 +42,19 @@ Atualizar o contrato de `plan`, `implement` e `review` para trabalhar por result
 
 ### T2: Executar e integrar fatias com prova proporcional
 
-- [ ] T2 concluída
+- [x] T2 concluída
 - **Spec:** A4, A5, A6, C1, C2, C3
 - **O quê:** Atualizar `vibe-implement` para investigar o fluxo da T*, implementar e simplificar antes da prova final. Definir delegação por capacidade do host, isolamento de edição, entrega delimitada ao subagente e integração exclusiva pelo coordenador. Testar novamente só após edição posterior ou falha.
 - **Aceite:**
-  - [ ] Fixture com duas T* independentes e uma dependente preserva a mesma fila e resultado em execução sequencial ou delegada.
-  - [ ] Contrato impede escrita concorrente nos artefatos vivos e no índice Git; commit da T* inclui apenas alterações integradas e provadas.
-  - [ ] Sem edição posterior à prova, a verificação roda uma vez; com edição posterior, roda novamente.
+  - [x] Fixture com duas T* independentes e uma dependente preserva a mesma fila e resultado em execução sequencial ou delegada.
+  - [x] Contrato impede escrita concorrente nos artefatos vivos e no índice Git; commit da T* inclui apenas alterações integradas e provadas.
+  - [x] Sem edição posterior à prova, a verificação roda uma vez; com edição posterior, roda novamente.
 - **Verificação:**
-  - [ ] `python docs/vibe-implement/tests/test-implement.py -v`
-  - [ ] `python docs/tests/test-mvp-flow.py -v`
+  - [x] `python docs/vibe-implement/tests/test-implement.py -v`
+  - [x] `python docs/tests/test-mvp-flow.py -v`
+- **Prova:** `test-implement.py` -> 37 testes OK, incluindo fixture com conclusão delegada fora de ordem; `test-mvp-flow.py` -> 2 testes OK.
 - **Deps:** nenhuma
-- **Arquivos:** `vibe-implement/SKILL.md`, `vibe-implement/templates/implement.md`, `docs/vibe-implement/`, testes de contrato afetados.
+- **Arquivos:** `vibe-implement/SKILL.md`, `vibe-implement/templates/implement.md`, `docs/vibe-implement/ANALISE.md`, `docs/vibe-implement/ARQUITETURA.md`, `docs/vibe-implement/tests/test-implement.py`.
 - **Risk:** `medium, concorrência pode misturar prova ou commit`
 
 ### T3: Limitar review aos marcos e riscos relevantes

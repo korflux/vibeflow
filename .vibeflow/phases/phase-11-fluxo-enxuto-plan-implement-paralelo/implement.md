@@ -1,13 +1,13 @@
-# Implement: contrato compacto de plan por resultado
+# Implement: fluxo enxuto de plan e implement
 # Alvo: phase-11-fluxo-enxuto-plan-implement-paralelo
-# Status: rascunho
+# Status: em-curso
 
 ## Fatia T1
 
 - Feito: Atualizados `vibe-plan` e os consumidores do contrato em `vibe-analyze`; removidos score e quebras automáticas por volume, duração ou título. O template agora trata preparo como checklist e paralelização/checkpoint como opcionais.
-- Marcado: T1 em `plan.md`; A1, A2 e A3 em `spec.md`. C3 permanece aberto porque inclui isolamento das atualizações compartilhadas, coberto pela T2.
+- Marcado: T1 em `plan.md`; A1, A2 e A3 em `spec.md`. C3 permaneceu aberto até T2, que cobriu o isolamento das atualizações compartilhadas.
 - Prova: `python docs/vibe-plan/tests/test-plan.py -v` -> 21 testes OK; `python docs/vibe-implement/tests/test-implement.py -v` -> 34 testes OK; `python docs/vibe-analyze/tests/test-analyze.py -v` -> 18 testes OK; motor PowerShell -> parse `ok`, T2/T3 elegíveis, T4 bloqueada por T2/T3.
-- Commit da task: pendente. `plan.md` e `spec.md` já estavam não rastreados antes desta execução; a skill exige decisão humana ou isolamento antes de incluí-los no commit.
+- Commit da task: `task(T1): publicar plan compacto por resultado`, `8df8dcf6f32f5a49f45ab67ea3423035de525ed6`.
 - Decisões críticas: N/A.
 
 ### Feedback +
@@ -16,8 +16,24 @@
 
 ### Feedback -
 
-- Commit aguardando decisão sobre os artefatos de phase 11 que já estavam não rastreados no snapshot inicial.
+- O commit da T1 aguardou a decisão de escopo e foi fechado separadamente antes do início da T2.
+
+## Fatia T2
+
+- Feito: Atualizado o ciclo para delegação opcional nativa, com entregas delimitadas, ownership isolado, integração e operações Git centralizadas no coordenador. Simplificação precede a prova final; a verificação só se repete após falha ou edição posterior em código/teste. Template, arquitetura, análise e contratos documentam e cobrem esses limites.
+- Marcado: T2 em `plan.md`; A4, A5, A6, C1, C2 e C3 em `spec.md`.
+- Prova: `python docs/vibe-implement/tests/test-implement.py -v` -> 37 testes OK, incluindo fixture com T1/T2 independentes e T3 dependente em duas ordens de conclusão; `python docs/tests/test-mvp-flow.py -v` -> 2 testes OK.
+- Commit da task: criar `task(T2): integrar fatias com prova proporcional`; registrar o hash no chat sem reabrir este artefato após o commit.
+- Decisões críticas: N/A.
+
+### Feedback +
+
+- A fila do parser produziu o mesmo estado final com conclusão sequencial e com retorno delegado fora de ordem; o coordenador manteve a responsabilidade de integração e commit.
+
+### Feedback -
+
+- A primeira execução do teste de contrato detectou a remoção acidental da frase “Sem teste verde executável”; a regra foi restaurada e as duas verificações foram repetidas com sucesso.
 
 ## Handoff
 
-Q: definir o escopo do commit da T1. Depois do fechamento, a próxima task elegível é T2.
+`vibe-implement` para T3, próxima task elegível. T4 continua bloqueada por T3. Recomende um novo chat focado na T3; o `plan.md` e este histórico são a ponte.

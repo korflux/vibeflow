@@ -12,6 +12,13 @@
 - Commit da task: registrar `<mensagem>` e `<hash>` no resultado da execução e no chat após o commit; não reabrir este artefato apenas para anexar o hash
 - Decisões críticas: <IDs implementados e prova; omitir quando N/A>
 
+### Delegação
+
+<!-- Omitir em execução sequencial. O coordenador registra somente o retorno integrado; a prova final é a do estado integrado. -->
+
+- Escopo delegado: <resultado, aceite e paths exclusivos>
+- Retorno integrado: <paths, resumo e prova reportada pelo agente; pendências ou N/A>
+
 ### Feedback +
 
 <!-- omitir se vazio -->

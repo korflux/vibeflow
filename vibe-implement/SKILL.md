@@ -10,7 +10,7 @@ description: >
 
 Não invente `n` se há plan. Sem prova e sem teste verde, sem `[x]` no `plan.md` ou commit da task. Sem `todo.md` nem `tasks.md`.
 Sem `.vibeflow/`: `/vibe-init`. Open Questions no markdown = defeito. Cada task verde gera um commit isolado; o push fica para o fechamento aprovado da phase.
-Proibido pular tasks ou desistir de erros. Diagnostique a causa raiz de qualquer falha no código e re-teste.
+Proibido pular tasks ou desistir de erros. Diagnostique a causa raiz de qualquer falha no código e repita a prova após corrigir.
 Comentários semânticos obrigatórios em todas as funções criadas ou alteradas.
 As provas de execução e arquivos modificados são registrados diretamente sob cada task no `plan.md` vivo.
 No MVP, não execute código sem analyze `aprovado` e `limpo`; a fila vem somente de `.vibeflow/mvp/plan.md`.
@@ -67,30 +67,27 @@ RECOMENDO: <opção>, <1 linha explicando motivo e impacto>
 (ok / outra?)
 ```
 
-Modo B só se o humano pediu: `auto`, “faz o todo”, “não para”, “run completa”.
+Modo B só se o humano pediu: `auto`, “faz o todo”, “não para”, “run completa” ou execução paralela das T*s independentes elegíveis.
 “Pode seguir” no modo A = próxima `T*` elegível. Não existe agrupamento intermediário.
 
 ## 3. Ciclo da fatia
 
-Execute cada task seguindo rigorosamente as 6 etapas:
+Execute cada task seguindo as 6 etapas. O coordenador responde pela integração final, pelos artefatos vivos e pelo índice Git.
 
 1. **Reconhecer (O que já existe?):**
    Formule a pergunta da T*, localize com `rg --files` e `rg -n` os pontos de entrada, símbolos, chamadas e testes da fatia, e trace somente as dependências do fluxo real. Com UI, inclua o `design.md` aprovado do alvo como entrada e siga tokens, motion e prova por tela. No Express (ajuste fino sem comportamento novo, low ou medium), reuse a mesma phase e siga só o recorte existente e alterado do design quando houver, sem exigir design ausente, sem rodar apply de design, sem plan novo e sem reabrir tasks antigas. Reutilize helpers, utilitários, componentes visuais, types e módulos existentes da standard library ou do projeto. Não reescreva o que já existe.
-2. **Codar:**
-   Implemente a solução de forma direta, enxuta e estritamente focada nos requisitos da task (`T*`). Deixe comentários semânticos em todas as funções.
-3. **Testar (comando real do repo; prova visual quando houver UI):**
-   - Execute o comando real de teste do repositório associado à task.
-   - Na primeira task funcional (T1), valide obrigatoriamente o *Smoke Test / Walking Skeleton* no ponto de entrada real da aplicação.
-   - Se a task tocar interface visual web, selecione nesta ordem, navegador integrado (`@Browser` ou equivalente) primeiro quando disponível, MCP Server `chrome-devtools` para `navigate_page`, `take_snapshot`, interação, `take_screenshot`, DOM, estilos, console, rede e assets, ou Playwright somente se já existir no repositório ou for solicitado para fluxos repetíveis e assertions. Siga `references/chrome-devtools.md`.
-   - Registre rota, viewport, estado, ações e evidência observada. Se nenhuma capacidade visual estiver disponível, registre a limitação e não marque a validação visual ou a task como concluída; não instale ferramenta automaticamente.
-   - Para controles compactos, use `icon-only` somente em ações universalmente reconhecíveis, como lixeira para apagar. Preserve nome acessível, área de interação adequada, foco visível e tooltip quando aplicável; ações ambíguas mantêm texto.
-   - **Diagnóstico e Correção sem Desistência:** Se o teste falhar, NUNCA pule nem desista da task. Pare, analise a causa raiz no log de erro, aplique a correção no código e execute o teste novamente até ficar verde. Apenas impedimentos externos intransponíveis geram parada com `Q + RECOMENDO`.
-4. **Simplificar (Refactor):**
-   Com o teste verde, revise o código recém-escrito. Remova duplicações, enxugue verbosidade e garanta que o código seja o mínimo necessário sem cortar o que importa.
-5. **Re-testar (Garantia de Regressão Zero):**
-   Rerode a suíte de testes da fatia após a simplificação para comprovar que nenhuma limpeza quebrou a funcionalidade.
-6. **Entregar e Atualizar plan.md:**
-   Aplique o patch diretamente no `plan.md` vivo (e `spec.md`/`review.md` conforme §4). Atualize `implement.md` diretamente, mantendo `# Status: rascunho` enquanto o registro estiver incompleto e fechando o status somente após a prova verde.
+2. **Escolher execução e delegar quando fizer sentido:**
+   Use delegação nativa somente se o host a oferecer. Recalcule a fila e delegue apenas T*s elegíveis e independentes; respeite `Deps` e só libere uma dependente depois que o coordenador registrar suas dependências como concluídas. Sem capacidade de delegação ou isolamento seguro, execute a mesma fila em sequência.
+   Delimite cada entrega por resultado, aceite, dependências, paths exclusivos e comando de verificação. Use worktree/branch isolada ou ownership sem sobreposição. Se não houver isolamento nem ownership exclusivo, não delegue escrita. Agentes não alteram `plan.md`, `spec.md`, `implement.md` ou `review.md`, nem operam o índice Git, criam commits ou fazem push. Peça que retornem os paths alterados, resumo do diff, prova executada e pendências.
+3. **Codar e integrar:**
+   Implemente de forma direta, enxuta e restrita ao aceite da T*. O coordenador confere cada retorno, integra somente paths autorizados e resolve conflitos antes de prosseguir. Prova relatada por um agente ajuda no diagnóstico, mas não substitui a prova do estado integrado.
+4. **Simplificar antes da prova:**
+   Revise o código integrado, remova duplicações e verbosidade desnecessária e preserve validações, segurança e comportamento exigidos. Deixe comentários semânticos em todas as funções criadas ou alteradas.
+5. **Executar a prova final:**
+   Rode o comando real da T* uma vez no estado integrado e simplificado. Na primeira task funcional (T1), valide obrigatoriamente o *Smoke Test / Walking Skeleton* no ponto de entrada real da aplicação. Se a prova falhar, diagnostique a causa raiz, corrija e execute novamente até ficar verde. Se código ou teste da task for editado depois da prova verde, repita a verificação afetada. Atualizar artefatos vivos e preparar o commit não invalida a prova.
+   Se a task tocar interface visual web, selecione nesta ordem, navegador integrado (`@Browser` ou equivalente) primeiro quando disponível, MCP Server `chrome-devtools` para `navigate_page`, `take_snapshot`, interação, `take_screenshot`, DOM, estilos, console, rede e assets, ou Playwright somente se já existir no repositório ou for solicitado para fluxos repetíveis e assertions. Siga `references/chrome-devtools.md`. Registre rota, viewport, estado, ações e evidência observada. Sem capacidade visual, registre a limitação e não marque a task como concluída nem instale ferramenta automaticamente. Para controles compactos, preserve nome acessível, área de interação, foco visível e tooltip quando aplicável; ações ambíguas mantêm texto.
+6. **Registrar e fechar:**
+   Depois da prova verde, atualize `plan.md` e `spec.md`/`review.md` somente nos critérios provados e acrescente a trilha em `implement.md`. Mantenha `# Status: rascunho` enquanto o registro estiver incompleto; feche a fatia só depois da prova e da integração.
 
 Critérios adicionais:
 - DoD: `references/definition-of-done.md` no que couber.
@@ -127,7 +124,7 @@ No MVP, certifique-se de registrar quais IDs críticos foram implementados. Não
 Depois de atualizar os artefatos e antes de declarar a fatia concluída:
 
 1. Compare o estado do Git com o snapshot capturado antes da task. Se um path da task já estava alterado, pare e peça isolamento ou decisão humana; não misture alterações.
-2. Liste somente os paths produzidos pela task e adicione-os explicitamente, por exemplo `git add -- path/da/task outro/path`. Nunca use `git add -A`, `git add .` ou inclua `*-report.json`.
+2. Em execução delegada, somente o coordenador altera artefatos vivos e o índice Git. Liste os paths integrados e provados pela task e adicione-os explicitamente, por exemplo `git add -- path/da/task outro/path`. Nunca use `git add -A`, `git add .` ou inclua `*-report.json`.
 3. Confira `git diff --cached --check` e `git diff --cached --name-only`. Se o diff indexado contiver path fora da task, remova-o do índice e pare se a origem não for clara.
 4. Crie um commit sem `Co-Authored-By`, com mensagem no formato `task(Tn): <outcome curto>`. Não faça `git push` nesta etapa.
 5. Registre a mensagem e o hash retornado por `git rev-parse HEAD` no resultado da execução e no chat. Não reabra `implement.md` apenas para anexar o hash, pois isso criaria um residual fora do commit da task. O próximo estado começa no commit criado.
@@ -152,7 +149,7 @@ Fatia concluída e registrada em <alvo>/plan.md.
 
 **A (default):** executa exatamente a `T*` escolhida ou única elegível, cria o commit dessa task e para. Se o usuário disser apenas "aprovado" ou "ok", permanece parado aguardando a próxima instrução. Se o usuário disser "pode seguir", "segue" ou "pode ir para a próxima fase", avança imediatamente para a próxima task elegível do plano ou para `vibe-review` se a fila estiver concluída. Quando houver fila, use um chat por T* como recomendação de isolamento e abra um novo chat focado na próxima T*; o `plan.md` e o `implement.md` vivos carregam o contexto verificável. Continue no mesmo chat somente se o humano escolher conscientemente.
 
-**B:** percorre `fila.elegiveis` recalculando depois de cada item, cria um commit por task e para somente em falha, bloqueio ou fila vazia. Atualiza o `plan.md` a cada item.
+**B:** percorre `fila.elegiveis` recalculando após cada item concluído. Pode delegar T*s independentes quando houver capacidade no host e isolamento seguro; tasks dependentes só começam depois da integração, prova, marcação e commit das dependências. O coordenador serializa atualizações dos artefatos vivos e do índice Git, cria um commit por task e para em falha, bloqueio ou fila vazia.
 
 Fila zerada (T* da run, ou R* bloqueantes) → handoff `vibe-review`; recomende um novo chat para a review. Se o usuário autorizar avançar para a review, inicia `vibe-review` diretamente. O `plan.md` e o `implement.md` vivos são a ponte; continuar no mesmo chat exige escolha consciente.
 

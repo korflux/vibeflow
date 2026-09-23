@@ -93,17 +93,17 @@ Reduzir o número e o tamanho das tasks e a repetição de testes na cadeia `vib
 - [x] A1: `plan.md` representa cada resultado uma vez, com T* curtas e dependências reais, sem seções que repitam a mesma informação.
 - [x] A2: checklist inicial trata ferramentas locais rapidamente e só cria T* para preparo persistente ou bloqueio real.
 - [x] A3: plano indica concorrência permitida e checkpoints de review apenas com justificativa objetiva.
-- [ ] A4: implement reconhece o fluxo relevante, entrega código já enxuto e executa a prova final sem repetição quando não houve edição.
-- [ ] A5: delegação disponível acelera trabalho independente, com isolamento de edição e integração pelo coordenador; a mesma fase funciona sem subagentes.
-- [ ] A6: execução paralela não mistura alterações, marcações, provas ou commits entre T*.
+- [x] A4: implement reconhece o fluxo relevante, entrega código já enxuto e executa a prova final sem repetição quando não houve edição.
+- [x] A5: delegação disponível acelera trabalho independente, com isolamento de edição e integração pelo coordenador; a mesma fase funciona sem subagentes.
+- [x] A6: execução paralela não mistura alterações, marcações, provas ou commits entre T*.
 - [ ] A7: review intermediária, quando indicada, avalia o marco; review final verifica a integração sem reexecutar automaticamente toda a matriz por T*.
 - [ ] A8: relatórios operacionais têm necessidade justificada ou são substituídos por saída transitória suficiente, preservando seleção, recusas e fila; não restam JSONs redundantes no workspace.
 
 ### Critérios de sucesso
 
-- [ ] C1: um exemplo de phase com duas T* independentes e uma dependente pode ser executado com e sem subagentes, produzindo o mesmo estado final e commits atribuíveis.
-- [ ] C2: uma T* sem edição posterior à prova roda sua verificação uma vez; nova edição exige nova prova.
-- [ ] C3: os testes de contrato cobrem alvo, dependências, preservação dos artefatos vivos e isolamento das atualizações compartilhadas, sem multiplicar casos que repetem a implementação.
+- [x] C1: um exemplo de phase com duas T* independentes e uma dependente pode ser executado com e sem subagentes, produzindo o mesmo estado final e commits atribuíveis.
+- [x] C2: uma T* sem edição posterior à prova roda sua verificação uma vez; nova edição exige nova prova.
+- [x] C3: os testes de contrato cobrem alvo, dependências, preservação dos artefatos vivos e isolamento das atualizações compartilhadas, sem multiplicar casos que repetem a implementação.
 
 ## Implementação
 

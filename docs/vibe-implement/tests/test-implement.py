@@ -355,6 +355,46 @@ class PythonContracts(unittest.TestCase):
         self.assertNotEqual(0, process.returncode)
         self.assertIn("MODO_INVALIDO", process.stderr)
 
+    def test_independent_task_completions_preserve_queue_order_and_result(self) -> None:
+        """Compara a fila serial com retornos delegados fora de ordem para tasks independentes."""
+        results = {}
+        for execution, completion_order in (
+            ("sequential", ("T1", "T2")),
+            ("delegated", ("T2", "T1")),
+        ):
+            repo = self.repo / execution
+            repo.mkdir()
+            vf = seed_vibeflow(repo)
+            phase = seed_phase(vf, "phase-1-fixture", "plan.md")
+            plan = plan_tasks(("T1", " ", "nenhuma"), ("T2", " ", "nenhuma"), ("T3", " ", "T1, T2"))
+            write_plan(phase, plan)
+
+            _, report = invoke(repo)
+            self.assertEqual(["T1", "T2"], report["fila"]["elegiveis"])
+            self.assertEqual([{"id": "T3", "deps": ["T1", "T2"]}], report["fila"]["bloqueadas"])
+
+            for index, task in enumerate(completion_order):
+                plan = plan.replace(f"- [ ] {task} concluída", f"- [x] {task} concluída", 1)
+                write_plan(phase, plan)
+                _, report = invoke(repo)
+                if index == 0:
+                    remaining = completion_order[1]
+                    self.assertEqual([remaining], report["fila"]["elegiveis"])
+                    self.assertEqual([{"id": "T3", "deps": [remaining]}], report["fila"]["bloqueadas"])
+                else:
+                    self.assertEqual(["T3"], report["fila"]["elegiveis"])
+                    self.assertEqual([], report["fila"]["bloqueadas"])
+
+            plan = plan.replace("- [ ] T3 concluída", "- [x] T3 concluída", 1)
+            write_plan(phase, plan)
+            _, report = invoke(repo)
+            results[execution] = {
+                key: report["fila"][key]
+                for key in ("concluidas", "abertas", "elegiveis", "bloqueadas")
+            }
+
+        self.assertEqual(results["sequential"], results["delegated"])
+
 
 class SkillContracts(unittest.TestCase):
     """Trava no disco os contratos que a skill precisa para ler fila e executar o ciclo de implementação."""
@@ -366,20 +406,42 @@ class SkillContracts(unittest.TestCase):
 
 
     def test_skill_requires_execution_cycle_and_green_test(self) -> None:
+        """Garante que a prova final sucede a simplificação e continua obrigatória."""
         skill = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
         dod = (SKILL_DIR / "references" / "definition-of-done.md").read_text(encoding="utf-8")
         self.assertIn("Sem teste verde executável", skill)
         self.assertIn("Reconhecer", skill)
         self.assertIn("Codar", skill)
-        self.assertIn("Testar", skill)
-        self.assertIn("Simplificar", skill)
-        self.assertIn("Re-testar", skill)
+        self.assertLess(skill.index("Simplificar antes da prova"), skill.index("Executar a prova final"))
+        self.assertIn("uma vez no estado integrado e simplificado", skill)
         self.assertIn("Não rebaixe", dod)
+
+    def test_skill_bounds_delegation_and_coordinator_ownership(self) -> None:
+        """Trava entrega delimitada e exclusividade do coordenador sobre estado compartilhado."""
+        skill = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
+        template = (SKILL_DIR / "templates" / "implement.md").read_text(encoding="utf-8")
+        self.assertIn("Use delegação nativa somente se o host a oferecer", skill)
+        self.assertIn("resultado, aceite, dependências, paths exclusivos e comando de verificação", skill)
+        self.assertIn("Agentes não alteram `plan.md`, `spec.md`, `implement.md` ou `review.md`", skill)
+        self.assertIn("somente o coordenador altera artefatos vivos e o índice Git", skill)
+        self.assertIn("worktree/branch isolada ou ownership sem sobreposição", skill)
+        self.assertIn("paths integrados e provados pela task", skill)
+        self.assertIn("Escopo delegado", template)
+        self.assertIn("Retorno integrado", template)
+        self.assertIn("a prova final é a do estado integrado", template)
+
+    def test_skill_repeats_proof_only_after_failure_or_code_test_edit(self) -> None:
+        """Garante uma prova final por estado e reexecução somente quando ela perde validade."""
+        skill = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("Se a prova falhar", skill)
+        self.assertIn("Se código ou teste da task for editado depois da prova verde", skill)
+        self.assertIn("Atualizar artefatos vivos e preparar o commit não invalida a prova", skill)
 
     # Garante que cada task termina em commit isolado e que o push fica para a review.
     def test_skill_requires_task_commit_without_push(self) -> None:
         skill = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("git diff --cached --check", skill)
+        self.assertIn("git add -- path/da/task outro/path", skill)
         self.assertIn("task(Tn)", skill)
         self.assertIn("Não faça `git push` nesta etapa", skill)
         self.assertIn("git add -A", skill)

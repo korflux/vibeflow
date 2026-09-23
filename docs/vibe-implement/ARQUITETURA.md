@@ -14,9 +14,9 @@
 
 | Peça | Responsabilidade |
 |---|---|
-| `SKILL.md` | Gate, escolha de T*/R*, ciclo de seis passos, prova visual, commit da task, registro e handoff. |
+| `SKILL.md` | Gate, escolha de T*/R*, delegação opcional por capacidade do host, ciclo de seis passos, prova final, commit da task, registro e handoff. |
 | `scripts/implement.py`, `implement.ps1`, `implement.sh` | Inventário, alvo, fila, gate MVP, preparação do vivo e relatório. |
-| `templates/implement.md` | Forma da trilha por fatia. |
+| `templates/implement.md` | Forma da trilha por fatia, com registro opcional de entrega delegada. |
 | `references/chrome-devtools.md` | Checklist de prova renderizada, consultada quando a task toca UI. |
 | `.vibeflow/implement-report.json` | Evidência operacional, fora do Git. |
 | `implement.md` | Histórico acumulativo da execução, incluindo a mensagem do commit e o handoff; o hash fica no resultado da execução e no chat para evitar um residual pós-commit. |
@@ -50,13 +50,15 @@ O apply não substitui histórico acumulativo. Plan, spec e review recebem apena
 
 ## 5. Ciclo da fatia
 
-Cada T*/R* segue: reconhecer o fluxo real, codar a solução mínima, testar com comando real, simplificar, re-testar e registrar. Falha de teste exige diagnóstico da causa raiz e nova execução.
+Cada T*/R* segue: reconhecer o fluxo real, selecionar execução sequencial ou delegação nativa do host, integrar as mudanças, simplificar e executar a prova final. A prova roda uma vez depois da integração e simplificação. Falha exige diagnóstico e nova execução após a correção; alteração posterior em código ou teste exige repetir a verificação afetada. Atualização dos artefatos vivos não invalida a prova.
+
+Delegação só atende T*s elegíveis e independentes. Cada entrega recebe resultado, aceite, dependências, paths exclusivos e comando de verificação. Use worktree/branch isolada ou ownership sem sobreposição; sem isolamento seguro, mantenha a execução sequencial. O coordenador é o único escritor de `plan.md`, `spec.md`, `implement.md`, `review.md` e do índice Git. A prova reportada por um agente não substitui a verificação do estado integrado.
 
 Em UI, a seleção é navegador integrado quando disponível, MCP Server `chrome-devtools` para snapshot, screenshot, DOM, estilos, console, rede e assets, e Playwright somente se já existir no repositório ou for solicitado. Com UI, o `design.md` aprovado do alvo é entrada do reconhecer, com tokens, motion e prova por tela. No Express, a implement segue só o recorte existente e alterado do design quando houver, sem exigir design ausente, sem apply de design, sem plan novo e sem reabrir tasks antigas. A prova registra rota, viewport, estado, ações e evidência; sem capacidade visual, a limitação impede marcar a validação visual.
 
 ## 6. Artefato, modos e handoff
 
-`implement.md` mantém uma seção por T*/R* com feito, marcado, prova, feedback, commit e pontos para review. Modo A executa exatamente uma task elegível, cria seu commit e para; modo B só existe quando o humano pede execução contínua e cria um commit por task. A mensagem e o hash do commit são registrados no resultado da execução e no chat, sem reabrir o artefato vivo depois do commit.
+`implement.md` mantém uma seção por T*/R* com feito, marcado, prova, feedback, commit e pontos para review; quando há delegação, registra o escopo e o retorno integrado. Modo A executa exatamente uma task elegível, cria seu commit e para. Modo B exige autorização explícita; pode delegar T*s independentes, recalcula a fila após cada conclusão e cria um commit por task. O coordenador serializa as marcações e operações no índice Git. A mensagem e o hash do commit são registrados no resultado da execução e no chat, sem reabrir o artefato vivo apenas para anexar o hash.
 
 Quando a fila da run termina, o handoff é `vibe-review`. Recomenda-se um novo chat focado por T* e outro para review. O plan e o implement vivos são a ponte; continuar no mesmo chat é escolha consciente.
 
@@ -64,12 +66,13 @@ Quando a fila da run termina, o handoff é `vibe-review`. Recomenda-se um novo c
 
 Falhas previstas usam `CODIGO: descrição`, incluindo `IMPLEMENT_SEM_ALVO`, `IMPLEMENT_SEM_PLAN`, `IMPLEMENT_ANALYZE_AUSENTE`, `IMPLEMENT_ANALYZE_RASCUNHO`, `IMPLEMENT_ANALYZE_BLOQUEADO`, `FASE_AUSENTE`, `MODO_INVALIDO` e `PHASES_INESPERADO`.
 
-Suítes: `docs/vibe-implement/tests/test-implement.py` e `docs/vibe-implement/tests/test-implement.sh`. Elas cobrem seleção, fila, phase/MVP, reexecução, preservação e paridade.
+Suítes: `docs/vibe-implement/tests/test-implement.py` e `docs/vibe-implement/tests/test-implement.sh`. Elas cobrem seleção, fila, phase/MVP, preservação, paridade, ordem de conclusão independente e contratos de delegação, ownership e prova final.
 
 ## 8. Limites
 
 - Sem teste verde executável, não marca `[x]`.
 - Não cria `todo.md`, `tasks.md` ou uma segunda trilha.
 - Não interpreta a prosa do plan para montar a fila.
+- Agentes delegados não escrevem artefatos vivos, não operam o índice Git e não criam commits.
 - Não publica decisões vigentes em `REGRAS.md`.
 - Código e artefatos vivos da task entram no commit path-scoped; relatório fica fora. Cada task verde gera commit sem push; o push só ocorre no fechamento aprovado da phase pela review.
