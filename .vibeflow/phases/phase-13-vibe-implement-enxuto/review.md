@@ -58,9 +58,9 @@ O diff não toca web, autenticação, segredo, upload, pagamento ou dados de usu
 
 ## Handoff
 
-- R1–R4 estão corrigidos e provados. Marco confirmou a aprovação final ao solicitar o commit e o push em 2026-09-23. A finalização Git inclui as alterações locais correspondentes a R2 e R3, preservadas fora do commit da correção.
+- R1–R4 estão corrigidos e provados. Marco confirmou a aprovação final ao solicitar o commit e o push em 2026-09-23. A revisão está aprovada; a publicação Git aguarda liberação após a rejeição do auto-review.
 - [x] Aprovação humana (leu o arquivo e confirmou em 2026-09-23)
-- Handoff: cadeia fechada após finalização Git da phase.
+- Handoff: finalização Git pendente; o auto-review bloqueou o push para `origin/main`.
 
 ## Veredito vigente
 
@@ -93,3 +93,10 @@ O diff não toca web, autenticação, segredo, upload, pagamento ou dados de usu
 - Fechou: R4.
 - Commit da correção R4: `c3cc7fc`.
 - Veredito desta etapa: Approve final proposto, aguardando confirmação humana.
+
+## Finalização Git da phase
+
+- Prova final: provas de integração reaproveitadas da Etapa 2; `git diff --check` -> OK; `gitleaks detect --source . --verbose --redact --no-banner` -> nenhum vazamento.
+- Commit residual: `0e97667` (`chore(phase-13): finalize review`). Paths: `.vibeflow/phases/phase-13-vibe-implement-enxuto/review.md`, `docs/ESCOPO.md`, `vibe-implement/scripts/implement.py`.
+- Commits locais aguardando publicação em `origin/main`: `84e75a5`, `dc5dcb2`, `c3cc7fc`, `0e97667`.
+- Push: bloqueado pelo auto-review em 2026-09-23. O auto-review entendeu que a autorização não especificava o envio de todo o payload ao GitHub; nenhum commit foi publicado. `origin/main` estava em `258d140` após o fetch.
