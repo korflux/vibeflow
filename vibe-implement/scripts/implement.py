@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Inventaria .vibeflow/phases e prepara phase-N-slug/implement.md."""
+"""Seleciona alvo e fila do plan sem criar artefato de execução."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ from typing import Any
 
 
 PHASE_RE = re.compile(r"^phase-(\d+)-([a-z0-9]+(?:-[a-z0-9]+)*)$")
-CHAIN_FILES = ("interview.md", "spec.md", "plan.md", "analyze.md", "implement.md", "review.md")
+CHAIN_FILES = ("interview.md", "spec.md", "plan.md", "analyze.md", "review.md")
 MAX_SLUG = 48
 REPARSE_POINT = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
 
@@ -172,22 +172,6 @@ def analyze_gate(path: Path) -> dict[str, Any]:
     return {"status": status, "veredito": verdict, "pronto": status == "aprovado" and verdict == "limpo"}
 
 
-# Maior n com plan e sem implement: primeira escrita desta skill na fila.
-def find_plan_pendente(existing: list[dict[str, Any]]) -> dict[str, Any] | None:
-    for item in reversed(existing):
-        if "plan.md" in item["files"] and "implement.md" not in item["files"]:
-            return item
-    return None
-
-
-# Maior n que já tem implement.md: vivo atualizável.
-def find_rascunho(existing: list[dict[str, Any]]) -> dict[str, Any] | None:
-    for item in reversed(existing):
-        if "implement.md" in item["files"]:
-            return item
-    return None
-
-
 # Maior n com plan.md: é a fila desta skill sem --dir.
 def find_alvo_com_plan(existing: list[dict[str, Any]]) -> dict[str, Any] | None:
     for item in reversed(existing):
@@ -196,16 +180,9 @@ def find_alvo_com_plan(existing: list[dict[str, Any]]) -> dict[str, Any] | None:
     return None
 
 
-# Destino preferido: fase com plan, senão implement avulso, senão criar.
-def resolve_alvo(existing: list[dict[str, Any]]) -> tuple[dict[str, Any] | None, str]:
-    with_plan = find_alvo_com_plan(existing)
-    if with_plan:
-        modo = "atualizar" if "implement.md" in with_plan["files"] else "reuse"
-        return with_plan, modo
-    draft = find_rascunho(existing)
-    if draft:
-        return draft, "atualizar"
-    return None, "criar"
+# Seleciona a fase com plan mais recente, sem depender de implement.md histórico.
+def resolve_alvo(existing: list[dict[str, Any]]) -> dict[str, Any] | None:
+    return find_alvo_com_plan(existing)
 
 
 # Quebra o plan em seções T* só pelos headings ### T{n}:; o resto da prosa não inicia tarefa.
@@ -315,9 +292,9 @@ def parse_plan_fila(text: str) -> dict[str, Any]:
     }
 
 
-# Projeta a fila do plan da alvo. Sem plan.md, a skill avulsa não recebe fila.
+# Projeta a fila do plan do alvo. Sem plan.md, a skill avulsa não recebe fila.
 def fila_from_alvo(repo: Path, alvo: dict[str, Any] | None) -> dict[str, Any] | None:
-    if not alvo or "plan.md" not in alvo["files"]:
+    if not alvo:
         return None
     body = read_text(repo / alvo["path"] / "plan.md")
     if body is None:
@@ -325,12 +302,12 @@ def fila_from_alvo(repo: Path, alvo: dict[str, Any] | None) -> dict[str, Any] | 
     return parse_plan_fila(body)
 
 
-# Destino: --dir se veio; senão o alvo do inventário.
+# Resolve --dir explícito ou seleciona a fase mais recente que possui plan.md.
 def resolve_alvo_com_dir(
     existing: list[dict[str, Any]],
     dir_arg: str | None,
     phases: Path,
-) -> tuple[dict[str, Any] | None, str]:
+) -> dict[str, Any] | None:
     if dir_arg:
         dest = phases / Path(dir_arg).name
         if is_reparse_point(dest) or not dest.is_dir() or not PHASE_RE.fullmatch(dest.name):
@@ -339,33 +316,23 @@ def resolve_alvo_com_dir(
             )
         found = next((item for item in existing if item["dir"] == dest.name), None)
         item = found if found is not None else phase_item(dest)
-        modo = "atualizar" if "implement.md" in item["files"] else "reuse"
-        return item, modo
+        return item
     return resolve_alvo(existing)
 
 
-# Cria o artefato vivo vazio somente quando ele ainda não existe, sem sobrescrever histórico.
-def prepare_live_file(dest_file: Path) -> bool:
-    if dest_file.is_symlink() or dest_file.exists():
-        if dest_file.is_symlink() or not dest_file.is_file():
-            raise RuntimeError(f"ARTEFATO_INESPERADO: {dest_file.name} não é um arquivo vivo.")
-        return False
-    try:
-        with dest_file.open("xb"):
-            pass
-    except FileExistsError:
-        if dest_file.is_file() and not dest_file.is_symlink():
-            return False
-        raise RuntimeError(f"ARTEFATO_INESPERADO: {dest_file.name} não é um arquivo vivo.")
-    return True
+# Expõe só identificadores do alvo, sem serializar o inventário de fases.
+def public_target(item: dict[str, Any] | None) -> dict[str, Any] | None:
+    if item is None:
+        return None
+    return {key: item[key] for key in ("kind", "dir", "n", "slug", "path") if key in item}
 
 
-# Serializa o inventário e a fila como JSON transitório, sem criar estado no workspace.
+# Serializa alvo, fila e avisos necessários para a execução imediata.
 def emit_report(payload: dict[str, Any]) -> None:
     print(json.dumps(payload, ensure_ascii=False, indent=2))
 
 
-# Inventaria o disco e opcionalmente prepara o artefato vivo implement.md.
+# Seleciona alvo e fila; Apply só cria uma phase quando há slug explícito.
 def run(args: argparse.Namespace) -> None:
     if args.mvp and (args.slug is not None or args.dir is not None):
         raise RuntimeError("MODO_INVALIDO: o alvo MVP não aceita --slug nem --dir.")
@@ -373,8 +340,6 @@ def run(args: argparse.Namespace) -> None:
     repo = repo_root(args.root)
     vf = repo / ".vibeflow"
     phases = vf / "phases"
-    actions: list[dict[str, str]] = []
-
     vf_state = vibeflow_state(vf)
     if vf_state == "ausente":
         raise RuntimeError("INIT_AUSENTE: não existe .vibeflow/. Rode /vibe-init antes.")
@@ -387,23 +352,17 @@ def run(args: argparse.Namespace) -> None:
     if ph_state == "ausente":
         phases.mkdir(parents=True)
         (phases / ".gitkeep").write_text("", encoding="utf-8")
-        actions.append({"op": "criar_phases", "alvo": ".vibeflow/phases"})
         ph_state = "ok"
 
     existing, warnings = list_phases(phases)
     next_n = (existing[-1]["n"] + 1) if existing else 1
-    pending = find_plan_pendente(existing)
-    draft = find_rascunho(existing)
-    alvo, modo_sugerido = resolve_alvo_com_dir(existing, args.dir, phases)
+    alvo = resolve_alvo_com_dir(existing, args.dir, phases)
     mvp = get_mvp(vf)
     if args.mvp and (mvp is None or "plan.md" not in mvp["files"]):
         raise RuntimeError("IMPLEMENT_SEM_PLAN: falta .vibeflow/mvp/plan.md.")
     if args.mvp:
         alvo = mvp
-        modo_sugerido = "atualizar" if "implement.md" in mvp["files"] else "reuse"
     gate = analyze_gate(vf / "mvp" / "analyze.md") if args.mvp else None
-    created: dict[str, Any] | None = None
-    modo: str | None = None
 
     if args.apply:
         if args.mvp:
@@ -413,22 +372,7 @@ def run(args: argparse.Namespace) -> None:
                 raise RuntimeError("IMPLEMENT_ANALYZE_RASCUNHO: analyze MVP não está aprovado.")
             if gate["veredito"] != "limpo":
                 raise RuntimeError("IMPLEMENT_ANALYZE_BLOQUEADO: analyze MVP não está limpo.")
-        dest_dir: Path
-        created_dir = False
-        if args.mvp:
-            dest_dir = vf / "mvp"
-            modo = modo_sugerido
-        elif args.dir:
-            dest_dir = phases / Path(args.dir).name
-            if is_reparse_point(dest_dir) or not dest_dir.is_dir() or not PHASE_RE.fullmatch(dest_dir.name):
-                raise RuntimeError(
-                    f"FASE_AUSENTE: .vibeflow/phases/{dest_dir.name} não é uma pasta de fase."
-                )
-            modo = "atualizar" if (dest_dir / "implement.md").is_file() else "reuse"
-        elif alvo:
-            dest_dir = repo / alvo["path"]
-            modo = modo_sugerido
-        else:
+        if not args.mvp and not args.dir and alvo is None:
             if not (args.slug or "").strip():
                 raise RuntimeError(
                     "IMPLEMENT_SEM_ALVO: sem fase alvo; passe --slug para abrir uma pasta nova."
@@ -440,53 +384,15 @@ def run(args: argparse.Namespace) -> None:
             if is_reparse_point(dest_dir) or dest_dir.exists():
                 raise RuntimeError(f"FASE_EXISTE: .vibeflow/phases/{dest_dir.name} já existe.")
             dest_dir.mkdir(parents=True)
-            created_dir = True
-            modo = "criar"
-            actions.append({"op": "criar_fase", "alvo": f".vibeflow/phases/{dest_dir.name}"})
-
-        dest_file = dest_dir / "implement.md"
-        rel = ".vibeflow/mvp" if args.mvp else f".vibeflow/phases/{dest_dir.name}"
-        try:
-            if prepare_live_file(dest_file):
-                actions.append({"op": "criar_arquivo", "alvo": f"{rel}/implement.md"})
-        except Exception:
-            if created_dir:
-                if not is_reparse_point(dest_dir) and dest_dir.exists() and not any(dest_dir.iterdir()):
-                    dest_dir.rmdir()
-            raise
-        if args.mvp:
-            mvp = get_mvp(vf)
-            alvo = mvp
-            modo_sugerido = "atualizar"
-            created = mvp
-        else:
-            existing, extra_warnings = list_phases(phases)
-            warnings.extend(extra_warnings)
-            next_n = (existing[-1]["n"] + 1) if existing else 1
-            pending = find_plan_pendente(existing)
-            draft = find_rascunho(existing)
-            alvo, modo_sugerido = resolve_alvo(existing)
-            created = next((item for item in existing if item["dir"] == dest_dir.name), None)
+            alvo = phase_item(dest_dir)
 
     payload = {
-        "root": str(repo),
-        "rota": "mvp" if args.mvp else "phase",
-        "vibeflow": vf_state,
-        "phases": ph_state,
-        "next_n": next_n,
-        "existing": existing,
-        "plan_pendente": pending,
-        "rascunho": draft,
-        "alvo": alvo,
-        "mvp": mvp,
-        "analyze_gate": gate,
-        "modo_sugerido": modo_sugerido,
-        "created": created,
-        "modo": modo,
-        "actions": actions,
-        "avisos": warnings,
+        "alvo": public_target(alvo),
         "fila": fila_from_alvo(repo, alvo),
+        "avisos": warnings,
     }
+    if args.mvp:
+        payload["analyze_gate"] = gate
     emit_report(payload)
 
 

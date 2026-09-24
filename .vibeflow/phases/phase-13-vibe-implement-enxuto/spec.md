@@ -96,17 +96,17 @@ Permitir que mudanças pequenas e claras terminem com pouco processo, enquanto m
 
 - [x] A1: pedido Express elegível funciona sem `.vibeflow/` e sem `vibe-init`, phase ou artefato novo; mudanças fora do limite são encaminhadas ao fluxo aplicável.
 - [x] A2: correção da validação humana permanece na phase atual e é registrada no plan/review existente, sem phase nova.
-- [ ] A3: novas execuções planejadas registram prova e paths no `plan.md`, não criam `implement.md`, e a review usa esse registro; históricos não são reescritos.
-- [ ] A4: o stdout de implement contém apenas o estado necessário à execução, sem inventário integral de phases.
+- [x] A3: novas execuções planejadas registram prova e paths no `plan.md`, não criam `implement.md`, e a review usa esse registro; históricos não são reescritos.
+- [x] A4: o stdout de implement contém apenas o estado necessário à execução, sem inventário integral de phases.
 - [ ] A5: a prova ocorre após edição de código/testes e é repetida apenas se falhar ou perder validade; escopo e risco determinam sua abrangência.
 - [ ] A6: checkpoint opcional permite retomar task incompleta conferindo estado e validade, sem repetir trabalho ainda válido.
 
 ### Critérios de sucesso
 
 - [x] C1: nenhuma trilha Express elegível abre fase ou exige inicialização VibeFlow.
-- [ ] C2: registro da execução não duplica a evidência de task que já pertence ao plan.
-- [ ] C3: review consegue localizar no plan a prova, os paths, os bloqueios e o status da T*.
-- [ ] C4: saída operacional cresce com a fila necessária e os avisos, não com o histórico inteiro de phases.
+- [x] C2: registro da execução não duplica a evidência de task que já pertence ao plan.
+- [x] C3: review consegue localizar no plan a prova, os paths, os bloqueios e o status da T*.
+- [x] C4: saída operacional cresce com a fila necessária e os avisos, não com o histórico inteiro de phases.
 - [x] C5: fluxo de alto risco mantém gates e evidência necessários mesmo após a redução de processo.
 
 ## Contratos e restrições necessárias

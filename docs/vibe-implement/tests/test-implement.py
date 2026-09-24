@@ -103,23 +103,22 @@ class PythonContracts(unittest.TestCase):
         self.assertIsNone(report)
 
     def test_creates_missing_phases(self) -> None:
+        """Mantém o stdout focado no alvo e cria apenas a estrutura phases ausente."""
         seed_vibeflow(self.repo)
         _, report = invoke(self.repo)
-        self.assertEqual("criar", report["modo_sugerido"])
+        self.assertEqual({"alvo", "fila", "avisos"}, set(report))
         self.assertIsNone(report["alvo"])
+        self.assertIsNone(report["fila"])
         self.assertTrue((self.repo / ".vibeflow" / "phases" / ".gitkeep").is_file())
-        self.assertIsNone(report["created"])
-        self.assertIsNone(report["modo"])
         self.assertNotIn("wip", report)
 
     def test_reuse_plan_folder_does_not_create_phase_two(self) -> None:
+        """Seleciona o plan existente sem expor ou criar um segundo artefato."""
         vf = seed_vibeflow(self.repo)
         seed_phase(vf, "phase-1-a", "spec.md", "plan.md")
         _, report = invoke(self.repo)
         self.assertEqual("phase-1-a", report["alvo"]["dir"])
-        self.assertEqual("reuse", report["modo_sugerido"])
         self.assertFalse((vf / "phases" / "phase-2-a").exists())
-        self.assertIsNone(report["created"])
 
     def test_alvo_is_highest_n_with_plan(self) -> None:
         vf = seed_vibeflow(self.repo)
@@ -137,12 +136,12 @@ class PythonContracts(unittest.TestCase):
         self.assertEqual("phase-1-com-plan", report["alvo"]["dir"])
 
     def test_dir_without_plan_is_alvo(self) -> None:
+        """Aceita override explícito mesmo quando a phase ainda não tem plan."""
         vf = seed_vibeflow(self.repo)
         seed_phase(vf, "phase-1-so-spec", "spec.md")
         _, report = invoke(self.repo, "--dir", "phase-1-so-spec")
         self.assertEqual("phase-1-so-spec", report["alvo"]["dir"])
-        self.assertEqual("reuse", report["modo_sugerido"])
-        self.assertNotIn("plan.md", report["alvo"]["files"])
+        self.assertIsNone(report["fila"])
 
     def test_dir_missing_or_invalid(self) -> None:
         seed_vibeflow(self.repo)
@@ -153,14 +152,23 @@ class PythonContracts(unittest.TestCase):
         self.assertNotEqual(0, process.returncode)
         self.assertIn("FASE_AUSENTE", process.stderr)
 
-    def test_review_and_implement_listed_in_files(self) -> None:
+    def test_historical_implement_does_not_select_a_target(self) -> None:
+        """Arquivo histórico isolado não substitui o plan como fonte do alvo."""
         vf = seed_vibeflow(self.repo)
-        seed_phase(vf, "phase-1-com-review", "plan.md", "review.md", "implement.md")
+        seed_phase(vf, "phase-9-historico", "implement.md")
         _, report = invoke(self.repo)
-        self.assertIn("review.md", report["alvo"]["files"])
-        self.assertIn("plan.md", report["alvo"]["files"])
-        self.assertIn("implement.md", report["alvo"]["files"])
-        self.assertEqual("atualizar", report["modo_sugerido"])
+        self.assertIsNone(report["alvo"])
+        self.assertIsNone(report["fila"])
+
+    def test_stdout_omits_full_phase_inventory(self) -> None:
+        """Emite apenas alvo, fila e avisos, mesmo com muitas phases no repositório."""
+        vf = seed_vibeflow(self.repo)
+        for number in range(1, 21):
+            seed_phase(vf, f"phase-{number}-historico", "plan.md")
+        process, report = invoke(self.repo)
+        self.assertEqual({"alvo", "fila", "avisos"}, set(report))
+        self.assertEqual("phase-20-historico", report["alvo"]["dir"])
+        self.assertNotIn("phase-1-historico", process.stdout)
 
     # Confirma que o JSON transitório não cria relatório nem altera o gitignore de init.
     def test_stdout_report_does_not_mutate_workspace(self) -> None:
@@ -171,37 +179,36 @@ class PythonContracts(unittest.TestCase):
         self.assertEqual(original, (vf / ".gitignore").read_bytes())
         self.assertEqual([], list(vf.glob("*-report.json")))
 
-    def test_apply_prepares_missing_live_file(self) -> None:
+    def test_apply_does_not_create_implement_file(self) -> None:
+        """Apply reaproveita o plan sem criar implement.md para novas execuções."""
         vf = seed_vibeflow(self.repo)
         seed_phase(vf, "phase-1-a", "plan.md")
         _, report = invoke(self.repo, "--apply")
         dest = vf / "phases" / "phase-1-a" / "implement.md"
-        self.assertEqual(b"", dest.read_bytes())
-        self.assertEqual("reuse", report["modo"])
-        self.assertEqual([{"op": "criar_arquivo", "alvo": ".vibeflow/phases/phase-1-a/implement.md"}], report["actions"])
+        self.assertFalse(dest.exists())
+        self.assertEqual("phase-1-a", report["alvo"]["dir"])
         self.assertNotIn("wip", report)
 
     def test_apply_reuses_plan_folder(self) -> None:
+        """Apply mantém o alvo na phase existente e deixa o plan como único registro."""
         vf = seed_vibeflow(self.repo)
         seed_phase(vf, "phase-1-a", "spec.md", "plan.md")
         _, report = invoke(self.repo, "--apply")
         dest = vf / "phases" / "phase-1-a" / "implement.md"
-        self.assertTrue(dest.is_file())
-        self.assertEqual(b"", dest.read_bytes())
+        self.assertFalse(dest.exists())
         self.assertFalse((vf / "phases" / "phase-2-a").exists())
-        self.assertEqual("reuse", report["modo"])
-        self.assertIn("implement.md", report["alvo"]["files"])
+        self.assertEqual("phase-1-a", report["alvo"]["dir"])
         self.assertNotIn("wip", report)
 
-    def test_apply_updates_existing_implement(self) -> None:
+    def test_apply_preserves_existing_historical_implement(self) -> None:
+        """Apply conserva byte a byte um implement.md legado sem depender dele."""
         vf = seed_vibeflow(self.repo)
         seed_phase(vf, "phase-1-a", "plan.md", "implement.md")
         original = b"# fatia 1\n\x00historico\n"
         (vf / "phases" / "phase-1-a" / "implement.md").write_bytes(original)
         _, report = invoke(self.repo, "--apply")
         self.assertEqual(original, (vf / "phases" / "phase-1-a" / "implement.md").read_bytes())
-        self.assertEqual("atualizar", report["modo"])
-        self.assertEqual([], report["actions"])
+        self.assertEqual("phase-1-a", report["alvo"]["dir"])
         self.assertNotIn("wip", report)
 
     def test_apply_without_alvo_or_slug(self) -> None:
@@ -211,13 +218,13 @@ class PythonContracts(unittest.TestCase):
         self.assertIn("IMPLEMENT_SEM_ALVO", process.stderr)
 
     def test_slug_creates_avulsa(self) -> None:
+        """Slug explícito cria somente a pasta alvo, sem arquivo de execução."""
         vf = seed_vibeflow(self.repo)
         _, report = invoke(self.repo, "--apply", "--slug", "hotfix-cor")
-        dest = vf / "phases" / "phase-1-hotfix-cor" / "implement.md"
-        self.assertTrue(dest.is_file())
-        self.assertEqual(b"", dest.read_bytes())
-        self.assertEqual("criar", report["modo"])
-        self.assertEqual(2, report["next_n"])
+        dest = vf / "phases" / "phase-1-hotfix-cor"
+        self.assertTrue(dest.is_dir())
+        self.assertFalse((dest / "implement.md").exists())
+        self.assertEqual("phase-1-hotfix-cor", report["alvo"]["dir"])
         self.assertNotIn("wip", report)
 
     def test_phases_file_is_unexpected(self) -> None:
@@ -320,12 +327,13 @@ class PythonContracts(unittest.TestCase):
         self.assertEqual([], fila["avisos"])
 
     def test_mvp_fila_uses_only_special_plan(self) -> None:
+        """Seleciona somente a fila do baseline MVP, isolada das phases numeradas."""
         vf = seed_vibeflow(self.repo)
         phase = seed_phase(vf, "phase-9-outra", "plan.md")
         write_plan(phase, plan_tasks(("T1", " ", "nenhuma")))
         seed_mvp(vf, plan_tasks(("T7", " ", "nenhuma")))
         _, report = invoke(self.repo, "--mvp")
-        self.assertEqual("mvp", report["rota"])
+        self.assertEqual("mvp", report["alvo"]["kind"])
         self.assertEqual(["T7"], report["fila"]["elegiveis"])
         self.assertTrue(report["analyze_gate"]["pronto"])
 
@@ -345,18 +353,17 @@ class PythonContracts(unittest.TestCase):
                 self.assertIn(expected, process.stderr)
                 self.assertFalse((vf / "mvp" / "implement.md").exists())
 
-    def test_mvp_apply_preserves_existing_live_file(self) -> None:
+    def test_mvp_apply_preserves_existing_historical_implement(self) -> None:
+        """Apply no MVP preserva o arquivo legado e não exige um novo implement.md."""
         vf = seed_vibeflow(self.repo)
         mvp = seed_mvp(vf, plan_tasks(("T1", " ", "nenhuma")))
-        _, report = invoke(self.repo, "--apply", "--mvp")
-        self.assertEqual(b"", (mvp / "implement.md").read_bytes())
-        self.assertEqual("mvp", report["created"]["kind"])
         original = b"# Fatia T1\n\x00\n## Fatia T2\n"
         (mvp / "implement.md").write_bytes(original)
-        _, second_report = invoke(self.repo, "--apply", "--mvp")
+        _, report = invoke(self.repo, "--apply", "--mvp")
         self.assertEqual(original, (mvp / "implement.md").read_bytes())
-        self.assertEqual([], second_report["actions"])
-        self.assertNotIn("wip", second_report)
+        self.assertEqual("mvp", report["alvo"]["kind"])
+        self.assertTrue(report["analyze_gate"]["pronto"])
+        self.assertNotIn("wip", report)
         self.assertEqual([], [item.name for item in (vf / "phases").iterdir() if item.is_dir()])
 
     def test_mvp_rejects_phase_selectors(self) -> None:
@@ -491,9 +498,12 @@ class SkillContracts(unittest.TestCase):
 
     # Garante que a skill consome a fila do JSON transitório no stdout.
     def test_skill_reads_fila_from_stdout_json(self) -> None:
+        """Mantém a skill alinhada ao JSON compacto de alvo, fila e avisos."""
         text = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("stdout", text)
         self.assertIn("fila.elegiveis", text)
+        self.assertIn("restrito a `alvo`, `fila` e `avisos`", text)
+        self.assertIn("não criam `implement.md`", text)
         self.assertNotIn(".vibeflow/implement-report.json", text)
         self.assertIn("2+ elegíveis", text)
 
@@ -512,17 +522,13 @@ class SkillContracts(unittest.TestCase):
     def test_skill_bounds_delegation_and_coordinator_ownership(self) -> None:
         """Trava entrega delimitada e exclusividade do coordenador sobre estado compartilhado."""
         skill = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
-        template = (SKILL_DIR / "templates" / "implement.md").read_text(encoding="utf-8")
         self.assertIn("Só após o humano aprovar a execução paralela", skill)
         self.assertIn("use delegação nativa se o host oferecer", skill)
         self.assertIn("resultado, aceite, dependências, paths exclusivos e comando de verificação", skill)
-        self.assertIn("Agentes não alteram `plan.md`, `spec.md`, `implement.md` ou `review.md`", skill)
+        self.assertIn("Agentes não alteram os artefatos vivos `plan.md`, `spec.md` ou `review.md`", skill)
         self.assertIn("somente o coordenador altera artefatos vivos e o índice Git", skill)
         self.assertIn("worktree/branch isolada ou ownership sem sobreposição", skill)
         self.assertIn("paths integrados e provados pela task", skill)
-        self.assertIn("Escopo delegado", template)
-        self.assertIn("Retorno integrado", template)
-        self.assertIn("a prova final é a do estado integrado", template)
 
     def test_skill_repeats_proof_only_after_failure_or_code_test_edit(self) -> None:
         """Garante uma prova final por estado e reexecução somente quando ela perde validade."""
@@ -554,7 +560,7 @@ def powershell7() -> str | None:
 
 @unittest.skipUnless(powershell7(), "PowerShell 7 indisponível")
 class PowershellParity(unittest.TestCase):
-    """Confere que o apply reuse do PowerShell grava o mesmo path."""
+    """Confere paridade do alvo, da fila e da preservação entre os motores."""
 
     def setUp(self) -> None:
         self.repo = Path.cwd() / f".vibe-implement-ps-{uuid.uuid4().hex}"
@@ -563,8 +569,9 @@ class PowershellParity(unittest.TestCase):
     def tearDown(self) -> None:
         shutil.rmtree(self.repo, ignore_errors=True)
 
-    # Confirma que o motor PowerShell entrega o alvo no stdout sem persistir relatório.
+    # Confirma que o PowerShell entrega o alvo sem criar implement.md ou relatório.
     def test_apply_reuse_same_path(self) -> None:
+        """Apply mantém o destino existente e não prepara um registro duplicado."""
         vf = seed_vibeflow(self.repo)
         seed_phase(vf, "phase-1-lock-bloco", "spec.md", "plan.md")
         process = subprocess.run(
@@ -575,15 +582,16 @@ class PowershellParity(unittest.TestCase):
         )
         self.assertEqual(0, process.returncode, process.stderr)
         dest = vf / "phases" / "phase-1-lock-bloco" / "implement.md"
-        self.assertTrue(dest.is_file())
-        self.assertEqual(b"", dest.read_bytes())
+        self.assertFalse(dest.exists())
         self.assertTrue((vf / "phases" / "phase-1-lock-bloco" / "plan.md").is_file())
         report = json.loads(process.stdout)
         self.assertFalse((vf / "implement-report.json").exists())
+        self.assertEqual({"alvo", "fila", "avisos"}, set(report))
         self.assertNotIn("wip", report)
 
     # Confirma que o motor PowerShell preserva o conteúdo do implement já existente.
     def test_apply_preserves_existing_file(self) -> None:
+        """Apply não altera bytes de um implement.md histórico já presente."""
         vf = seed_vibeflow(self.repo)
         phase = seed_phase(vf, "phase-1-lock-bloco", "spec.md", "plan.md", "implement.md")
         original = b"# implement\n\x00historico\n"
@@ -598,14 +606,17 @@ class PowershellParity(unittest.TestCase):
         self.assertEqual(original, (phase / "implement.md").read_bytes())
         report = json.loads(process.stdout)
         self.assertFalse((vf / "implement-report.json").exists())
-        self.assertEqual([], report["actions"])
+        self.assertEqual("phase-1-lock-bloco", report["alvo"]["dir"])
         self.assertNotIn("wip", report)
 
     # Compara fila Python e PowerShell pela saída transitória em JSON.
     def test_fila_parity_dep_blocks(self) -> None:
+        """Mantém fila equivalente e stdout compacto nos dois motores."""
         vf = seed_vibeflow(self.repo)
         phase = seed_phase(vf, "phase-1-a", "plan.md")
         write_plan(phase, plan_tasks(("T1", " ", "nenhuma"), ("T2", " ", "T1")))
+        for number in range(2, 21):
+            seed_phase(vf, f"phase-{number}-historico", "spec.md")
         _, py_report = invoke(self.repo)
         process = subprocess.run(
             [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo)],
@@ -616,6 +627,10 @@ class PowershellParity(unittest.TestCase):
         self.assertEqual(0, process.returncode, process.stderr)
         ps_report = json.loads(process.stdout)
         self.assertFalse((vf / "implement-report.json").exists())
+        self.assertEqual({"alvo", "fila", "avisos"}, set(py_report))
+        self.assertEqual({"alvo", "fila", "avisos"}, set(ps_report))
+        self.assertNotIn("phase-20-historico", process.stdout)
+        self.assertEqual(py_report["alvo"], ps_report["alvo"])
         self.assertEqual(py_report["fila"]["elegiveis"], ps_report["fila"]["elegiveis"])
         self.assertEqual(py_report["fila"]["bloqueadas"], ps_report["fila"]["bloqueadas"])
         self.assertEqual(["T1"], ps_report["fila"]["elegiveis"])
@@ -623,6 +638,7 @@ class PowershellParity(unittest.TestCase):
 
     # Confirma que o gate MVP e a fila chegam no stdout sem relatório persistido.
     def test_mvp_apply_same_path_and_gate(self) -> None:
+        """Apply no MVP mantém o gate e a fila sem criar implement.md."""
         vf = seed_vibeflow(self.repo)
         mvp = seed_mvp(vf, plan_tasks(("T1", " ", "nenhuma")))
         process = subprocess.run(
@@ -632,9 +648,11 @@ class PowershellParity(unittest.TestCase):
             check=False,
         )
         self.assertEqual(0, process.returncode, process.stderr)
-        self.assertEqual(b"", (mvp / "implement.md").read_bytes())
+        self.assertFalse((mvp / "implement.md").exists())
         report = json.loads(process.stdout)
         self.assertFalse((vf / "implement-report.json").exists())
+        self.assertEqual("mvp", report["alvo"]["kind"])
+        self.assertEqual({"alvo", "fila", "avisos", "analyze_gate"}, set(report))
         self.assertTrue(report["analyze_gate"]["pronto"])
         self.assertEqual(["T1"], report["fila"]["elegiveis"])
         self.assertNotIn("wip", report)

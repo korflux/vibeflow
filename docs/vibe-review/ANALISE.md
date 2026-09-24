@@ -18,7 +18,7 @@ diff + artefatos da cadeia
   → review final: integração julgada, Approve confirmado, commit residual e push final da phase
 ```
 
-A IA começa pela pergunta de auditoria e pelos T*/diff relevantes. Usa `rg --files` e `rg -n` para localizar paths, símbolos, testes e referências aplicáveis, abrindo somente as dependências do fluxo. O histórico do chat não substitui a prova no disco.
+A IA começa pela pergunta de auditoria e pelos T*/diff relevantes. Usa `rg --files` e `rg -n` para localizar paths, símbolos, testes e referências aplicáveis, abrindo somente as dependências do fluxo. O status, as dependências/bloqueios, os paths e as provas de cada task ficam no `plan.md`, que é conferido contra o diff integrado. `implement.md` histórico não é requisito. O histórico do chat não substitui a prova no disco.
 
 ## Escrita direta e etapas
 
@@ -61,4 +61,4 @@ Review recomenda novo chat, separado da implementação, para avaliar o resultad
 
 ## Impacto
 
-Review e implement compartilham o mesmo histórico: a review registra R*, a implementação prova o remédio e a etapa seguinte fecha o item. Checkpoints preservam o marco sem simular conclusão de feature; a etapa final valida a integração com provas proporcionais. A troca de chat não perde o julgamento porque o arquivo vivo é acumulativo.
+O `plan.md` mantém a trilha executável das T*, enquanto `review.md` mantém os R*, etapas e vereditos. Implement prova os remédios no plan e a review confere os paths no diff antes de fechar o item. Checkpoints preservam o marco sem simular conclusão de feature; a etapa final valida a integração com provas proporcionais. A troca de chat não perde o julgamento porque os registros vivos permanecem no disco.

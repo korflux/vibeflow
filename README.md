@@ -17,15 +17,15 @@ Cada skill é um pacote instalável (`vibe-init/`, `vibe-interview/`, …) com `
 .vibeflow/phases/phase-N-slug/spec.md
 .vibeflow/phases/phase-N-slug/plan.md
 .vibeflow/phases/phase-N-slug/analyze.md
-.vibeflow/phases/phase-N-slug/implement.md
 .vibeflow/phases/phase-N-slug/review.md
+# implement.md pode existir como histórico, mas não é criado por novas execuções
 AGENTS.md  →  .vibeflow/REGRAS.md           symlink
 CLAUDE.md  →  .vibeflow/REGRAS.md           symlink
 ```
 
 `n` e o slug das phases saem do script, não da IA. Projeto novo classificado como MVP usa uma única `.vibeflow/mvp/`, sem número nem slug, e percorre a rota max completa. Skills seguintes do mesmo pedido gravam na mesma pasta, outro arquivo. Nenhuma skill dispara a próxima: o handoff é uma linha no artefato.
 
-O `--apply` das skills de artefato executa os gates mecânicos e prepara o arquivo vivo somente quando ele ainda não existe. A IA escreve e atualiza a prosa diretamente em `interview.md`, `spec.md`, `plan.md`, `analyze.md`, `implement.md` e `review.md`; o conteúdo existente é preservado.
+O `--apply` das skills de artefato executa os gates mecânicos e prepara o arquivo vivo somente quando ele ainda não existe. A execução de `vibe-implement` registra status, paths e prova sob a T* no `plan.md`, sem criar `implement.md`; arquivos históricos são preservados. A IA escreve e atualiza a prosa diretamente em `interview.md`, `spec.md`, `plan.md`, `analyze.md` e `review.md`.
 
 Escopo do produto: [`docs/ESCOPO.md`](docs/ESCOPO.md). Contrato de cada skill: `docs/vibe-<nome>/ARQUITETURA.md`. CI: [`.github/workflows/contrato.yml`](.github/workflows/contrato.yml).
 
@@ -171,7 +171,7 @@ Efeito prático: as regras do projeto ficam numa fonte (`.vibeflow/REGRAS.md`), 
 | [`vibe-design`](vibe-design/SKILL.md) | `/vibe-design` | Desenha a apresentação com dois modos de entrada e três usos, sem código nem imagem final | `phase-N-slug/design.md` |
 | [`vibe-plan`](vibe-plan/SKILL.md) | `/vibe-plan` | Fatia a spec em T* verificáveis e reutiliza provas por capacidade quando cobrem a entrega | `phase-N-slug/plan.md` |
 | [`vibe-analyze`](vibe-analyze/SKILL.md) | `/vibe-analyze` | Cruza interview, spec e plan da mesma fase. Corrige lacunas óbvias em `spec.md` e `plan.md`; grava o certificado no vivo | `phase-N-slug/analyze.md` |
-| [`vibe-implement`](vibe-implement/SKILL.md) | `/vibe-implement` | Executa a T* elegível, prova, marca `[x]` e cria o commit isolado da task | `phase-N-slug/implement.md` |
+| [`vibe-implement`](vibe-implement/SKILL.md) | `/vibe-implement` | Executa a T* elegível, registra prova e paths no plan, marca `[x]` e cria o commit isolado da task | `phase-N-slug/plan.md` |
 | [`vibe-review`](vibe-review/SKILL.md) | `/vibe-review` | Julga o patch, conduz correções e faz o commit/push final após aprovação | `phase-N-slug/review.md` |
 
 Arquitetura, análise e testes de contrato de cada skill ficam em `docs/vibe-<nome>/` e **não** entram no pacote instalável.

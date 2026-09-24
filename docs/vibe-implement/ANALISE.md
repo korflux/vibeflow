@@ -2,19 +2,19 @@
 
 ## Problema
 
-A implementação precisava executar uma fila verificável sem perder histórico quando a execução mudasse de chat. O contrato anterior tratava o apply como transporte de um documento acumulativo; isso duplicava responsabilidade e permitia que o arquivo vivo ficasse desatualizado.
+A implementação precisava executar uma fila verificável sem perder histórico quando a execução mudasse de chat. O plan já continha tasks e dependências, então um segundo registro acumulativo duplicava status, paths e provas e podia divergir da fila.
 
 ## Decisão de desenho
 
 ```text
-relatório → fila.elegiveis
-  → apply garante implement.md
+JSON compacto → alvo, fila.elegiveis e avisos
+  → apply valida o alvo sem criar artefato de execução
   → investigação dirigida da T* e do fluxo real
   → execução sequencial ou delegação isolada por capacidade do host
   → integração pelo coordenador e simplificação
   → prova final no estado integrado, com repetição somente após falha ou edição de código/teste
-  → IA registra a fatia diretamente no vivo
-  → plan/spec/review recebem somente marcações provadas
+  → IA registra status, paths, prova e bloqueios sob a T* no plan
+  → spec/review recebem somente marcações provadas
   → staging explícito e commit da T* sem push
   → handoff vibe-review ou próxima T*
 ```
@@ -25,7 +25,7 @@ O parser continua deliberadamente pequeno. A ordem sai do plan, as dependências
 
 Delegação é opcional e depende de capacidade nativa do host. O coordenador confere elegibilidade e independência, entrega a cada agente um resultado, aceite, dependências, paths exclusivos e comando de verificação, e integra os retornos. Sem isolamento por worktree/branch ou ownership sem sobreposição, a execução continua sequencial.
 
-Só o coordenador altera `plan.md`, `spec.md`, `implement.md` e `review.md`, opera o índice Git, decide os paths do commit e registra a conclusão. Um agente retorna paths, resumo do diff, prova executada e pendências. Essa prova é evidência auxiliar; a task só fecha depois da verificação do estado integrado e simplificado. A fila é recalculada após cada task concluída, então uma dependente só se torna elegível depois que suas dependências foram provadas e registradas.
+Só o coordenador altera `plan.md`, `spec.md` e `review.md`, opera o índice Git, decide os paths do commit e registra a conclusão. Um agente retorna paths, resumo do diff, prova executada e pendências. Essa prova é evidência auxiliar; a task só fecha depois da verificação do estado integrado e simplificado. A fila é recalculada após cada task concluída, então uma dependente só se torna elegível depois que suas dependências foram provadas e registradas.
 
 ## Investigação e prova
 
@@ -35,13 +35,13 @@ Para UI, o contrato escolhe navegador integrado, depois MCP Chrome DevTools, dep
 
 ## Escrita direta
 
-O motor prepara um `implement.md` vazio quando necessário e preserva um arquivo já existente. A IA acrescenta uma seção por fatia diretamente no vivo, com prova, feedback e handoff. O teste verde é condição para marcar `[x]`; a persistência da trilha não depende de um segundo arquivo. Atualizar esses artefatos depois da prova não exige outro teste, porque não muda o código ou o teste validado.
+O apply valida o alvo e não cria `implement.md`. Depois da prova verde, a IA registra status, comando/resultado da prova, paths e bloqueios diretamente sob a T* no plan. O teste verde é condição para marcar `[x]`; atualizar os artefatos depois da prova não exige outro teste porque não muda o código ou o teste validado.
 
-Essa decisão reduz cópia e estados concorrentes. A limitação é que a IA precisa manter o histórico ao editar o vivo; o template e a revisão devem conferir essa continuidade.
+Arquivos `implement.md` de execuções anteriores permanecem byte a byte intactos, mas não entram na seleção do alvo nem são necessários para review. Isso remove uma fonte duplicada sem migrar ou apagar histórico.
 
 ## Chat e modos
 
-Implement recomenda um chat por T* na execução em sequência e um novo chat para review. Se o plan apontar um grupo independente, o agente mostra as tasks e pergunta antes de paralelizá-las. Com autorização, um chat coordenador conduz apenas aquele grupo, com isolamento, prova e commit próprios por task. A recomendação de chat não bloqueia a preferência do humano; o plan e o implement carregam o contexto verificável.
+Implement recomenda um chat por T* na execução em sequência e um novo chat para review. Se o plan apontar um grupo independente, o agente mostra as tasks e pergunta antes de paralelizá-las. Com autorização, um chat coordenador conduz apenas aquele grupo, com isolamento, prova e commit próprios por task. A recomendação de chat não bloqueia a preferência do humano; o plan e o diff carregam o contexto verificável.
 
 ## MVP
 
@@ -52,11 +52,11 @@ O gate de analyze continua separado para a rota max. A existência de plan não 
 | Corte | Motivo |
 |---|---|
 | Documento de tasks paralelo | A fila já está no plan. |
-| Cópia acumulativa pelo script | O vivo é editado diretamente pela IA. |
+| Documento acumulativo de implementação | O plan já é a fila e o registro durável da execução. |
 | Teste visual silencioso | Sem evidência renderizada, a validação não fecha. |
 | Push por task | Mantém o remoto estável durante a implementação; o push fica para a phase aprovada. |
 | Instalação de navegador | Ferramenta nova só entra por necessidade real ou pedido. |
 
 ## Impacto
 
-A próxima review lê `implement.md`, o plan marcado e as provas no mesmo alvo. A troca de chat deixa de ser uma perda de contexto porque o disco mantém a trilha completa.
+A próxima review lê status, dependências/bloqueios, paths e provas no plan e confere tudo contra o diff integrado. A troca de chat deixa de ser uma perda de contexto porque o disco mantém uma trilha única e verificável.

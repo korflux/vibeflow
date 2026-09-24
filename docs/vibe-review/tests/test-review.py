@@ -71,15 +71,22 @@ class PythonContracts(unittest.TestCase):
         self.assertTrue((self.repo / ".vibeflow" / "phases" / ".gitkeep").is_file())
 
     def test_reuse_plan_folder(self) -> None:
+        """Aplica review a uma phase com provas no plan e sem implement.md novo."""
         vf = seed_vibeflow(self.repo)
         phase = vf / "phases" / "phase-1-a"
         phase.mkdir(parents=True)
-        (phase / "plan.md").write_text("plan\n", encoding="utf-8")
+        (phase / "plan.md").write_text(
+            "### T1: fixture\n\n- [x] T1 concluída\n- **Deps:** nenhuma\n"
+            "- **Verificação:** `python -m unittest`\n- **Prova:** passou\n"
+            "- **Arquivos:** `src/app.py`\n",
+            encoding="utf-8",
+        )
         _, report = invoke(self.repo, "--apply")
         dest = phase / "review.md"
         self.assertTrue(dest.is_file())
         self.assertEqual(b"", dest.read_bytes())
         self.assertTrue((phase / "plan.md").is_file())
+        self.assertFalse((phase / "implement.md").exists())
         self.assertFalse((vf / "phases" / "phase-2-a").exists())
         self.assertEqual("reuse", report["modo"])
         self.assertNotIn("wip", report)
@@ -330,6 +337,17 @@ class SkillContracts(unittest.TestCase):
         self.assertIn("Inspeção Visual e Interface", skill)
         self.assertIn("Simplificação e Qualidade de Código", skill)
         self.assertIn("chrome-devtools", skill)
+
+    # Garante que a review encontra a prova de implementação no registro único do plan.
+    def test_review_uses_plan_as_execution_record(self) -> None:
+        """Exige status, dependências, paths e provas no plan sem depender do histórico legado."""
+        skill = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("Use o `plan.md` como registro das execuções", skill)
+        self.assertIn("status da T*", skill)
+        self.assertIn("`Deps` e bloqueios", skill)
+        self.assertIn("`Arquivos`", skill)
+        self.assertIn("`Prova`/`Verificação`", skill)
+        self.assertIn("`implement.md` histórico não é necessário", skill)
 
     # Garante que checkpoint e review final não compartilhem o gate de conclusão da phase.
     def test_checkpoint_and_final_review_have_separate_gates(self) -> None:

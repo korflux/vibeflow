@@ -23,7 +23,7 @@ A investigação começa pela pergunta de auditoria e pelo T*/diff que precisa s
    - Windows: `pwsh "<skill>/scripts/review.ps1"`
    - Unix: `bash "<skill>/scripts/review.sh"` (Python 3, senão pwsh 7)
    - Alvo MVP: acrescente `-Mvp` ou `--mvp`.
-3. Leia o JSON operacional emitido no stdout pelo comando acima. Use `rg --files` e `rg -n` para localizar o alvo, o que `files` listar, `plan.md` com as provas, `spec.md`, `analyze.md` se houver, `REGRAS.md` e o diff apontado pelo humano ou da sessão. Abra somente os paths que sustentam o veredito; não leia a árvore inteira.
+3. Leia o JSON operacional emitido no stdout pelo comando acima. Use `rg --files` e `rg -n` para localizar o alvo, o que `files` listar, `plan.md` com status, dependências, bloqueios, paths e provas de cada T*, `spec.md`, `analyze.md` se houver, `REGRAS.md` e o diff apontado pelo humano ou da sessão. Abra somente os paths que sustentam o veredito; não leia a árvore inteira.
 
 `INIT_AUSENTE` exige init. `REVIEW_SEM_ALVO`, `REVIEW_CADEIA_INCOMPLETA`, `MVP_INESPERADO`, `MODO_INVALIDO`, `FASE_AUSENTE` e `SLUG_INVALIDO` não são contornados.
 
@@ -79,7 +79,7 @@ A review é um processo cético e investigativo. Não confie cegamente em checkb
 
 ### Selecionar e executar provas
 
-1. Confira no `implement.md` as provas registradas por T* e compare os paths cobertos com o estado integrado. Reaproveite prova verde quando não houve edição posterior nos paths cobertos e ela continua relevante para o resultado atual.
+1. Use o `plan.md` como registro das execuções: confira o status da T*, `Deps` e bloqueios, `Arquivos` e `Prova`/`Verificação`. Compare os paths cobertos com o estado integrado e reaproveite prova verde quando não houve edição posterior e ela continua relevante. `implement.md` histórico não é necessário para a review.
 2. Execute somente a menor prova que falta para julgar o marco ou a integração. Reexecute uma prova quando estiver ausente, falhou, ficou desatualizada por edição posterior, não cobre a integração entre tasks, ou quando um risco alterado exigir cobertura adicional.
 3. Não rode automaticamente a matriz de comandos de cada T*. Na review final, prefira uma verificação agregada existente quando ela comprovar a integração; rode o Smoke Test somente quando a entrada real tiver mudado, sua prova estiver ausente/desatualizada ou for necessária para cobrir o fluxo integrado.
 4. Registre em cada etapa as provas reaproveitadas, os comandos executados e o motivo. Se uma prova necessária falhar, abra `R*` `Required` com comando e remédio; não aprove silenciosamente.

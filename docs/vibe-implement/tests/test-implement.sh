@@ -31,7 +31,7 @@ assert "$( [ "$last_rc" -eq 0 ] && [ "$alvo" = phase-1-so-spec ] && [ ! -e "$s/.
   "2-dir-sem-plan" "rc=$last_rc alvo=$alvo err=$(cat "$last_err")"
 rm -rf "$s"
 
-# 3. --apply prepara o arquivo vivo ausente sem criar WIP.
+# 3. --apply reaproveita o plan sem criar implement.md.
 s=$(new_sandbox)
 seed_vibeflow "$s"
 mkdir -p "$s/.vibeflow/phases/phase-1-a"
@@ -39,11 +39,11 @@ printf 'p\n' >"$s/.vibeflow/phases/phase-1-a/plan.md"
 root=$(native_root "$s")
 run_sh bash "$LAUNCHER" --root "$root" --apply
 dest="$s/.vibeflow/phases/phase-1-a/implement.md"
-assert "$( [ "$last_rc" -eq 0 ] && [ -f "$dest" ] && [ ! -s "$dest" ] && echo 1 || echo 0 )" \
-  "3-apply-vivo-ausente" "rc=$last_rc dest=$dest err=$(cat "$last_err")"
+assert "$( [ "$last_rc" -eq 0 ] && [ ! -e "$dest" ] && echo 1 || echo 0 )" \
+  "3-apply-sem-implement" "rc=$last_rc dest=$dest err=$(cat "$last_err")"
 rm -rf "$s"
 
-# 4. Reexecução preserva o conteúdo do implement vivo.
+# 4. Reexecução preserva byte a byte o implement histórico.
 s=$(new_sandbox)
 seed_vibeflow "$s"
 mkdir -p "$s/.vibeflow/phases/phase-1-a"
@@ -56,17 +56,17 @@ assert "$( [ "$last_rc" -eq 0 ] && [ "$(cat "$dest")" = '# historico' ] && echo 
   "4-preserva-vivo" "rc=$last_rc dest=$dest err=$(cat "$last_err")"
 rm -rf "$s"
 
-# 5. --apply --slug cria implement avulso vazio.
+# 5. --apply --slug cria apenas a pasta de destino.
 s=$(new_sandbox)
 seed_vibeflow "$s"
 root=$(native_root "$s")
 run_sh bash "$LAUNCHER" --root "$root" --apply --slug hotfix-cor
-dest="$s/.vibeflow/phases/phase-1-hotfix-cor/implement.md"
-assert "$( [ "$last_rc" -eq 0 ] && [ -f "$dest" ] && [ ! -s "$dest" ] && echo 1 || echo 0 )" \
+dest="$s/.vibeflow/phases/phase-1-hotfix-cor"
+assert "$( [ "$last_rc" -eq 0 ] && [ -d "$dest" ] && [ ! -e "$dest/implement.md" ] && echo 1 || echo 0 )" \
   "5-apply-slug" "rc=$last_rc dest=$dest err=$(cat "$last_err")"
 rm -rf "$s"
 
-# 6. --mvp respeita analyze aprovado e prepara o alvo especial.
+# 6. --mvp respeita analyze aprovado sem criar implement.md.
 s=$(new_sandbox)
 seed_vibeflow "$s"
 mkdir -p "$s/.vibeflow/mvp"
@@ -75,8 +75,8 @@ printf '# Analyze\n# Status: aprovado\n\n## Veredito\n\nlimpo\n' >"$s/.vibeflow/
 root=$(native_root "$s")
 run_sh bash "$LAUNCHER" --root "$root" --apply --mvp
 dest="$s/.vibeflow/mvp/implement.md"
-assert "$( [ "$last_rc" -eq 0 ] && [ -f "$dest" ] && [ ! -s "$dest" ] && echo 1 || echo 0 )" \
-  "6-apply-mvp" "rc=$last_rc dest=$dest err=$(cat "$last_err")"
+assert "$( [ "$last_rc" -eq 0 ] && [ ! -e "$dest" ] && echo 1 || echo 0 )" \
+  "6-apply-mvp-sem-implement" "rc=$last_rc dest=$dest err=$(cat "$last_err")"
 rm -rf "$s"
 
 # 7. Sem motor: recusa explícita.

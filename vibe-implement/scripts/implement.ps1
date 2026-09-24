@@ -1,6 +1,6 @@
 #Requires -Version 7.0
 # vibe-implement/scripts/implement.ps1
-# Inventário de .vibeflow/phases → prepara phase-N-slug/implement.md.
+# Seleciona alvo e fila do plan sem criar artefato de execução.
 param(
     [string]$Root,
     [switch]$Apply,
@@ -12,7 +12,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $script:SlugWasBound = $PSBoundParameters.ContainsKey('Slug')
 $script:DirWasBound = $PSBoundParameters.ContainsKey('Dir')
-$script:ChainFiles = @('interview.md', 'spec.md', 'plan.md', 'analyze.md', 'implement.md', 'review.md')
+$script:ChainFiles = @('interview.md', 'spec.md', 'plan.md', 'analyze.md', 'review.md')
 $script:MaxSlug = 48
 
 # Obtém o item do sistema de arquivos sem resolver links quebrados em ausência.
@@ -120,22 +120,6 @@ function Get-AnalyzeGate([string]$Path) {
     return [pscustomobject]@{ status = $status; veredito = $veredito; pronto = ($status -eq 'aprovado' -and $veredito -eq 'limpo') }
 }
 
-# Maior n com plan e sem implement: primeira escrita desta skill na fila.
-function Get-PlanPendente($Existing) {
-    foreach ($item in ($Existing | Sort-Object n -Descending)) {
-        if ($item.files -contains 'plan.md' -and $item.files -notcontains 'implement.md') { return $item }
-    }
-    return $null
-}
-
-# Maior n que já tem implement.md: vivo atualizável.
-function Get-Rascunho($Existing) {
-    foreach ($item in ($Existing | Sort-Object n -Descending)) {
-        if ($item.files -contains 'implement.md') { return $item }
-    }
-    return $null
-}
-
 # Maior n com plan.md: é a fila desta skill sem -Dir.
 function Get-AlvoComPlan($Existing) {
     foreach ($item in ($Existing | Sort-Object n -Descending)) {
@@ -144,32 +128,17 @@ function Get-AlvoComPlan($Existing) {
     return $null
 }
 
-# Converte o objeto da fase para PSCustomObject (hashtable enumeraria no JSON).
+# Projeta apenas os identificadores do alvo, sem serializar o inventário de fases.
 function ConvertTo-PhaseMap($Item) {
     if ($null -eq $Item) { return $null }
-    return [pscustomobject]@{
-        kind  = 'phase'
-        dir   = [string]$Item.dir
-        n     = [int]$Item.n
-        slug  = [string]$Item.slug
-        path  = [string]$Item.path
-        files = @($Item.files)
-    }
+    $map = [ordered]@{ kind = [string]$Item.kind; dir = [string]$Item.dir }
+    if ($Item.PSObject.Properties['n']) { $map.n = [int]$Item.n }
+    if ($Item.PSObject.Properties['slug']) { $map.slug = [string]$Item.slug }
+    $map.path = [string]$Item.path
+    return [pscustomobject]$map
 }
 
-# Destino preferido: fase com plan, senão implement avulso, senão criar.
-function Get-ImplementAlvo($Existing) {
-    $withPlan = Get-AlvoComPlan $Existing
-    if ($null -ne $withPlan) {
-        $modo = if ($withPlan.files -contains 'implement.md') { 'atualizar' } else { 'reuse' }
-        return @{ item = $withPlan; modo = $modo }
-    }
-    $draft = Get-Rascunho $Existing
-    if ($null -ne $draft) { return @{ item = $draft; modo = 'atualizar' } }
-    return @{ item = $null; modo = 'criar' }
-}
-
-# Destino: -Dir se veio; senão o alvo do inventário.
+# Resolve -Dir explícito ou seleciona a fase mais recente que possui plan.md.
 function Get-ImplementAlvoComDir($Existing, [string]$Phases) {
     if (-not [string]::IsNullOrWhiteSpace($Dir)) {
         $destName = [System.IO.Path]::GetFileName($Dir)
@@ -183,33 +152,12 @@ function Get-ImplementAlvoComDir($Existing, [string]$Phases) {
         }
         foreach ($item in $Existing) {
             if ($item.dir -eq $destName) {
-                $modo = if ($item.files -contains 'implement.md') { 'atualizar' } else { 'reuse' }
-                return @{ item = $item; modo = $modo }
+                return $item
             }
         }
         throw "FASE_AUSENTE: .vibeflow/phases/$destName não é uma pasta de fase."
     }
-    return Get-ImplementAlvo $Existing
-}
-
-# Cria o artefato vivo vazio somente quando ele ainda não existe, sem sobrescrever histórico.
-function New-LiveFile([string]$Path) {
-    $item = Get-FsItem $Path
-    if ($item) {
-        if ((Test-IsReparsePoint $item) -or -not (Test-Path -LiteralPath $Path -PathType Leaf)) {
-            throw "ARTEFATO_INESPERADO: $([System.IO.Path]::GetFileName($Path)) não é um arquivo vivo."
-        }
-        return $false
-    }
-    try {
-        $stream = [System.IO.File]::Open($Path, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
-        $stream.Dispose()
-        return $true
-    } catch [System.IO.IOException] {
-        $item = Get-FsItem $Path
-        if ($item -and -not (Test-IsReparsePoint $item) -and (Test-Path -LiteralPath $Path -PathType Leaf)) { return $false }
-        throw "ARTEFATO_INESPERADO: $([System.IO.Path]::GetFileName($Path)) não é um arquivo vivo."
-    }
+    return Get-AlvoComPlan $Existing
 }
 
 # Extrai ids T* da linha Deps. "nenhuma", vazio ou ausência viram lista vazia. Sempre List, para não iterar caractere.
@@ -335,24 +283,22 @@ function ConvertFrom-PlanFila([string]$Text) {
     }
 }
 
-# Projeta a fila do plan da alvo. Sem plan.md, a skill avulsa não recebe fila.
+# Projeta a fila do plan do alvo. Sem plan.md, a skill avulsa não recebe fila.
 function Get-FilaFromAlvo([string]$Repo, $Alvo) {
     if ($null -eq $Alvo) { return $null }
-    $files = @($Alvo.files)
-    if ($files -notcontains 'plan.md') { return $null }
     $path = Join-Path (Join-Path $Repo ([string]$Alvo.path)) 'plan.md'
     if (-not (Test-Path -LiteralPath $path)) { return $null }
     $text = [System.IO.File]::ReadAllText($path)
     return ConvertFrom-PlanFila $text
 }
 
-# Serializa o inventário e a fila como JSON transitório, sem criar estado no workspace.
+# Serializa alvo, fila e avisos necessários para a execução imediata.
 function Write-ImplementOutput([hashtable]$Payload) {
     $json = [string](ConvertTo-Json -InputObject $Payload -Depth 8)
     [Console]::Out.WriteLine($json)
 }
 
-# Inventaria o disco e opcionalmente prepara o artefato vivo implement.md.
+# Seleciona alvo e fila; Apply só cria uma phase quando há slug explícito.
 function Invoke-Implement {
     if ($Mvp -and ($script:SlugWasBound -or $script:DirWasBound)) {
         throw 'MODO_INVALIDO: o alvo MVP não aceita -Slug nem -Dir.'
@@ -361,8 +307,6 @@ function Invoke-Implement {
     $repo = Get-RepoRoot
     $vf = Join-Path $repo '.vibeflow'
     $phases = Join-Path $vf 'phases'
-    $actions = New-Object System.Collections.Generic.List[object]
-
     if (-not (Test-Path -LiteralPath $vf)) {
         throw 'INIT_AUSENTE: não existe .vibeflow/. Rode /vibe-init antes.'
     }
@@ -383,7 +327,6 @@ function Invoke-Implement {
     } else {
         New-Item -ItemType Directory -Path $phases -Force | Out-Null
         [System.IO.File]::WriteAllText((Join-Path $phases '.gitkeep'), '')
-        $actions.Add([pscustomobject]@{ op = 'criar_phases'; alvo = '.vibeflow/phases' })
         $phState = 'ok'
     }
 
@@ -393,20 +336,15 @@ function Invoke-Implement {
     foreach ($w in $listed.warnings) { $warnings.Add($w) }
     $nextN = 1
     if ($existing.Count -gt 0) { $nextN = [int]$existing[-1].n + 1 }
-    $resolved = Get-ImplementAlvoComDir $existing $phases
-    $alvoItem = $resolved.item
-    $modoSugerido = $resolved.modo
+    $alvoItem = Get-ImplementAlvoComDir $existing $phases
     $mvpMap = Get-MvpMap $vf
     if ($Mvp -and ($null -eq $mvpMap -or $mvpMap.files -notcontains 'plan.md')) {
         throw 'IMPLEMENT_SEM_PLAN: falta .vibeflow/mvp/plan.md.'
     }
     if ($Mvp) {
         $alvoItem = $mvpMap
-        $modoSugerido = if ($mvpMap.files -contains 'implement.md') { 'atualizar' } else { 'reuse' }
     }
     $analyzeGate = if ($Mvp) { Get-AnalyzeGate (Join-Path (Join-Path $vf 'mvp') 'analyze.md') } else { $null }
-    $created = $null
-    $modo = $null
 
     if ($Apply) {
         if ($Mvp) {
@@ -420,25 +358,7 @@ function Invoke-Implement {
                 throw 'IMPLEMENT_ANALYZE_BLOQUEADO: analyze MVP não está limpo.'
             }
         }
-        $createdDir = $false
-        if ($Mvp) {
-            $destDir = Join-Path $vf 'mvp'
-            $modo = $modoSugerido
-        } elseif (-not [string]::IsNullOrWhiteSpace($Dir)) {
-            $destDir = Join-Path $phases ([System.IO.Path]::GetFileName($Dir))
-            $destItem = Get-FsItem $destDir
-            if (-not $destItem -or (Test-IsReparsePoint $destItem) -or -not $destItem.PSIsContainer) {
-                throw "FASE_AUSENTE: .vibeflow/phases/$([System.IO.Path]::GetFileName($Dir)) não é uma pasta de fase."
-            }
-            $name = [System.IO.Path]::GetFileName($destDir)
-            if (-not [regex]::IsMatch($name, '^phase-(\d+)-([a-z0-9]+(?:-[a-z0-9]+)*)$')) {
-                throw "FASE_AUSENTE: $name não é uma pasta de fase."
-            }
-            $modo = if (Test-Path -LiteralPath (Join-Path $destDir 'implement.md')) { 'atualizar' } else { 'reuse' }
-        } elseif ($null -ne $alvoItem) {
-            $destDir = Join-Path $repo $alvoItem.path
-            $modo = $modoSugerido
-        } else {
+        if (-not $Mvp -and [string]::IsNullOrWhiteSpace($Dir) -and $null -eq $alvoItem) {
             if ([string]::IsNullOrWhiteSpace($Slug)) {
                 throw 'IMPLEMENT_SEM_ALVO: sem fase alvo; passe -Slug para abrir uma pasta nova.'
             }
@@ -451,69 +371,24 @@ function Invoke-Implement {
                 throw "FASE_EXISTE: .vibeflow/phases/phase-$nextN-$clean já existe."
             }
             New-Item -ItemType Directory -Path $destDir -Force | Out-Null
-            $createdDir = $true
-            $modo = 'criar'
-            $actions.Add([pscustomobject]@{ op = 'criar_fase'; alvo = ".vibeflow/phases/phase-$nextN-$clean" })
-        }
-
-        $destFile = Join-Path $destDir 'implement.md'
-        $destName = [System.IO.Path]::GetFileName($destDir)
-        $rel = if ($Mvp) { '.vibeflow/mvp' } else { ".vibeflow/phases/$destName" }
-        try {
-            if (New-LiveFile $destFile) {
-                $actions.Add([pscustomobject]@{ op = 'criar_arquivo'; alvo = "$rel/implement.md" })
-            }
-        } catch {
-            if ($createdDir) {
-                if (-not (Test-IsReparsePoint (Get-FsItem $destDir)) -and (Test-Path -LiteralPath $destDir) -and -not (Get-ChildItem -LiteralPath $destDir -Force)) {
-                    Remove-Item -LiteralPath $destDir -Force
-                }
-            }
-            throw
-        }
-        if ($Mvp) {
-            $mvpMap = Get-MvpMap $vf
-            $alvoItem = $mvpMap
-            $modoSugerido = 'atualizar'
-            $created = $mvpMap
-        } else {
-            $listed = Get-PhaseList $phases
-            $existing = @($listed.existing)
-            foreach ($w in $listed.warnings) { $warnings.Add($w) }
-            $nextN = 1
-            if ($existing.Count -gt 0) { $nextN = [int]$existing[-1].n + 1 }
-            $resolved = Get-ImplementAlvo $existing
-            $alvoItem = $resolved.item
-            $modoSugerido = $resolved.modo
-            foreach ($item in $existing) {
-                if ($item.dir -eq $destName) { $created = $item; break }
+            $name = [System.IO.Path]::GetFileName($destDir)
+            $alvoItem = [pscustomobject]@{
+                kind  = 'phase'
+                dir   = $name
+                n     = [int]$nextN
+                slug  = $clean
+                path  = ".vibeflow/phases/$name"
+                files = @()
             }
         }
     }
 
-    $mapped = New-Object System.Collections.Generic.List[object]
-    foreach ($item in @($existing)) {
-        if ($null -ne $item) { [void]$mapped.Add((ConvertTo-PhaseMap $item)) }
-    }
     $payload = @{
-        root           = "$repo"
-        rota           = $(if ($Mvp) { 'mvp' } else { 'phase' })
-        vibeflow       = 'ok'
-        phases         = "$phState"
-        next_n         = [int]$nextN
-        existing       = $mapped.ToArray()
-        plan_pendente  = ConvertTo-PhaseMap (Get-PlanPendente $existing)
-        rascunho       = ConvertTo-PhaseMap (Get-Rascunho $existing)
-        alvo           = $(if ($Mvp) { $alvoItem } else { ConvertTo-PhaseMap $alvoItem })
-        mvp            = $mvpMap
-        analyze_gate   = $analyzeGate
-        modo_sugerido  = "$modoSugerido"
-        created        = $(if ($Mvp) { $created } else { ConvertTo-PhaseMap $created })
-        modo           = $modo
-        actions        = $actions.ToArray()
+        alvo   = ConvertTo-PhaseMap $alvoItem
+        fila   = Get-FilaFromAlvo $repo $alvoItem
         avisos         = $warnings.ToArray()
-        fila           = (Get-FilaFromAlvo $repo $alvoItem)
     }
+    if ($Mvp) { $payload.analyze_gate = $analyzeGate }
     Write-ImplementOutput $payload
 }
 

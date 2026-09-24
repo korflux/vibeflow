@@ -32,18 +32,20 @@ Reduzir o custo de implementação com Express sem fase, registro único no plan
 
 ### T2: Usar plan como registro e reduzir o inventário operacional
 
-- [ ] T2 concluída
+- [x] T2 concluída
 - **Spec:** A3, A4, C2, C3, C4
 - **O quê:** remover criação e dependência de `implement.md` nas novas execuções, mover prova e paths para o plan, fazer review consumir o plan e limitar stdout ao alvo, fila e avisos necessários.
 - **Aceite:**
-  - [ ] Apply não cria `implement.md`; seleção da implementação não depende dele; arquivos históricos permanecem intactos.
-  - [ ] Review encontra no plan status, paths, prova e bloqueios sem exigir novo `implement.md`.
-  - [ ] Motores Python e PowerShell emitem os dados necessários sem serializar todas as phases.
+  - [x] Apply não cria `implement.md`; seleção da implementação não depende dele; arquivos históricos permanecem intactos.
+  - [x] Review encontra no plan status, paths, prova e bloqueios sem exigir novo `implement.md`.
+  - [x] Motores Python e PowerShell emitem os dados necessários sem serializar todas as phases.
 - **Verificação:**
-  - [ ] `python docs/vibe-implement/tests/test-implement.py -v`
-  - [ ] `python docs/vibe-review/tests/test-review.py -v`
+  - [x] `python docs/vibe-implement/tests/test-implement.py -v`
+  - [x] `python docs/vibe-review/tests/test-review.py -v`
+- **Prova:** `python docs/vibe-implement/tests/test-implement.py -v` -> 39 testes OK, incluindo paridade PowerShell; `python docs/vibe-review/tests/test-review.py -v` -> 24 testes OK, incluindo paridade PowerShell; `git diff --check` -> OK.
 - **Deps:** T1
-- **Arquivos:** `vibe-implement/`, `vibe-review/SKILL.md`, `vibe-review/tests/`, `docs/vibe-implement/`, `docs/vibe-review/`, `README.md`
+- **Arquivos:** `vibe-implement/SKILL.md`, `vibe-implement/scripts/implement.py`, `vibe-implement/scripts/implement.ps1`, remoção de `vibe-implement/templates/implement.md`, `vibe-review/SKILL.md`, `docs/vibe-implement/`, `docs/vibe-review/`, `README.md`
+- **Decisões:** `plan.md` é o registro único da execução; stdout da phase contém alvo, fila e avisos, com `analyze_gate` adicional para MVP.
 
 ### T3: Fazer prova proporcional e permitir retomada curta
 

@@ -1,6 +1,6 @@
 # vibe-review, arquitetura
 
-`/vibe-review` julga o patch, a cobertura e as provas pós-código em um único `review.md`. A IA inspeciona e grava o veredito; o motor resolve a cadeia e prepara o arquivo vivo.
+`/vibe-review` julga o patch, a cobertura e as provas pós-código em um único `review.md`. Para cada T*, consulta status, dependências/bloqueios, paths e provas no `plan.md`; não exige um novo `implement.md`.
 
 ```text
 .vibeflow/phases/phase-<n>-<slug>/review.md
@@ -18,6 +18,7 @@
 | `references/security-and-hardening.md` | Catálogo sob demanda para superfícies sensíveis. |
 | `stdout (JSON)` | Evidência operacional transitória, consumida na mesma execução. |
 | `review.md` | Tipo e escopo de cada etapa, provas, histórico, veredito final e itens R*. |
+| `plan.md` | Status, dependências/bloqueios, paths e provas registrados sob cada T*. |
 
 O motor não julga o diff, não edita source, não escreve a prosa e não sincroniza `REGRAS.md`.
 
@@ -47,11 +48,11 @@ Status: `rascunho` durante checkpoints e enquanto o veredito final aguarda confi
 
 Checkpoint só é permitido quando `plan.md` declarar o marco e sua justificativa e todas as T* desse marco estiverem concluídas. A etapa julga apenas o marco, suas provas e o contrato ou risco compartilhado indicado. Registra T* ainda abertas, não declara a feature concluída, não marca Approve final e não autoriza sincronização de decisões, commit residual ou push.
 
-Review final exige a fila do plan concluída e julga critérios de aceite, código integrado e riscos alterados. Confere as provas registradas por T* no estado atual; reaproveita evidência verde que ainda cobre paths sem edição posterior e executa apenas a verificação necessária que falta para integração ou risco. Não repete automaticamente cada comando da matriz de T*. Toda prova executada ou reaproveitada fica registrada no `review.md` com seu motivo.
+Review final exige a fila do plan concluída e julga critérios de aceite, código integrado e riscos alterados. Para cada T*, confere status, `Deps`, bloqueios, `Arquivos` e `Prova`/`Verificação` no `plan.md`; compara os paths cobertos com o estado integrado e reaproveita evidência verde que ainda é válida. Executa apenas a verificação necessária que falta para integração ou risco. Não repete automaticamente cada comando da matriz de T*. Toda prova executada ou reaproveitada fica registrada no `review.md` com seu motivo.
 
 ## 6. Auditoria e prova visual
 
-A review cruza pedido, spec, plan, analyze e código real. Confere as provas registradas e segue a seleção proporcional da seção anterior para executar apenas as verificações que faltam; também verifica falsos positivos, segurança, funções alteradas, dados e migrations quando aplicável.
+A review cruza pedido, spec, plan, analyze e código real. Lê no plan o status, as dependências/bloqueios, os paths e as provas de cada T*, sem exigir `implement.md`. Confere as evidências contra o estado atual e segue a seleção proporcional da seção anterior para executar apenas as verificações que faltam; também verifica falsos positivos, segurança, funções alteradas, dados e migrations quando aplicável.
 
 Aplica os pilares de auditoria ao diff e às superfícies relevantes para o marco ou para a integração final. Se o diff tocar UI, seleciona navegador integrado quando disponível, MCP Server `chrome-devtools` para snapshot, screenshot, DOM, estilos, console, rede e assets, e Playwright somente se já existir ou for solicitado. Registra rota, viewport, estado, ações e evidência. Sem capacidade visual, abre `R* Required` e não aprova silenciosamente.
 
