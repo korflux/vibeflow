@@ -27,25 +27,11 @@ Nenhuma skill dispara a seguinte. O handoff é uma linha no artefato.
 
 Contrato do que acabou de entrar. Não é fila aberta.
 
-### 3.1 `implement.md`
+### 3.1 Registro da execução no `plan.md`
 
-- [x] Artefato próprio na pasta da fase, com `--apply` / `--slug` e escrita direta no vivo.
+- [x] `plan.md` é o registro por T*: status, paths, prova e bloqueios; `implement.md` antigo permanece histórico e não é criado em novas execuções.
 
-A implement deixa de só marcar `[x]` no `plan.md` / `spec.md` / `review.md`. Na mesma pasta grava `implement.md`. A review e a próxima fatia leem isso no disco, não no chat. O arquivo vivo é preparado pelo script e preenchido pela IA.
-
-O arquivo registra, por fatia:
-
-| Campo | Para que serve | Fecha quando |
-|---|---|---|
-| Fatia | T* / R* desta run | Sempre presente |
-| Feito | O que mudou (paths) | Sempre presente |
-| Marcado | Quais `[x]` foram virados, em qual arquivo | Sempre presente |
-| Prova | Comando e resultado | Sempre presente |
-| Feedback + | O que correu e deve se repetir | Omitir se vazio |
-| Feedback − | O que emperrou, dívida, risco, decisão assumida | Omitir se vazio |
-| Para a review | O que a próxima porta precisa olhar | Omitir se nada além da prova |
-
-`--apply` e `--slug` fazem parte da preparação do alvo. O `--apply` não transporta conteúdo temporário, não calcula hash de promoção e não substitui um vivo existente. Contrato: `docs/vibe-implement/ARQUITETURA.md`.
+A implementação atualiza a task concluída no `plan.md`, e a review confere esse registro contra o estado integrado. Arquivos `implement.md` existentes são preservados sem migração ou reescrita. O motor seleciona o alvo e a fila; `--apply` não prepara um segundo artefato. Contrato: `docs/vibe-implement/ARQUITETURA.md`.
 
 ### 3.2 `review.md` único, checklist por etapa
 

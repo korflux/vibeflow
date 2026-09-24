@@ -38,7 +38,7 @@ DEP_ID_RE = re.compile(r"T(\d+)")
 
 # Interpreta somente os parâmetros equivalentes ao contrato público do implement.ps1.
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Inventaria e prepara implement para .vibeflow/phases")
+    parser = argparse.ArgumentParser(description="Seleciona o alvo e a fila do plan sem criar artefato de execução")
     parser.add_argument("--root")
     parser.add_argument("--apply", action="store_true")
     parser.add_argument("--slug")
