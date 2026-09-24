@@ -278,7 +278,8 @@ class PythonContracts(unittest.TestCase):
         phase = seed_phase(vf, "phase-1-a", "plan.md")
         write_plan(
             phase,
-            "# Plan\n\n## Preparo (checklist curta, não é task)\n\n- [ ] comandos disponíveis\n\n"
+            "# Plan\n\n## Prontidão das provas\n\n- Requisitos verificados: Python disponível no CI\n"
+            "- Ausências e ação na fila: nenhuma\n\n"
             "## Tasks\n\n### T1: entrega inicial\n\n- [ ] T1 concluída\n"
             "- **Spec:** A1\n- **O quê:** resultado inicial\n- **Aceite:** observável\n"
             "- **Verificação:** `python -m unittest`\n- **Deps:** nenhuma\n\n"
@@ -486,12 +487,15 @@ class SkillContracts(unittest.TestCase):
         express = skill[express_start:script_start]
 
         self.assertLess(express_start, script_start)
+        self.assertIn("No fluxo padrão, sem `.vibeflow/`: `/vibe-init`", skill)
+        self.assertNotIn("Sem `.vibeflow/`: `/vibe-init`.", skill)
         self.assertIn("pedido claro e localizado", express)
         self.assertIn("Não rode `vibe-init`", express)
         self.assertIn("não crie ou exija `.vibeflow/`", express)
         self.assertIn("atualize a T* aberta", express)
         self.assertIn("uma T* curta ao `plan.md` existente", express)
         self.assertIn("o R* existente", express)
+        self.assertIn("saia do Express e use a cadeia aplicável", express)
         for trigger in (
             "privacidade", "obrigação jurídica", "autenticação", "autorização",
             "pagamento", "segredo", "persistência", "perda de dados",
@@ -553,8 +557,12 @@ class SkillContracts(unittest.TestCase):
         self.assertIn("Remova o checkpoint ao concluir a T*", skill)
         self.assertIn("Smoke Test / Walking Skeleton entra somente quando o ponto de entrada real foi criado ou alterado", skill)
         self.assertIn("inclusive analyze aprovado e limpo no MVP", skill)
-        self.assertIn("tela, o estado e a viewport afetados", visual)
-        self.assertIn("quando layout, responsividade, interação", visual)
+        self.assertIn("Visual: necessária", skill)
+        self.assertIn("Visual: dispensada", skill)
+        self.assertIn("Tocar arquivo de UI, HTML ou DOM, sozinho, não abre navegador", skill)
+        self.assertIn("A review reaproveita essa evidência", skill)
+        self.assertIn("o aceite depende de aparência", visual)
+        self.assertIn("não basta", visual)
 
     # Garante que cada task termina em commit isolado e que o push fica para a review.
     def test_skill_requires_task_commit_without_push(self) -> None:

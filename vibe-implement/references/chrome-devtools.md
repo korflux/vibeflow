@@ -1,6 +1,6 @@
 # Prova visual renderizada no navegador
 
-Abra esta referência somente quando a fatia alterar ou criar interface web visualizada no navegador. Confira no estado renderizado a tela, o estado e a viewport afetados. Amplie para outra viewport, estado ou superfície compartilhada quando layout, responsividade, interação ou o risco do diff exigirem; teste unitário, snapshot de DOM ou screenshot isolado não substitui a inspeção do comportamento quando houver interação relevante.
+Abra esta referência quando `Visual: necessária` estiver registrado no plan ou quando a implementação revelar uma mudança renderizada relevante que não estava planejada. A prova visual é necessária quando o aceite depende de aparência, layout, responsividade, estado ou interação que só pode ser julgado na interface renderizada; tocar arquivo de UI, HTML ou DOM não basta. Confira o recorte afetado e amplie para outra viewport, estado ou superfície compartilhada quando layout, responsividade, interação ou risco exigirem. Provas automatizadas podem cobrir mudanças sem resultado visual a julgar.
 
 ## Seleção da ferramenta
 
@@ -10,7 +10,7 @@ Escolha a primeira capacidade disponível, sem instalar ferramenta automaticamen
 2. **MCP Server `chrome-devtools`:** use `navigate_page`, `take_snapshot`, `click` ou `fill`, `take_screenshot` e, quando necessário, a inspeção de DOM, estilos, console, rede e assets.
 3. **Playwright:** use somente quando já existir no repositório ou quando o humano o solicitar, para fluxos repetíveis, viewports, screenshots e assertions de visibilidade ou acessibilidade.
 
-Se nenhuma capacidade estiver disponível, registre a limitação e não marque a validação visual como concluída. A ausência de navegador não é passe visual e não justifica instalar uma dependência nova.
+Se a prova visual for necessária e nenhuma capacidade estiver disponível, registre a limitação e não marque a validação visual como concluída. A ausência de navegador não justifica instalar uma dependência nova. Depois de uma prova verde, reutilize-a enquanto os inputs renderizados não mudarem; não repita apenas para produzir outra captura.
 
 ## Checklist renderizada
 

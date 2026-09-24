@@ -87,7 +87,7 @@ Cada etapa registra o que olhou, o que abriu, o que fechou e o veredito **daquel
 | Cobertura A*/C* | Existe `spec.md` | Spec não existe: seção omitida |
 | R* Critical / Required / Nit | Achado com `path` + evidência | `[x]` quando a implement provou. Lista vazia some. Sem bloqueio: uma linha “nenhum bloqueio” |
 | R* extra na mesma lista | Achado novo em etapa posterior. Número novo. Não renumerar fechados | Idem |
-| Visual (browser, screenshot, leitura) | O diff desta etapa toca UI | Diff sem UI: omitir |
+| Visual (browser, screenshot, leitura) | O aceite depende da UI renderizada ou a T* marcou `Visual: necessária` | Se não há resultado renderizado a julgar e a dispensa está provada, omitir |
 | Segurança | O diff toca input, auth, segredo, upload, pagamento, LLM ou dado pessoal | Diff sem isso: omitir. Sem catálogo fixo |
 | DoD | Há item aplicável nesta etapa | Tudo N/A: omitir |
 | Notas | Há algo que não cabe num R* (teto 5 linhas) | Vazio: omitir |

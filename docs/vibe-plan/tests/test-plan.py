@@ -254,32 +254,41 @@ class PowershellParity(unittest.TestCase):
 class TemplateContracts(unittest.TestCase):
     """Trava as linhas que a implement parseia e a Verificação como comando."""
 
-    def test_template_freezes_task_queue_and_keeps_preparation_outside_it(self) -> None:
-        """Confirma que o preparo é checklist e que a T* mantém o contrato da fila."""
+    def test_template_freezes_task_queue_and_records_proof_readiness(self) -> None:
+        """Confirma que prontidão é obrigatória e fica fora da fila de execução."""
         template = (SKILL_DIR / "templates" / "plan.md").read_text(encoding="utf-8")
         self.assertIn("- [ ] T1 concluída", template)
         self.assertIn("- **Deps:** nenhuma", template)
         self.assertIn("comando do repo", template)
         self.assertNotIn("passo manual", template)
-        self.assertIn("não é task", template.lower())
+        self.assertIn("## prontidão das provas", template.lower())
+        self.assertIn("requisitos verificados", template.lower())
+        self.assertIn("ausências e ação na fila", template.lower())
+        self.assertNotIn("checklist curta", template.lower())
         self.assertIn("<path aprovado ou n/a>", template.lower())
         self.assertIn("checkpoint de review (opcional", template.lower())
         self.assertNotIn("## ordem", template.lower())
         self.assertNotIn("## conferência", template.lower())
 
     def test_skill_requires_real_deps_and_command_verification(self) -> None:
-        """Confirma os gates de dependência, comandos executáveis e preparo local."""
+        """Confirma os gates de dependência, prontidão e necessidade visual por aceite."""
         skill = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("gitleaks", skill.lower())
         self.assertIn("chrome-devtools", skill.lower())
         self.assertIn("smoke test", skill.lower())
         self.assertIn("deps", skill.lower())
         self.assertIn("verificação só manual", skill.lower())
-        self.assertIn("preparo local", skill.lower())
+        self.assertIn("dependências das provas", skill.lower())
+        self.assertIn("ambiente onde a prova planejada vai rodar", skill.lower())
+        self.assertIn("inclua sua resolução na t1", skill.lower())
+        self.assertIn("visual: necessária", skill.lower())
+        self.assertIn("visual: dispensada", skill.lower())
+        self.assertIn("mudança em arquivo de ui, html ou dom, sozinha, não aciona navegador", skill.lower())
+        self.assertIn("quando `visual: necessária`, cubra no browser", skill.lower())
         self.assertIn("não crie t* apenas para repetir baseline", skill.lower())
         self.assertIn("repita somente após falha ou edição que invalide um input coberto", skill.lower())
         self.assertIn("smoke entra quando a entrada real mudar", skill.lower())
-        self.assertIn("tela, o estado e a viewport afetados", skill.lower())
+        self.assertIn("rota, o estado, a viewport e a evidência", skill.lower())
 
     def test_task_splitting_uses_results_real_dependencies_and_isolation(self) -> None:
         """Impede que score, título, duração ou volume imponham quebras automáticas."""
@@ -296,6 +305,8 @@ class TemplateContracts(unittest.TestCase):
         template = (SKILL_DIR / "templates" / "plan.md").read_text(encoding="utf-8")
         for field in ("**O quê:**", "**Spec:**", "**Aceite:**", "**Verificação:**", "**Deps:**"):
             self.assertIn(field, template)
+        self.assertIn("**Visual:**", template)
+        self.assertIn("somente tasks que alteram ui", template.lower())
         self.assertIn("paralelização (opcional", template.lower())
         self.assertIn("checkpoint de review (opcional", template.lower())
         self.assertIn("checkpoint de retomada (opcional)", template.lower())
@@ -304,6 +315,12 @@ class TemplateContracts(unittest.TestCase):
         self.assertIn("head=<hash retornado por git rev-parse head>", template.lower())
         self.assertNotIn("**Size:**", template)
         self.assertNotIn("<score>/10", template)
+
+    def test_plan_hands_off_final_review_without_a_review_task(self) -> None:
+        """Mantém review final na porta própria após a fila de implementação."""
+        skill = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("não crie uma t* apenas para executar a review final", skill.lower())
+        self.assertIn("`vibe-implement` → `vibe-review`", skill)
 
     def test_plan_documentation_describes_result_based_splitting(self) -> None:
         """Alinha arquitetura, análise e README ao fatiamento por resultado."""

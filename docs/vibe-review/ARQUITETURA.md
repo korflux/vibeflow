@@ -14,7 +14,7 @@
 | `SKILL.md` | Gate, auditoria, cobertura A*/C*, eixos, visual, segurança, veredito e finalização Git da phase. |
 | `scripts/review.py`, `review.ps1`, `review.sh` | Inventário, cadeia, alvo, preparação do vivo e JSON operacional no stdout. |
 | `templates/review.md` | Checklist e forma de etapas no mesmo arquivo. |
-| `references/ui-visual-quality.md` | Checklist visual renderizada quando o diff toca UI. |
+| `references/ui-visual-quality.md` | Checklist renderizada quando a aceitação exige evidência visual. |
 | `references/security-and-hardening.md` | Catálogo sob demanda para superfícies sensíveis. |
 | `stdout (JSON)` | Evidência operacional transitória, consumida na mesma execução. |
 | `review.md` | Tipo e escopo de cada etapa, provas, histórico, veredito final e itens R*. |
@@ -54,7 +54,7 @@ Review final exige a fila do plan concluída e julga critérios de aceite, códi
 
 A review cruza pedido, spec, plan, analyze e código real. Lê no plan o status, as dependências/bloqueios, os paths e as provas de cada T*, sem exigir `implement.md`. Confere as evidências contra o estado atual e segue a seleção proporcional da seção anterior para executar apenas as verificações que faltam; também verifica falsos positivos, segurança, funções alteradas, dados e migrations quando aplicável.
 
-Aplica os pilares de auditoria ao diff e às superfícies relevantes para o marco ou para a integração final. Se o diff tocar UI, seleciona navegador integrado quando disponível, MCP Server `chrome-devtools` para snapshot, screenshot, DOM, estilos, console, rede e assets, e Playwright somente se já existir ou for solicitado. Começa pela rota/tela, estado e viewport afetados; amplia conforme o impacto em layout, responsividade, interação, componente compartilhado ou risco. Sem capacidade visual, abre `R* Required` e não aprova silenciosamente.
+Aplica os pilares de auditoria ao diff e às superfícies relevantes para o marco ou para a integração final. Usa `Visual` no plan para decidir se o aceite precisa de evidência renderizada; tocar arquivo de UI, HTML ou DOM, sozinho, não aciona navegador. Reaproveita prova de implementação válida e só executa a inspeção se ela estiver ausente/desatualizada ou não cobrir a integração. Quando necessária, seleciona navegador integrado, MCP Server `chrome-devtools` e Playwright somente se já existir ou for solicitado. Começa pela rota/tela, estado e viewport afetados; amplia conforme o impacto em layout, responsividade, interação, componente compartilhado ou risco. Sem capacidade visual para uma prova necessária, abre `R* Required` e não aprova silenciosamente.
 
 `icon-only` só é aceito para ação universalmente reconhecível, como lixeira para apagar, com nome acessível, foco visível, área de interação e tooltip quando aplicável. Ações ambíguas permanecem textuais.
 

@@ -1,12 +1,12 @@
 # Qualidade Visual e Interface
 
-Abra esta referência quando o diff alterar elementos visuais, layouts, componentes de UI ou fluxos web vistos no navegador. Julgue o estado renderizado no recorte afetado com evidência factual. Comece pela rota/tela, estado e viewport atingidos pelo diff; amplie quando layout, responsividade, interação, componente compartilhado ou risco exigirem. Toda anomalia real vira `R*` `Required`; preferência estética sem exigência da spec não bloqueia.
+Abra esta referência quando `Visual: necessária` estiver no plan ou quando o diff revelar uma saída renderizada relevante que não foi prevista. O gatilho é o aceite depender da aparência, do layout, da responsividade, de estado ou de interação renderizados; tocar arquivo de UI, HTML ou DOM, sozinho, não basta. Julgue com evidência factual a rota/tela, o estado e a viewport atingidos pelo diff; amplie quando layout, responsividade, interação, componente compartilhado ou risco exigirem. Toda anomalia real vira `R*` `Required`; preferência estética sem exigência da spec não bloqueia.
 
 ## Ferramenta e evidência
 
-Use a seleção definida em `vibe-implement/references/chrome-devtools.md`: navegador integrado (`@Browser` ou equivalente) primeiro quando disponível, MCP Server `chrome-devtools` para snapshot, screenshot, DOM, estilos, console, rede e assets, e Playwright somente se já existir no repositório ou for solicitado para fluxos repetíveis e assertions. Sem capacidade visual, registre `R*` `Required`; não aprove silenciosamente e não instale ferramenta automaticamente.
+Use a seleção definida em `vibe-implement/references/chrome-devtools.md`: navegador integrado (`@Browser` ou equivalente) primeiro quando disponível, MCP Server `chrome-devtools` para snapshot, screenshot, DOM, estilos, console, rede e assets, e Playwright somente se já existir no repositório ou for solicitado para fluxos repetíveis e assertions. Se a prova renderizada for necessária e não houver capacidade ou evidência válida, registre `R*` `Required`; não aprove silenciosamente e não instale ferramenta automaticamente.
 
-Em toda prova, registre rota, viewport, estado, ações e evidência observada do recorte afetado. Screenshot isolado não substitui a inspeção da interação relevante.
+Reaproveite a prova registrada no plan quando seus inputs continuarem válidos e cobrirem a integração; não abra o navegador de novo apenas para repetir uma captura. Quando precisar executar a prova, registre rota, viewport, estado, ações e evidência observada do recorte afetado. Screenshot isolado não substitui a inspeção da interação relevante.
 
 ## Checklist única de auditoria renderizada
 

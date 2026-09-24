@@ -38,7 +38,7 @@ Review continua sem corrigir source. Somente a review final pode abrir fechament
 
 ## Visual e acessibilidade
 
-Quando o diff toca UI, a review usa a referência visual existente e começa pela rota/tela, estado e viewport afetados. Amplia a inspeção quando o impacto alcança layout, responsividade, interação, componente compartilhado ou risco. Navegador integrado é a primeira opção, Chrome DevTools MCP cobre inspeção, e Playwright só entra se já existir ou for solicitado. Screenshot isolado não substitui a leitura de comportamento, geometria, estados e console/rede/assets relevantes.
+Quando a aceitação depende da UI renderizada, a review usa a classificação `Visual` do plan e começa pela rota/tela, estado e viewport afetados. Tocar arquivo de UI, HTML ou DOM não aciona inspeção por si só. A evidência da implementação é reaproveitada se os inputs continuarem válidos e ela cobrir a integração; navegador integrado é a primeira opção, Chrome DevTools MCP cobre inspeção, e Playwright só entra se já existir ou for solicitado. Screenshot isolado não substitui a leitura de comportamento, geometria, estados e console/rede/assets relevantes.
 
 Controles compactos reduzem ruído apenas quando a ação é universalmente reconhecível. `icon-only` exige semântica acessível, foco, área de interação e feedback; ação ambígua mantém texto.
 
@@ -55,7 +55,7 @@ Review recomenda novo chat, separado da implementação, para avaliar o resultad
 | Segundo `review.md` por rodada | Etapas no mesmo arquivo preservam o veredito vigente. |
 | Checkpoint automático por contagem de tasks | O plan só pede marco intermediário quando existe risco ou contrato que precise de julgamento antecipado. |
 | Repetir toda a matriz de testes por T* na review final | Evidências válidas são reaproveitadas; a review fecha apenas lacunas de integração e riscos alterados. |
-| Browser obrigatório para task sem UI | A prova visual só abre quando o diff toca interface. |
+| Navegador em toda alteração de UI | A prova visual só abre quando o aceite depende do resultado renderizado; a review reutiliza evidência válida. |
 | Publicação automática de decisões | Exige Approve sem bloqueios e confirmação humana. |
 | Push antes da aprovação | O remoto só recebe a phase depois do fechamento da review. |
 

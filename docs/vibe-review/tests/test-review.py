@@ -333,6 +333,8 @@ class SkillContracts(unittest.TestCase):
         """Garante que a review limita a inspeção visual ao impacto do diff."""
         skill = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
         visual = (SKILL_DIR / "references" / "ui-visual-quality.md").read_text(encoding="utf-8")
+        rules = (Path.cwd() / ".vibeflow" / "REGRAS.md").read_text(encoding="utf-8")
+        scope = (Path.cwd() / "docs" / "ESCOPO.md").read_text(encoding="utf-8")
         self.assertIn("Rastreabilidade e Verificação Anti-Alucinação", skill)
         self.assertIn("Provas e Integridade dos Testes", skill)
         self.assertIn("Auditoria Implacável de Segurança e Hardening", skill)
@@ -341,6 +343,13 @@ class SkillContracts(unittest.TestCase):
         self.assertIn("chrome-devtools", skill)
         self.assertIn("viewport atingidos pelo diff", visual)
         self.assertIn("quando o diff afeta layout ou responsividade", visual)
+        self.assertIn("Visual: necessária", skill)
+        self.assertIn("Visual: dispensada", skill)
+        self.assertIn("Tocar arquivo de UI, HTML ou DOM não basta", skill)
+        self.assertIn("Reaproveite a evidência visual", skill)
+        self.assertIn("não abra o navegador de novo", visual)
+        self.assertIn("inspeção renderizada somente quando o aceite depender do resultado visual", rules.lower())
+        self.assertIn("o aceite depende da ui renderizada", scope.lower())
 
     # Garante que a review encontra a prova de implementação no registro único do plan.
     def test_review_uses_plan_as_execution_record(self) -> None:

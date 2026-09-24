@@ -5,7 +5,7 @@
 |---|---|---|
 | — | init | primeira vez no repo, ou disco quebrado, de novo só para reparar |
 | low | implement | pedido claro, direto, simples (cor, texto, documento, landing page / página de captura estática) |
-| medium | implement → review | pedido claro e direto sem regressão de backend, ou página visual com validação chrome-devtools |
+| medium | implement → review | pedido claro e direto sem regressão de backend, ou página visual cujo aceite dependa de validação renderizada |
 | high | spec → plan → implement → review | pedido claro, execução difícil, ou sistema com auth, painel admin, banco ou regressão |
 | xhigh | interview → spec → plan → implement → review | pedido ambíguo, confiança baixa, intenção ou sucesso de software em aberto |
 | max | interview → spec → plan → analyze → implement → review | pedido toca auth, pagamento, segredo, perda de dados, produção, alto blast radius ou baseline MVP de software |
@@ -29,7 +29,7 @@ Separar chats é uma recomendação, nunca um gate. Se o humano preferir continu
 
 Faixa Express (low ou medium) atende pedidos claros e localizados sem comportamento novo, como copy, rótulo, nome de tela, cor, espaçamento ou ícone com texto mantido. Classifique antes de exigir `.vibeflow/`, `vibe-init`, inventário de phase ou script. Sem phase ativa para a entrega, implemente direto, faça a checagem proporcional e não crie init, phase ou artefato VibeFlow. Com phase ativa, reutilize-a: atualize a T* aberta ou acrescente uma T* curta no `plan.md` existente; achado formal de review atualiza o R* existente. Para ajuste visual, atualize o `design.md` existente quando houver. Não crie spec, plan ou design só para o ajuste. Comportamento, rota, interação, critério de aceite ou acessibilidade alterados saem do Express. Também saem mudanças que toquem privacidade, dado pessoal, consentimento, retenção, direitos, obrigação jurídica, autenticação, autorização, pagamento, segredo, persistência ou risco de perda de dados, seguindo a cadeia aplicável.
 
-Review leve no Express cobra só rastreabilidade mais visual. Segurança e banco só abrem se o diff tocar essas superfícies.
+Review leve no Express cobra rastreabilidade e inspeção renderizada somente quando o aceite depender do resultado visual. Segurança e banco só abrem se o diff tocar essas superfícies.
 
 ## Projeto
 

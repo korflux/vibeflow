@@ -59,14 +59,15 @@ RECOMENDO: <opção>, <1 linha explicando o porquê e impacto>
 (ok / outra?)
 ```
 
-## 3. Preparo e ferramentas
+## 3. Prontidão das provas
 
-Antes de fatiar, confira a spec, a superfície da entrega e somente as ferramentas exigidas pelas provas escolhidas:
+Depois de definir as provas por task e antes de fechar a fila, confira somente os runtimes, comandos, serviços e capacidades exigidos por elas:
 
 1. **Spec sólida:** A*/C* observáveis, limites claros de Fora, direção visual definida se houver UI e caminhos existentes ou acordados. Com UI visível, exige `design.md` aprovado na mesma pasta; sem UI, registra `Design: N/A`.
-2. **Preparo local:** Faça uma checklist curta dos comandos, ferramentas e serviços necessários para executar as provas. Confira `gitleaks` quando o repositório ou CI exigir varredura de segredos. Resolva uma instalação ou conexão local simples durante o preparo quando estiver disponível e autorizada. Ausência local, por si só, não cria T*: planeje uma task somente se o setup persistente fizer parte da entrega do projeto. Se uma dependência externa impedir uma prova e não houver solução local, registre o bloqueio ou a limitação.
-3. **Validação visual:** Se a entrega envolver interface ou DOM, escolha navegador integrado (`@Browser` ou equivalente), depois MCP Server `chrome-devtools`, ou Playwright somente se já existir no repositório ou for solicitado para fluxos repetíveis e assertions. Ausência de capacidade visual é limitação explícita; não obriga navegador em tasks sem UI nem instalação automática.
-4. **Decisões críticas (MVP):** Toda decisão da spec possui ação explícita e as tasks correspondentes citam seus IDs.
+2. **Dependências das provas:** Derive a lista dos comandos `Verificação` planejados. Confira runtime e package manager (por exemplo, Node), serviços, comandos (incluindo `gitleaks` quando CI ou repo o exigirem) e capacidades externas necessárias. Use manifests, scripts, workflows de CI e ferramentas disponíveis como evidência; registre no plan onde cada requisito está disponível, localmente ou no CI. Considere-o atendido quando estiver disponível no ambiente onde a prova planejada vai rodar.
+3. **Ausências:** Não deixe requisito necessário em checklist opcional. Ausência local não exige setup quando a prova será executada no CI e os requisitos estão atendidos lá. Se um requisito compartilhado faltar no ambiente planejado para a prova, inclua sua resolução na T1; se só for usado depois, inclua a resolução na primeira T* que depende dele. Não crie T* separada de preparo, a menos que o setup persistente seja um resultado do projeto. Se uma capacidade externa, como MCP, não estiver disponível e não houver equivalente, registre o bloqueio na fila; não marque a prova como concluída nem instale ferramentas automaticamente.
+4. **Prova visual por task:** Para cada task que altera UI, registre `Visual: necessária` quando o aceite depender de aparência, layout, responsividade, estado ou interação renderizados no navegador. Registre `Visual: dispensada` com o motivo quando comandos ou testes existentes provarem o aceite e nenhuma saída renderizada precisar ser julgada. Mudança em arquivo de UI, HTML ou DOM, sozinha, não aciona navegador. Quando necessária, use navegador integrado (`@Browser` ou equivalente), depois MCP Server `chrome-devtools`; use Playwright somente se já existir no repo ou se for solicitado para fluxos repetíveis e assertions. Registre a rota, o estado, a viewport e a evidência. Reaproveite a prova na review enquanto os inputs permanecerem válidos.
+5. **Decisões críticas (MVP):** Toda decisão da spec possui ação explícita e as tasks correspondentes citam seus IDs.
 
 ## 4. Fatiar por resultado
 
@@ -79,7 +80,7 @@ Crie outra T* somente quando houver um resultado entregável separado, uma depen
 1. **Ponto de entrada:** Quando o resultado criar ou alterar um ponto de entrada executável, inclua o smoke test desse ponto na mesma T*. Não crie T* apenas para repetir baseline ou smoke test genérico.
 2. **Estrutura de cada T\*:** Título com verbo e resultado, `Spec: A*/C*`, aceite observável, verificação com comando executável do repo e dependências explícitas (`Deps`). Inclua `Arquivos` ou `Risco` somente quando ajudarem a implementar, isolar ou revisar a fatia.
 3. **Decisões críticas:** Quando a task implementar ou substituir decisão crítica, adicionar `Decisões: <ID> (<ação>)`.
-4. **Verificação:** Toda task exige comando executável relevante para seu aceite. Organize a cobertura por capacidade ou jornada (ex.: login, cadastro), reutilizando testes existentes quando comprovarem a alteração. Um comando por task não exige teste novo por task nem um teste por critério de aceite. Crie teste específico quando comportamento novo, regressão, caso de borda ou risco não estiver coberto. Verificação só manual ou leitura de arquivo não conta como prova suficiente. Planeje a prova depois da última edição de código/teste; repita somente após falha ou edição que invalide um input coberto. Smoke entra quando a entrada real mudar. Para UI, cubra a tela, o estado e a viewport afetados e amplie quando o impacto exigir.
+4. **Verificação:** Toda task exige comando executável relevante para seu aceite. Organize a cobertura por capacidade ou jornada (ex.: login, cadastro), reutilizando testes existentes quando comprovarem a alteração. Um comando por task não exige teste novo por task nem um teste por critério de aceite. Crie teste específico quando comportamento novo, regressão, caso de borda ou risco não estiver coberto. Verificação só manual ou leitura de arquivo não conta como prova suficiente. Planeje a prova depois da última edição de código/teste; repita somente após falha ou edição que invalide um input coberto. Smoke entra quando a entrada real mudar. Quando `Visual: necessária`, cubra no browser a tela, o estado e a viewport afetados e amplie quando o impacto exigir; quando `Visual: dispensada`, use a prova executável indicada sem abrir navegador.
 5. **Dependências (`Deps`):** Declarar apenas predecessores reais de execução. Fatias independentes usam `Deps: nenhuma`; a linha de dependências define a fila, sem repetir a ordem em outra seção.
 6. **Paralelização e checkpoints:** Indique no `plan.md` os IDs das T* que podem executar juntas e um motivo curto, somente quando dependências, ownership dos arquivos e ausência de conflito estiverem claros. No chat, mostre os grupos ao humano e diga que `vibe-implement` perguntará se ele quer executá-los em paralelo. Registre checkpoint de review apenas quando um risco ou contrato compartilhado precisar ser julgado antes de outra T*. O checkpoint de retomada é diferente: só aparece sob uma T* incompleta, com estado, próximo passo, paths da prova, snapshot Git e validade da prova; omita-o no plano inicial.
 7. **UI Greenfield:** Entregue componentes e tokens dentro de fatias de resultado; não crie task de preparo visual sem entrega verificável.
@@ -107,7 +108,7 @@ Plan gravado: <created.path>/plan.md
 
 - Overview: <1 linha>
 - Resultados e dependências: <resumo curto da fila, sem repetir cada Deps>
-- Preparo: <ferramentas necessárias disponíveis ou bloqueio registrado>
+- Prontidão das provas: <requisitos reais, onde estão disponíveis e ação para ausências>
 - Paralelizáveis: <IDs + motivo curto ou “nenhum grupo seguro”; se houver grupo, diga que implement perguntará se o humano quer executá-lo junto>
 - Checkpoint: <somente se aplicável>
 - Chat: recomende novo chat para a próxima porta; continuar aqui é válido se o humano preferir.
@@ -132,5 +133,6 @@ Rascunho sem "aprovado" e sem pedido da próxima porta não autoriza iniciar o c
 Não commite no git nesta porta. O commit começa na `vibe-implement`, depois da prova verde de cada task. Não dispare a próxima skill a menos que o usuário tenha pedido explicitamente para avançar (§6).
 No handoff, recomende novo chat para `vibe-analyze` no MVP ou `vibe-implement` nas demais rotas. Se o humano preferir continuar, siga sem bloquear; o `plan.md` vivo e o handoff são a ponte.
 Handoff normal: `vibe-implement`. Handoff MVP: `vibe-analyze` (pois o modo max exige análise antes do código).
+Não crie uma T* apenas para executar a review final. A fila do plan termina com as entregas implementáveis; a review final é a próxima skill do fluxo `vibe-implement` → `vibe-review`.
 Zero código nesta execução.
 

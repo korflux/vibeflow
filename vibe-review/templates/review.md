@@ -49,7 +49,7 @@
 
 ## Visual
 
-<!-- omitir se o diff desta etapa não toca UI -->
+<!-- omitir se não há prova renderizada necessária; reaproveitar a evidência válida registrada no plan -->
 
 - Browser: <DevTools | E2E do repo>
 - Screenshot: <path> - leitura: <ok | falhas>

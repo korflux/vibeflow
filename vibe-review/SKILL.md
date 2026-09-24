@@ -66,7 +66,7 @@ RECOMENDO: <opção>, <1 linha>
 (ok / outra?)
 ```
 
-Barra de Approve: saúde do código + convenção do repo. Não bloquear gosto. No Express, julgue só rastreabilidade mais visual, incluindo acessibilidade afetada. Segurança e banco só abrem se o diff tocar essas superfícies.
+Barra de Approve: saúde do código + convenção do repo. Não bloquear gosto. No Express, julgue rastreabilidade e inspecione o resultado renderizado somente quando ele fizer parte do aceite; cubra a acessibilidade afetada pela mudança. Segurança e banco só abrem se o diff tocar essas superfícies.
 
 ## 3. Checkpoint, review final e prova proporcional
 
@@ -102,10 +102,11 @@ Inspecione o código integrado e aplique estes pilares ao escopo da etapa:
      - Há segredos, chaves ou tokens expostos no código, no bundle do frontend ou gravados em logs?
    - Toda brecha explorável vira `R*` `Critical`. Falta de limite/validação de borda vira `R*` `Required`.
 4. **Inspeção Visual e Interface:**
-   - Se o diff tocar interface de usuário web, selecione nesta ordem, conforme `references/ui-visual-quality.md`: navegador integrado (`@Browser` ou equivalente) primeiro quando disponível, MCP Server `chrome-devtools` para snapshot, screenshot, DOM, estilos, console, rede e assets, ou Playwright somente se já existir no repositório ou for solicitado para fluxos repetíveis e assertions.
+   - Inspecione no navegador quando `Visual: necessária` estiver no plan ou quando o diff revelar uma saída renderizada relevante não prevista. Tocar arquivo de UI, HTML ou DOM não basta. Se `Visual: dispensada` estiver justificada por prova executável e o diff confirmar que não há resultado renderizado a julgar, não abra o navegador.
+   - Reaproveite a evidência visual registrada pela implement quando seus inputs continuam válidos e ela cobre a integração. Só execute ou repita navegador se a prova estiver ausente/desatualizada, faltar cobertura da integração, ou o risco/diff exigir outro estado ou viewport. Quando necessário, selecione nesta ordem conforme `references/ui-visual-quality.md`: navegador integrado (`@Browser` ou equivalente), MCP Server `chrome-devtools`, ou Playwright somente se já existir no repositório ou for solicitado para fluxos repetíveis e assertions.
    - Comece pela rota/tela, estado e viewport afetados pelo diff; amplie quando layout, responsividade, interação, componente compartilhado ou risco exigirem. Registre rota, viewport, estado, ações e evidência observada. Aplique a checklist da referência ao recorte afetado, incluindo acessibilidade e erros relevantes de runtime.
    - Para ações compactas, aceite `icon-only` somente quando a ação for universalmente reconhecível, como lixeira para apagar, com nome acessível, área de interação adequada, foco visível e tooltip quando aplicável. Ações ambíguas continuam com texto.
-   - Sem capacidade visual ou sem evidência renderizada, abra `R*` `Required`; não aprove silenciosamente e não instale ferramenta automaticamente.
+   - Se a prova renderizada for necessária e não houver capacidade ou evidência válida, abra `R*` `Required`; não aprove silenciosamente e não instale ferramenta automaticamente.
 5. **Simplificação e Qualidade de Código:**
    - Inspecione se o código é o mínimo necessário (YAGNI, sem estruturas especulativas, sem duplicação de lógica ou componentes).
    - Verifique se todas as funções criadas ou modificadas possuem comentários semânticos obrigatórios.
@@ -137,7 +138,7 @@ Molde: `templates/review.md`. Uma casa por fato. Omita seção que esta etapa n�
 | Cobertura | Há `spec.md` | Sem spec: omitir |
 | R* | Achado com path + evidência | `[x]` quando implement provou. Lista vazia some. Sem bloqueio: “nenhum bloqueio” |
 | Provas | Toda etapa | Liste provas reaproveitadas, executadas e o motivo; N/A só quando não há prova aplicável |
-| Visual | Diff desta etapa toca UI | Sem UI: omitir |
+| Visual | O aceite depende da UI renderizada ou a T* marcou `Visual: necessária` | Se não há resultado renderizado a julgar e a dispensa está provada, omitir |
 | Segurança | Diff toca superfície listada no §3 | Sem isso: omitir |
 | DoD / Notas | Há o que aplicar ou anotar | Vazio / N/A: omitir |
 | Etapa N | Toda run desta skill no pedido | Etapa antiga **não** apaga |

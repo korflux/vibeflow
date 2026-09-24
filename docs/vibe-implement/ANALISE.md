@@ -57,7 +57,7 @@ O gate de analyze continua separado para a rota max. A existência de plan não 
 |---|---|
 | Documento de tasks paralelo | A fila já está no plan. |
 | Documento acumulativo de implementação | O plan já é a fila e o registro durável da execução. |
-| Teste visual silencioso | Sem evidência renderizada, a validação não fecha. |
+| Inspeção renderizada em toda mudança de UI | Só é exigida quando o aceite depende da renderização; o plan justifica a dispensa nos outros casos e a review reaproveita evidência válida. |
 | Push por task | Mantém o remoto estável durante a implementação; o push fica para a phase aprovada. |
 | Instalação de navegador | Ferramenta nova só entra por necessidade real ou pedido. |
 

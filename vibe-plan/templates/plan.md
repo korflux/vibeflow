@@ -10,9 +10,10 @@
 <1 parágrafo: o que esta entrega realiza, apontando a spec>
 - **Design:** <path aprovado ou N/A>
 
-## Preparo (opcional, checklist curta, não é task)
+## Prontidão das provas
 
-- [ ] <comandos e ferramentas necessários à prova: disponíveis, limitação ou bloqueio>
+- **Requisitos verificados:** <runtime, comandos, serviços ou capacidades exigidos; informe se estão disponíveis localmente ou no CI>
+- **Ausências e ação na fila:** nenhuma | <resolução na T1 ou na primeira task que depende do requisito; limitação externa registrada>
 
 ## Tasks
 
@@ -25,6 +26,7 @@
   - [ ] <condição testável>
 - **Verificação:**
   - [ ] `<comando do repo que cobre a capacidade; pode ser reutilizado por outras T*>`
+- **Visual:** <necessária | dispensada; justifique pela relação entre o aceite e a UI renderizada> <!-- Somente tasks que alteram UI; omitir nas demais. -->
 - **Deps:** nenhuma
 - **Decisões:** <ID (ação); omitir quando N/A>
 - **Arquivos:** `path/...` <!-- opcional, quando orientar execução ou ownership -->
@@ -51,5 +53,6 @@
 
 <vibe-implement no phase sem analyze obrigatório; vibe-analyze no MVP>
 <!-- No MVP, acrescentar: rota: max -->
+<!-- Não criar T* apenas para a review final; o handoff da implementação encaminha para vibe-review. -->
 
 - Chat: recomende novo chat ao iniciar `vibe-plan` após spec/design e para `vibe-analyze` no MVP ou `vibe-implement` nas demais rotas. Recomende um chat por T* em sequência; grupo paralelo aprovado é a exceção coordenada. O humano pode continuar no chat atual; o `plan.md` vivo é a ponte.

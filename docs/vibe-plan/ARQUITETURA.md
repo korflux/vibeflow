@@ -13,7 +13,7 @@
 |---|---|
 | `SKILL.md` | Validar a spec, preparo das provas, resultados, dependências e paralelismo seguro. |
 | `scripts/plan.py`, `plan.ps1`, `plan.sh` | Inventário, seleção do alvo, gates mecânicos, preparação do vivo e JSON operacional no stdout. |
-| `templates/plan.md` | Forma compacta de Overview, preparo opcional, Tasks e handoff. |
+| `templates/plan.md` | Forma compacta de Overview, prontidão das provas, Tasks e handoff. |
 | `stdout (JSON)` | Evidência operacional transitória, consumida na mesma execução. |
 | `plan.md` | Fila executável e fonte da próxima T*. |
 
@@ -31,9 +31,11 @@ pwsh plan.ps1 [-Root PATH] [-Apply] [-Dir phase-N-slug] [-Mvp]
 bash plan.sh [--root PATH] [--apply] [--dir phase-N-slug] [--mvp]
 ```
 
-## 3. Pré-requisitos de prova
+## 3. Pré-requisitos e modalidade da prova
 
-A IA verifica `gitleaks` quando o repositório prevê essa prova. Se a spec toca UI, escolhe navegador integrado quando disponível, depois MCP Server `chrome-devtools`, e Playwright somente se já existir no repositório ou tiver sido solicitado. Ausência de capacidade visual é limitação explícita, não passe silencioso.
+A IA deriva as dependências dos comandos de verificação por T* e confirma runtimes, package managers, serviços e capacidades nos arquivos do repo, workflows de CI e ferramentas disponíveis. `gitleaks` entra quando o repo ou CI exigir a varredura. O plan registra requisito, disponibilidade local ou no CI, e qualquer ausência no ambiente onde a prova vai rodar. Ausência local não exige setup quando a prova roda no CI e os requisitos estão atendidos lá. Dependência compartilhada ausente entra na T1; dependência exclusiva entra na primeira T* que a usa. Setup persistente do projeto só vira T* separada quando for um resultado da entrega. Bloqueio externo permanece explícito; não se marca prova como concluída nem se instala ferramenta automaticamente.
+
+Para cada T* que altera UI, o campo `Visual` declara `necessária` quando o aceite depende da UI renderizada, ou `dispensada` com motivo quando outra prova executável cobre o aceite e não há resultado visual a julgar. Tocar arquivos de UI, HTML ou DOM não aciona navegador por si só. Quando necessária, usa navegador integrado, depois MCP `chrome-devtools`; Playwright somente se já existir ou for solicitado para fluxo repetível/assertions. A evidência renderizada registra rota, estado e viewport e pode ser reutilizada na review enquanto os inputs estiverem válidos.
 
 Tasks devem conter um resultado coeso, aceite observável, comando executável de verificação, `Deps` e `Spec: A*/C*`. `Arquivos` e `Risco` são opcionais quando orientam execução, isolamento ou review. Se a task criar ou alterar um ponto de entrada executável, a prova de smoke entra nessa mesma task. A prova final acontece depois da última edição de código/teste e só é repetida após falha ou invalidação dos inputs cobertos.
 
@@ -56,7 +58,7 @@ O script não escreve prosa, não escolhe a semântica da fila e não dispara im
 
 ## 6. Contrato do artefato
 
-Seções: Overview, preparo local opcional, Tasks e Handoff. `Paralelização` e checkpoint de review aparecem somente quando mudam a execução. Checkpoint de retomada aparece apenas sob T* incompleta durante implementação, registra o snapshot Git dos inputs da prova e é removido ao concluir a task. `Deps` é a única declaração da fila. Cada task usa `T1`, `T2` em sequência, tem um resultado coeso, comando próprio de verificação e é a unidade que a implement pode commitar. Não usar `todo.md`, `tasks.md`, `T001`, `[P]`, `[US1]`, `checklists/` ou verificação apenas manual.
+Seções: Overview, prontidão das provas, Tasks e Handoff. Pré-requisitos verificados não são uma checklist opcional: ausências necessárias entram na T1 ou na primeira T* que depende delas, sem criar task de preparo isolada. T* com UI declara a necessidade de prova renderizada e seu motivo; tasks sem UI omitem o campo. `Paralelização` e checkpoint de review aparecem somente quando mudam a execução. Checkpoint de retomada aparece apenas sob T* incompleta durante implementação, registra o snapshot Git dos inputs da prova e é removido ao concluir a task. `Deps` é a única declaração da fila. Cada task usa `T1`, `T2` em sequência, tem um resultado coeso, comando próprio de verificação e é a unidade que a implement pode commitar. A fila não contém T* só para review final; a implement faz handoff para `vibe-review` ao concluir. Não usar `todo.md`, `tasks.md`, `T001`, `[P]`, `[US1]`, `checklists/` ou verificação apenas manual.
 
 ## 7. Erros, testes e handoff
 

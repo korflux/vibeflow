@@ -13,7 +13,7 @@ Abrir no fechamento da fatia, não no boot.
 - Prova final executada após as edições de código/teste; repita somente a prova afetada por falha ou mudança em seus inputs
 - Sem regressão na prova executável relevante; amplie a cobertura quando o risco ou a integração exigir
 - Testes redundantes da capacidade tocada podem ser consolidados apenas com preservação dos cenários e afirmações relevantes
-- UI web user-visible: prova no browser (ver `chrome-devtools.md`)
+- Quando o aceite depende de aparência, layout, responsividade ou comportamento renderizado de UI web, prova focada no browser (ver `chrome-devtools.md`). Se não depender, o `plan.md` registra por que a prova automatizada é suficiente.
 
 ## Quality
 
