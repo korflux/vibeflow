@@ -22,7 +22,7 @@ SKILLS = (
 )
 CANONICAL_SKILL_PATHS = [f"./{name}" for name in SKILLS]
 ANTIGRAVITY_SCHEMA = "https://antigravity.google/schemas/v1/plugin.json"
-CONTRACT_VERSION = "2.1.0"
+CONTRACT_VERSION = "2.2.0"
 
 
 # Lê o name do frontmatter YAML; é o identificador que o CLI e o slash usam.
@@ -157,7 +157,7 @@ class DistribuicaoContracts(unittest.TestCase):
             "agy plugin install https://github.com/korflux/vibeflow.git",
             "grok plugin marketplace add korflux/vibeflow",
             "grok plugin install vibeflow --trust",
-            "Versão dos manifests: `2.1.0`",
+            "Versão dos manifests: `2.2.0`",
             "Só `.vibeflow/init-report.json` persiste",
         )
         missing = [line for line in required if line not in readme]
@@ -165,6 +165,7 @@ class DistribuicaoContracts(unittest.TestCase):
 
     # T5: cada skill investiga por relevância, usa artefato vivo e não revive o contrato operacional removido.
     def test_skill_guidance_is_directed_and_isolated(self) -> None:
+        """Confirma investigação dirigida e ausência de artefatos removidos."""
         skill_texts = {
             name: (ROOT / name / "SKILL.md").read_text(encoding="utf-8-sig")
             for name in SKILLS
@@ -174,12 +175,12 @@ class DistribuicaoContracts(unittest.TestCase):
             self.assertIn("rg -n", text, name)
             self.assertIn("árvore inteira", text, name)
             self.assertNotIn("wip", text.lower(), name)
-            if name not in ("vibe-plan", "vibe-review"):
+            if name not in ("vibe-plan", "vibe-review", "vibe-implement"):
                 self.assertNotIn("checkpoint", text.lower(), name)
 
         for name in ("vibe-plan", "vibe-analyze", "vibe-implement", "vibe-review"):
             self.assertIn("novo chat", skill_texts[name].lower(), name)
-        self.assertIn("um chat por T*", skill_texts["vibe-implement"], "vibe-implement")
+        self.assertIn("um chat por `T*`", skill_texts["vibe-implement"], "vibe-implement")
 
         template_names = (
             "vibe-interview",
@@ -187,7 +188,6 @@ class DistribuicaoContracts(unittest.TestCase):
             "vibe-design",
             "vibe-plan",
             "vibe-analyze",
-            "vibe-implement",
             "vibe-review",
         )
         for name in template_names:
@@ -200,6 +200,7 @@ class DistribuicaoContracts(unittest.TestCase):
             self.assertNotIn("wip", template.lower(), name)
             if name not in ("vibe-plan", "vibe-review"):
                 self.assertNotIn("checkpoint", template.lower(), name)
+        self.assertFalse((ROOT / "vibe-implement" / "templates" / "implement.md").exists())
 
     # C5: o contrato Git fica distribuído entre implement, review e o template de execução.
     def test_task_commit_and_phase_push_contract(self) -> None:
@@ -210,17 +211,19 @@ class DistribuicaoContracts(unittest.TestCase):
         self.assertIn("Finalização Git da phase", review)
         self.assertIn("git push", review)
         self.assertIn("sem `--force`", review)
-        self.assertNotIn("checkpoint", implement.lower())
+        self.assertIn("checkpoint de retomada", implement.lower())
+        self.assertNotIn("checkpoint de review", implement.lower())
         self.assertIn("checkpoint nunca abre finalização git", review.lower())
 
-    # C5: checkpoint fica no plan e na review, com publicação reservada à etapa final.
+    # C5: retomada fica na T* aberta; review mantém checkpoint de marco e publicação final.
     def test_checkpoint_contract_is_declared_and_scoped(self) -> None:
+        """Limita checkpoints de review e retomada aos artefatos que os consomem."""
         paths = [
             ROOT / "README.md",
             ROOT / ".vibeflow" / "REGRAS.md",
         ]
         for name in SKILLS:
-            if name in ("vibe-plan", "vibe-review"):
+            if name in ("vibe-plan", "vibe-review", "vibe-implement"):
                 continue
             paths.extend((ROOT / name / "SKILL.md", ROOT / "docs" / name / "ARQUITETURA.md", ROOT / "docs" / name / "ANALISE.md"))
             if name != "vibe-init":
@@ -239,6 +242,9 @@ class DistribuicaoContracts(unittest.TestCase):
             ROOT / "vibe-plan" / "templates" / "plan.md",
             ROOT / "docs" / "vibe-plan" / "ARQUITETURA.md",
             ROOT / "docs" / "vibe-plan" / "ANALISE.md",
+            ROOT / "vibe-implement" / "SKILL.md",
+            ROOT / "docs" / "vibe-implement" / "ARQUITETURA.md",
+            ROOT / "docs" / "vibe-implement" / "ANALISE.md",
             ROOT / "vibe-review" / "SKILL.md",
             ROOT / "vibe-review" / "templates" / "review.md",
             ROOT / "docs" / "vibe-review" / "ARQUITETURA.md",

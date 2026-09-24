@@ -98,8 +98,8 @@ Permitir que mudanças pequenas e claras terminem com pouco processo, enquanto m
 - [x] A2: correção da validação humana permanece na phase atual e é registrada no plan/review existente, sem phase nova.
 - [x] A3: novas execuções planejadas registram prova e paths no `plan.md`, não criam `implement.md`, e a review usa esse registro; históricos não são reescritos.
 - [x] A4: o stdout de implement contém apenas o estado necessário à execução, sem inventário integral de phases.
-- [ ] A5: a prova ocorre após edição de código/testes e é repetida apenas se falhar ou perder validade; escopo e risco determinam sua abrangência.
-- [ ] A6: checkpoint opcional permite retomar task incompleta conferindo estado e validade, sem repetir trabalho ainda válido.
+- [x] A5: a prova ocorre após edição de código/testes e é repetida apenas se falhar ou perder validade; escopo e risco determinam sua abrangência.
+- [x] A6: checkpoint opcional permite retomar task incompleta conferindo estado e validade, sem repetir trabalho ainda válido.
 
 ### Critérios de sucesso
 

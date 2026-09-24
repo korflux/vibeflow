@@ -29,6 +29,13 @@
 - **Decisões:** <ID (ação); omitir quando N/A>
 - **Arquivos:** `path/...` <!-- opcional, quando orientar execução ou ownership -->
 - **Risco:** <somente se alterar isolamento, verificação ou review>
+<!-- Não incluir no plan inicial. Durante implementação, acrescente somente se a T* ficar incompleta ou em handoff; remova ao concluí-la. -->
+- **Checkpoint de retomada (opcional):**
+  - Estado: <realizado, pendente ou bloqueio>
+  - Próximo passo: <ação curta>
+  - Paths da prova: `<path>=<hash retornado por git hash-object>`, <inclua inputs de código, teste e configuração>
+  - Git: `HEAD=<hash retornado por git rev-parse HEAD>`
+  - Prova: <válida no snapshot, invalidada ou ausente>; `<comando>` -> <resultado>
 
 ## Paralelização (opcional, omitir quando não aplicável)
 

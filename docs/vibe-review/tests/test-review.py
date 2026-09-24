@@ -330,13 +330,17 @@ class SkillContracts(unittest.TestCase):
 
     # Confirma que os eixos obrigatórios continuam disponíveis na review.
     def test_review_requires_five_audit_pillars(self) -> None:
+        """Garante que a review limita a inspeção visual ao impacto do diff."""
         skill = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
+        visual = (SKILL_DIR / "references" / "ui-visual-quality.md").read_text(encoding="utf-8")
         self.assertIn("Rastreabilidade e Verificação Anti-Alucinação", skill)
         self.assertIn("Provas e Integridade dos Testes", skill)
         self.assertIn("Auditoria Implacável de Segurança e Hardening", skill)
         self.assertIn("Inspeção Visual e Interface", skill)
         self.assertIn("Simplificação e Qualidade de Código", skill)
         self.assertIn("chrome-devtools", skill)
+        self.assertIn("viewport atingidos pelo diff", visual)
+        self.assertIn("quando o diff afeta layout ou responsividade", visual)
 
     # Garante que a review encontra a prova de implementação no registro único do plan.
     def test_review_uses_plan_as_execution_record(self) -> None:
@@ -348,6 +352,8 @@ class SkillContracts(unittest.TestCase):
         self.assertIn("`Arquivos`", skill)
         self.assertIn("`Prova`/`Verificação`", skill)
         self.assertIn("`implement.md` histórico não é necessário", skill)
+        self.assertIn("Compare os inputs da prova com o estado integrado", skill)
+        self.assertIn("Mudança em plan, spec ou review não invalida prova de código", skill)
 
     # Garante que checkpoint e review final não compartilhem o gate de conclusão da phase.
     def test_checkpoint_and_final_review_have_separate_gates(self) -> None:

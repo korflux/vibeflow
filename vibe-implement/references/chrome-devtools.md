@@ -1,6 +1,6 @@
 # Prova visual renderizada no navegador
 
-Abra esta referência somente quando a fatia alterar ou criar interface web visualizada no navegador. Toda mudança de UI precisa ser conferida no estado renderizado; teste unitário, snapshot de DOM ou screenshot isolado não substitui a inspeção do comportamento quando houver interação relevante.
+Abra esta referência somente quando a fatia alterar ou criar interface web visualizada no navegador. Confira no estado renderizado a tela, o estado e a viewport afetados. Amplie para outra viewport, estado ou superfície compartilhada quando layout, responsividade, interação ou o risco do diff exigirem; teste unitário, snapshot de DOM ou screenshot isolado não substitui a inspeção do comportamento quando houver interação relevante.
 
 ## Seleção da ferramenta
 
@@ -14,15 +14,15 @@ Se nenhuma capacidade estiver disponível, registre a limitação e não marque 
 
 ## Checklist renderizada
 
-Registre a rota, a viewport normal e estreita, o estado exercitado, as ações realizadas e a evidência observada. Verifique:
+Registre a rota, a viewport afetada, o estado exercitado, as ações realizadas e a evidência observada. Inclua uma viewport estreita quando a alteração afetar layout ou responsividade, e estados adicionais quando a interação ou o risco os alcançar. Verifique:
 
 - overflow horizontal ou vertical inesperado e conteúdo fora da viewport;
 - clipping, elementos sobrepostos ou cobertos e z-index de modal ou sticky;
 - truncamento, quebra de texto e proporção de largura dos containers;
 - controles maiores que o necessário e composição de input com ícone na mesma linha quando houver espaço;
-- responsividade em viewport estreita;
-- estados loading, empty, error e success;
-- foco visível, navegação por teclado, contraste e nomes acessíveis;
-- erros no console, na rede ou no carregamento de assets.
+- responsividade em viewport estreita quando fizer parte do escopo afetado;
+- estados loading, empty, error e success alcançados pelo recorte afetado;
+- foco visível, teclado, contraste e nomes acessíveis nos controles alterados;
+- erros novos ou relevantes no console, na rede ou no carregamento de assets.
 
 Para interações, use a árvore de acessibilidade do `take_snapshot` e os identificadores retornados para executar as ações antes do screenshot. Leia a captura de forma factual e registre qualquer anomalia como pendência da fatia.

@@ -277,6 +277,9 @@ class TemplateContracts(unittest.TestCase):
         self.assertIn("verificação só manual", skill.lower())
         self.assertIn("preparo local", skill.lower())
         self.assertIn("não crie t* apenas para repetir baseline", skill.lower())
+        self.assertIn("repita somente após falha ou edição que invalide um input coberto", skill.lower())
+        self.assertIn("smoke entra quando a entrada real mudar", skill.lower())
+        self.assertIn("tela, o estado e a viewport afetados", skill.lower())
 
     def test_task_splitting_uses_results_real_dependencies_and_isolation(self) -> None:
         """Impede que score, título, duração ou volume imponham quebras automáticas."""
@@ -295,6 +298,10 @@ class TemplateContracts(unittest.TestCase):
             self.assertIn(field, template)
         self.assertIn("paralelização (opcional", template.lower())
         self.assertIn("checkpoint de review (opcional", template.lower())
+        self.assertIn("checkpoint de retomada (opcional)", template.lower())
+        self.assertIn("não incluir no plan inicial", template.lower())
+        self.assertIn("paths da prova", template.lower())
+        self.assertIn("head=<hash retornado por git rev-parse head>", template.lower())
         self.assertNotIn("**Size:**", template)
         self.assertNotIn("<score>/10", template)
 

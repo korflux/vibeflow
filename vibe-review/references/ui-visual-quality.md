@@ -1,12 +1,12 @@
 # Qualidade Visual e Interface
 
-Abra esta referência quando o diff alterar elementos visuais, layouts, componentes de UI ou fluxos web vistos no navegador. Julgue o estado renderizado com evidência factual. Toda anomalia real vira `R*` `Required`; preferência estética sem exigência da spec não bloqueia.
+Abra esta referência quando o diff alterar elementos visuais, layouts, componentes de UI ou fluxos web vistos no navegador. Julgue o estado renderizado no recorte afetado com evidência factual. Comece pela rota/tela, estado e viewport atingidos pelo diff; amplie quando layout, responsividade, interação, componente compartilhado ou risco exigirem. Toda anomalia real vira `R*` `Required`; preferência estética sem exigência da spec não bloqueia.
 
 ## Ferramenta e evidência
 
 Use a seleção definida em `vibe-implement/references/chrome-devtools.md`: navegador integrado (`@Browser` ou equivalente) primeiro quando disponível, MCP Server `chrome-devtools` para snapshot, screenshot, DOM, estilos, console, rede e assets, e Playwright somente se já existir no repositório ou for solicitado para fluxos repetíveis e assertions. Sem capacidade visual, registre `R*` `Required`; não aprove silenciosamente e não instale ferramenta automaticamente.
 
-Em toda prova, registre rota, viewport, estado, ações e evidência observada. Screenshot isolado não substitui a inspeção da interação relevante.
+Em toda prova, registre rota, viewport, estado, ações e evidência observada do recorte afetado. Screenshot isolado não substitui a inspeção da interação relevante.
 
 ## Checklist única de auditoria renderizada
 
@@ -15,10 +15,10 @@ Em toda prova, registre rota, viewport, estado, ações e evidência observada. 
 | Viewport e geometria | overflow horizontal ou vertical inesperado, conteúdo fora da viewport, clipping, sobreposição ou cobertura e z-index de modal ou sticky |
 | Texto e proporção | truncamento, quebra de texto e proporção de largura dos containers |
 | Controles e composição | controles maiores que o necessário e input com ícone na mesma linha quando houver espaço |
-| Responsividade | comportamento em viewport estreita |
-| Estados | loading, empty, error e success |
-| Acessibilidade | nome acessível, foco visível, teclado e contraste |
-| Runtime | erros de console, rede e carregamento de assets |
+| Responsividade | comportamento em viewport estreita quando o diff afeta layout ou responsividade |
+| Estados | loading, empty, error e success alcançados pelo fluxo afetado |
+| Acessibilidade | nome acessível, foco visível, teclado e contraste nos controles alterados |
+| Runtime | erros novos ou relevantes no console, rede e carregamento de assets |
 
 ## Controles compactos e semânticos
 

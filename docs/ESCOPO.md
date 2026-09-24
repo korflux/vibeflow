@@ -133,7 +133,7 @@ Contrato: `docs/vibe-review/ARQUITETURA.md` e `templates/review.md` antes de mud
 
 - [x] `vibe-plan` agrupa cada resultado coeso em uma T* e só divide por entrega separada, dependência de execução, isolamento de risco ou prova inviável como uma unidade.
 - [x] Preparo local de ferramentas é checklist; task de setup só existe quando a mudança persistente faz parte da entrega do projeto.
-- [x] Paralelização e checkpoints são registrados somente quando mudam execução ou review; o parser continua lendo `T*`, conclusão e `Deps`.
+- [x] Paralelização e checkpoints de review aparecem somente quando mudam execução ou review; checkpoint de retomada fica temporariamente sob T* incompleta e guarda o snapshot Git da prova. O parser continua lendo somente `T*`, conclusão e `Deps`.
 
 ## 4. Limites de contrato
 

@@ -282,6 +282,9 @@ class PythonContracts(unittest.TestCase):
             "## Tasks\n\n### T1: entrega inicial\n\n- [ ] T1 concluída\n"
             "- **Spec:** A1\n- **O quê:** resultado inicial\n- **Aceite:** observável\n"
             "- **Verificação:** `python -m unittest`\n- **Deps:** nenhuma\n\n"
+            "- **Checkpoint de retomada:** estado salvo\n  - Próximo passo: revisar\n"
+            "  - Paths da prova: `src/a.py`=abc\n  - Git: `HEAD=def`\n"
+            "  - Prova: válida no snapshot\n\n"
             "## Paralelização (opcional)\n\n- texto sem efeito na fila\n\n"
             "## Checkpoint de review (opcional)\n\n- revisar contrato compartilhado\n\n"
             "### T2: entrega dependente\n\n- [ ] T2 concluída\n- **Deps:** T1\n",
@@ -516,7 +519,7 @@ class SkillContracts(unittest.TestCase):
         self.assertIn("Reconhecer", skill)
         self.assertIn("Codar", skill)
         self.assertLess(skill.index("Simplificar antes da prova"), skill.index("Executar a prova final"))
-        self.assertIn("uma vez no estado integrado e simplificado", skill)
+        self.assertIn("uma vez, no estado integrado", skill)
         self.assertIn("Não rebaixe", dod)
 
     def test_skill_bounds_delegation_and_coordinator_ownership(self) -> None:
@@ -534,8 +537,24 @@ class SkillContracts(unittest.TestCase):
         """Garante uma prova final por estado e reexecução somente quando ela perde validade."""
         skill = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("Se a prova falhar", skill)
-        self.assertIn("Se código ou teste da task for editado depois da prova verde", skill)
-        self.assertIn("Atualizar artefatos vivos e preparar o commit não invalida a prova", skill)
+        self.assertIn("Edição posterior em código ou teste invalida apenas as provas cujos inputs mudaram", skill)
+        self.assertIn("edição de plan, spec, review ou outro registro não invalida a prova", skill)
+
+    # Confirma que retomada valida o estado Git e preserva os gates de risco.
+    def test_resume_checkpoint_validates_git_inputs_and_keeps_gates(self) -> None:
+        """Trava o checkpoint mínimo, a validade das provas e os gates sensíveis."""
+        skill = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
+        visual = (SKILL_DIR / "references" / "chrome-devtools.md").read_text(encoding="utf-8")
+        for field in ("estado", "próximo passo", "paths relevantes à prova", "git hash-object", "head"):
+            with self.subTest(field=field):
+                self.assertIn(field, skill.lower())
+        self.assertIn("git status --short", skill)
+        self.assertIn("git hash-object -- <path>", skill)
+        self.assertIn("Remova o checkpoint ao concluir a T*", skill)
+        self.assertIn("Smoke Test / Walking Skeleton entra somente quando o ponto de entrada real foi criado ou alterado", skill)
+        self.assertIn("inclusive analyze aprovado e limpo no MVP", skill)
+        self.assertIn("tela, o estado e a viewport afetados", visual)
+        self.assertIn("quando layout, responsividade, interação", visual)
 
     # Garante que cada task termina em commit isolado e que o push fica para a review.
     def test_skill_requires_task_commit_without_push(self) -> None:
@@ -545,7 +564,6 @@ class SkillContracts(unittest.TestCase):
         self.assertIn("task(Tn)", skill)
         self.assertIn("Não faça `git push` nesta etapa", skill)
         self.assertIn("git add -A", skill)
-        self.assertNotIn("checkpoint", skill.lower())
 
 
 

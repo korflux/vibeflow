@@ -79,7 +79,7 @@ A review é um processo cético e investigativo. Não confie cegamente em checkb
 
 ### Selecionar e executar provas
 
-1. Use o `plan.md` como registro das execuções: confira o status da T*, `Deps` e bloqueios, `Arquivos` e `Prova`/`Verificação`. Compare os paths cobertos com o estado integrado e reaproveite prova verde quando não houve edição posterior e ela continua relevante. `implement.md` histórico não é necessário para a review.
+1. Use o `plan.md` como registro das execuções: confira o status da T*, `Deps` e bloqueios, `Arquivos` e `Prova`/`Verificação`. Compare os inputs da prova com o estado integrado e reaproveite prova verde somente quando esses inputs permanecem iguais e a prova ainda cobre a integração. Mudança em plan, spec ou review não invalida prova de código; edição posterior em código/teste invalida somente a prova afetada. `implement.md` histórico não é necessário para a review.
 2. Execute somente a menor prova que falta para julgar o marco ou a integração. Reexecute uma prova quando estiver ausente, falhou, ficou desatualizada por edição posterior, não cobre a integração entre tasks, ou quando um risco alterado exigir cobertura adicional.
 3. Não rode automaticamente a matriz de comandos de cada T*. Na review final, prefira uma verificação agregada existente quando ela comprovar a integração; rode o Smoke Test somente quando a entrada real tiver mudado, sua prova estiver ausente/desatualizada ou for necessária para cobrir o fluxo integrado.
 4. Registre em cada etapa as provas reaproveitadas, os comandos executados e o motivo. Se uma prova necessária falhar, abra `R*` `Required` com comando e remédio; não aprove silenciosamente.
@@ -103,7 +103,7 @@ Inspecione o código integrado e aplique estes pilares ao escopo da etapa:
    - Toda brecha explorável vira `R*` `Critical`. Falta de limite/validação de borda vira `R*` `Required`.
 4. **Inspeção Visual e Interface:**
    - Se o diff tocar interface de usuário web, selecione nesta ordem, conforme `references/ui-visual-quality.md`: navegador integrado (`@Browser` ou equivalente) primeiro quando disponível, MCP Server `chrome-devtools` para snapshot, screenshot, DOM, estilos, console, rede e assets, ou Playwright somente se já existir no repositório ou for solicitado para fluxos repetíveis e assertions.
-   - Registre rota, viewport, estado, ações e evidência observada. Use a checklist da referência para conferir overflow, conteúdo fora da viewport, clipping, sobreposição ou cobertura, z-index, truncamento ou quebra, proporção de largura, controles excessivos, input e ícone inline, viewport estreita, estados loading/empty/error/success, foco, teclado, contraste e console/rede/assets.
+   - Comece pela rota/tela, estado e viewport afetados pelo diff; amplie quando layout, responsividade, interação, componente compartilhado ou risco exigirem. Registre rota, viewport, estado, ações e evidência observada. Aplique a checklist da referência ao recorte afetado, incluindo acessibilidade e erros relevantes de runtime.
    - Para ações compactas, aceite `icon-only` somente quando a ação for universalmente reconhecível, como lixeira para apagar, com nome acessível, área de interação adequada, foco visível e tooltip quando aplicável. Ações ambíguas continuam com texto.
    - Sem capacidade visual ou sem evidência renderizada, abra `R*` `Required`; não aprove silenciosamente e não instale ferramenta automaticamente.
 5. **Simplificação e Qualidade de Código:**

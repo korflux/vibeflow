@@ -35,7 +35,7 @@ bash plan.sh [--root PATH] [--apply] [--dir phase-N-slug] [--mvp]
 
 A IA verifica `gitleaks` quando o repositório prevê essa prova. Se a spec toca UI, escolhe navegador integrado quando disponível, depois MCP Server `chrome-devtools`, e Playwright somente se já existir no repositório ou tiver sido solicitado. Ausência de capacidade visual é limitação explícita, não passe silencioso.
 
-Tasks devem conter um resultado coeso, aceite observável, comando executável de verificação, `Deps` e `Spec: A*/C*`. `Arquivos` e `Risco` são opcionais quando orientam execução, isolamento ou review. Se a task criar ou alterar um ponto de entrada executável, a prova de smoke entra nessa mesma task.
+Tasks devem conter um resultado coeso, aceite observável, comando executável de verificação, `Deps` e `Spec: A*/C*`. `Arquivos` e `Risco` são opcionais quando orientam execução, isolamento ou review. Se a task criar ou alterar um ponto de entrada executável, a prova de smoke entra nessa mesma task. A prova final acontece depois da última edição de código/teste e só é repetida após falha ou invalidação dos inputs cobertos.
 
 ## 4. JSON operacional no stdout
 
@@ -56,7 +56,7 @@ O script não escreve prosa, não escolhe a semântica da fila e não dispara im
 
 ## 6. Contrato do artefato
 
-Seções: Overview, preparo local opcional, Tasks e Handoff. `Paralelização` e checkpoint de review aparecem somente quando mudam a execução. `Deps` é a única declaração da fila. Cada task usa `T1`, `T2` em sequência, tem um resultado coeso, comando próprio de verificação e é a unidade que a implement pode commitar. Não usar `todo.md`, `tasks.md`, `T001`, `[P]`, `[US1]`, `checklists/` ou verificação apenas manual.
+Seções: Overview, preparo local opcional, Tasks e Handoff. `Paralelização` e checkpoint de review aparecem somente quando mudam a execução. Checkpoint de retomada aparece apenas sob T* incompleta durante implementação, registra o snapshot Git dos inputs da prova e é removido ao concluir a task. `Deps` é a única declaração da fila. Cada task usa `T1`, `T2` em sequência, tem um resultado coeso, comando próprio de verificação e é a unidade que a implement pode commitar. Não usar `todo.md`, `tasks.md`, `T001`, `[P]`, `[US1]`, `checklists/` ou verificação apenas manual.
 
 ## 7. Erros, testes e handoff
 

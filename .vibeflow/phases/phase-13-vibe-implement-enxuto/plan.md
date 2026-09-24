@@ -49,20 +49,22 @@ Reduzir o custo de implementação com Express sem fase, registro único no plan
 
 ### T3: Fazer prova proporcional e permitir retomada curta
 
-- [ ] T3 concluída
+- [x] T3 concluída
 - **Spec:** A5, A6, C5
 - **O quê:** consolidar edições antes de uma prova final proporcional; registrar checkpoint mínimo no plan apenas para task incompleta e reaproveitar provas válidas após retomada.
 - **Aceite:**
-  - [ ] Uma prova final cobre o estado integrado; só falha ou edição posterior de código/teste invalida a prova afetada.
-  - [ ] Smoke acompanha alteração real do ponto de entrada; UI limita a checagem à tela/estado/viewport afetados, ampliando quando necessário.
-  - [ ] Checkpoint opcional informa estado, próximo passo, paths e validade da prova; retomada confere o Git antes de continuar.
-  - [ ] Segurança, privacidade, jurídico, dados e gates MVP continuam cobertos conforme o diff.
+  - [x] Uma prova final cobre o estado integrado; só falha ou edição posterior de código/teste invalida a prova afetada.
+  - [x] Smoke acompanha alteração real do ponto de entrada; UI limita a checagem à tela/estado/viewport afetados, ampliando quando necessário.
+  - [x] Checkpoint opcional informa estado, próximo passo, paths e validade da prova; retomada confere o Git antes de continuar.
+  - [x] Segurança, privacidade, jurídico, dados e gates MVP continuam cobertos conforme o diff.
 - **Verificação:**
-  - [ ] `python docs/vibe-implement/tests/test-implement.py -v`
-  - [ ] `python docs/vibe-plan/tests/test-plan.py -v`
-  - [ ] `python docs/vibe-review/tests/test-review.py -v`
+  - [x] `python docs/vibe-implement/tests/test-implement.py -v`
+  - [x] `python docs/vibe-plan/tests/test-plan.py -v`
+  - [x] `python docs/vibe-review/tests/test-review.py -v`
+  - [x] `python docs/tests/test-distribuicao.py -v`
+- **Prova:** implement -> 40 testes OK, incluindo paridade PowerShell; plan -> 21 testes OK; review -> 24 testes OK após ajuste da referência visual; distribuição -> 13 testes OK após ajustes dos contratos review; manifests em 2.2.0; `git diff --check` -> OK.
 - **Deps:** T2
-- **Arquivos:** `vibe-implement/SKILL.md`, `vibe-implement/templates/`, `vibe-implement/references/`, `vibe-plan/SKILL.md`, `vibe-plan/templates/plan.md`, `docs/vibe-implement/`, `docs/vibe-plan/`, `docs/vibe-review/`
+- **Arquivos:** `vibe-implement/SKILL.md`, `vibe-implement/references/`, `vibe-plan/SKILL.md`, `vibe-plan/templates/plan.md`, `vibe-review/SKILL.md`, `vibe-review/references/ui-visual-quality.md`, manifests versionáveis, `README.md`, `docs/ESCOPO.md`, `docs/tests/test-distribuicao.py`, `docs/vibe-implement/`, `docs/vibe-plan/`, `docs/vibe-review/`
 
 ## Handoff
 

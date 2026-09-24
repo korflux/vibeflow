@@ -12,7 +12,7 @@ JSON compacto → alvo, fila.elegiveis e avisos
   → investigação dirigida da T* e do fluxo real
   → execução sequencial ou delegação isolada por capacidade do host
   → integração pelo coordenador e simplificação
-  → prova final no estado integrado, com repetição somente após falha ou edição de código/teste
+  → prova proporcional após a última edição de código/teste, com repetição somente após falha ou invalidação dos inputs
   → IA registra status, paths, prova e bloqueios sob a T* no plan
   → spec/review recebem somente marcações provadas
   → staging explícito e commit da T* sem push
@@ -31,11 +31,15 @@ Só o coordenador altera `plan.md`, `spec.md` e `review.md`, opera o índice Git
 
 A IA formula a pergunta da T*, usa `rg --files` e `rg -n` para localizar pontos de entrada, chamadas, helpers, testes e referências, e expande a leitura apenas quando uma lacuna bloqueia a prova. O inventário seleciona o alvo, mas não autoriza ler a árvore inteira.
 
-Para UI, o contrato escolhe navegador integrado, depois MCP Chrome DevTools, depois Playwright existente ou solicitado. Uma task documental, de script ou de contrato não ganha exigência artificial de navegador.
+Para UI, o contrato escolhe navegador integrado, depois MCP Chrome DevTools, depois Playwright existente ou solicitado. A prova começa pela tela, estado e viewport afetados; só amplia quando o diff alcança layout, responsividade, interação, componente compartilhado ou risco adicional. Uma task documental, de script ou de contrato não ganha exigência artificial de navegador.
 
 ## Escrita direta
 
-O apply valida o alvo e não cria `implement.md`. Depois da prova verde, a IA registra status, comando/resultado da prova, paths e bloqueios diretamente sob a T* no plan. O teste verde é condição para marcar `[x]`; atualizar os artefatos depois da prova não exige outro teste porque não muda o código ou o teste validado.
+O apply valida o alvo e não cria `implement.md`. Depois da prova verde, a IA registra status, comando/resultado da prova, paths e bloqueios diretamente sob a T* no plan. O teste verde é condição para marcar `[x]`; atualizar plan, spec ou review depois da prova não exige outro teste porque não muda os inputs de código/teste validados. Smoke Test acompanha a alteração do ponto de entrada real, não a posição da T* no plan.
+
+## Retomada sem segunda trilha
+
+Uma T* que continua incompleta pode carregar um checkpoint curto no próprio plan: estado, próximo passo, paths que alimentam a prova, `HEAD`, hash Git por path e última prova. Esse registro só existe enquanto a task está aberta e é removido quando ela fecha. Na retomada, a IA compara `git status --short`, `HEAD` e os hashes com o checkpoint; se um input mudou ou faltar snapshot, invalida apenas a prova afetada. Sem mudança nos inputs, reaproveita o resultado e continua do próximo passo. O checkpoint orienta a retomada, mas não substitui a inspeção do diff, os gates da rota nem a fila do plan.
 
 Arquivos `implement.md` de execuções anteriores permanecem byte a byte intactos, mas não entram na seleção do alvo nem são necessários para review. Isso remove uma fonte duplicada sem migrar ou apagar histórico.
 

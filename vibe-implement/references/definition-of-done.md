@@ -10,7 +10,8 @@ Abrir no fechamento da fatia, não no boot.
 - Roda em runtime, não só typecheck
 - Comportamento novo coberto por prova executável capaz de detectar sua ausência, reutilizada ou ampliada quando possível. Não rebaixe esta barra para leitura de arquivo
 - Comando da Verificação da T* verde. Passo só manual não conta
-- Sem regressão na suite relevante
+- Prova final executada após as edições de código/teste; repita somente a prova afetada por falha ou mudança em seus inputs
+- Sem regressão na prova executável relevante; amplie a cobertura quando o risco ou a integração exigir
 - Testes redundantes da capacidade tocada podem ser consolidados apenas com preservação dos cenários e afirmações relevantes
 - UI web user-visible: prova no browser (ver `chrome-devtools.md`)
 

@@ -15,7 +15,7 @@
 |---|---|
 | `SKILL.md` | Gate, escolha de T*/R*, delegação opcional por capacidade do host, ciclo de seis passos, prova final, commit da task, registro e handoff. |
 | `scripts/implement.py`, `implement.ps1`, `implement.sh` | Inventário interno, alvo, fila, gate MVP e JSON operacional compacto no stdout. |
-| `references/chrome-devtools.md` | Checklist de prova renderizada, consultada quando a task toca UI. |
+| `references/chrome-devtools.md` | Prova renderizada proporcional, consultada quando a task toca UI. |
 | `stdout (JSON)` | Alvo, fila e avisos necessários; no MVP também traz o gate de analyze. O inventário completo não é serializado. |
 | `plan.md` | Registro único por T*: status, dependências/bloqueios, verificação, prova, paths e decisões materiais. |
 
@@ -45,11 +45,13 @@ Apply não cria `implement.md`, não altera arquivos históricos e não escreve 
 
 ## 5. Ciclo da fatia
 
-Cada T*/R* segue: reconhecer o fluxo real, selecionar execução sequencial ou delegação nativa do host, integrar as mudanças, simplificar e executar a prova final. A prova roda uma vez depois da integração e simplificação. Falha exige diagnóstico e nova execução após a correção; alteração posterior em código ou teste exige repetir a verificação afetada. Atualização dos artefatos vivos não invalida a prova.
+Cada T*/R* segue: reconhecer o fluxo real, selecionar execução sequencial ou delegação nativa do host, integrar as mudanças, simplificar e executar a prova final. A prova roda após a última edição de código/teste e cobre o estado integrado. Falha exige diagnóstico e repetição da prova afetada; alteração posterior em um input de código/teste invalida somente as provas que o cobrem. Atualização de plan, spec, review ou metadados não invalida a prova. Smoke Test acompanha mudança real no ponto de entrada, não o número da task.
 
 Delegação só atende T*s elegíveis e independentes. Cada entrega recebe resultado, aceite, dependências, paths exclusivos e comando de verificação. Use worktree/branch isolada ou ownership sem sobreposição; sem isolamento seguro, mantenha a execução sequencial. O coordenador é o único escritor de `plan.md`, `spec.md`, `review.md` e do índice Git. A prova reportada por um agente não substitui a verificação do estado integrado.
 
-Em UI, a seleção é navegador integrado quando disponível, MCP Server `chrome-devtools` para snapshot, screenshot, DOM, estilos, console, rede e assets, e Playwright somente se já existir no repositório ou for solicitado. Com UI, o `design.md` aprovado do alvo é entrada do reconhecer, com tokens, motion e prova por tela. No Express, a implement segue só o recorte existente e alterado do design quando houver, sem exigir design ausente, sem apply de design, sem plan novo e sem reabrir tasks antigas. A prova registra rota, viewport, estado, ações e evidência; sem capacidade visual, a limitação impede marcar a validação visual.
+Em UI, a seleção é navegador integrado quando disponível, MCP Server `chrome-devtools` para snapshot, screenshot, DOM, estilos, console, rede e assets, e Playwright somente se já existir no repositório ou for solicitado. Com UI, o `design.md` aprovado do alvo é entrada do reconhecer, com tokens, motion e prova por tela. A checagem começa pela tela, estado e viewport afetados; amplia quando layout, responsividade, interação, componente compartilhado ou risco exigirem. No Express, a implement segue só o recorte existente e alterado do design quando houver, sem exigir design ausente, sem apply de design, sem plan novo e sem reabrir tasks antigas. A prova registra rota, viewport, estado, ações e evidência; sem capacidade visual, a limitação impede marcar a validação visual.
+
+Checkpoint de retomada é um bloco opcional sob uma T* que continua incompleta ou entra em handoff. Registra estado, próximo passo, paths que alimentam a prova, `HEAD`, hashes `git hash-object` desses paths e a última prova. Na retomada, a IA confere `git status --short`, `HEAD` e cada hash antes de reaproveitar a prova; hash divergente ou snapshot incompleto invalida somente a prova afetada. O checkpoint sai do plan quando a task fecha; status, prova e paths finais permanecem na T*.
 
 ## 6. Artefato, modos e handoff
 
@@ -61,7 +63,7 @@ Quando a fila da run termina, o handoff é `vibe-review`. Recomende um chat por 
 
 Falhas previstas usam `CODIGO: descrição`, incluindo `IMPLEMENT_SEM_ALVO`, `IMPLEMENT_SEM_PLAN`, `IMPLEMENT_ANALYZE_AUSENTE`, `IMPLEMENT_ANALYZE_RASCUNHO`, `IMPLEMENT_ANALYZE_BLOQUEADO`, `FASE_AUSENTE`, `MODO_INVALIDO` e `PHASES_INESPERADO`.
 
-Suítes: `docs/vibe-implement/tests/test-implement.py` e `docs/vibe-implement/tests/test-implement.sh`. Elas cobrem seleção, fila, phase/MVP, preservação, paridade, ordem de conclusão independente e contratos de delegação, ownership e prova final.
+Suítes: `docs/vibe-implement/tests/test-implement.py` e `docs/vibe-implement/tests/test-implement.sh`. Elas cobrem seleção, fila, phase/MVP, preservação, paridade, ordem de conclusão independente e contratos de delegação, ownership, prova final e retomada.
 
 ## 8. Limites
 

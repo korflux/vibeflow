@@ -29,7 +29,9 @@ Para UI, a ordem é navegador integrado, MCP Server `chrome-devtools`, Playwrigh
 
 Cada T* reúne um resultado coeso verificável. Uma nova T* só aparece para um resultado separado, uma dependência real de execução, isolamento de risco ou impossibilidade de verificar a fatia como unidade. Número de arquivos, sessões, critérios de aceite, uma pontuação ou a conjunção no título não acionam quebras automáticas. Arquivos e risco são registrados quando ajudam a executar, isolar ou revisar.
 
-O preparo local lista as ferramentas necessárias para as provas e resolve ausências simples quando disponível e autorizado. Uma ferramenta ausente só vira T* quando o setup persistente faz parte da entrega do projeto; bloqueios externos ficam registrados. `Deps` contém apenas dependências de execução e define a fila. Paralelização e checkpoints são omitidos quando não alteram execução ou review. Se uma T* criar ou alterar um ponto de entrada executável, o smoke test fica na prova dessa mesma T*.
+O preparo local lista as ferramentas necessárias para as provas e resolve ausências simples quando disponível e autorizado. Uma ferramenta ausente só vira T* quando o setup persistente faz parte da entrega do projeto; bloqueios externos ficam registrados. `Deps` contém apenas dependências de execução e define a fila. Paralelização e checkpoint de review são omitidos quando não alteram execução ou review. Checkpoint de retomada é um registro temporário sob uma T* aberta, diferente do checkpoint de review, e sai quando a task conclui. Se uma T* criar ou alterar um ponto de entrada executável, o smoke test fica na prova dessa mesma T*.
+
+A prova planejada roda depois da última edição de código/teste e é reaproveitada se os inputs permanecerem iguais. Falha ou alteração em um input invalida somente as verificações afetadas. Em UI, a prova começa pelo recorte visual tocado e cresce conforme o impacto em layout, viewport, estado ou interação.
 
 ## Chat e continuidade
 
