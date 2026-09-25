@@ -8,6 +8,7 @@ Os modelos históricos descreviam plan técnico, tasks e checklists como arquivo
 
 ```text
 spec.md aprovado
+  → design.md aprovado quando há UI
   → inventário do mesmo alvo
   → preparo curto das ferramentas exigidas pelas provas
   → fatiamento por resultados e dependências reais
@@ -18,6 +19,8 @@ spec.md aprovado
 ```
 
 `--apply` não transporta a prosa do plan. Ele garante o path e evita sobrescrever um arquivo vivo. Isso deixa o parser mecânico restrito a `### T*`, à linha de conclusão e a `Deps`, enquanto a IA continua dona do significado de aceite, ordem e prova.
+
+O pedido explícito de plan também fecha a aprovação pendente do `design.md` do mesmo alvo: em chat novo, a IA altera somente `# Status` para `aprovado` antes de continuar. Um design ausente ainda exige `vibe-design`, e um rascunho sem pedido explícito ainda exige aprovação humana.
 
 ## Investigação e ferramentas
 

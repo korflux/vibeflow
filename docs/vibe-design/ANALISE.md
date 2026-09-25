@@ -24,6 +24,8 @@ A IA começa pela pergunta de apresentação que a spec deixou aberta, localiza 
 
 `interview → spec → design` pode seguir no mesmo chat. Recomende novo chat ao iniciar `plan`; a separação não é gate e o arquivo vivo permite continuar sem depender do histórico como autoridade.
 
+O pedido explícito de iniciar o plan aprova o `design.md` do mesmo alvo ao atualizar seu status, inclusive quando chega em um chat novo. Sem esse pedido, o rascunho continua aguardando aprovação.
+
 ## MVP
 
 O baseline MVP usa o mesmo template, com o alvo fixo em `.vibeflow/mvp/`. Isso evita que a apresentação de produto novo se misture à numeração cronológica de features. Spec, design e decisões de reuso ficam na mesma pasta.

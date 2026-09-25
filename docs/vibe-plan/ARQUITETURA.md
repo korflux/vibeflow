@@ -1,6 +1,6 @@
 # vibe-plan, arquitetura
 
-`/vibe-plan` fatia uma spec aprovada em tasks verificáveis e grava um único `plan.md`. A IA define a ordem técnica e a prova; os motores inventariam o alvo e preparam o arquivo vivo.
+`/vibe-plan` fatia uma spec aprovada em tasks verificáveis e grava um único `plan.md`. Quando há UI, também exige o `design.md` aprovado no mesmo alvo. A IA define a ordem técnica e a prova; os motores inventariam o alvo e preparam o arquivo vivo.
 
 ```text
 .vibeflow/phases/phase-<n>-<slug>/plan.md
@@ -20,6 +20,8 @@
 ## 2. Dependências e seleção
 
 Sem `.vibeflow/`, `INIT_AUSENTE`. O modo phase exige `spec.md` e reusa a maior phase com spec sem plan. `--dir` força uma phase existente. O plan não cria uma phase nova e não pisa um alvo com `analyze.md`.
+
+Com UI visível, a IA valida o `design.md` do mesmo alvo. Se o design ainda não estiver aprovado, um pedido humano explícito para fazer o plan ou aprovar o design autoriza atualizar somente a linha `# Status` para `aprovado`, inclusive quando o pedido chega em chat novo. Sem esse pedido, o rascunho continua bloqueando o plan; sem `design.md`, o handoff segue para `vibe-design`. Os motores não inferem nem alteram essa aprovação.
 
 No modo MVP, `--mvp` fixa `.vibeflow/mvp/`, exige `spec.md`, recusa `--dir` e encaminha para `vibe-analyze`. A flag representa uma decisão semântica da IA.
 
@@ -52,7 +54,7 @@ O JSON transitório mantém `vibeflow`, `phases`, `next_n`, `existing`, `spec_pe
 3. Prepara `plan.md` vazio quando ausente.
 4. Preserva bytes do vivo existente.
 5. Emite o JSON operacional no stdout para leitura imediata da IA.
-6. A IA escreve ou atualiza diretamente `plan.md`, mantendo `# Status: rascunho` até aprovação.
+6. A IA escreve ou atualiza diretamente `plan.md`, mantendo `# Status: rascunho` até aprovação. A promoção autorizada do design anterior altera somente seu cabeçalho e ocorre antes do fatiamento.
 
 O script não escreve prosa, não escolhe a semântica da fila e não dispara implement. Ajuste ou aprovação posterior é patch no arquivo vivo.
 

@@ -28,11 +28,11 @@ Erros determinísticos previstos: `INIT_AUSENTE` exige `/vibe-init`. `PLAN_SEM_S
 
 ## 1. Abrir
 
-Declare em cerca de cinco linhas: rota, modo, alvo, spec, status da spec e estado do artefato vivo.
+Declare em cerca de cinco linhas: rota, modo, alvo, status da spec, presença/status do design quando houver UI e estado do artefato vivo.
 Ao iniciar após `vibe-spec` ou `vibe-design`, recomende um chat novo. Se o humano preferir continuar no chat atual, prossiga sem bloquear.
 
 ```text
-modo: reuse · alvo: phase-1-lock-bloco · spec: sim · spec-status: aprovado · artefato vivo: presente · chat: novo recomendado
+modo: reuse · alvo: phase-1-lock-bloco · spec-status: aprovado · design-status: aprovado · artefato vivo: presente · chat: novo recomendado
 ```
 
 - `modo_sugerido=criar`: não há pasta com spec. Não invente fase; mande `/vibe-spec`.
@@ -48,7 +48,9 @@ modo: reuse · alvo: phase-1-lock-bloco · spec: sim · spec-status: aprovado ·
 | Spec rascunho sem pedido de plan | Parar. Pedir leitura e aprovação da spec |
 | Intenção, sucesso ou limites frouxos | Devolver para `vibe-interview` ou `vibe-spec`. Não completar no chute |
 | Dúvida pontual de ordem técnica | Resolver via chat (Q + RECOMENDO) |
-| Com UI visível sem `design.md` aprovado na mesma pasta | Parar. Encaminhar para `vibe-design` |
+| Com UI visível e `design.md` aprovado na mesma pasta | Seguir |
+| Com UI visível, `design.md` existente ainda sem status aprovado e pedido explícito para fazer o plan ou aprovar o design | Alterar somente `# Status` do design para `aprovado` e seguir. O pedido direto de plan vale como aprovação explícita, inclusive em chat novo |
+| Com UI visível sem `design.md` aprovado e sem pedido explícito de plan/aprovação | Parar. Sem arquivo, encaminhar para `vibe-design`; com rascunho, pedir leitura e aprovação |
 | Sem UI visível | Registrar N/A explícito no plan, sem bloqueio |
 | `analyze.md` já existente no alvo | Não sobrescrever. Pedido novo exige outra fase |
 

@@ -55,7 +55,7 @@ O JSON transitório mantém `vibeflow`, `phases`, `next_n`, `existing`, `spec_pe
 3. Prepara `design.md` vazio quando ausente.
 4. Preserva byte a byte o vivo existente.
 5. Emite o JSON operacional no stdout para leitura imediata da IA.
-6. A IA escreve ou atualiza diretamente `design.md`, mantendo `# Status: rascunho` até aprovação.
+6. A IA escreve ou atualiza diretamente `design.md`, mantendo `# Status: rascunho` até aprovação. Um pedido humano explícito para seguir ao plan ou iniciar `vibe-plan` promove somente essa linha para `aprovado` e inicia o handoff.
 
 O script não escolhe modo, não preenche markdown e não dispara plan. Ajuste ou aprovação posterior é patch no arquivo vivo. Em falha de gate, pasta nova vazia é removida para não deixar fase vazia no disco.
 
