@@ -1,7 +1,7 @@
 ---
 name: vibe-interview
 description: >
-  Entrevista pedidos ambíguos e projetos novos até fechar intenção, jornadas, páginas e decisões iniciais, gravando a trilha em `.vibeflow/phases/phase-N-slug/interview.md` ou `.vibeflow/mvp/interview.md`. Use when the user runs /vibe-interview, pede para refinar uma ideia, iniciar um produto, site ou MVP, ou ainda não definiu público, funcionamento ou restrições, mesmo que não diga vibe-interview.
+  Esclarece pedidos quando a intenção, o funcionamento ou o resultado esperado ainda não estão claros, inclusive briefings de documentos. Registra as decisões em `.vibeflow/phases/phase-N-slug/interview.md` ou `.vibeflow/mvp/interview.md` para baseline de software. Use when the user runs /vibe-interview, pede para refinar uma ideia ou a IA não tem confiança suficiente para definir a entrega, mesmo que não diga vibe-interview.
 ---
 
 # vibe-interview

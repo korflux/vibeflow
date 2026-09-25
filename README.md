@@ -109,6 +109,8 @@ Primeira vez num repo sem `.vibeflow/`: rode `/vibe-init`. As demais skills recu
 
 O bloco de cadeia em `.vibeflow/REGRAS.md` escolhe o esforço da rota. A IA não inventa atalho: o esforço manda quais portas existem.
 
+A cadeia `spec → design → plan → implement → review` trata entregas de software. Texto e documentos avulsos seguem edição direta; `vibe-interview` pode esclarecer um briefing ambíguo antes da redação.
+
 ```text
                          ┌────────────┐
                          │ vibe-init  │  repo sem .vibeflow, ou disco quebrado

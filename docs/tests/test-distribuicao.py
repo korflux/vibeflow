@@ -180,7 +180,7 @@ class DistribuicaoContracts(unittest.TestCase):
 
         for name in ("vibe-plan", "vibe-analyze", "vibe-implement", "vibe-review"):
             self.assertIn("novo chat", skill_texts[name].lower(), name)
-        self.assertIn("um chat por `T*`", skill_texts["vibe-implement"], "vibe-implement")
+        self.assertRegex(skill_texts["vibe-implement"], r"chat novo por T\*")
 
         template_names = (
             "vibe-interview",

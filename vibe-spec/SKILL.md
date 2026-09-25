@@ -1,10 +1,7 @@
 ---
 name: vibe-spec
 description: >
-  Especifica comportamento, escopo, aceite e decisões em `.vibeflow/phases/phase-N-slug/spec.md` ou `.vibeflow/mvp/spec.md`.
-  Use when the user runs /vibe-spec, pede spec, especificar a entrega,
-  fechar comportamento e aceite antes do plan, ou a rota é high/xhigh/max
-  com intenção já razoavelmente clara, mesmo que não diga vibe-spec.
+  Define o funcionamento de uma entrega de software: fluxos, regras, escopo, exclusões, alterações e critérios de aceite. Grava em `.vibeflow/phases/phase-N-slug/spec.md` ou `.vibeflow/mvp/spec.md`. Use when the user runs /vibe-spec, pede a especificação de uma funcionalidade ou a rota de software é high/xhigh/max com intenção clara, mesmo que não diga vibe-spec. Não se aplica à redação de documentos avulsos.
 ---
 
 # vibe-spec

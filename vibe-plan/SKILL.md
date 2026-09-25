@@ -1,10 +1,7 @@
 ---
 name: vibe-plan
 description: >
-  Fatia a spec em tasks verificáveis e grava em `.vibeflow/phases/phase-N-slug/plan.md` ou `.vibeflow/mvp/plan.md`.
-  Use when the user runs /vibe-plan, pede plan, fatiar a spec, criar tasks,
-  todo, ordem de execução, ou a rota é high/xhigh/max com spec em disco,
-  mesmo que não diga vibe-plan.
+  Fatia a spec de software em tarefas de implementação verificáveis e grava em `.vibeflow/phases/phase-N-slug/plan.md` ou `.vibeflow/mvp/plan.md`. Use when the user runs /vibe-plan, pede para fatiar uma funcionalidade em tarefas de código, ou a rota de software é high/xhigh/max com spec em disco, mesmo que não diga vibe-plan. Não se aplica a planos de documentos avulsos.
 ---
 
 # vibe-plan

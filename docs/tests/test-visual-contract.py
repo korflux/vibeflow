@@ -76,15 +76,15 @@ class VisualContract(unittest.TestCase):
         self.assertRegex(contract, r"icon-only.{0,180}universalmente reconhec")
         self.assertRegex(contract, r"ações ambíguas.{0,180}texto")
 
-    # Impede que a cadeia volte a exigir um navegador específico ou instalação automática.
+    # Mantém a seleção de ferramenta e a prova visual distribuídas entre skill e referência.
     def test_tool_selection_and_fallback_are_explicit(self) -> None:
         skills = read_contract(SKILL_PATHS)
+        references = read_contract(REFERENCE_PATHS)
         for term in ("navegador integrado", "chrome-devtools", "playwright"):
             self.assertIn(term, skills, term)
         for term in ("snapshot", "screenshot", "dom", "estilos", "console", "rede", "assets"):
-            self.assertIn(term, skills, term)
-        self.assertRegex(skills, r"playwright.{0,220}(já existir|existir no repositório).{0,220}solicit")
-        self.assertRegex(skills, r"não instalar|não instale|não .*instala")
+            self.assertIn(term, references, term)
+        self.assertIn("se faltar ferramenta, tente disponibilizá-la", skills)
         self.assertRegex(skills, r"não .*passe|não .*aprove|não marque.*conclu")
         plan = (ROOT / "vibe-plan" / "SKILL.md").read_text(encoding="utf-8-sig").lower()
         self.assertNotIn("alocar uma task inicial para instalação/configuração do mcp", plan)

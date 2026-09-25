@@ -1,10 +1,7 @@
 ---
 name: vibe-review
 description: >
-  Julga o patch, os testes e a cobertura pós-código e grava em `.vibeflow/phases/phase-N-slug/review.md` ou `.vibeflow/mvp/review.md`.
-  Use when the user runs /vibe-review, pede review, revisa isso, LGTM, pode
-  mergear, ou há handoff de vibe-implement / rota medium+, mesmo que não
-  diga vibe-review.
+  Revisa código alterado, testes e cobertura após a implementação e grava em `.vibeflow/phases/phase-N-slug/review.md` ou `.vibeflow/mvp/review.md`. Use when the user runs /vibe-review, pede revisão de código ou patch, LGTM, merge de software, ou há handoff de vibe-implement, mesmo que não diga vibe-review. Não se aplica à revisão editorial de texto ou documentos.
 ---
 
 # vibe-review

@@ -1,6 +1,6 @@
 # vibe-implement, arquitetura
 
-`/vibe-implement` executa uma fatia elegível, prova o resultado e registra status, paths, prova e bloqueios diretamente na task do `plan.md`. A IA inspeciona o fluxo, codifica, testa e simplifica; o motor seleciona alvo e fila sem criar um segundo registro.
+`/vibe-implement` executa uma fatia de código elegível, prova o resultado e registra status, paths, prova e bloqueios diretamente na task do `plan.md`. A IA inspeciona o fluxo, codifica, testa e simplifica; o motor seleciona alvo e fila sem criar um segundo registro. Edição apenas de texto ou documento avulso fica fora desta skill.
 
 ```text
 .vibeflow/phases/phase-<n>-<slug>/plan.md

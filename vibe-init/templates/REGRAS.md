@@ -4,7 +4,7 @@
 | esforço | fluxo | quando |
 |---|---|---|
 | — | init | primeira vez no repo, ou disco quebrado, de novo só para reparar |
-| low | implement | pedido claro, direto, simples (cor, texto, documento, landing page / página de captura estática) |
+| low | implement | mudança simples de código de software, como cor ou layout de página estática |
 | medium | implement → review | pedido claro e direto sem regressão de backend, ou página visual com validação chrome-devtools |
 | high | spec → plan → implement → review | pedido claro, execução difícil, ou sistema com auth, painel admin, banco ou regressão |
 | xhigh | interview → spec → plan → implement → review | pedido ambíguo, confiança baixa, intenção ou sucesso de software em aberto |

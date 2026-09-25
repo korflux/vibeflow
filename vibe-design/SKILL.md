@@ -1,9 +1,7 @@
 ---
 name: vibe-design
 description: >
-  Desenha a apresentação de fluxos aprovados e grava em `.vibeflow/phases/phase-N-slug/design.md` ou `.vibeflow/mvp/design.md`.
-  Use when the user runs /vibe-design, pede design, desenho de tela, layout, tokens, corrigir UI, analisar UI existente,
-  ou a rota tem UI visível com spec aprovada, mesmo que não diga vibe-design.
+  Define a UI visível de uma entrega de software a partir dos fluxos aprovados e grava em `.vibeflow/phases/phase-N-slug/design.md` ou `.vibeflow/mvp/design.md`. Use when the user runs /vibe-design, pede desenho de tela, layout, tokens ou análise de UI existente, ou a rota de software tem UI visível com spec aprovada, mesmo que não diga vibe-design. Não se aplica ao layout de documentos avulsos.
 ---
 
 # vibe-design

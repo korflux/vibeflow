@@ -4,7 +4,9 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
+import stat
 import subprocess
 import sys
 import unittest
@@ -15,6 +17,16 @@ from pathlib import Path
 SKILL_DIR = Path(__file__).resolve().parents[3] / "vibe-implement"
 SCRIPT = SKILL_DIR / "scripts" / "implement.py"
 POWERSHELL_SCRIPT = SKILL_DIR / "scripts" / "implement.ps1"
+
+
+# Limpa a fixture e torna graváveis objetos Git que o Windows cria como read-only.
+def remove_fixture_tree(path: Path) -> None:
+    # A falha volta ao teste se o problema não for apenas o atributo read-only.
+    def retry_writable(operation, filename, error) -> None:
+        os.chmod(filename, stat.S_IWRITE)
+        operation(filename)
+
+    shutil.rmtree(path, onerror=retry_writable)
 
 
 # Executa o motor Python e decodifica o inventário transitório enviado no stdout.
@@ -84,13 +96,17 @@ class PythonContracts(unittest.TestCase):
         self.repo.mkdir()
 
     def tearDown(self) -> None:
-        shutil.rmtree(self.repo, ignore_errors=True)
+        remove_fixture_tree(self.repo)
 
     # Executa Git no repositório temporário sem shell, preservando erros como evidência do teste.
     def _git(self, repo: Path, *arguments: str) -> subprocess.CompletedProcess[str]:
+        # O repositório Git da fixture fica fora do worktree para permitir limpeza estrita no sandbox.
+        git_dir = repo.parent / f"{repo.name}-git"
+        git_env = os.environ | {"GIT_DIR": str(git_dir), "GIT_WORK_TREE": str(repo)}
         return subprocess.run(
             ["git", *arguments],
             cwd=repo,
+            env=git_env,
             capture_output=True,
             text=True,
             check=True,
@@ -482,14 +498,15 @@ class SkillContracts(unittest.TestCase):
     def test_express_precedes_init_and_routes_same_phase_adjustments(self) -> None:
         """Mantém o Express sem fase antes dos motores e retém ajustes na entrega atual."""
         skill = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
-        express_start = skill.index("1. Classifique Express")
+        express_start = skill.index("1. Antes de exigir `.vibeflow/`")
         script_start = skill.index("2. Fora do Express")
         express = skill[express_start:script_start]
 
         self.assertLess(express_start, script_start)
         self.assertIn("No fluxo padrão, sem `.vibeflow/`: `/vibe-init`", skill)
         self.assertNotIn("Sem `.vibeflow/`: `/vibe-init`.", skill)
-        self.assertIn("pedido claro e localizado", express)
+        self.assertIn("mudança de código clara e localizada", express)
+        self.assertIn("Texto puro segue edição direta, fora desta skill", express)
         self.assertIn("não rode `vibe-init`", express)
         self.assertIn("nem crie ou exija `.vibeflow/`", express)
         self.assertIn("atualize a T* aberta", express)
@@ -594,7 +611,7 @@ class PowershellParity(unittest.TestCase):
         self.repo.mkdir()
 
     def tearDown(self) -> None:
-        shutil.rmtree(self.repo, ignore_errors=True)
+        remove_fixture_tree(self.repo)
 
     # Confirma que o PowerShell entrega o alvo sem criar implement.md ou relatório.
     def test_apply_reuse_same_path(self) -> None:
