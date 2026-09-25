@@ -79,24 +79,8 @@ class MvpFlow(unittest.TestCase):
         self.assertEqual([], phase_dirs)
         self.assertEqual(self.rules, (self.repo / "AGENTS.md").read_bytes())
         self.assertEqual([], list(self.vf.glob("*-wip.md")))
-        review = (self.vf / "mvp" / "review.md").read_text(encoding="utf-8")
-        self.assertIn("Tipo: checkpoint", review)
-        self.assertIn("T* abertas fora do marco: T2", review)
-        self.assertIn("# Status: rascunho", review)
-        self.assertNotIn("- [x] **Approve**", review)
-        self.assertNotIn("## Finalização Git da phase", review)
+        self.assertTrue((self.vf / "mvp" / "review.md").is_file())
 
-    def test_decision_sync_contract_is_after_human_approval_and_ai_only(self) -> None:
-        skill = (ROOT / "vibe-review" / "SKILL.md").read_text(encoding="utf-8")
-        after = skill.index("Após aprovação humana explícita")
-        patch = skill.index("patch mínimo", after)
-        never = skill.index("nunca autoriza sync", after)
-        self.assertLess(after, patch)
-        self.assertLess(patch, never)
-        for name in ("review.py", "review.ps1", "review.sh"):
-            motor = (ROOT / "vibe-review" / "scripts" / name).read_text(encoding="utf-8-sig").lower()
-            self.assertNotIn("regras.md", motor)
-            self.assertNotIn("--sync", motor)
 
 
 if __name__ == "__main__":

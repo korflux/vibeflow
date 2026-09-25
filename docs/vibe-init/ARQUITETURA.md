@@ -8,9 +8,9 @@ O template fica em `vibe-init/templates/AGENTS.md`. O motor cria o arquivo quand
 
 ## Migração e proteção
 
-O motor reconhece `.vibeflow/REGRAS.md`, `REGRAS.md` na raiz e `CLAUDE.md` como fontes legadas. Copia arquivos regulares para `.vibeflow/old/` e confere tamanho e SHA-256 antes de editar o alvo. Colisão com conteúdo diferente recebe sufixo UTC. Um `AGENTS.md` que aponta para arquivo local é materializado após backup. Links externos, fontes não regulares e fontes maiores que 1 MiB são recusados. Legados diferentes de `AGENTS.md` aparecem em `merges` e permanecem no disco até consolidação semântica pela IA; o motor não apaga regra de usuário nem inventa equivalência.
+O motor reconhece `.vibeflow/REGRAS.md`, `REGRAS.md` na raiz e `CLAUDE.md` como fontes legadas. Salva cada fonte em `.vibeflow/old/` e confere tamanho e SHA-256 antes de editar ou remover. Colisão com conteúdo diferente recebe sufixo UTC. Um `AGENTS.md` que aponta para arquivo local é materializado após backup. Links externos, fontes não regulares e fontes maiores que 1 MiB são recusados. Legados com conteúdo idêntico ao `AGENTS.md` materializado são removidos automaticamente, inclusive symlinks, depois da atualização do alvo. Fontes diferentes aparecem em `merges` e permanecem no disco até consolidação semântica pela IA.
 
-O relatório JSON contém `root`, `target`, `actions`, `olds`, `merges` e `legacy_present`. Ele é ignorado pelo Git. O stdout contém somente seu path. O arquivo `.vibeflow/.gitignore` preserva entradas existentes e acrescenta `init-report.json` e `init-pending.json` quando faltarem.
+O relatório JSON contém `root`, `target`, `actions`, `olds`, `merges`, `migrated` e `legacy_present`. Ele é ignorado pelo Git. O stdout contém somente seu path. O arquivo `.vibeflow/.gitignore` preserva entradas existentes e acrescenta `init-report.json` e `init-pending.json` quando faltarem.
 
 ## Motores e testes
 

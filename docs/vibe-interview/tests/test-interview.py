@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import json
-import re
 import shutil
 import subprocess
 import sys
@@ -17,8 +16,6 @@ SKILL_DIR = Path(__file__).resolve().parents[3] / "vibe-interview"
 SCRIPT = SKILL_DIR / "scripts" / "interview.py"
 POWERSHELL_SCRIPT = SKILL_DIR / "scripts" / "interview.ps1"
 # Caminho do template vivo; os contratos abaixo garantem jornadas e acesso obrigatórios.
-TEMPLATE = SKILL_DIR / "templates" / "interview.md"
-DISCOVERY = SKILL_DIR / "references" / "mvp-discovery.md"
 
 
 # Executa o motor Python e decodifica o inventário transitório enviado no stdout.
@@ -201,58 +198,9 @@ class PythonContracts(unittest.TestCase):
 
 
 # Contratos do template vivo; garantem jornadas, navegação e checklist de acesso.
-class TemplateContracts(unittest.TestCase):
-    """Verifica que o template exige jornadas, navegação e acesso com N/A explícito."""
-
-    # Lê o template canônico sem depender de .vibeflow ou do motor.
-    def read_template(self) -> str:
-        return TEMPLATE.read_text(encoding="utf-8")
-
-    # Confirma que a tabela de jornadas exige as 8 colunas do contrato.
-    def test_jornadas_exigem_oito_colunas(self) -> None:
-        text = self.read_template()
-        for coluna in ("Jornada", "Ator", "Gatilho", "Objetivo", "Páginas/telas", "Entrada", "Saída", "Estado crítico"):
-            self.assertIn(coluna, text)
-
-    # Garante que cada página tenha um caminho de entrada, próximo destino e retorno.
-    def test_paginas_exigem_navegacao(self) -> None:
-        text = self.read_template()
-        for coluna in ("Páginas e navegação", "Como chega", "Ação e próximo destino", "Como volta"):
-            self.assertIn(coluna, text)
-
-    # Confirma que o checklist de acesso cobre os passos da conta com N/A explícito.
-    def test_acesso_exige_checklist_com_na(self) -> None:
-        text = self.read_template().lower()
-        for item in ("login", "cadastro", "dados do cadastro", "verificação", "recuperação", "sessão", "papéis", "primeiro usuário", "bloqueio", "logout"):
-            self.assertIn(item, text)
-        self.assertIn("n/a", text)
-
-    # Confirma que o template declara o invariante de jornada incompleta como defeito.
-    def test_jornada_incompleta_e_defeito(self) -> None:
-        text = self.read_template()
-        self.assertIn("sem saída", text)
-        self.assertIn("sem estado crítico", text)
-        self.assertIn("Texto livre sem tabela é defeito", text)
 
 
 # Confere que as referências condicionais e os gatilhos de descoberta continuam utilizáveis.
-class DiscoveryReferenceContracts(unittest.TestCase):
-    """Protege os caminhos dos módulos e os gatilhos de privacidade e requisitos legais."""
-
-    # Garante que cada caminho de módulo citado no roteador aponta para um arquivo real.
-    def test_referencias_de_modulo_apontam_para_arquivos(self) -> None:
-        text = DISCOVERY.read_text(encoding="utf-8")
-        references = re.findall(r"`(modules/[^`]+\.md)`", text)
-        self.assertTrue(references, "o roteador MVP não cita caminhos de módulos")
-        for reference in references:
-            with self.subTest(reference=reference):
-                self.assertTrue((DISCOVERY.parent / reference).is_file(), f"referência sem arquivo: {reference}")
-
-    # Garante que riscos de dados pessoais e obrigações legais acionem perguntas próprias.
-    def test_discovery_define_gatilhos_de_privacidade_e_juridico(self) -> None:
-        text = DISCOVERY.read_text(encoding="utf-8").lower()
-        for gatilho in ("privacidade", "dados pessoais ou sensíveis", "jurídico", "setor é regulado"):
-            self.assertIn(gatilho, text)
 
 
 # Verifica se existe uma versão real de PowerShell 7, única suportada pelo motor gêmeo.

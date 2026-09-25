@@ -25,7 +25,7 @@ Faça os seis. Ache **instância**, não padrão genérico.
 | Duplicação | `duplicacao` | A*/C*/T* que dizem a mesma entrega com redação pior |
 | Ambiguidade | `ambiguidade` | Adjetivo sem métrica (rápido, seguro, intuitivo); placeholder (`TODO`, `???`, `<...>`) |
 | Furo | `furo` | Verbo sem objeto; aceite não testável; T* cita arquivo que spec/plan não definem |
-| Constituição | `constituicao` | Viola MUST/Never do `REGRAS.md`. Sempre `CRITICAL` |
+| Constituição | `constituicao` | Viola MUST/Never do `AGENTS.md`. Sempre `CRITICAL` |
 | Cobertura | `cobertura` | A*/C* com zero T*; T* sem requisito; sucesso da interview sem C* |
 | Inconsistência | `inconsistencia` | Nome diferente para a mesma coisa; entidade só num arquivo; ordem de T* que fura Deps; A* e T* se anulam |
 | Decisão crítica | `decisao` | ID órfão; opção muda sem `substitui`; task implementa decisão diferente. Sempre `CRITICAL` quando altera lógica, acesso, dados, infraestrutura, segurança ou operação |

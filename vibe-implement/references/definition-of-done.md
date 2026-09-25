@@ -26,4 +26,4 @@ Abrir no fechamento da fatia, não no boot.
 - Encaixa no que já existe. Sem módulo paralelo “por via das dúvidas”
 - API interna obsoleta: apaga. API publicada a terceiros: não remove em silêncio
 
-Não renegocie esta lista a cada T*. Adapte **uma vez** ao repo se o `REGRAS.md` já tiver barra própria; senão use esta.
+Não renegocie esta lista a cada T*. Adapte **uma vez** ao repo se o `AGENTS.md` já tiver barra própria; senão use esta.

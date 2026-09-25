@@ -12,7 +12,7 @@
 | interview.md | presente | ausente |
 | spec.md | presente |
 | plan.md | presente |
-| REGRAS.md | lido |
+| AGENTS.md | lido |
 
 ## Cobertura e Rastreabilidade
 
@@ -53,7 +53,7 @@
 
 ## Constituição
 
-<!-- Omitir se zero choque com REGRAS.md -->
+<!-- Omitir se zero choque com AGENTS.md -->
 
 - Regra: <qual regra> -> Resolução: <ajuste aplicado para conformidade>
 

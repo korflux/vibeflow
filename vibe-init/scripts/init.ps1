@@ -38,9 +38,13 @@ function Get-LocalSource([string]$Path, [string]$Project) {
 function Save-Old([string]$Source, [string]$Project, [string]$OldDir, [string]$Name, $Records) {
     New-Item -ItemType Directory -Path $OldDir -Force | Out-Null
     $destination = Join-Path $OldDir $Name
+    $existing = Get-Item -LiteralPath $destination -Force -ErrorAction SilentlyContinue
+    if ($existing -and ($existing.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw "TIPO_INESPERADO: backup $destination não pode ser link" }
     if (Test-Path -LiteralPath $destination) {
         if ((Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash -eq (Get-FileHash -LiteralPath $Source -Algorithm SHA256).Hash) { return }
         $destination = Join-Path $OldDir ($Name + '.' + [DateTime]::UtcNow.ToString('yyyyMMddTHHmmssfffffffZ'))
+        $existing = Get-Item -LiteralPath $destination -Force -ErrorAction SilentlyContinue
+        if ($existing -and ($existing.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw "TIPO_INESPERADO: backup $destination não pode ser link" }
     }
     Copy-Item -LiteralPath $Source -Destination $destination
     $sourceItem = Get-Item -LiteralPath $Source
@@ -130,17 +134,24 @@ function Invoke-VibeInit {
         $actions.Add('criar_AGENTS')
     }
     foreach ($entry in $legacySources) {
-        if (-not (Get-Item -LiteralPath $entry.path -Force).LinkType) {
-            $name = if ($entry.path -eq (Join-Path $vf 'REGRAS.md')) { 'REGRAS-vibeflow.md' } else { Split-Path -Leaf $entry.path }
-            Save-Old $entry.source $project $old $name $records
-        }
+        $name = if ($entry.path -eq (Join-Path $vf 'REGRAS.md')) { 'REGRAS-vibeflow.md' } else { Split-Path -Leaf $entry.path }
+        Save-Old $entry.source $project $old $name $records
     }
+    $legacyContents = @{}
+    foreach ($entry in $legacySources) { $legacyContents[$entry.path] = [IO.File]::ReadAllText($entry.source) }
     $current = [IO.File]::ReadAllText($agents)
     $updated = Update-Header $current $template
     if ($updated -cne $current) {
         if ($current.Trim() -and -not @($records | Where-Object { $_.from -eq 'AGENTS.md' }).Count) { Save-Old $agents $project $old 'AGENTS.md' $records }
         [IO.File]::WriteAllText($agents, $updated, $Utf8)
         $actions.Add('atualizar_AGENTS')
+    }
+    # Migra automaticamente só fontes idênticas ao AGENTS materializado e com backup verificado.
+    $migrated = @($legacySources | Where-Object { $legacyContents[$_.path] -ceq $current })
+    $merges = @($legacySources | Where-Object { $legacyContents[$_.path] -cne $current } | ForEach-Object { [IO.Path]::GetRelativePath($project, $_.path).Replace('\','/') })
+    foreach ($entry in @($migrated | Where-Object { (Get-Item -LiteralPath $_.path -Force).LinkType }) + @($migrated | Where-Object { -not (Get-Item -LiteralPath $_.path -Force).LinkType })) {
+        Remove-Item -LiteralPath $entry.path -Force
+        $actions.Add('remover_legado:' + [IO.Path]::GetRelativePath($project, $entry.path).Replace('\','/'))
     }
     $bridgeContent = '@../../AGENTS.md' + "`n"
     if (Test-Path -LiteralPath $bridge) {
@@ -151,8 +162,7 @@ function Invoke-VibeInit {
         [IO.File]::WriteAllText($bridge, $bridgeContent, $Utf8)
         $actions.Add('atualizar_ponte_antigravity')
     }
-    $merges = @($legacySources | Where-Object { (Get-FileHash -LiteralPath $_.source -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $agents -Algorithm SHA256).Hash } | ForEach-Object { [IO.Path]::GetRelativePath($project, $_.path).Replace('\','/') })
-    $report = @{ root = $project; target = 'AGENTS.md'; actions = @($actions); olds = @($records); merges = $merges; legacy_present = @($legacySources | ForEach-Object { [IO.Path]::GetRelativePath($project, $_.path).Replace('\','/') }) }
+    $report = @{ root = $project; target = 'AGENTS.md'; actions = @($actions); olds = @($records); merges = $merges; migrated = @($migrated | ForEach-Object { [IO.Path]::GetRelativePath($project, $_.path).Replace('\','/') }); legacy_present = @($legacySources | Where-Object { Test-Path -LiteralPath $_.path } | ForEach-Object { [IO.Path]::GetRelativePath($project, $_.path).Replace('\','/') }) }
     $reportPath = Join-Path $vf 'init-report.json'
     [IO.File]::WriteAllText($reportPath, ($report | ConvertTo-Json -Depth 8), $Utf8)
     Write-Output $reportPath

@@ -6,6 +6,8 @@ description: >
 
 # vibe-design
 
+Se encontrar `.vibeflow/REGRAS.md`, `REGRAS.md` ou `CLAUDE.md` de uma instalação anterior, execute `vibe-init` para migrar as regras e então retome esta etapa. Fontes divergentes continuam para consolidação.
+
 Não invente `n`, slug ou path. Sem spec aprovada no alvo, não há design. Sem `.vibeflow/`, pare e mande `/vibe-init`.
 Não edite source, teste ou lockfile nesta skill. Não gere imagem final. Open Questions no arquivo é defeito.
 

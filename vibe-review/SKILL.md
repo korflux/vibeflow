@@ -6,21 +6,23 @@ description: >
 
 # vibe-review
 
+Se encontrar `.vibeflow/REGRAS.md`, `REGRAS.md` ou `CLAUDE.md` de uma instalação anterior, execute `vibe-init` para migrar as regras e então retome esta etapa. Fontes divergentes continuam para consolidação.
+
 Não invente `n` se há plan. Não edite source, teste nem lockfile. Sem `review.md` não há veredito.
 Um arquivo por alvo. Sem `.vibeflow/`: `/vibe-init`. Open Questions no arquivo = defeito. Correções ficam na `vibe-implement`; o Git só é finalizado após Approve e confirmação humana.
-Decisões vigentes em `REGRAS.md` só são sincronizadas após Approve sem bloqueios e confirmação humana explícita.
+Decisões vigentes em `AGENTS.md` só são sincronizadas após Approve sem bloqueios e confirmação humana explícita.
 Recomende iniciar a review em um chat novo, separado da implementação. Se o humano preferir o chat atual, prossiga sem bloquear.
 
 A investigação começa pela pergunta de auditoria e pelo T*/diff que precisa ser provado. Use `rg --files` para localizar os artefatos, paths alterados, testes e referências aplicáveis; use `rg -n` para localizar símbolos, contratos e evidências. Abra somente as entradas e dependências do fluxo real e expanda a leitura quando uma lacuna bloquear o veredito. O inventário é mapa de seleção, não autorização para ler a árvore inteira.
 
 ## 0. Entender e usar o script
 
-1. Resolva o diretório desta skill e leia o motor que vai executar. Entenda alvo, cadeia exigida, recusas, preparação do destino e preservação do arquivo vivo. Confirme que ele não escreve `REGRAS.md`; corrija e prove qualquer defeito antes de seguir.
+1. Resolva o diretório desta skill e leia o motor que vai executar. Entenda alvo, cadeia exigida, recusas, preparação do destino e preservação do arquivo vivo. Confirme que ele não escreve `AGENTS.md`; corrija e prove qualquer defeito antes de seguir.
 2. No cwd do repo:
    - Windows: `pwsh "<skill>/scripts/review.ps1"`
    - Unix: `bash "<skill>/scripts/review.sh"` (Python 3, senão pwsh 7)
    - Alvo MVP: acrescente `-Mvp` ou `--mvp`.
-3. Leia o JSON operacional emitido no stdout pelo comando acima. Use `rg --files` e `rg -n` para localizar o alvo, o que `files` listar, `plan.md` com status, dependências, bloqueios, paths e provas de cada T*, `spec.md`, `analyze.md` se houver, `REGRAS.md` e o diff apontado pelo humano ou da sessão. Abra somente os paths que sustentam o veredito; não leia a árvore inteira.
+3. Leia o JSON operacional emitido no stdout pelo comando acima. Use `rg --files` e `rg -n` para localizar o alvo, o que `files` listar, `plan.md` com status, dependências, bloqueios, paths e provas de cada T*, `spec.md`, `analyze.md` se houver, `AGENTS.md` e o diff apontado pelo humano ou da sessão. Abra somente os paths que sustentam o veredito; não leia a árvore inteira.
 
 `INIT_AUSENTE` exige init. `REVIEW_SEM_ALVO`, `REVIEW_CADEIA_INCOMPLETA`, `MVP_INESPERADO`, `MODO_INVALIDO`, `FASE_AUSENTE` e `SLUG_INVALIDO` não são contornados.
 
@@ -178,7 +180,7 @@ Após aprovação humana explícita da review final, com a fila concluída:
 2. Se **Decisões para vigência** estiver vazia, feche a cadeia sem tocar regras.
 3. Se houver linhas, aplique patch mínimo em `AGENTS.md`. Crie ou atualize uma única seção `## Decisões vigentes` com tabela `ID | Decisão vigente | Fonte`. Atualize por ID, preserve linhas não citadas e use como fonte o review aprovado do alvo.
 4. Não copie justificativa, histórico ou impacto para as regras. Eles permanecem nos artefatos.
-5. Releia `REGRAS.md` e confirme que apenas os IDs aprovados mudaram. Review rascunho, Request changes ou Approve sem confirmação humana nunca autoriza sync.
+5. Releia `AGENTS.md` e confirme que apenas os IDs aprovados mudaram. Review rascunho, Request changes ou Approve sem confirmação humana nunca autoriza sync.
 
 ### Finalização Git da phase
 

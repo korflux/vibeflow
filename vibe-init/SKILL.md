@@ -1,16 +1,16 @@
 ---
 name: vibe-init
 description: >
-  Inicializa ou repara as regras de um projeto de software em AGENTS.md na raiz, sem criar CLAUDE.md nem REGRAS.md. Use when the user runs /vibe-init, pede governança para agentes, unificar regras ou preparar um repositório VibeFlow, mesmo sem citar vibe-init.
+  Inicializa ou repara as regras de um projeto de software em AGENTS.md na raiz, sem criar CLAUDE.md nem REGRAS.md. Use when the user runs /vibe-init, pede governança para agentes, unificar regras, preparar um repositório VibeFlow ou encontra uma instalação antiga com REGRAS.md ou CLAUDE.md, mesmo sem citar vibe-init.
 ---
 
 # vibe-init
 
-`AGENTS.md` na raiz é a única fonte editável de regras. Preserve toda fonte existente em backup verificado antes de substituí-la. Não crie `CLAUDE.md`, `REGRAS.md` ou cópias das regras em outros paths.
+`AGENTS.md` na raiz é a única fonte editável de regras. Preserve toda fonte existente em backup verificado antes de substituí-la. Não crie `CLAUDE.md`, `REGRAS.md` ou cópias das regras em outros paths. A execução do init também migra instalações antigas.
 
 ## 0. Entender e usar o motor
 
-Leia `scripts/init.py` no Unix ou `scripts/init.ps1` no Windows antes de executar. O motor aceita `--root`/`-Root`, cria `.vibeflow/phases/`, prepara `AGENTS.md` com `templates/AGENTS.md`, atualiza a ponte `.agents/rules/vibeflow.md` para `@../../AGENTS.md` e emite `.vibeflow/init-report.json`. Um `AGENTS.md` existente mantém suas regras; o motor atualiza só a regra de escopo e o bloco `VIBEFLOW:CADEIA`. Fontes legadas são copiadas e verificadas em `.vibeflow/old/`, sem exclusão automática.
+Leia `scripts/init.py` no Unix ou `scripts/init.ps1` no Windows antes de executar. O motor aceita `--root`/`-Root`, cria `.vibeflow/phases/`, prepara `AGENTS.md` com `templates/AGENTS.md`, atualiza a ponte `.agents/rules/vibeflow.md` para `@../../AGENTS.md` e emite `.vibeflow/init-report.json`. Um `AGENTS.md` existente mantém suas regras; o motor atualiza só a regra de escopo e o bloco `VIBEFLOW:CADEIA`. Fontes legadas recebem backup verificado em `.vibeflow/old/`; o motor remove automaticamente apenas as que forem idênticas ao conteúdo materializado em `AGENTS.md` antes da atualização do cabeçalho.
 
 Execute na raiz do projeto:
 
@@ -23,7 +23,7 @@ Se faltar runtime, tente o outro motor. Se ambos falharem por limitação de amb
 
 ## 1. Investigar e consolidar
 
-Leia o relatório, o `AGENTS.md` e apenas as fontes listadas em `merges`. Use `rg --files` e `rg -n` para localizar manifestos, comandos, entradas e dependências relevantes; não leia a árvore inteira. Preserve diferenças materiais dos legados no `AGENTS.md`. Depois de confirmar que o conteúdo foi incorporado e está salvo em `old/`, remova os arquivos legados `CLAUDE.md` e `REGRAS.md` apenas quando forem do antigo VibeFlow; outros arquivos do usuário permanecem até a decisão humana sobre sua função.
+Leia o relatório, o `AGENTS.md` e apenas as fontes listadas em `merges`. Use `rg --files` e `rg -n` para localizar manifestos, comandos, entradas e dependências relevantes; não leia a árvore inteira. Preserve diferenças materiais dos legados no `AGENTS.md`. Depois de confirmar que o conteúdo foi incorporado e está salvo em `old/`, remova os arquivos legados restantes apenas quando forem do antigo VibeFlow; outros arquivos do usuário permanecem até a decisão humana sobre sua função.
 
 Preencha os SLOTs do template somente com evidência do projeto. Em arquivos de referência, aproveite a forma, não os fatos: comandos reais de setup/teste, mapa curto da estrutura, fluxos de ponta a ponta, invariantes, validações e caminhos de alteração frequentes. Não copie stack, paths, nomes de funções ou regras do projeto de origem. O bloco de proibição a documentos fica no topo de `AGENTS.md`, antes da cadeia.
 

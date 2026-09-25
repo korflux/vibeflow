@@ -6,9 +6,11 @@ description: >
 
 # vibe-analyze
 
+Se encontrar `.vibeflow/REGRAS.md`, `REGRAS.md` ou `CLAUDE.md` de uma instalação anterior, execute `vibe-init` para migrar as regras e então retome esta etapa. Fontes divergentes continuam para consolidação.
+
 Não invente `n`, slug ou path. Sem plan no alvo, não há analyze. Sem `.vibeflow/`, pare e mande `/vibe-init`.
 Erros óbvios e lacunas determinísticas identificados no cruzamento devem ser corrigidos diretamente nos artefatos (`spec.md`, `design.md` ou `plan.md`). Ambiguidades reais de negócio ou arquitetura devem ser esclarecidas com o usuário via chat.
-Não atualize decisões vigentes nem `REGRAS.md`. No MVP, conflito crítico sem `substitui` explícito bloqueia a implementação.
+Não atualize decisões vigentes nem `AGENTS.md`. No MVP, conflito crítico sem `substitui` explícito bloqueia a implementação.
 
 A investigação começa pela pergunta de consistência que precisa ser respondida. Use `rg --files` para localizar interview, spec, plan, analyze, regras e paths citados; use `rg -n` para localizar A*/C*, T*, IDs, símbolos e comandos. Abra somente as entradas e dependências que sustentam o cruzamento e expanda a leitura quando uma lacuna bloquear a prova. O inventário é mapa de seleção, não autorização para ler a árvore inteira.
 
@@ -68,7 +70,7 @@ Audite, cruze e resolva:
    - As tasks possuem comandos reais de teste no repositório? Se houver verificação puramente manual sem comando, converta para comando executável real no `plan.md`.
    - Confira apenas ferramentas exigidas pelas provas escolhidas, como `gitleaks` ou MCP `chrome-devtools`. Resolva preparo local simples quando disponível e autorizado; só proponha T* para setup persistente que faça parte da entrega do projeto. Registre bloqueio externo sem criar task artificial de instalação.
 6. **Decisões Críticas (MVP):** Cruze cada ID entre interview, spec e plan. Se houver divergência sem declaração de `substitui` ou ID órfão, ajuste a consistência nos artefatos ou pergunte ao usuário se for mudança intencional.
-7. **Conformidade com REGRAS.md:** Violação de regras mandatórias (segurança, auth, dados, segredos, CSP) = aplicar patch corretivo imediato nos artefatos.
+7. **Conformidade com AGENTS.md:** Violação de regras mandatórias (segurança, auth, dados, segredos, CSP) = aplicar patch corretivo imediato nos artefatos.
 8. **Passes de Consistência:** Duplicação, ambiguidade de adjetivos, furos de aceite e inconsistências de termos = aplicar correção direta.
 
 Para cada ajuste aplicado diretamente em `spec.md`, `design.md` ou `plan.md`, registre a entrada na seção **Achados e Resoluções** do `analyze.md`.

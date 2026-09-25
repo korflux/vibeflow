@@ -320,76 +320,14 @@ class PowershellParity(unittest.TestCase):
 class SkillContracts(unittest.TestCase):
     """Trava os gates semânticos, a cobertura da auditoria e o fechamento Git."""
 
-    def test_sync_requires_human_approval_and_has_no_motor_flag(self) -> None:
-        skill = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
-        self.assertIn("Após aprovação humana explícita", skill)
-        self.assertIn("patch mínimo", skill)
-        self.assertIn("nunca autoriza sync", skill)
-        for script in (SCRIPT, POWERSHELL_SCRIPT, SKILL_DIR / "scripts" / "review.sh"):
-            self.assertNotIn("--sync", script.read_text(encoding="utf-8-sig").lower())
 
     # Confirma que os eixos obrigatórios continuam disponíveis na review.
-    def test_review_requires_five_audit_pillars(self) -> None:
-        """Garante que a review limita a inspeção visual ao impacto do diff."""
-        skill = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
-        visual = (SKILL_DIR / "references" / "ui-visual-quality.md").read_text(encoding="utf-8")
-        rules = (Path.cwd() / ".vibeflow" / "REGRAS.md").read_text(encoding="utf-8")
-        scope = (Path.cwd() / "docs" / "ESCOPO.md").read_text(encoding="utf-8")
-        self.assertIn("Rastreabilidade e Verificação Anti-Alucinação", skill)
-        self.assertIn("Provas e Integridade dos Testes", skill)
-        self.assertIn("Auditoria Implacável de Segurança e Hardening", skill)
-        self.assertIn("Inspeção Visual e Interface", skill)
-        self.assertIn("Simplificação e Qualidade de Código", skill)
-        self.assertIn("chrome-devtools", skill)
-        self.assertIn("viewport atingidos pelo diff", visual)
-        self.assertIn("quando o diff afeta layout ou responsividade", visual)
-        self.assertIn("Visual: necessária", skill)
-        self.assertIn("Visual: dispensada", skill)
-        self.assertIn("Tocar arquivo de UI, HTML ou DOM não basta", skill)
-        self.assertIn("Reaproveite a evidência visual", skill)
-        self.assertIn("não abra o navegador de novo", visual)
-        self.assertIn("inspeção renderizada somente quando o aceite depender do resultado visual", rules.lower())
-        self.assertIn("o aceite depende da ui renderizada", scope.lower())
 
     # Garante que a review encontra a prova de implementação no registro único do plan.
-    def test_review_uses_plan_as_execution_record(self) -> None:
-        """Exige status, dependências, paths e provas no plan sem depender do histórico legado."""
-        skill = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
-        self.assertIn("Use o `plan.md` como registro das execuções", skill)
-        self.assertIn("status da T*", skill)
-        self.assertIn("`Deps` e bloqueios", skill)
-        self.assertIn("`Arquivos`", skill)
-        self.assertIn("`Prova`/`Verificação`", skill)
-        self.assertIn("`implement.md` histórico não é necessário", skill)
-        self.assertIn("Compare os inputs da prova com o estado integrado", skill)
-        self.assertIn("Mudança em plan, spec ou review não invalida prova de código", skill)
 
     # Garante que checkpoint e review final não compartilhem o gate de conclusão da phase.
-    def test_checkpoint_and_final_review_have_separate_gates(self) -> None:
-        skill = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
-        template = (SKILL_DIR / "templates" / "review.md").read_text(encoding="utf-8")
-        architecture = (Path.cwd() / "docs" / "vibe-review" / "ARQUITETURA.md").read_text(encoding="utf-8")
-        self.assertIn("todas as T* do marco estão concluídas", skill)
-        self.assertIn("Nunca declare a feature concluída", skill)
-        self.assertIn("sincronize decisões, crie commit residual ou publique a phase", skill)
-        self.assertIn("Não rode automaticamente a matriz de comandos de cada T*", skill)
-        self.assertIn("Provas reaproveitadas", template)
-        self.assertIn("Checkpoint registra o resultado do marco", template)
-        self.assertIn("Review final exige a fila do plan concluída", architecture)
 
     # Garante que a review é a única porta de commit residual e push da phase.
-    def test_review_owns_final_phase_commit_and_push(self) -> None:
-        skill = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
-        template = (SKILL_DIR / "templates" / "review.md").read_text(encoding="utf-8")
-        for text in (skill, template):
-            self.assertIn("Finalização Git da phase", text)
-            self.assertIn("git push", text)
-            self.assertIn("sem `--force`", text)
-            self.assertIn("Approve", text)
-        self.assertIn("Checkpoint nunca abre finalização Git", skill)
-        self.assertIn("Omitir em checkpoint", template)
-        self.assertIn("Critical ou Required", skill)
-        self.assertIn("Não faça `git push`", (Path.cwd() / "vibe-implement" / "SKILL.md").read_text(encoding="utf-8"))
 
 if __name__ == "__main__":
     unittest.main()

@@ -25,7 +25,20 @@ Check-Scenario 'legado' {
     Set-Content -LiteralPath (Join-Path $repo 'CLAUDE.md') -Value 'regra legada' -Encoding utf8
     & $engine -Root $repo | Out-Null
     $report = Get-Content -LiteralPath (Join-Path $repo '.vibeflow/init-report.json') -Raw | ConvertFrom-Json
-    if ($report.merges -notcontains 'CLAUDE.md' -or -not (Test-Path (Join-Path $repo '.vibeflow/old/CLAUDE.md'))) { throw 'legado não preservado' }
+    if ($report.migrated -notcontains 'CLAUDE.md' -or (Test-Path (Join-Path $repo 'CLAUDE.md')) -or -not (Test-Path (Join-Path $repo '.vibeflow/old/CLAUDE.md'))) { throw 'legado não migrado' }
+}
+
+Check-Scenario 'ponte-legada' {
+    param($repo)
+    $vf = Join-Path $repo '.vibeflow'
+    New-Item -ItemType Directory -Path $vf | Out-Null
+    [IO.File]::WriteAllText((Join-Path $vf 'REGRAS.md'), "# Regra antiga`n")
+    New-Item -ItemType SymbolicLink -Path (Join-Path $repo 'AGENTS.md') -Target '.vibeflow/REGRAS.md' | Out-Null
+    New-Item -ItemType SymbolicLink -Path (Join-Path $repo 'CLAUDE.md') -Target '.vibeflow/REGRAS.md' | Out-Null
+    & $engine -Root $repo | Out-Null
+    $report = Get-Content -LiteralPath (Join-Path $vf 'init-report.json') -Raw | ConvertFrom-Json
+    if ((Test-Path (Join-Path $vf 'REGRAS.md')) -or (Test-Path (Join-Path $repo 'CLAUDE.md')) -or $report.migrated -notcontains '.vibeflow/REGRAS.md') { throw 'ponte antiga não migrada' }
+    if ((Get-Item -LiteralPath (Join-Path $repo 'AGENTS.md')).LinkType) { throw 'AGENTS continua symlink' }
 }
 
 if ($failed) { exit 1 }

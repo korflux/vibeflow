@@ -11,7 +11,7 @@ Sem prova verde, não marque `[x]` nem faça commit. Cada T* concluída gera um 
 ## 0. Classificar Express e usar o script
 
 1. Antes de exigir `.vibeflow/` ou rodar script, separe texto/documento avulso de código de software. Texto puro segue edição direta, fora desta skill. Express é mudança de código clara e localizada, sem comportamento novo, como cor ou espaçamento na UI. Faça patch e checagem proporcionais; não rode `vibe-init` nem crie ou exija `.vibeflow/`. Na entrega atual, atualize a T* aberta ou acrescente uma T* curta ao plan existente; achado de review atualiza o R* existente. Reuse o design existente quando couber. Alterar comportamento, rota, interação, aceite, acessibilidade ou tocar privacidade, obrigação jurídica, autenticação, autorização, pagamento, segredo, persistência ou perda de dados sai do Express e segue a cadeia aplicável.
-2. Fora do Express, leia o motor antes de executá-lo: `scripts/implement.ps1` no Windows ou `scripts/implement.py` no Unix. Ele seleciona alvo e fila; não cria artefato. Execute no repo com `pwsh "<skill>/scripts/implement.ps1"` ou `bash "<skill>/scripts/implement.sh"`. Para MVP, acrescente `-Mvp` ou `--mvp`.
+2. Fora do Express, se encontrar `.vibeflow/REGRAS.md`, `REGRAS.md` ou `CLAUDE.md` de uma instalação anterior, execute `vibe-init` para migrar as regras e retome a implementação. Fontes divergentes continuam para consolidação. Leia o motor antes de executá-lo: `scripts/implement.ps1` no Windows ou `scripts/implement.py` no Unix. Ele seleciona alvo e fila; não cria artefato. Execute no repo com `pwsh "<skill>/scripts/implement.ps1"` ou `bash "<skill>/scripts/implement.sh"`. Para MVP, acrescente `-Mvp` ou `--mvp`.
 3. Leia o JSON no stdout, restrito a `alvo`, `fila` e `avisos` (`analyze_gate` no MVP). Escolha pela `fila.elegiveis`. Localize regras, paths e símbolos com `rg --files` e `rg -n`; abra apenas o fluxo relevante, não a árvore inteira.
 
 No fluxo padrão, `INIT_AUSENTE` exige init. `IMPLEMENT_SEM_ALVO`, `IMPLEMENT_SEM_PLAN`, `IMPLEMENT_ANALYZE_AUSENTE`, `IMPLEMENT_ANALYZE_RASCUNHO`, `IMPLEMENT_ANALYZE_BLOQUEADO`, `MVP_INESPERADO`, `MODO_INVALIDO`, `FASE_AUSENTE` e `PHASES_INESPERADO` não são contornados.
@@ -76,7 +76,7 @@ Outros arquivos marcados:
 | `review.md` | `R*` Critical/Required que o fix provou |
 | `interview.md` | **Não** |
 
-No MVP, certifique-se de registrar quais IDs críticos foram implementados. Não publique essas decisões em `REGRAS.md`; isso pertence ao pós-review aprovado.
+No MVP, certifique-se de registrar quais IDs críticos foram implementados. Não publique essas decisões em `AGENTS.md`; isso pertence ao pós-review aprovado.
 
 ### Commit da task
 

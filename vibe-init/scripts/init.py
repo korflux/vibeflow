@@ -70,11 +70,15 @@ def readable_source(path: Path, root: Path) -> Path | None:
 def backup(source: Path, root: Path, old: Path, name: str, records: list[dict[str, str]]) -> Path:
     old.mkdir(parents=True, exist_ok=True)
     destination = old / name
+    if is_reparse(destination):
+        raise RuntimeError(f"TIPO_INESPERADO: backup {destination} não pode ser link")
     if destination.exists():
         if sha256(destination) == sha256(source):
             return destination
         stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
         destination = old / f"{name}.{stamp}"
+        if is_reparse(destination):
+            raise RuntimeError(f"TIPO_INESPERADO: backup {destination} não pode ser link")
     shutil.copyfile(source, destination)
     if destination.stat().st_size != source.stat().st_size or sha256(destination) != sha256(source):
         destination.unlink(missing_ok=True)
@@ -150,9 +154,8 @@ def run(root: Path) -> Path:
         actions.append("criar_AGENTS")
 
     for path, source in legacy_sources:
-        if path.is_symlink():
-            continue
         backup(source, root, old, path.name if path.parent == root else "REGRAS-vibeflow.md", records)
+    legacy_contents = {path: source.read_text(encoding="utf-8") for path, source in legacy_sources}
     current = agents.read_text(encoding="utf-8")
     updated = update_header(current, template)
     if updated != current:
@@ -160,6 +163,13 @@ def run(root: Path) -> Path:
             backup(agents, root, old, "AGENTS.md", records)
         agents.write_text(updated, encoding="utf-8", newline="\n")
         actions.append("atualizar_AGENTS")
+
+    # Remove apenas fontes cujo conteúdo já foi materializado e salvo em backup.
+    migrated = [path for path, _ in legacy_sources if legacy_contents[path] == current]
+    merges = [path.relative_to(root).as_posix() for path, _ in legacy_sources if path not in migrated]
+    for path in sorted(migrated, key=lambda item: not item.is_symlink()):
+        path.unlink()
+        actions.append(f"remover_legado:{path.relative_to(root).as_posix()}")
 
     if bridge.exists() and not bridge.is_file():
         raise RuntimeError(f"TIPO_INESPERADO: {bridge} não é arquivo")
@@ -169,8 +179,7 @@ def run(root: Path) -> Path:
         bridge.write_text(BRIDGE, encoding="utf-8")
         actions.append("atualizar_ponte_antigravity")
 
-    merges = [path.relative_to(root).as_posix() for path, source in legacy_sources if source.read_bytes() != agents.read_bytes()]
-    report = {"root": str(root), "target": "AGENTS.md", "actions": actions, "olds": records, "merges": merges, "legacy_present": [path.relative_to(root).as_posix() for path, _ in legacy_sources]}
+    report = {"root": str(root), "target": "AGENTS.md", "actions": actions, "olds": records, "merges": merges, "migrated": [path.relative_to(root).as_posix() for path in migrated], "legacy_present": [path.relative_to(root).as_posix() for path, _ in legacy_sources if path.exists() or path.is_symlink()]}
     output = vf / "init-report.json"
     output.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print(output)

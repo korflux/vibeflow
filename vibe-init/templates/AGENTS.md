@@ -2,6 +2,8 @@
 
 > VibeFlow: documentos e edição apenas de texto ficam fora de `vibe-spec`, `vibe-design`, `vibe-plan`, `vibe-analyze`, `vibe-implement` e `vibe-review`. Essas skills tratam código de software. `vibe-interview` pode esclarecer um briefing ambíguo de documento.
 
+Testes das skills devem exercitar os scripts e seus efeitos no disco. É proibido testar a presença de palavras, frases ou seções em `SKILL.md`, templates, referências ou documentação.
+
 <!-- VIBEFLOW:CADEIA start -->
 | esforço | fluxo | quando |
 |---|---|---|

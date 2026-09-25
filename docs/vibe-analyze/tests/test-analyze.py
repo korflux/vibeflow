@@ -266,25 +266,7 @@ class PowershellParity(unittest.TestCase):
 class TemplateContracts(unittest.TestCase):
     """Trava os contratos de varredura cruzada e qualidade de testes."""
 
-    def test_skill_requires_quality_and_decisions(self) -> None:
-        """Confirma as verificações de entrada, ferramentas e decisões críticas."""
-        skill = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
-        self.assertIn("smoke test", skill.lower())
-        self.assertIn("gitleaks", skill.lower())
-        self.assertIn("chrome-devtools", skill.lower())
-        self.assertIn("substitui", skill.lower())
-        self.assertIn("CRITICAL", skill)
-        self.assertIn("não exija uma t1 de baseline", skill.lower())
-        self.assertIn("preparo local simples", skill.lower())
 
-    def test_coverage_reference_includes_quality_and_decisions(self) -> None:
-        """Evita regressão para setup local obrigatório ou smoke em toda T1."""
-        coverage = (SKILL_DIR / "references" / "coverage.md").read_text(encoding="utf-8")
-        self.assertIn("qualidade_teste", coverage)
-        self.assertIn("decisao", coverage)
-        self.assertIn("smoke test", coverage.lower())
-        self.assertNotIn("T1 sem smoke test", coverage)
-        self.assertNotIn("sem task de setup alocada", coverage)
 
 
 if __name__ == "__main__":

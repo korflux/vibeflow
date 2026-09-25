@@ -104,6 +104,8 @@ Depois da instalação, os slash names são `/vibe-init` … `/vibe-review`. Nã
 
 Primeira vez num repo sem `AGENTS.md` ou `.vibeflow/`: rode `/vibe-init`. As demais skills recusam sem a infraestrutura necessária.
 
+Projeto já inicializado com `.vibeflow/REGRAS.md`, `REGRAS.md` ou `CLAUDE.md`: rode `/vibe-init` uma vez antes da próxima etapa. O Init materializa `AGENTS.md`, confere backups em `.vibeflow/old/` e remove automaticamente os legados com conteúdo idêntico. Fontes com regras diferentes continuam no projeto e aparecem em `merges` no relatório para consolidação.
+
 ## Desenho do fluxo das skills
 
 O bloco de cadeia em `AGENTS.md` escolhe o esforço da rota. A IA não inventa atalho: o esforço manda quais portas existem.
@@ -216,7 +218,7 @@ vibe-<nome>/
 5. Não inventar path de artefato fora de `.vibeflow/phases/phase-N-slug/`; a única exceção é o baseline fixo `.vibeflow/mvp/`. Manter `AGENTS.md` como única fonte de regras do projeto.
 6. Só `.vibeflow/init-report.json` persiste, pois carrega `apply_token` para retomar um merge pendente; os inventários das demais skills são JSON transitório no stdout. Relatórios e pendências do init ficam fora do git; os artefatos vivos entram no git.
 
-Versão dos manifests: `3.0.0`. O Antigravity mantém o schema mínimo sem campo de versão.
+Versão dos manifests: `3.1.0`. O Antigravity mantém o schema mínimo sem campo de versão.
 
 PR contra `main`. Mudança de contrato (path, schema do relatório, flag pública) é Major; o resto segue o semver em `AGENTS.md`.
 

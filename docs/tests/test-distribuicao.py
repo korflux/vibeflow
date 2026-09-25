@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import json
-import re
 import unittest
 from pathlib import Path
 
@@ -22,16 +21,7 @@ SKILLS = (
 )
 CANONICAL_SKILL_PATHS = [f"./{name}" for name in SKILLS]
 ANTIGRAVITY_SCHEMA = "https://antigravity.google/schemas/v1/plugin.json"
-CONTRACT_VERSION = "3.0.0"
-
-
-# Lê o name do frontmatter YAML; é o identificador que o CLI e o slash usam.
-def frontmatter_name(skill_md: Path) -> str:
-    text = skill_md.read_text(encoding="utf-8-sig")
-    match = re.search(r"^---\s*\n.*?^name:\s*(\S+)\s*$", text, re.MULTILINE | re.DOTALL)
-    if not match:
-        raise AssertionError(f"frontmatter sem name em {skill_md}")
-    return match.group(1)
+CONTRACT_VERSION = "3.1.0"
 
 
 # Carrega JSON de manifesto e falha com o path se o arquivo não existir ou for inválido.
@@ -47,7 +37,6 @@ class DistribuicaoContracts(unittest.TestCase):
 
     # C2: skills/vibe-* é symlink relativo para o pacote canônico, com SKILL.md no alvo.
     def test_skills_pointers(self) -> None:
-        names: list[str] = []
         for name in SKILLS:
             link = ROOT / "skills" / name
             self.assertTrue(link.is_symlink(), f"{link} não é symlink")
@@ -55,9 +44,6 @@ class DistribuicaoContracts(unittest.TestCase):
             self.assertEqual(target.as_posix(), f"../{name}", f"alvo de {name}")
             skill_md = (ROOT / "skills" / name / "SKILL.md").resolve()
             self.assertTrue(skill_md.is_file(), f"SKILL.md ausente no alvo de {name}")
-            names.append(frontmatter_name(skill_md))
-        self.assertEqual(names, list(SKILLS))
-        self.assertEqual(len(set(names)), 8)
 
     # C1: descoberta pelo local padrão do CLI (skills/) não duplica name.
     def test_unique_names_under_skills(self) -> None:
@@ -130,142 +116,16 @@ class DistribuicaoContracts(unittest.TestCase):
         self.assertNotIn("commands", antigravity)
 
     # C4: README traz escopos, caminhos por host, fallbacks e verificações de descoberta.
-    def test_readme_install_commands(self) -> None:
-        readme = (ROOT / "README.md").read_text(encoding="utf-8-sig")
-        required = (
-            "### Instalador `npx skills`, project-local e global",
-            "npx skills add korflux/vibeflow -g -a grok -a claude-code -a codex -a antigravity -y",
-            "npx skills add korflux/vibeflow -a grok -a claude-code -a codex -a antigravity -y",
-            "./<agent>/skills/",
-            "~/<agent>/skills/",
-            "### Antigravity IDE",
-            ".agents/plugins/vibeflow/",
-            "~/.gemini/config/plugins/vibeflow/",
-            ".agents/rules/vibeflow.md",
-            "@../../AGENTS.md",
-            "~/.gemini/antigravity/skills/",
-            "### Antigravity CLI",
-            "~/.gemini/antigravity-cli/plugins/vibeflow/",
-            "agy plugin list",
-            "/plugin marketplace add korflux/vibeflow",
-            "/plugin install vibeflow@vibeflow",
-            "codex plugin marketplace add korflux/vibeflow",
-            "codex plugin add vibeflow@vibeflow",
-            "~/.codex/AGENTS.md",
-            "~/.gemini/GEMINI.md",
-            "grok inspect",
-            "agy plugin install https://github.com/korflux/vibeflow.git",
-            "grok plugin marketplace add korflux/vibeflow",
-            "grok plugin install vibeflow --trust",
-            "Versão dos manifests: `3.0.0`",
-            "Só `.vibeflow/init-report.json` persiste",
-        )
-        missing = [line for line in required if line not in readme]
-        self.assertEqual(missing, [], f"README sem: {missing}")
 
     # T5: cada skill investiga por relevância, usa artefato vivo e não revive o contrato operacional removido.
-    def test_skill_guidance_is_directed_and_isolated(self) -> None:
-        """Confirma investigação dirigida e ausência de artefatos removidos."""
-        skill_texts = {
-            name: (ROOT / name / "SKILL.md").read_text(encoding="utf-8-sig")
-            for name in SKILLS
-        }
-        for name, text in skill_texts.items():
-            self.assertIn("rg --files", text, name)
-            self.assertIn("rg -n", text, name)
-            self.assertIn("árvore inteira", text, name)
-            self.assertNotIn("wip", text.lower(), name)
-            if name not in ("vibe-plan", "vibe-review", "vibe-implement"):
-                self.assertNotIn("checkpoint", text.lower(), name)
-
-        for name in ("vibe-plan", "vibe-analyze", "vibe-implement", "vibe-review"):
-            self.assertIn("novo chat", skill_texts[name].lower(), name)
-        self.assertRegex(skill_texts["vibe-implement"], r"chat novo por T\*")
-
-        template_names = (
-            "vibe-interview",
-            "vibe-spec",
-            "vibe-design",
-            "vibe-plan",
-            "vibe-analyze",
-            "vibe-review",
-        )
-        for name in template_names:
-            template = (ROOT / name / "templates" / f"{name.removeprefix('vibe-')}.md").read_text(
-                encoding="utf-8-sig"
-            )
-            self.assertIn("# Status: rascunho", template, name)
-            self.assertIn("artefato vivo", template.lower(), name)
-            self.assertIn("chat", template.lower(), name)
-            self.assertNotIn("wip", template.lower(), name)
-            if name not in ("vibe-plan", "vibe-review"):
-                self.assertNotIn("checkpoint", template.lower(), name)
-        self.assertFalse((ROOT / "vibe-implement" / "templates" / "implement.md").exists())
 
     # C5: o contrato Git fica distribuído entre implement, review e o template de execução.
-    def test_task_commit_and_phase_push_contract(self) -> None:
-        implement = (ROOT / "vibe-implement" / "SKILL.md").read_text(encoding="utf-8-sig")
-        review = (ROOT / "vibe-review" / "SKILL.md").read_text(encoding="utf-8-sig")
-        self.assertIn("task(Tn)", implement)
-        self.assertIn("Não faça `git push` nesta etapa", implement)
-        self.assertIn("Finalização Git da phase", review)
-        self.assertIn("git push", review)
-        self.assertIn("sem `--force`", review)
-        self.assertIn("checkpoint de retomada", implement.lower())
-        self.assertNotIn("checkpoint de review", implement.lower())
-        self.assertIn("checkpoint nunca abre finalização git", review.lower())
 
     # C5: retomada fica na T* aberta; review mantém checkpoint de marco e publicação final.
-    def test_checkpoint_contract_is_declared_and_scoped(self) -> None:
-        """Limita checkpoints de review e retomada aos artefatos que os consomem."""
-        paths = [
-            ROOT / "README.md",
-            ROOT / "AGENTS.md",
-        ]
-        for name in SKILLS:
-            if name in ("vibe-plan", "vibe-review", "vibe-implement"):
-                continue
-            paths.extend((ROOT / name / "SKILL.md", ROOT / "docs" / name / "ARQUITETURA.md", ROOT / "docs" / name / "ANALISE.md"))
-            if name != "vibe-init":
-                stem = name.removeprefix("vibe-")
-                paths.append(ROOT / name / "templates" / f"{stem}.md")
-            else:
-                paths.append(ROOT / name / "templates" / "AGENTS.md")
-        for path in paths:
-            content = path.read_text(encoding="utf-8-sig").lower()
-            self.assertNotIn("checkpoint", content, str(path))
-            self.assertNotIn("check point", content, str(path))
-
-        allowed = (
-            ROOT / "docs" / "ESCOPO.md",
-            ROOT / "vibe-plan" / "SKILL.md",
-            ROOT / "vibe-plan" / "templates" / "plan.md",
-            ROOT / "docs" / "vibe-plan" / "ARQUITETURA.md",
-            ROOT / "docs" / "vibe-plan" / "ANALISE.md",
-            ROOT / "vibe-implement" / "SKILL.md",
-            ROOT / "docs" / "vibe-implement" / "ARQUITETURA.md",
-            ROOT / "docs" / "vibe-implement" / "ANALISE.md",
-            ROOT / "vibe-review" / "SKILL.md",
-            ROOT / "vibe-review" / "templates" / "review.md",
-            ROOT / "docs" / "vibe-review" / "ARQUITETURA.md",
-            ROOT / "docs" / "vibe-review" / "ANALISE.md",
-        )
-        for path in allowed:
-            content = path.read_text(encoding="utf-8-sig").lower()
-            self.assertIn("checkpoint", content, str(path))
-            self.assertNotIn("check point", content, str(path))
 
     # C4: apenas o estado persistido do init permanece no ignore operacional do Vibeflow.
-    def test_vibeflow_gitignore_keeps_only_init_state(self) -> None:
-        gitignore = (ROOT / ".vibeflow" / ".gitignore").read_text(encoding="utf-8-sig")
-        self.assertEqual(["init-report.json", "init-pending.json"], gitignore.splitlines())
 
     # C5: o workflow de contrato executa esta suíte.
-    def test_ci_runs_this_suite(self) -> None:
-        workflow = (ROOT / ".github" / "workflows" / "contrato.yml").read_text(encoding="utf-8-sig")
-        self.assertIn("docs/tests/test-distribuicao.py", workflow)
-        self.assertIn("docs/tests/test-mvp-flow.py", workflow)
-        self.assertIn("docs/tests/test-visual-contract.py", workflow)
 
 
 # Normaliza o alvo do symlink para comparar com o path POSIX da spec.

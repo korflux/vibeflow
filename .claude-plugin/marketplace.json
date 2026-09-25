@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "vibeflow",
-      "version": "3.0.0",
+      "version": "3.1.0",
       "source": "./",
       "description": "Cadeia vibe-init, interview, spec, design, plan, analyze, implement e review.",
       "homepage": "https://github.com/korflux/vibeflow",

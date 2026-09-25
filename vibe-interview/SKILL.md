@@ -6,6 +6,8 @@ description: >
 
 # vibe-interview
 
+Se encontrar `.vibeflow/REGRAS.md`, `REGRAS.md` ou `CLAUDE.md` de uma instalação anterior, execute `vibe-init` para migrar as regras e então retome esta etapa. Fontes divergentes continuam para consolidação.
+
 Não invente `n`, slug ou path. Sem `.vibeflow/`, pare e mande `/vibe-init`. Não grave em `docs/` nem na raiz.
 Um MVP usa `.vibeflow/mvp/` uma única vez por repo. Nunca sobrescreva esse baseline nem transforme uma feature posterior em continuação dele.
 

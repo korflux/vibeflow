@@ -6,9 +6,11 @@ description: >
 
 # vibe-spec
 
+Se encontrar `.vibeflow/REGRAS.md`, `REGRAS.md` ou `CLAUDE.md` de uma instalação anterior, execute `vibe-init` para migrar as regras e então retome esta etapa. Fontes divergentes continuam para consolidação.
+
 Não invente `n`, slug ou path. Sem `.vibeflow/`, pare e mande `/vibe-init`. Não grave em `docs/` nem na raiz.
 Só o decidido. Open Questions no arquivo é defeito. O arquivo vivo é a fonte da verdade; o chat não substitui o disco.
-No MVP, preserve IDs críticos da interview e declare `mantém`, `cria` ou `substitui`; não publique decisões em `REGRAS.md`.
+No MVP, preserve IDs críticos da interview e declare `mantém`, `cria` ou `substitui`; não publique decisões em `AGENTS.md`.
 
 A investigação começa pela pergunta de comportamento e aceite que a spec precisa fechar no fluxo real. Use `rg --files` para localizar os artefatos e entradas do fluxo; use `rg -n` para localizar nomes, símbolos, contratos e decisões. Abra somente os paths que sustentam o desenho e expanda a leitura quando uma lacuna bloquear a prova. O inventário é mapa de seleção, não autorização para ler a árvore inteira.
 

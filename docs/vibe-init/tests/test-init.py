@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import shutil
 import subprocess
@@ -16,7 +15,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 PYTHON = ROOT / "vibe-init" / "scripts" / "init.py"
 POWERSHELL = ROOT / "vibe-init" / "scripts" / "init.ps1"
-TEMPLATE = ROOT / "vibe-init" / "templates" / "AGENTS.md"
 
 
 # Executa um motor em raiz isolada e carrega o relatório operacional produzido.
@@ -51,7 +49,6 @@ class InitContracts(unittest.TestCase):
         self.assertFalse((self.repo / "REGRAS.md").exists())
         self.assertFalse((self.repo / ".vibeflow" / "REGRAS.md").exists())
         self.assertEqual("@../../AGENTS.md\n", (self.repo / ".agents" / "rules" / "vibeflow.md").read_text(encoding="utf-8"))
-        self.assertIn("documentos e edição apenas de texto", (self.repo / "AGENTS.md").read_text(encoding="utf-8"))
         self.assertTrue((self.repo / ".vibeflow" / "phases" / ".gitkeep").is_file())
 
     # A segunda execução não cria backup nem altera o conteúdo já consolidado.
@@ -72,7 +69,7 @@ class InitContracts(unittest.TestCase):
         self.assertEqual("# Projeto\n\nRegra do time\n", (self.repo / ".vibeflow" / "old" / "AGENTS.md").read_text(encoding="utf-8"))
         self.assertEqual(1, len(report["olds"]))
 
-    # O symlink antigo é materializado depois do backup, e as fontes legadas ficam disponíveis para merge.
+    # O formato antigo é convertido na mesma execução depois de materializar e salvar as regras.
     def test_old_symlinks_are_backed_up_before_migration(self) -> None:
         vf = self.repo / ".vibeflow"
         vf.mkdir()
@@ -85,12 +82,15 @@ class InitContracts(unittest.TestCase):
         self.assertFalse((self.repo / "AGENTS.md").is_symlink())
         self.assertIn("Regra crítica", (self.repo / "AGENTS.md").read_text(encoding="utf-8"))
         backup = vf / "old" / "REGRAS-vibeflow.md"
-        self.assertEqual(hashlib.sha256(old_rules.read_bytes()).digest(), hashlib.sha256(backup.read_bytes()).digest())
-        self.assertTrue((self.repo / "CLAUDE.md").is_symlink())
-        self.assertIn(".vibeflow/REGRAS.md", report["legacy_present"])
+        self.assertFalse(old_rules.exists())
+        self.assertFalse((self.repo / "CLAUDE.md").exists())
+        self.assertEqual("# Regra crítica\n", backup.read_text(encoding="utf-8"))
+        self.assertEqual({".vibeflow/REGRAS.md", "CLAUDE.md"}, set(report["migrated"]))
+        self.assertEqual([], report["legacy_present"])
 
-    # Um CLAUDE.md diferente nunca é descartado ou mesclado automaticamente.
+    # Uma segunda fonte diferente permanece até a consolidação semântica.
     def test_distinct_claude_is_reported_for_merge(self) -> None:
+        (self.repo / "AGENTS.md").write_text("regra principal\n", encoding="utf-8")
         (self.repo / "CLAUDE.md").write_text("regra exclusiva\n", encoding="utf-8")
         process, report = invoke(self.repo)
         self.assertEqual(0, process.returncode, process.stderr)
@@ -106,6 +106,17 @@ class InitContracts(unittest.TestCase):
         self.assertNotEqual(0, process.returncode)
         self.assertIn("FONTE_EXTERNA", process.stderr)
         self.assertTrue((self.repo / "AGENTS.md").is_symlink())
+
+    # Um falso backup por symlink não autoriza apagar a fonte legada.
+    def test_linked_backup_does_not_authorize_migration(self) -> None:
+        (self.repo / "CLAUDE.md").write_text("regra legada\n", encoding="utf-8")
+        old = self.repo / ".vibeflow" / "old"
+        old.mkdir(parents=True)
+        (old / "CLAUDE.md").symlink_to("../../CLAUDE.md")
+        process, _ = invoke(self.repo)
+        self.assertNotEqual(0, process.returncode)
+        self.assertIn("TIPO_INESPERADO", process.stderr)
+        self.assertTrue((self.repo / "CLAUDE.md").is_file())
 
     # Mantém o motor PowerShell equivalente para criação e migração essenciais.
     @unittest.skipUnless(shutil.which("pwsh"), "PowerShell 7 indisponível")
