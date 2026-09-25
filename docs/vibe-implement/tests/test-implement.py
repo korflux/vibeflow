@@ -542,6 +542,9 @@ class SkillContracts(unittest.TestCase):
         self.assertIn("Codar", skill)
         self.assertLess(skill.index("Simplificar antes da prova"), skill.index("Executar a prova final"))
         self.assertIn("uma vez, no estado integrado", skill)
+        self.assertIn("prova da jornada afetada", skill)
+        self.assertIn("Não crie um teste por campo", skill)
+        self.assertIn("consolide-os em uma prova de fluxo", skill)
         self.assertIn("Não rebaixe", dod)
 
     def test_skill_bounds_delegation_and_coordinator_ownership(self) -> None:

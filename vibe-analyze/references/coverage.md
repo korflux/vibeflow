@@ -10,7 +10,7 @@ Abrir **só** na varredura da `vibe-analyze`. Não copiar esta tabela para o cha
 | Spec A*/C* | Plan T* campo `Spec:` | A*/C* órfão; T* sem A*/C* (só ok se for infra justificada no Overview) |
 | Spec Fora | Plan T* / Escopo | Task que implementa o recusado |
 | Plan T* (o quê, arquivos) | Spec Escopo / Contratos e restrições necessárias | Comportamento ou módulo fora do escopo; path interno não precisa constar na spec |
-| Os três | `.vibeflow/REGRAS.md` | Choque com Never, Git, semver, política do repo |
+| Os três | `AGENTS.md` | Choque com Never, Git, semver, política do repo |
 | Interview Decisões críticas | Spec Decisões críticas | Mesmo ID e opção, ou ação `substitui` explícita com motivo |
 | Spec Decisões críticas | Plan T* campo `Decisões:` | ID criado/substituído com task responsável; nenhuma task implementa opção divergente |
 

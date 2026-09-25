@@ -31,7 +31,9 @@ Só o coordenador altera `plan.md`, `spec.md` e `review.md`, opera o índice Git
 
 A IA formula a pergunta da T*, usa `rg --files` e `rg -n` para localizar pontos de entrada, chamadas, helpers, testes e referências, e expande a leitura apenas quando uma lacuna bloqueia a prova. O inventário seleciona o alvo, mas não autoriza ler a árvore inteira.
 
-Para UI, o contrato escolhe navegador integrado, depois MCP Chrome DevTools, depois Playwright existente ou solicitado. A prova começa pela tela, estado e viewport afetados; só amplia quando o diff alcança layout, responsividade, interação, componente compartilhado ou risco adicional. Uma task documental, de script ou de contrato não ganha exigência artificial de navegador.
+Para UI, o contrato escolhe navegador integrado, depois MCP Chrome DevTools, depois Playwright existente ou solicitado. A prova começa pela tela, estado e viewport afetados; só amplia quando o diff alcança layout, responsividade, interação, componente compartilhado ou risco adicional. Uma task de código sem UI não ganha exigência artificial de navegador.
+
+Ao alterar testes, o agente preserva a cobertura observável da jornada e reduz fragmentação redundante. Um fluxo completo vale mais que um teste novo para cada campo ou helper, desde que falhas independentes continuem diagnosticáveis e casos de erro, permissão e borda não desapareçam.
 
 ## Escrita direta
 

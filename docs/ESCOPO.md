@@ -129,7 +129,7 @@ Não são backlog. Mudá-los quebra o disco.
 |---|---|
 | `AGENTS.md` e `CLAUDE.md` nunca são cópia de `REGRAS.md` | Cópia diverge na primeira edição e deixa de existir fonte única. Sem symlink, o init falha alto. |
 | Artefato da cadeia só em `.vibeflow/phases/phase-N-slug/`, salvo o baseline único `.vibeflow/mvp/` | `docs/`, `specs/` e paths de outro produto continuam proibidos; a exceção MVP é fixa, explícita e não versionada. |
-| Segunda fonte de regras fora de `.vibeflow/REGRAS.md` | Mesma razão. A ponte Antigravity é apenas `@../../.vibeflow/REGRAS.md`, não uma cópia. |
+| Segunda fonte de regras fora de `AGENTS.md` | Mesma razão. A ponte Antigravity é apenas `@../../AGENTS.md`, não uma cópia. |
 | A IA não escolhe `n`, slug nem path | Disco decide, script calcula. |
 | A IA não escolhe homolog ou produção | Só o humano sabe, e a resposta muda o bloco de migrations. |
 | Commit por task e push final | Implement commita cada task verde com staging explícito; review fecha a phase e faz push somente após aprovação humana. |

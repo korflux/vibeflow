@@ -1,11 +1,13 @@
 # Regras do projeto
 
+> VibeFlow: documentos e edição apenas de texto ficam fora de `vibe-spec`, `vibe-design`, `vibe-plan`, `vibe-analyze`, `vibe-implement` e `vibe-review`. Essas skills tratam código de software. `vibe-interview` pode esclarecer um briefing ambíguo de documento.
+
 <!-- VIBEFLOW:CADEIA start -->
 | esforço | fluxo | quando |
 |---|---|---|
 | — | init | primeira vez no repo, ou disco quebrado, de novo só para reparar |
 | low | implement | mudança simples de código de software, como cor ou layout de página estática |
-| medium | implement → review | pedido claro e direto sem regressão de backend, ou página visual com validação chrome-devtools |
+| medium | implement → review | pedido claro e direto sem regressão de backend, ou página visual cujo aceite dependa de validação renderizada |
 | high | spec → plan → implement → review | pedido claro, execução difícil, ou sistema com auth, painel admin, banco ou regressão |
 | xhigh | interview → spec → plan → implement → review | pedido ambíguo, confiança baixa, intenção ou sucesso de software em aberto |
 | max | interview → spec → plan → analyze → implement → review | pedido toca auth, pagamento, segredo, perda de dados, produção, alto blast radius ou baseline MVP de software |
@@ -14,6 +16,10 @@
 ## Projeto
 <!-- SLOT:paragrafo -->
 <!-- evidência: <path ou vazio> -->
+
+## Comandos do projeto
+<!-- SLOT:comandos -->
+<!-- Instalar, executar, testar, lintar e validar tipos; registrar só comandos existentes. -->
 
 ## Ambiente
 <!-- SLOT:ambiente -->
@@ -45,6 +51,10 @@
 
 ## Estrutura
 <!-- SLOT:estrutura -->
+
+## Fluxos e invariantes
+<!-- SLOT:fluxos -->
+<!-- Onde entram dados, permissões e persistência; registrar só o que o projeto comprova. -->
 
 ## Regras deste repo
 <!-- SLOT:regras -->

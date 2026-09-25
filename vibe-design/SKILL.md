@@ -18,7 +18,7 @@ A investigação começa pela pergunta de apresentação que a spec deixou abert
    - Windows: `pwsh "<skill>/scripts/design.ps1"`.
    - Unix: `bash "<skill>/scripts/design.sh"`.
    - Alvo MVP: acrescente `-Mvp` ou `--mvp`.
-3. Leia o JSON operacional emitido no stdout pelo comando acima. Use `rg --files` e `rg -n` para localizar `spec.md` (obrigatória), `interview.md` se houver, `design.md` e `.vibeflow/REGRAS.md`, além das referências de leitura citadas. Abra somente as entradas e dependências do fluxo, não a árvore inteira.
+3. Leia o JSON operacional emitido no stdout pelo comando acima. Use `rg --files` e `rg -n` para localizar `spec.md` (obrigatória), `interview.md` se houver, `design.md` e `AGENTS.md`, além das referências de leitura citadas. Abra somente as entradas e dependências do fluxo, não a árvore inteira.
 
 Erros determinísticos previstos: `INIT_AUSENTE` exige `/vibe-init`. `DESIGN_SEM_SPEC` exige spec prévia. `DESIGN_JA_PLANEJADO` exige outra phase. `DESIGN_SEM_ALVO`, `PHASES_INESPERADO`, `MVP_INESPERADO`, `FASE_AUSENTE`, `FASE_EXISTE`, `SLUG_INVALIDO` e `MODO_INVALIDO` exigem diagnosticar a causa e não devem ser contornados.
 

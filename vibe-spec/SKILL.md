@@ -20,7 +20,7 @@ A investigação começa pela pergunta de comportamento e aceite que a spec prec
    - Windows: `pwsh "<skill>/scripts/spec.ps1"`.
    - Unix: `bash "<skill>/scripts/spec.sh"`.
    - Modo MVP: acrescente `-Mvp` ou `--mvp`.
-3. Leia o JSON operacional emitido no stdout pelo comando acima. Use `rg --files` e `rg -n` para localizar `interview.md`, `spec.md`, `.vibeflow/REGRAS.md` e somente os paths do codebase necessários para entender o comportamento pretendido. Abra as entradas e dependências do fluxo; o inventário não é uma ordem para ler a árvore inteira.
+3. Leia o JSON operacional emitido no stdout pelo comando acima. Use `rg --files` e `rg -n` para localizar `interview.md`, `spec.md`, `AGENTS.md` e somente os paths do codebase necessários para entender o comportamento pretendido. Abra as entradas e dependências do fluxo; o inventário não é uma ordem para ler a árvore inteira.
 
 Erros determinísticos previstos: `INIT_AUSENTE` exige `/vibe-init`. `PHASES_INESPERADO`, `MVP_INESPERADO`, `MVP_INTERVIEW_AUSENTE`, `SPEC_JA_PLANEJADA`, `SPEC_SEM_ALVO`, `FASE_AUSENTE`, `FASE_EXISTE`, `SLUG_INVALIDO` e `MODO_INVALIDO` exigem diagnosticar a causa e não devem ser contornados.
 

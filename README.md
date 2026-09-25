@@ -11,7 +11,7 @@ O vibeflow é uma cadeia de skills para quem programa com agentes (Grok Build, C
 Cada skill é um pacote instalável (`vibe-init/`, `vibe-interview/`, …) com `SKILL.md`, scripts e, quando precisa, templates e referências. No repo do consumidor, o trabalho da cadeia vive em disco:
 
 ```text
-.vibeflow/REGRAS.md                         fonte única de regras do projeto
+AGENTS.md                                  fonte única de regras do projeto
 .vibeflow/mvp/                              baseline único de projeto novo na rota max
 .vibeflow/phases/phase-N-slug/interview.md
 .vibeflow/phases/phase-N-slug/spec.md
@@ -19,8 +19,7 @@ Cada skill é um pacote instalável (`vibe-init/`, `vibe-interview/`, …) com `
 .vibeflow/phases/phase-N-slug/analyze.md
 .vibeflow/phases/phase-N-slug/review.md
 # implement.md pode existir como histórico, mas não é criado por novas execuções
-AGENTS.md  →  .vibeflow/REGRAS.md           symlink
-CLAUDE.md  →  .vibeflow/REGRAS.md           symlink
+.agents/rules/vibeflow.md                  inclusão curta de AGENTS.md
 ```
 
 `n` e o slug das phases saem do script, não da IA. Projeto novo classificado como MVP usa uma única `.vibeflow/mvp/`, sem número nem slug, e percorre a rota max completa. Skills seguintes do mesmo pedido gravam na mesma pasta, outro arquivo. Nenhuma skill dispara a próxima: o handoff é uma linha no artefato.
@@ -65,7 +64,7 @@ O fallback documentado pelo host é `_agents/plugins/`. Para uso global na IDE, 
 
 Em ambos os casos, `plugin.json` deve permanecer na raiz do plugin e `skills/` deve conter os oito diretórios com `SKILL.md`. Confirme a descoberta por `/skills` quando o host oferecer esse comando ou reabra o workspace/host para recarregar os plugins.
 
-O `vibe-init` cria a regra de workspace em `.agents/rules/vibeflow.md` com a inclusão `@../../.vibeflow/REGRAS.md`. Esse arquivo é somente uma ponte curta. A fonte editável continua sendo `.vibeflow/REGRAS.md`.
+O `vibe-init` cria a regra de workspace em `.agents/rules/vibeflow.md` com a inclusão `@../../AGENTS.md`. Esse arquivo é somente uma ponte curta. A fonte editável continua sendo `AGENTS.md`.
 
 Para skills avulsas sem o bundle de plugin, a IDE usa `.agents/skills/` no workspace e `~/.gemini/antigravity/skills/` globalmente.
 
@@ -97,17 +96,17 @@ grok plugin marketplace add korflux/vibeflow
 grok plugin install vibeflow --trust
 ```
 
-O Codex mantém suas regras globais em `~/.codex/AGENTS.md` ou `~/.codex/AGENTS.override.md`. O Antigravity mantém as regras globais em `~/.gemini/GEMINI.md`. Nenhum desses arquivos substitui `.vibeflow/REGRAS.md`, e o pacote não cria uma cópia `GEMINI.md` no workspace.
+O Codex mantém suas regras globais em `~/.codex/AGENTS.md` ou `~/.codex/AGENTS.override.md`. O Antigravity mantém as regras globais em `~/.gemini/GEMINI.md`. Nenhum desses arquivos substitui `AGENTS.md`, e o pacote não cria uma cópia `GEMINI.md` no workspace.
 
 Quando um host puder carregar mais de um nome de regra, como `AGENTS.md` e `CLAUDE.md`, inspecione a carga efetiva com `grok inspect` ou a ferramenta equivalente do host. Se o slash command estiver disponível, `/skills` e `agy plugin list` são as confirmações mínimas para skills e plugins. Reiniciar ou reabrir o host é o fallback quando não houver comando de inspeção.
 
 Depois da instalação, os slash names são `/vibe-init` … `/vibe-review`. Não há alias `/spec` nem `/plan`.
 
-Primeira vez num repo sem `.vibeflow/`: rode `/vibe-init`. As demais skills recusam sem isso.
+Primeira vez num repo sem `AGENTS.md` ou `.vibeflow/`: rode `/vibe-init`. As demais skills recusam sem a infraestrutura necessária.
 
 ## Desenho do fluxo das skills
 
-O bloco de cadeia em `.vibeflow/REGRAS.md` escolhe o esforço da rota. A IA não inventa atalho: o esforço manda quais portas existem.
+O bloco de cadeia em `AGENTS.md` escolhe o esforço da rota. A IA não inventa atalho: o esforço manda quais portas existem.
 
 A cadeia `spec → design → plan → implement → review` trata entregas de software. Texto e documentos avulsos seguem edição direta; `vibe-interview` pode esclarecer um briefing ambíguo antes da redação.
 
@@ -161,13 +160,13 @@ Esta cadeia separa papéis e deixa o disco como fonte:
 - **Script** auxilia operações determinísticas como inventário, path, número, slug, preparação do alvo e relatório.
 - **Humano** decide apenas o que muda materialmente o resultado e confirma o fechamento. `vibe-implement` commita cada task verde; `vibe-review` faz o commit/push final da phase somente após Approve confirmado.
 
-Efeito prático: as regras do projeto ficam numa fonte (`.vibeflow/REGRAS.md`), o pedido deixa trilha (interview → spec → plan → implement → review), e “feito” exige comando e resultado, não recap no chat.
+Efeito prático: as regras do projeto ficam numa fonte (`AGENTS.md`), o pedido deixa trilha (interview → spec → plan → implement → review), e “feito” exige comando e resultado, não recap no chat.
 
 ## O que cada skill faz
 
 | Skill | Slash | Faz | Grava |
 |---|---|---|---|
-| [`vibe-init`](vibe-init/SKILL.md) | `/vibe-init` | Inicializa ou repara a fonte única de regras. `AGENTS.md` e `CLAUDE.md` viram symlink para `.vibeflow/REGRAS.md`; `.agents/rules/vibeflow.md` vira uma inclusão mínima para Antigravity. Une legado em vez de escolher um arquivo e descartar o outro | `.vibeflow/REGRAS.md`, ponteiros e adaptador de host |
+| [`vibe-init`](vibe-init/SKILL.md) | `/vibe-init` | Inicializa `AGENTS.md` na raiz, preserva regras legadas em backups verificados e atualiza a ponte mínima do Antigravity | `AGENTS.md` e adaptador de host |
 | [`vibe-interview`](vibe-interview/SKILL.md) | `/vibe-interview` | Descobre a solução, jornadas e páginas; usa módulos condicionais para completar o produto | `phase-N-slug/interview.md` ou `.vibeflow/mvp/interview.md` |
 | [`vibe-spec`](vibe-spec/SKILL.md) | `/vibe-spec` | Cobre a origem, fecha comportamento e aceite, e registra somente contratos necessários | `phase-N-slug/spec.md` ou `.vibeflow/mvp/spec.md` |
 | [`vibe-design`](vibe-design/SKILL.md) | `/vibe-design` | Desenha a apresentação com dois modos de entrada e três usos, sem código nem imagem final | `phase-N-slug/design.md` |
@@ -194,8 +193,7 @@ vibeflow/
 ├── docs/vibe-<nome>/           ARQUITETURA.md, ANALISE.md, tests/ (não instala)
 ├── docs/ESCOPO.md              feito e fila
 ├── docs/tests/                 contrato de distribuição e harness dos launchers
-├── .vibeflow/REGRAS.md         regras deste repo (fonte viva)
-├── AGENTS.md, CLAUDE.md        symlink → .vibeflow/REGRAS.md
+├── AGENTS.md                   regras deste repo (fonte viva)
 └── LICENSE
 ```
 
@@ -215,12 +213,12 @@ vibe-<nome>/
 2. Scripts em trio, mesmo contrato: `.py` (motor), `.ps1` (Windows), `.sh` (launcher Unix).
 3. Teste de contrato em `docs/vibe-<nome>/tests/`, `unittest`, pasta isolada. Depois: `python docs/vibe-<nome>/tests/test-<nome>.py -v`.
 4. Distribuição: `python docs/tests/test-distribuicao.py -v`.
-5. Não inventar path de artefato fora de `.vibeflow/phases/phase-N-slug/`; a única exceção é o baseline fixo `.vibeflow/mvp/`. Não copiar `REGRAS.md` para `AGENTS.md` / `CLAUDE.md`.
+5. Não inventar path de artefato fora de `.vibeflow/phases/phase-N-slug/`; a única exceção é o baseline fixo `.vibeflow/mvp/`. Manter `AGENTS.md` como única fonte de regras do projeto.
 6. Só `.vibeflow/init-report.json` persiste, pois carrega `apply_token` para retomar um merge pendente; os inventários das demais skills são JSON transitório no stdout. Relatórios e pendências do init ficam fora do git; os artefatos vivos entram no git.
 
-Versão dos manifests: `2.3.0`. O Antigravity mantém o schema mínimo sem campo de versão.
+Versão dos manifests: `3.0.0`. O Antigravity mantém o schema mínimo sem campo de versão.
 
-PR contra `main`. Mudança de contrato (path, schema do relatório, flag pública) é Major; o resto segue o semver em `.vibeflow/REGRAS.md`.
+PR contra `main`. Mudança de contrato (path, schema do relatório, flag pública) é Major; o resto segue o semver em `AGENTS.md`.
 
 ## Créditos
 

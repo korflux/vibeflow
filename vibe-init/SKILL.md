@@ -1,94 +1,32 @@
 ---
 name: vibe-init
 description: >
-  Inicializa ou repara a governança e o Documento Vivo de regras (.vibeflow/REGRAS.md)
-  com AGENTS.md e CLAUDE.md como ponteiros. Use when the user runs /vibe-init,
-  pede para preparar o repo para agentes, unificar regras, consertar symlinks ou
-  quando o projeto não possui .vibeflow/REGRAS.md.
+  Inicializa ou repara as regras de um projeto de software em AGENTS.md na raiz, sem criar CLAUDE.md nem REGRAS.md. Use when the user runs /vibe-init, pede governança para agentes, unificar regras ou preparar um repositório VibeFlow, mesmo sem citar vibe-init.
 ---
 
 # vibe-init
 
-Inicializa a infraestrutura de governança do Vibeflow e cria a fonte única e viva da verdade de arquitetura e regras (`.vibeflow/REGRAS.md`).
+`AGENTS.md` na raiz é a única fonte editável de regras. Preserve toda fonte existente em backup verificado antes de substituí-la. Não crie `CLAUDE.md`, `REGRAS.md` ou cópias das regras em outros paths.
 
-A investigação começa pela pergunta do bootstrap e pelas evidências do disco. Use `rg --files` para localizar README, manifestos, regras, ponteiros e entradas; use `rg -n` para localizar símbolos, comandos e referências. Abra somente os paths que sustentam a decisão e expanda a leitura quando uma lacuna bloquear a prova. O inventário é mapa de seleção, não autorização para ler a árvore inteira.
+## 0. Entender e usar o motor
 
----
+Leia `scripts/init.py` no Unix ou `scripts/init.ps1` no Windows antes de executar. O motor aceita `--root`/`-Root`, cria `.vibeflow/phases/`, prepara `AGENTS.md` com `templates/AGENTS.md`, atualiza a ponte `.agents/rules/vibeflow.md` para `@../../AGENTS.md` e emite `.vibeflow/init-report.json`. Um `AGENTS.md` existente mantém suas regras; o motor atualiza só a regra de escopo e o bloco `VIBEFLOW:CADEIA`. Fontes legadas são copiadas e verificadas em `.vibeflow/old/`, sem exclusão automática.
 
-## 1. O que o Utilitário de Setup Faz
+Execute na raiz do projeto:
 
-O script (`scripts/init.ps1`, `scripts/init.py`, `scripts/init.sh`) foi desenhado para automatizar tarefas mecânicas de sistema operacional:
-1. **Estrutura de Diretórios:** Cria `.vibeflow/` e `.vibeflow/phases/` com um arquivo `.gitkeep` vazio.
-2. **Preservação de Legado:** Se encontrar arquivos `AGENTS.md` ou `CLAUDE.md` com conteúdo prévio na raiz (que não sejam links para `.vibeflow/REGRAS.md`), ele não apaga: copia com segurança para `.vibeflow/old/AGENTS.md` e `.vibeflow/old/CLAUDE.md`.
-3. **Template Base:** Se `.vibeflow/REGRAS.md` não existir, copia o modelo inicial de `templates/REGRAS.md`.
-4. **Ponteiros Unificados:** Cria symlinks relativos `AGENTS.md` e `CLAUDE.md` apontando para `.vibeflow/REGRAS.md`. Caso o sistema operacional recuse a criação de links simbólicos (ex: Windows sem Developer Mode ativo), o script cria arquivos ponteiro de texto contendo `.vibeflow/REGRAS.md` como fallback seguro.
+```text
+Windows: pwsh "<skill>/scripts/init.ps1"
+Unix:    bash "<skill>/scripts/init.sh"
+```
 
----
+Se faltar runtime, tente o outro motor. Se ambos falharem por limitação de ambiente, reproduza as mesmas validações e backups manualmente. Erro de proteção de path, link externo ou hash nunca é contornado.
 
-## 2. Execução e Resiliência de Ambiente
+## 1. Investigar e consolidar
 
-### Como executar:
-Execute o script correspondente ao sistema operacional no repositório:
-* **Windows:** `pwsh "<skill>/scripts/init.ps1"` (ou `python "<skill>/scripts/init.py"`)
-* **Unix/macOS:** `bash "<skill>/scripts/init.sh"` (ou `python3 "<skill>/scripts/init.py"`)
+Leia o relatório, o `AGENTS.md` e apenas as fontes listadas em `merges`. Use `rg --files` e `rg -n` para localizar manifestos, comandos, entradas e dependências relevantes; não leia a árvore inteira. Preserve diferenças materiais dos legados no `AGENTS.md`. Depois de confirmar que o conteúdo foi incorporado e está salvo em `old/`, remova os arquivos legados `CLAUDE.md` e `REGRAS.md` apenas quando forem do antigo VibeFlow; outros arquivos do usuário permanecem até a decisão humana sobre sua função.
 
-### Dever de Diagnóstico e Autocorreção:
-Se o script falhar por limitações da máquina do usuário (ex: versão incompatível de shell, restrição de política de execução `ExecutionPolicy`, ausência de runtime ou bloqueio de permissão de arquivo):
-* **Não trave nem transfira o trabalho mecânico para o usuário.**
-* Analise o erro retornado no terminal, tente ajustar o comando (ex: usar `python` em vez de `pwsh` ou vice-versa).
-* Se a execução via terminal continuar bloqueada, **execute a infraestrutura manualmente** através das suas ferramentas de escrita e manipulação de arquivos: crie as pastas `.vibeflow/` e `.vibeflow/phases/`, faça os backups necessários em `.vibeflow/old/` e crie o `.vibeflow/REGRAS.md` e os arquivos ponteiro na raiz.
+Preencha os SLOTs do template somente com evidência do projeto. Em arquivos de referência, aproveite a forma, não os fatos: comandos reais de setup/teste, mapa curto da estrutura, fluxos de ponta a ponta, invariantes, validações e caminhos de alteração frequentes. Não copie stack, paths, nomes de funções ou regras do projeto de origem. O bloco de proibição a documentos fica no topo de `AGENTS.md`, antes da cadeia.
 
----
+## 2. Fechar
 
-## 3. Auditoria Factual e Leitura de Contexto
-
-Audite o disco antes de consolidar as regras. Comece pela pergunta que motivou o bootstrap, por exemplo ausência, conflito ou ponteiro inválido, e formule as evidências necessárias para respondê-la.
-
-1. **Localizar as entradas:**
-   * Use `rg --files -g 'README*' -g 'package.json' -g 'Cargo.toml' -g 'pyproject.toml' -g 'go.mod' -g 'pom.xml' -g 'AGENTS.md' -g 'CLAUDE.md' -g 'REGRAS.md'` para encontrar candidatos.
-   * Use `rg -n 'entrada|rota|stack|migra|AGENTS|CLAUDE|REGRAS'` somente nos paths relevantes para localizar referências e símbolos.
-   * Abra o `README.md`, os manifestos encontrados, os ponteiros e os entrypoints necessários, não todos os arquivos listados.
-
-2. **Auditoria de Disco:**
-   * Verifique se `.vibeflow/REGRAS.md` existe e está acessível.
-   * Inspecione `.vibeflow/old/` somente para confirmar regras legadas que precisam ser resgatadas e mescladas.
-   * Confirme se `AGENTS.md` e `CLAUDE.md` estão presentes na raiz como links ou ponteiros válidos.
-
-3. **Mapeamento Semântico de Arquitetura:**
-   * Leia apenas as pastas e arquivos necessários para explicar o fluxo real do projeto.
-   * Mapeie o papel arquitetural de cada pasta relevante, como rotas, regras de negócio, componentes visuais e configs.
-   * Destaque somente arquivos-chave ou pontos de entrada essenciais.
-   * O inventário não é uma ordem para ler a árvore inteira. Não faça dump cego de listagem de arquivos; registre o mapa de responsabilidades.
-
----
-
-## 4. Alinhamento Objetivo com o Usuário
-
-Faça apenas perguntas pontuais para fechar definições que o disco não respondeu por completo:
-* **Ambiente Principal:**
-  * **MVP:** Foco em velocidade e validação do núcleo essencial sem complexidade prematura, mantendo integridade básica.
-  * **Homologação:** Ambiente intermediário com testes de integração e validações completas.
-  * **Produção:** Rigor máximo, plano de rollback em migrations, zero tolerância a regressões e segurança estrita.
-* **Regras Específicas:** Pergunte se há restrições, decisões técnicas ou regras de negócio que não estejam explícitas nos arquivos de código.
-
----
-
-## 5. Consolidação no Documento Vivo (`.vibeflow/REGRAS.md`)
-
-Edite e preencha diretamente o arquivo `.vibeflow/REGRAS.md`:
-* Propósito do sistema e stack técnica identificada.
-* Perfil do ambiente selecionado (`MVP`, `Homologação` ou `Produção`).
-* Tabela de cadeia do Vibeflow preservada.
-* Mapa semântico de arquitetura das pastas.
-* Regras e convenções específicas consolidadas.
-
-### Princípio da Manutenção Contínua:
-O `.vibeflow/REGRAS.md` é um **Documento Vivo**. Sempre que novas fases adicionarem novos módulos, serviços ou convenções de código, a IA e o desenvolvedor devem atualizar este arquivo para que o repositório nunca fique com governança defasada.
-
----
-
-## 6. Fechar
-
-Conclua o init com commit dos arquivos produzidos e auditados: `.vibeflow/REGRAS.md`, ponteiros `AGENTS.md` e `CLAUDE.md`, backups em `.vibeflow/old/` quando houver e `.vibeflow/phases/.gitkeep`. Faça staging explícito por path, confira o diff indexado e exclua `init-report.json` e `init-pending.json`. Não faça push. A fonte viva e o caminho do handoff são a ponte para a etapa seguinte. `init → interview → spec → design` pode continuar no mesmo chat. Recomende novo chat para `vibe-plan`; se o humano preferir, continue no mesmo sem bloquear o fluxo.
-
-Handoff: `vibe-interview`.
+Confira que `AGENTS.md` é arquivo regular na raiz, o bloco da cadeia está atualizado, a ponte Antigravity aponta para ele, e nenhuma regra legada se perdeu. Não crie `CLAUDE.md`, `.vibeflow/REGRAS.md` nem `GEMINI.md`. Faça staging explícito dos paths produzidos e backups necessários; confira o diff e crie commit local sem push. Informe o hash, paths e fontes legadas que ainda exigem consolidação. Handoff: `vibe-interview` quando houver ambiguidade de software; para documento avulso, só a entrevista é aplicável e as demais skills VibeFlow não entram.

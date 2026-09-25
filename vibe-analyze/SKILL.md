@@ -19,7 +19,7 @@ A investigação começa pela pergunta de consistência que precisa ser respondi
    - Windows: `pwsh "<skill>/scripts/analyze.ps1"`.
    - Unix: `bash "<skill>/scripts/analyze.sh"`.
    - Alvo MVP: acrescente `-Mvp` ou `--mvp`.
-3. Leia o JSON operacional emitido no stdout pelo comando acima. Use `rg --files` e `rg -n` para localizar `spec.md` e `plan.md` (obrigatórios), `interview.md` se houver, `analyze.md`, `.vibeflow/REGRAS.md` e os paths de código necessários. Abra somente os arquivos que sustentam o cruzamento, não a árvore inteira.
+3. Leia o JSON operacional emitido no stdout pelo comando acima. Use `rg --files` e `rg -n` para localizar `spec.md` e `plan.md` (obrigatórios), `interview.md` se houver, `analyze.md`, `AGENTS.md` e os paths de código necessários. Abra somente os arquivos que sustentam o cruzamento, não a árvore inteira.
 
 Erros determinísticos previstos: `INIT_AUSENTE` exige `/vibe-init`. `ANALYZE_SEM_PLAN` exige plan. `ANALYZE_SEM_SPEC`, `ANALYZE_SEM_INTERVIEW`, `MVP_INESPERADO`, `MODO_INVALIDO` e `FASE_AUSENTE` exigem diagnosticar a causa e não devem ser contornados.
 

@@ -176,7 +176,7 @@ Após aprovação humana explícita da review final, com a fila concluída:
 
 1. Marque `# Status: aprovado`, o veredito Approve e a aprovação humana no `review.md` vivo.
 2. Se **Decisões para vigência** estiver vazia, feche a cadeia sem tocar regras.
-3. Se houver linhas, aplique patch mínimo em `.vibeflow/REGRAS.md`. Crie ou atualize uma única seção `## Decisões vigentes` com tabela `ID | Decisão vigente | Fonte`. Atualize por ID, preserve linhas não citadas e use como fonte o review aprovado do alvo.
+3. Se houver linhas, aplique patch mínimo em `AGENTS.md`. Crie ou atualize uma única seção `## Decisões vigentes` com tabela `ID | Decisão vigente | Fonte`. Atualize por ID, preserve linhas não citadas e use como fonte o review aprovado do alvo.
 4. Não copie justificativa, histórico ou impacto para as regras. Eles permanecem nos artefatos.
 5. Releia `REGRAS.md` e confirme que apenas os IDs aprovados mudaram. Review rascunho, Request changes ou Approve sem confirmação humana nunca autoriza sync.
 
@@ -186,7 +186,7 @@ Esta seção só se aplica à review final, depois da aprovação humana explíc
 
 1. Execute a prova final necessária para a integração conforme §3, sem repetir automaticamente a matriz de cada T*. Execute `git diff --check` e gitleaks quando previsto pelo repositório.
 2. Compare o estado atual com o snapshot da review. Se houver path fora da phase, das decisões aprovadas ou da correção registrada, pare e peça isolamento; não misture trabalho pré-existente.
-3. Adicione somente os paths residuais autorizados, com `git add -- path/da/phase .vibeflow/REGRAS.md` quando a sincronização foi aprovada. Nunca use `git add -A` ou `git add .`.
+3. Adicione somente os paths residuais autorizados, com `git add -- path/da/phase AGENTS.md` quando a sincronização foi aprovada. Nunca use `git add -A` ou `git add .`.
 4. Valide `git diff --cached --check` e a lista de paths. Crie `chore(phase-N): finalize review` sem `Co-Authored-By` quando houver mudanças residuais. Não crie commit vazio; se não houver residual, o último commit da task é o HEAD da phase.
 5. Execute `git push` para o upstream do branch atual, sem `--force`. Ausência de upstream, falha de commit ou falha de push mantém o handoff bloqueado e precisa ser informada com a causa segura.
 6. Registre no `review.md` e no chat o hash do commit final ou o HEAD já existente, o resultado do push e os paths enviados. O inventário é JSON transitório no stdout.

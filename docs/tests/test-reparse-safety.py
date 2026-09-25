@@ -164,6 +164,9 @@ class PythonReparseSafety(unittest.TestCase):
 
     def test_live_artifact_link_is_rejected(self) -> None:
         for skill, artifact, prerequisites in ENGINES:
+            # Implement não prepara implement.md desde que passou a registrar no plan.
+            if skill == "implement":
+                continue
             with self.subTest(skill=skill):
                 repo, outside, phases = seed_repo(Path.cwd())
                 try:
@@ -291,6 +294,9 @@ class PowershellReparseSafety(unittest.TestCase):
 
     def test_live_artifact_link_is_rejected(self) -> None:
         for skill, artifact, prerequisites in ENGINES:
+            # Implement não prepara implement.md desde que passou a registrar no plan.
+            if skill == "implement":
+                continue
             with self.subTest(skill=skill):
                 repo, outside, phases = seed_repo(Path.cwd())
                 try:

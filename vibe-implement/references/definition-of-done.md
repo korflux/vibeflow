@@ -12,7 +12,7 @@ Abrir no fechamento da fatia, não no boot.
 - Comando da Verificação da T* verde. Passo só manual não conta
 - Prova final executada após as edições de código/teste; repita somente a prova afetada por falha ou mudança em seus inputs
 - Sem regressão na prova executável relevante; amplie a cobertura quando o risco ou a integração exigir
-- Testes redundantes da capacidade tocada podem ser consolidados apenas com preservação dos cenários e afirmações relevantes
+- Testes da jornada tocada exercitam o fluxo completo e seus resultados observáveis quando possível. Casos fragmentados e redundantes são consolidados sem perder cenários e afirmações relevantes; riscos independentes mantêm prova própria
 - Quando o aceite depende de aparência, layout, responsividade ou comportamento renderizado de UI web, prova focada no browser (ver `chrome-devtools.md`). Se não depender, o `plan.md` registra por que a prova automatizada é suficiente.
 
 ## Quality

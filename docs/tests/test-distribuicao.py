@@ -22,7 +22,7 @@ SKILLS = (
 )
 CANONICAL_SKILL_PATHS = [f"./{name}" for name in SKILLS]
 ANTIGRAVITY_SCHEMA = "https://antigravity.google/schemas/v1/plugin.json"
-CONTRACT_VERSION = "2.3.0"
+CONTRACT_VERSION = "3.0.0"
 
 
 # Lê o name do frontmatter YAML; é o identificador que o CLI e o slash usam.
@@ -142,7 +142,7 @@ class DistribuicaoContracts(unittest.TestCase):
             ".agents/plugins/vibeflow/",
             "~/.gemini/config/plugins/vibeflow/",
             ".agents/rules/vibeflow.md",
-            "@../../.vibeflow/REGRAS.md",
+            "@../../AGENTS.md",
             "~/.gemini/antigravity/skills/",
             "### Antigravity CLI",
             "~/.gemini/antigravity-cli/plugins/vibeflow/",
@@ -157,7 +157,7 @@ class DistribuicaoContracts(unittest.TestCase):
             "agy plugin install https://github.com/korflux/vibeflow.git",
             "grok plugin marketplace add korflux/vibeflow",
             "grok plugin install vibeflow --trust",
-            "Versão dos manifests: `2.3.0`",
+            "Versão dos manifests: `3.0.0`",
             "Só `.vibeflow/init-report.json` persiste",
         )
         missing = [line for line in required if line not in readme]
@@ -220,7 +220,7 @@ class DistribuicaoContracts(unittest.TestCase):
         """Limita checkpoints de review e retomada aos artefatos que os consomem."""
         paths = [
             ROOT / "README.md",
-            ROOT / ".vibeflow" / "REGRAS.md",
+            ROOT / "AGENTS.md",
         ]
         for name in SKILLS:
             if name in ("vibe-plan", "vibe-review", "vibe-implement"):
@@ -230,7 +230,7 @@ class DistribuicaoContracts(unittest.TestCase):
                 stem = name.removeprefix("vibe-")
                 paths.append(ROOT / name / "templates" / f"{stem}.md")
             else:
-                paths.append(ROOT / name / "templates" / "REGRAS.md")
+                paths.append(ROOT / name / "templates" / "AGENTS.md")
         for path in paths:
             content = path.read_text(encoding="utf-8-sig").lower()
             self.assertNotIn("checkpoint", content, str(path))

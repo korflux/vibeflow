@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Inicializa ou repara a fonte única de regras sem depender de PowerShell."""
+"""Prepara AGENTS.md como fonte única das regras de um projeto VibeFlow."""
 
 from __future__ import annotations
 
@@ -7,60 +7,39 @@ import argparse
 import hashlib
 import json
 import os
-import re
 import shutil
 import stat
 import subprocess
 import sys
-import uuid
-from collections import deque
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
 
 
-TARGET_REL = ".vibeflow/REGRAS.md"
-ANTIGRAVITY_BRIDGE_REL = ".agents/rules/vibeflow.md"
-ANTIGRAVITY_BRIDGE_INCLUDE = "@../../.vibeflow/REGRAS.md"
-ANTIGRAVITY_BRIDGE_OLD_NAME = "antigravity-vibeflow.md"
-IGNORED_DIRS = {"node_modules", ".git", "dist", "build", ".next", "vendor", "__pycache__"}
-EVIDENCE_WARNINGS: list[str] = []
-MAX_STRUCTURE_ITEMS = 120
-MAX_MIGRATION_DEPTH = 4
-# Estado vivo da run: referências às listas que a matriz alimenta, para que uma falha
-# depois da primeira escrita ainda produza relatório do que já foi feito no disco.
-PARTIAL: dict[str, Any] = {}
-REPARSE_POINT = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+START = "<!-- VIBEFLOW:CADEIA start -->"
+END = "<!-- VIBEFLOW:CADEIA end -->"
+BRIDGE = "@../../AGENTS.md\n"
 
 
-# Interpreta somente os parâmetros equivalentes ao contrato público do init.ps1.
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Inicializa ou repara .vibeflow")
-    parser.add_argument("--root")
-    parser.add_argument("--apply-pointers", action="store_true")
-    parser.add_argument("--merge-token")
-    parser.add_argument("--redirect-pointer", choices=("AGENTS", "CLAUDE"))
-    parser.add_argument("--stop-after-old", action="store_true")
-    return parser.parse_args()
+# Recusa symlinks e junctions nos diretórios e artefatos operacionais do init.
+def is_reparse(path: Path) -> bool:
+    if not path.exists() and not path.is_symlink():
+        return False
+    return path.is_symlink() or bool(getattr(path.lstat(), "st_file_attributes", 0) & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400))
 
 
-# Resolve a raiz por parâmetro, Git ou cwd, sem tornar o Git uma dependência obrigatória.
-def repo_root(explicit: str | None) -> Path:
-    if explicit:
-        return Path(explicit).resolve(strict=True)
-    if shutil.which("git"):
-        result = subprocess.run(
-            ["git", "rev-parse", "--show-toplevel"],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if result.returncode == 0 and result.stdout.strip():
-            return Path(result.stdout.strip()).resolve()
-    return Path.cwd().resolve()
+# Aceita uma raiz explícita e só usa Git para localizar o projeto quando ela falta.
+def repo_root(value: str | None) -> Path:
+    if value:
+        root = Path(value).resolve()
+    else:
+        probe = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True, check=False) if shutil.which("git") else None
+        root = Path(probe.stdout.strip()).resolve() if probe and probe.returncode == 0 else Path.cwd().resolve()
+    if not root.is_dir():
+        raise RuntimeError(f"RAIZ_AUSENTE: {root}")
+    return root
 
 
-# Calcula o hash usado para validar backups e fontes de merge byte a byte.
+# Calcula o hash usado para conferir backups antes de qualquer substituição.
 def sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as stream:
@@ -69,678 +48,144 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-# Compara arquivos sem carregar conteúdo potencialmente grande em memória.
-def same_bytes(first: Path, second: Path) -> bool:
-    return first.is_file() and second.is_file() and first.stat().st_size == second.stat().st_size and sha256(first) == sha256(second)
-
-
-# Compara caminhos com sensibilidade a caixa coerente com o sistema operacional.
-def same_path(first: Path | str, second: Path | str) -> bool:
-    left, right = os.path.abspath(str(first)), os.path.abspath(str(second))
-    return os.path.normcase(left) == os.path.normcase(right)
-
-
-# Lê texto operacional que precisa ser preservado integralmente.
-def read_text(path: Path) -> str | None:
-    if not path.is_file():
-        return None
-    return path.read_text(encoding="utf-8-sig")
-
-
-# Detecta symlinks, junctions e outros reparse points sem seguir o alvo do caminho.
-def is_reparse_point(path: Path) -> bool:
-    if path.is_symlink():
-        return True
-    try:
-        attributes = getattr(path.lstat(), "st_file_attributes", 0)
-    except FileNotFoundError:
-        return False
-    return bool(attributes & REPARSE_POINT)
-
-
-# Recusa links e tipos incompatíveis nos caminhos graváveis do init antes da primeira mutação.
-def assert_safe_operational_file(path: Path, label: str) -> None:
-    if is_reparse_point(path) or (path.exists() and not path.is_file()):
-        raise RuntimeError(f"TIPO_INESPERADO: '{label}' precisa ser um arquivo local regular.")
-
-
-# Limita arquivos usados apenas como evidência para evitar consumo irrestrito de memória.
-def read_evidence(path: Path, max_bytes: int = 1024 * 1024) -> str | None:
-    if not path.is_file():
-        return None
-    if path.stat().st_size > max_bytes:
-        EVIDENCE_WARNINGS.append(f"evidência ignorada por tamanho: {path}")
-        return None
-    return path.read_text(encoding="utf-8-sig")
-
-
-# Extrai os SLOTs que ainda exigem evidência ou resposta humana.
-def open_slots(text: str | None) -> list[str]:
-    return re.findall(r"<!--\s*SLOT:(\w+)\s*-->", text or "")
-
-
-# Reconhece o arquivo textual produzido quando um checkout degrada um symlink.
-def is_pointer_text(path: Path) -> bool:
-    text = read_text(path)
-    if text is None:
-        return False
-    normalized = text.strip().lstrip("\ufeff").replace("\\", "/")
-    if normalized.startswith("./"):
-        normalized = normalized[2:]
-    if os.name == "nt":
-        return normalized.casefold() == TARGET_REL.casefold()
-    return normalized == TARGET_REL
-
-
-# Classifica a pasta principal antes de qualquer alteração.
-def vibeflow_state(path: Path) -> str:
-    if is_reparse_point(path):
-        return "inesperado"
-    if not path.exists():
-        return "ausente"
-    if not path.is_dir():
-        return "inesperado"
-    if (path / "REGRAS.md").exists():
-        return "com_regras"
-    return "vazia" if not any(path.iterdir()) else "sem_regras"
-
-
-# Classifica um arquivo de regras sem interpretar semanticamente seu conteúdo.
-def regras_file_state(path: Path) -> str:
-    if not path.exists():
-        return "ausente"
-    if not path.is_file():
-        return "inesperado"
-    text = read_text(path) or ""
-    if not text.strip():
-        return "vazio"
-    return "template" if open_slots(text) else "preenchido"
-
-
-# Resume a relação entre a fonte viva e uma possível cópia na raiz.
-def regras_state(live: Path, root_copy: Path) -> str:
-    if live.exists() and root_copy.exists():
-        return "raiz_e_vibeflow"
-    if root_copy.exists() and not live.exists():
-        return "raiz_sozinho"
-    return regras_file_state(live)
-
-
-# Classifica um ponteiro considerando links quebrados, cópias e conteúdo legado.
-def pointer_state(repo: Path, name: str, live: Path) -> str:
-    path = repo / name
+# Recusa links externos e tipos inesperados nas fontes de regras.
+def readable_source(path: Path, root: Path) -> Path | None:
     if not path.exists() and not path.is_symlink():
-        return "ausente"
-    if path.is_dir() and not path.is_symlink():
-        return "inesperado"
-    if path.is_symlink():
-        target = Path(os.readlink(path))
-        resolved = (repo / target).resolve(strict=False) if not target.is_absolute() else target.resolve(strict=False)
-        if not resolved.exists():
-            return "symlink_quebrado"
-        return "symlink_ok" if live.exists() and same_path(resolved, live.resolve()) else "symlink_outro"
-    text = read_text(path) or ""
-    if not text.strip():
-        return "vazio"
-    if is_pointer_text(path):
-        return "ponteiro_texto"
-    return "arquivo_igual" if live.is_file() and same_bytes(path, live) else "arquivo_legado"
-
-
-# Classifica a inclusão mínima descoberta pelo Antigravity sem seguir symlinks externos.
-def antigravity_bridge_state(path: Path) -> str:
-    if path.is_symlink():
-        return "inesperado"
-    if not path.exists():
-        return "ausente"
-    if not path.is_file():
-        return "inesperado"
-    try:
-        content = path.read_text(encoding="utf-8-sig")
-    except (OSError, UnicodeError):
-        return "divergente"
-    return "ponteiro_ok" if content.strip() == ANTIGRAVITY_BRIDGE_INCLUDE else "divergente"
-
-
-# Recusa tipos estruturais que impediriam um reparo previsível antes da primeira escrita.
-def assert_infrastructure_types(
-    vf: Path,
-    live: Path,
-    root_copy: Path,
-    old_dir: Path,
-    phases: Path,
-    gitignore: Path,
-    gitkeep: Path,
-    pending_path: Path,
-    report_path: Path,
-    antigravity_root: Path,
-    antigravity_rules: Path,
-) -> None:
-    if is_reparse_point(vf):
-        raise RuntimeError("TIPO_INESPERADO: .vibeflow precisa ser um diretório local.")
-    if vf.exists() and not vf.is_dir():
-        raise RuntimeError("TIPO_INESPERADO: .vibeflow existe, mas não é um diretório.")
-    for path in (live, root_copy, gitignore, gitkeep, pending_path, report_path):
-        assert_safe_operational_file(path, str(path))
-    for path, label in ((old_dir, ".vibeflow/old"), (phases, ".vibeflow/phases")):
-        if is_reparse_point(path) or (path.exists() and not path.is_dir()):
-            raise RuntimeError(f"TIPO_INESPERADO: {label} precisa ser um diretório local.")
-    for path in (antigravity_root, antigravity_rules):
-        if is_reparse_point(path) or path.exists() and not path.is_dir():
-            raise RuntimeError(f"TIPO_INESPERADO: '{path}' precisa ser um diretório local.")
-
-
-# Escolhe um nome de backup único sem depender da precisão do relógio.
-def unique_old_path(old_dir: Path, name: str) -> Path:
-    direct = old_dir / name
-    if not direct.exists():
-        return direct
-    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    candidate = old_dir / f"{name}.{stamp}"
-    suffix = 1
-    while candidate.exists():
-        candidate = old_dir / f"{name}.{stamp}.{suffix}"
-        suffix += 1
-    return candidate
-
-
-# Copia e valida um backup antes que qualquer fonte original possa ser substituída.
-def copy_verified(source: Path, destination: Path) -> None:
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(source, destination)
-    if os.environ.get("VIBE_INIT_TEST_CORRUPT_OLD") == "1":
-        destination.write_text("CORRUPT", encoding="utf-8")
-    if not same_bytes(source, destination):
-        destination.unlink(missing_ok=True)
-        raise RuntimeError(f"OLD_HASH_MISMATCH: cópia de '{source}' não bateu com '{destination}'. Peça não substituída.")
-
-
-# Escreve a inclusão curta em arquivo temporário para trocar a ponte sem truncar o arquivo anterior.
-def write_antigravity_bridge(path: Path) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
-    try:
-        with temporary.open("w", encoding="utf-8", newline="\n") as stream:
-            stream.write(f"{ANTIGRAVITY_BRIDGE_INCLUDE}\n")
-        temporary.replace(path)
-    finally:
-        temporary.unlink(missing_ok=True)
-
-
-# Cria e valida o link temporário antes de substituir o item que ocupa o caminho final.
-def replace_symlink(link: Path, target: str) -> None:
-    temporary = link.with_name(f"{link.name}.__vibe_symlink__{uuid.uuid4().hex}")
-    try:
-        temporary.symlink_to(target)
-    except OSError as error:
-        raise RuntimeError(
-            f"SYMLINK_RECUSADO: o OS recusou criar o link '{link}' -> '{target}'. "
-            "Ative o suporte a symlink ou execute com privilégios adequados; o original permanece."
-        ) from error
-    try:
-        if link.exists() or link.is_symlink():
-            link.unlink()
-        temporary.rename(link)
-    finally:
-        temporary.unlink(missing_ok=True)
-
-
-# Acrescenta exclusões operacionais preservando regras existentes e evitando duplicação.
-def add_gitignore_entry(path: Path, entry: str) -> None:
-    assert_safe_operational_file(path, str(path))
-    body = read_text(path) or ""
-    if entry in {line.strip() for line in body.splitlines()}:
-        return
-    prefix = "\n" if body and not body.endswith("\n") else ""
-    with path.open("a", encoding="utf-8", newline="\n") as stream:
-        stream.write(f"{prefix}{entry}\n")
-
-
-# Extrai um nome factual de manifests conhecidos ou do diretório do projeto.
-def project_name(repo: Path) -> dict[str, str]:
-    package = read_evidence(repo / "package.json")
-    if package:
-        try:
-            value = json.loads(package).get("name")
-            if value:
-                return {"value": str(value), "from": "package.json"}
-        except (json.JSONDecodeError, AttributeError):
-            pass
-    pyproject = read_evidence(repo / "pyproject.toml")
-    if pyproject:
-        match = re.search(r'(?ms)^\[project\].*?^name\s*=\s*["\']([^"\']+)["\']', pyproject)
-        if match:
-            return {"value": match.group(1), "from": "pyproject.toml"}
-    gomod = read_evidence(repo / "go.mod")
-    if gomod:
-        match = re.search(r"(?m)^module\s+(\S+)", gomod)
-        if match:
-            return {"value": match.group(1).split("/")[-1], "from": "go.mod"}
-    return {"value": repo.name, "from": "pasta"}
-
-
-# Seleciona o primeiro parágrafo útil, ignorando títulos, badges e imagens iniciais.
-def useful_paragraph(text: str | None) -> str | None:
-    if not text or not text.strip():
         return None
-    lines: list[str] = []
-    started = False
-    for raw in text.splitlines():
-        line = raw.strip()
-        if not started:
-            if not line or re.match(r"^#+|^\[!\[|^!\[|^<!--|^<img", line):
-                continue
-            started = True
-        if not line:
-            break
-        lines.append(line)
-    return " ".join(lines).strip() or None
-
-
-# Localiza uma descrição factual sem abrir arquivos maiores que o limite de evidência.
-def paragraph_evidence(repo: Path) -> dict[str, str] | None:
-    for name in ("README.md", "README.MD", "readme.md"):
-        paragraph = useful_paragraph(read_evidence(repo / name))
-        if paragraph:
-            return {"text": paragraph, "from": name}
-    package = read_evidence(repo / "package.json")
-    if package:
-        try:
-            value = json.loads(package).get("description")
-            if value:
-                return {"text": str(value), "from": "package.json"}
-        except (json.JSONDecodeError, AttributeError):
-            pass
-    pyproject = read_evidence(repo / "pyproject.toml")
-    if pyproject:
-        match = re.search(r'(?ms)^\[project\].*?^description\s*=\s*["\']([^"\']+)["\']', pyproject)
-        if match:
-            return {"text": match.group(1), "from": "pyproject.toml"}
-    return None
-
-
-# Lista dois níveis úteis da árvore, com teto, para o SLOT não virar dump em repo grande.
-def structure(repo: Path) -> list[str]:
-    result: list[str] = []
-    for entry in sorted(repo.iterdir(), key=lambda item: item.name.casefold()):
-        if entry.name in IGNORED_DIRS:
-            continue
-        result.append(entry.name)
-        if entry.is_dir() and not entry.is_symlink():
-            try:
-                children = sorted(entry.iterdir(), key=lambda item: item.name.casefold())
-            except OSError:
-                children = []
-            result.extend(f"{entry.name}/{child.name}" for child in children if child.name not in IGNORED_DIRS)
-    if len(result) > MAX_STRUCTURE_ITEMS:
-        return result[:MAX_STRUCTURE_ITEMS] + [f"… (+{len(result) - MAX_STRUCTURE_ITEMS} itens omitidos)"]
-    return result
-
-
-# Identifica a stack apenas pela presença de manifests conhecidos.
-def stack(repo: Path) -> list[str]:
-    names = ("package.json", "pyproject.toml", "go.mod", "Cargo.toml", "composer.json", "Gemfile", "pom.xml", "build.gradle", "requirements.txt", "Pipfile")
-    return [name for name in names if (repo / name).is_file()]
-
-
-# Detecta migrations com travessia podada, sem visitar dependências, builds ou symlinks.
-def has_migrations(repo: Path) -> bool:
-    known = ("prisma/migrations", "alembic", "alembic.ini", "drizzle", "knexfile.js", "knexfile.ts", "supabase/migrations")
-    if any((repo / path).exists() for path in known):
-        return True
-    queue: deque[tuple[Path, int]] = deque([(repo, 0)])
-    while queue:
-        current, depth = queue.popleft()
-        try:
-            children = current.iterdir()
-        except OSError:
-            continue
-        for child in children:
-            if child.name in IGNORED_DIRS or child.is_symlink() or not child.is_dir():
-                continue
-            if child.name == "migrations":
-                return True
-            if depth + 1 < MAX_MIGRATION_DEPTH:
-                queue.append((child, depth + 1))
-    return False
-
-
-# Extrai do template o único bloco que a skill controla integralmente.
-def cadeia_block(template: str) -> str:
-    match = re.search(r"(?s)<!-- VIBEFLOW:CADEIA start -->.*?<!-- VIBEFLOW:CADEIA end -->", template)
-    if not match:
-        raise RuntimeError("Template sem bloco VIBEFLOW:CADEIA")
-    return match.group(0)
-
-
-# Atualiza ou insere o roteador preservando todo o conteúdo pertencente ao usuário.
-def set_cadeia(content: str, block: str) -> str:
-    pattern = r"(?s)<!-- VIBEFLOW:CADEIA start -->.*?<!-- VIBEFLOW:CADEIA end -->"
-    if re.search(pattern, content):
-        return re.sub(pattern, lambda _: block, content, count=1)
-    title = re.match(r"(?s)^(# [^\r\n]+\r?\n)(\r?\n)?", content)
-    if title:
-        return f"{title.group(1)}\n{block}\n\n{content[title.end():]}"
-    return f"{block}\n\n{content}"
-
-
-# Preenche somente um SLOT explicitamente respaldado por evidência.
-def set_slot(content: str, slot: str, value: str, evidence: str | None = None) -> str:
-    pattern = rf"(?m)^<!--\s*SLOT:{re.escape(slot)}\s*-->\s*\r?\n(?:<!--\s*evidência:[^\n]*-->\s*\r?\n)?"
-    replacement = value.rstrip() + "\n"
-    if evidence is not None:
-        replacement += f"<!-- evidência: {evidence} -->\n"
-    return re.sub(pattern, lambda _: replacement, content, count=1)
-
-
-# Persiste o estado que vincula um merge às fontes e ao consolidado inventariados.
-def write_pending(path: Path, repo: Path, target: Path, merges: list[dict[str, Any]]) -> dict[str, Any]:
-    source_paths = list(dict.fromkeys(source for merge in merges for source in merge["sources"]))
-    sources = []
-    for source in source_paths:
-        absolute = repo / source
-        if not absolute.is_file():
-            raise RuntimeError(f"MERGE_SOURCE_AUSENTE: fonte de merge não encontrada: {source}")
-        sources.append({"path": source, "sha256": sha256(absolute)})
-    pending = {
-        "version": 1,
-        "token": uuid.uuid4().hex,
-        "target": target.relative_to(repo).as_posix(),
-        "target_sha256_inicial": sha256(target),
-        "sources": sources,
-        "remove_regras_raiz": any(merge["id"] == "regras_duplicado" for merge in merges),
-    }
-    assert_safe_operational_file(path, str(path))
-    path.write_text(json.dumps(pending, ensure_ascii=False, indent=2), encoding="utf-8")
-    return pending
-
-
-# Autoriza a finalização somente quando token, fontes e consolidado permanecem coerentes.
-def confirm_pending(path: Path, repo: Path, token: str | None) -> dict[str, Any]:
-    if not path.is_file():
-        raise RuntimeError("APPLY_SEM_MERGE: não existe merge pendente para finalizar.")
-    pending = json.loads(path.read_text(encoding="utf-8"))
-    if not token or token != pending["token"]:
-        raise RuntimeError("MERGE_TOKEN_INVALIDO: use o apply_token do init-report.json atual.")
-    for source in pending["sources"]:
-        absolute = repo / source["path"]
-        if not absolute.is_file() or sha256(absolute) != source["sha256"]:
-            raise RuntimeError(f"MERGE_SOURCE_ALTERADA: a fonte '{source['path']}' mudou desde o inventário.")
-    target = repo / pending["target"]
-    if not target.is_file():
-        raise RuntimeError(f"MERGE_TARGET_AUSENTE: consolidado não encontrado: {pending['target']}")
-    if sha256(target) == pending["target_sha256_inicial"]:
-        raise RuntimeError("MERGE_NAO_APLICADO: o consolidado não mudou desde o inventário; os ponteiros foram preservados.")
-    return pending
-
-
-# Executa a matriz determinística, prepara a ponte do Antigravity e produz o relatório consumido pela IA.
-def run(args: argparse.Namespace) -> Path:
-    EVIDENCE_WARNINGS.clear()
-    repo = repo_root(args.root)
-    skill = Path(__file__).resolve().parent.parent
-    template_path = skill / "templates" / "REGRAS.md"
-    vf, root_copy = repo / ".vibeflow", repo / "REGRAS.md"
-    live, old_dir, phases = vf / "REGRAS.md", vf / "old", vf / "phases"
-    antigravity_root = repo / ".agents"
-    antigravity_rules = antigravity_root / "rules"
-    antigravity_bridge = antigravity_rules / "vibeflow.md"
-    gitignore = vf / ".gitignore"
-    gitkeep = phases / ".gitkeep"
-    pending_path = vf / "init-pending.json"
-    report_path = vf / "init-report.json"
-    assert_infrastructure_types(
-        vf, live, root_copy, old_dir, phases, gitignore, gitkeep, pending_path,
-        report_path, antigravity_root, antigravity_rules,
-    )
-    confirmed = confirm_pending(pending_path, repo, args.merge_token) if args.apply_pointers else None
-    if not args.apply_pointers and pending_path.exists():
-        raise RuntimeError("MERGE_PENDENTE: finalize o consolidado e use o apply_token do relatório atual.")
-
-    inventory = {
-        "vibeflow": vibeflow_state(vf),
-        "phases": "ok" if phases.is_dir() else "ausente",
-        "regras": regras_state(live, root_copy),
-        "agents": pointer_state(repo, "AGENTS.md", live),
-        "claude": pointer_state(repo, "CLAUDE.md", live),
-        "antigravity": antigravity_bridge_state(antigravity_bridge),
-    }
-    flow = "reparar" if inventory["vibeflow"] != "ausente" or root_copy.exists() or inventory["agents"] != "ausente" or inventory["claude"] != "ausente" or inventory["antigravity"] != "ausente" else "novo"
-    olds: list[dict[str, Any]] = []
-    actions: list[dict[str, str]] = []
-    merges: list[dict[str, Any]] = []
-    conflicts: list[dict[str, str]] = []
-    warnings: list[str] = []
-    PARTIAL.clear()
-    PARTIAL.update({
-        "repo": repo, "flow": flow, "inventory": inventory, "olds": olds,
-        "actions": actions, "merges": merges, "conflicts": conflicts, "warnings": warnings,
-    })
-
-    # Registra ações em um único formato para manter paridade com o relatório PowerShell.
-    def action(operation: str, target: str) -> None:
-        actions.append({"op": operation, "alvo": target})
-
-    # Salva uma fonte e devolve o path real, inclusive quando recebeu sufixo de colisão.
-    def save_old(source: Path, name: str) -> str:
-        destination = unique_old_path(old_dir, name)
-        copy_verified(source, destination)
-        relative = destination.relative_to(repo).as_posix()
-        olds.append({"from": source.relative_to(repo).as_posix(), "to": relative, "bytes": destination.stat().st_size, "sha256": sha256(destination)})
-        action("old", relative)
-        return relative
-
-    if inventory["vibeflow"] == "ausente":
-        vf.mkdir()
-        action("criar_dir", ".vibeflow")
-    if not phases.exists():
-        phases.mkdir(parents=True)
-        action("criar_phases", ".vibeflow/phases")
-    if not (phases / ".gitkeep").exists():
-        (phases / ".gitkeep").write_text("", encoding="utf-8")
-        action("criar_phases", ".vibeflow/phases/.gitkeep")
-    add_gitignore_entry(gitignore, "init-report.json")
-    add_gitignore_entry(gitignore, "init-pending.json")
-
-    agents_path, claude_path = repo / "AGENTS.md", repo / "CLAUDE.md"
-    agents_legacy, claude_legacy = inventory["agents"] == "arquivo_legado", inventory["claude"] == "arquivo_legado"
-    equal_legacy = agents_legacy and claude_legacy and same_bytes(agents_path, claude_path)
-    content_state = regras_file_state(live if live.exists() else root_copy)
-    need_template = inventory["regras"] not in ("raiz_sozinho", "raiz_e_vibeflow") and content_state in ("ausente", "vazio")
-    # Toda fonte de texto que perde o papel de arquivo editável vira merge, inclusive quando o
-    # REGRAS vem da raiz: sem isso o legado só sobrevive em old/ e some do consolidado.
-    # AGENTS idêntico a CLAUDE entra uma vez só; a IA não precisa ler o mesmo texto duas vezes.
-    legacy_sources = [".vibeflow/old/AGENTS.md"] if agents_legacy else []
-    if claude_legacy and not equal_legacy:
-        legacy_sources.append(".vibeflow/old/CLAUDE.md")
-    live_has_text = live.is_file() and bool((read_text(live) or "").strip())
-    duplicated = inventory["regras"] == "raiz_e_vibeflow" and not same_bytes(root_copy, live)
-    merge_pending = False
-    if not args.apply_pointers:
-        if duplicated:
-            merges.append({"id": "regras_duplicado", "sources": [".vibeflow/old/REGRAS-raiz.md", ".vibeflow/old/REGRAS.md"], "target": TARGET_REL})
-        if legacy_sources:
-            # Texto que o consolidado já terá nesta run: o vivo, ou o REGRAS da raiz que vira o vivo.
-            if duplicated:
-                existing: list[str] = []
-            elif inventory["regras"] == "raiz_sozinho":
-                existing = [".vibeflow/old/REGRAS-raiz.md"]
-            elif live_has_text and inventory["regras"] in ("template", "preenchido", "raiz_e_vibeflow"):
-                existing = [".vibeflow/old/REGRAS.md"]
-            else:
-                existing = []
-            merge_id = "duas_fontes" if not existing and len(legacy_sources) > 1 else "legado_vs_regras"
-            merges.append({"id": merge_id, "sources": legacy_sources + existing, "target": TARGET_REL})
-        merge_pending = bool(merges)
-    if merges:
-        action("merge_pendente", TARGET_REL)
-
-    for name, state in (("AGENTS.md", inventory["agents"]), ("CLAUDE.md", inventory["claude"])):
-        if state == "ponteiro_texto":
-            warnings.append(f"{name} é ponteiro_texto (checkout sem symlink). Não entra em merge.")
-        elif state == "symlink_outro":
-            conflicts.append({"id": "ponteiro_alheio", "peca": name, "detalhe": f"link para outro arquivo (não é {TARGET_REL})"})
-        elif state == "inesperado":
-            conflicts.append({"id": "tipo_inesperado", "peca": name, "detalhe": "não é arquivo nem symlink"})
-
-    needed_sources = {source for merge in merges for source in merge["sources"]}
-    old_map: dict[str, str] = {}
-    if not args.apply_pointers:
-        if agents_legacy or inventory["agents"] in ("arquivo_igual", "ponteiro_texto"):
-            old_map[".vibeflow/old/AGENTS.md"] = save_old(agents_path, "AGENTS.md")
-        if claude_legacy or inventory["claude"] in ("arquivo_igual", "ponteiro_texto"):
-            old_map[".vibeflow/old/CLAUDE.md"] = save_old(claude_path, "CLAUDE.md")
-        if inventory["regras"] in ("raiz_sozinho", "raiz_e_vibeflow"):
-            old_map[".vibeflow/old/REGRAS-raiz.md"] = save_old(root_copy, "REGRAS-raiz.md")
-        if ".vibeflow/old/REGRAS.md" in needed_sources and live_has_text:
-            old_map[".vibeflow/old/REGRAS.md"] = save_old(live, "REGRAS.md")
-        for merge in merges:
-            merge["sources"] = [old_map.get(source, source) for source in merge["sources"]]
-
-    if args.stop_after_old:
-        return write_report(repo, flow, inventory, olds, actions, merges, conflicts, warnings, {}, [], False, {}, False, False, None)
-
-    if inventory["regras"] == "raiz_sozinho":
-        root_copy.replace(live)
-        action("mover", "REGRAS.md -> .vibeflow/REGRAS.md")
-    elif inventory["regras"] == "raiz_e_vibeflow" and same_bytes(root_copy, live):
-        root_copy.unlink()
-        action("apagar_raiz", "REGRAS.md")
-    elif need_template:
-        shutil.copyfile(template_path, live)
-        action("escrever_template", TARGET_REL)
-
-    # Converte cada ponteiro independentemente, preservando fontes ainda necessárias ao merge.
-    def convert_pointer(name: str, state: str) -> None:
-        path = repo / name
-        key = name.removesuffix(".md")
-        if state in ("inesperado", "symlink_ok") or state == "symlink_outro" and args.redirect_pointer != key:
-            return
-        if state == "arquivo_legado" and merge_pending and not args.apply_pointers:
-            return
-        if state == "symlink_outro" and args.redirect_pointer == key:
-            previous = os.readlink(path)
-            destination = unique_old_path(old_dir, name.replace(".md", ".target.txt"))
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            destination.write_text(previous, encoding="utf-8")
-            olds.append({"from": name, "to": destination.relative_to(repo).as_posix(), "bytes": len(previous.encode()), "sha256": "target-path"})
-        if state in ("ausente", "vazio", "arquivo_igual", "arquivo_legado", "ponteiro_texto"):
-            replace_symlink(path, TARGET_REL)
-            action("symlink_criar", name)
-        elif state == "symlink_quebrado" or state == "symlink_outro" and args.redirect_pointer:
-            replace_symlink(path, TARGET_REL)
-            action("symlink_recriar", name)
-
-    if live.exists():
-        convert_pointer("AGENTS.md", inventory["agents"])
-        convert_pointer("CLAUDE.md", inventory["claude"])
-        if inventory["antigravity"] == "ausente":
-            write_antigravity_bridge(antigravity_bridge)
-            action("antigravity_bridge_criar", ANTIGRAVITY_BRIDGE_REL)
-        elif inventory["antigravity"] == "divergente":
-            backup = save_old(antigravity_bridge, ANTIGRAVITY_BRIDGE_OLD_NAME)
-            warnings.append(f"{ANTIGRAVITY_BRIDGE_REL} divergente; backup verificado em {backup} e ponte reparada.")
-            write_antigravity_bridge(antigravity_bridge)
-            action("antigravity_bridge_reparar", ANTIGRAVITY_BRIDGE_REL)
-        elif inventory["antigravity"] == "inesperado":
-            conflicts.append({
-                "id": "tipo_inesperado",
-                "peca": ANTIGRAVITY_BRIDGE_REL,
-                "detalhe": "não é arquivo regular com inclusão relativa do REGRAS",
-            })
-    if args.apply_pointers and confirmed and confirmed["remove_regras_raiz"] and root_copy.is_file():
-        root_copy.unlink()
-        action("apagar_raiz", "REGRAS.md")
-
-    filled: dict[str, Any] = {"nome": project_name(repo)}
-    tree, manifests, migrations, evidence = structure(repo), stack(repo), has_migrations(repo), paragraph_evidence(repo)
-    warnings.extend(item for item in dict.fromkeys(EVIDENCE_WARNINGS) if item not in warnings)
-    scan = {"estrutura": tree, "stack": manifests, "evidencia_paragrafo": evidence}
-    if live.is_file():
-        body = read_text(live) or ""
-        slots = open_slots(body)
-        if "estrutura" in slots:
-            body = set_slot(body, "estrutura", "\n".join(f"- {item}" for item in tree) if tree else "- (raiz vazia)")
-        if "paragrafo" in slots and evidence:
-            body = set_slot(body, "paragrafo", evidence["text"], evidence["from"])
-            filled["paragrafo"] = {"value": evidence["text"], "from": evidence["from"]}
-        refreshed = set_cadeia(body, cadeia_block(read_text(template_path) or ""))
-        if refreshed != body:
-            action("cadeia_upsert", TARGET_REL)
-        live.write_text(refreshed, encoding="utf-8", newline="\n")
-
-    slots = open_slots(read_text(live))
-    symlink_agents = pointer_state(repo, "AGENTS.md", live) == "symlink_ok"
-    symlink_claude = pointer_state(repo, "CLAUDE.md", live) == "symlink_ok"
-    apply_token = None
-    if not args.apply_pointers and merges:
-        apply_token = write_pending(pending_path, repo, live, merges)["token"]
-    if args.apply_pointers:
-        pending_path.unlink(missing_ok=True)
-    return write_report(repo, flow, inventory, olds, actions, merges, conflicts, warnings, filled, slots, migrations, scan, symlink_agents, symlink_claude, apply_token)
-
-
-# Grava o JSON final usando o mesmo schema emitido pela implementação PowerShell.
-def write_report(
-    repo: Path,
-    flow: str,
-    inventory: dict[str, str],
-    olds: list[dict[str, Any]],
-    actions: list[dict[str, str]],
-    merges: list[dict[str, Any]],
-    conflicts: list[dict[str, str]],
-    warnings: list[str],
-    filled: dict[str, Any],
-    slots: list[str],
-    migrations: bool,
-    scan: dict[str, Any],
-    symlink_agents: bool,
-    symlink_claude: bool,
-    apply_token: str | None,
-) -> Path:
-    report_path = repo / ".vibeflow" / "init-report.json"
-    report = {
-        "flow": flow,
-        "root": str(repo),
-        "inventory": inventory,
-        "olds": olds,
-        "actions": actions,
-        "merges": merges,
-        "conflicts": conflicts,
-        "filled": filled,
-        "slots_abertos": slots,
-        "migrations_detectadas": migrations,
-        "symlink_ok": {"agents": symlink_agents, "claude": symlink_claude},
-        "scan": scan,
-        "avisos": warnings,
-        "apply_token": apply_token,
-    }
-    assert_safe_operational_file(report_path, str(report_path))
-    report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8", newline="\n")
-    print(report_path)
-    return report_path
-
-
-# Grava o que a run já fez quando ela falha no meio: sem isso a IA fica sem contrato de disco
-# justamente no cenário em que o repositório ficou parcialmente convertido.
-def write_partial_report(error: BaseException) -> None:
-    repo = PARTIAL.get("repo")
-    if not repo or not (repo / ".vibeflow").is_dir() or not PARTIAL["actions"]:
-        return
-    PARTIAL["warnings"].append(f"run interrompida: {error}")
-    write_report(
-        repo, PARTIAL["flow"], PARTIAL["inventory"], PARTIAL["olds"], PARTIAL["actions"],
-        PARTIAL["merges"], PARTIAL["conflicts"], PARTIAL["warnings"], {}, [], False, {}, False, False, None,
-    )
-
-
-# Converte falhas previstas em mensagens curtas, sem stack trace operacional para o usuário.
-def main() -> int:
+    target = (path.parent / os.readlink(path)).resolve(strict=True) if path.is_symlink() else path.resolve(strict=True)
     try:
-        run(parse_args())
+        local = os.path.commonpath((str(root), str(target))) == str(root)
+    except ValueError:
+        local = False
+    if not local:
+        raise RuntimeError(f"FONTE_EXTERNA: {path} aponta para fora do projeto")
+    if not target.is_file():
+        raise RuntimeError(f"TIPO_INESPERADO: {path} não é arquivo")
+    if target.stat().st_size > 1024 * 1024:
+        raise RuntimeError(f"FONTE_GRANDE: {path} excede 1 MiB")
+    return target
+
+
+# Salva uma cópia verificada e preserva colisões com sufixo de tempo.
+def backup(source: Path, root: Path, old: Path, name: str, records: list[dict[str, str]]) -> Path:
+    old.mkdir(parents=True, exist_ok=True)
+    destination = old / name
+    if destination.exists():
+        if sha256(destination) == sha256(source):
+            return destination
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+        destination = old / f"{name}.{stamp}"
+    shutil.copyfile(source, destination)
+    if destination.stat().st_size != source.stat().st_size or sha256(destination) != sha256(source):
+        destination.unlink(missing_ok=True)
+        raise RuntimeError(f"OLD_HASH_MISMATCH: backup de {source} não confere")
+    records.append({"from": source.relative_to(root).as_posix(), "to": destination.relative_to(root).as_posix(), "sha256": sha256(destination)})
+    return destination
+
+
+# Atualiza só o roteador e a regra de escopo no topo, preservando as outras regras do usuário.
+def update_header(content: str, template: str) -> str:
+    block = template[template.index(START):template.index(END) + len(END)]
+    scope = template.split(START, 1)[0].split("\n\n", 1)[1].strip()
+    if (START in content) != (END in content):
+        raise RuntimeError("CADEIA_INCOMPLETA: delimitadores do roteador não formam um par")
+    if START in content:
+        content = content[:content.index(START)] + block + content[content.index(END) + len(END):]
+    else:
+        if content.startswith("# ") and "\n" in content:
+            title, body = content.split("\n", 1)
+            content = f"{title}\n\n{block}\n\n{body.lstrip()}"
+        else:
+            content = f"{block}\n\n{content.lstrip()}"
+    if scope not in content:
+        if content.startswith("# ") and "\n" in content:
+            title, body = content.split("\n", 1)
+            content = f"{title}\n\n{scope}\n\n{body.lstrip()}"
+        else:
+            content = f"{scope}\n\n{content}"
+    return content.rstrip() + "\n"
+
+
+# Prepara diretórios e relatório operacional sem criar outra fonte de regras.
+def run(root: Path) -> Path:
+    vf = root / ".vibeflow"
+    phases = vf / "phases"
+    old = vf / "old"
+    agents = root / "AGENTS.md"
+    bridge = root / ".agents" / "rules" / "vibeflow.md"
+    template = (Path(__file__).resolve().parent.parent / "templates" / "AGENTS.md").read_text(encoding="utf-8")
+    for directory in (vf, phases, old, bridge.parent.parent, bridge.parent):
+        if is_reparse(directory) or directory.exists() and not directory.is_dir():
+            raise RuntimeError(f"TIPO_INESPERADO: {directory} não é diretório")
+    for operational in (vf / ".gitignore", vf / "init-report.json", phases / ".gitkeep", bridge):
+        if is_reparse(operational):
+            raise RuntimeError(f"TIPO_INESPERADO: {operational} não pode ser link")
+    legacy = [root / ".vibeflow" / "REGRAS.md", root / "REGRAS.md", root / "CLAUDE.md"]
+    agent_source = readable_source(agents, root)
+    legacy_sources = [(path, readable_source(path, root)) for path in legacy]
+    legacy_sources = [(path, source) for path, source in legacy_sources if source]
+    for directory in (vf, phases, bridge.parent):
+        directory.mkdir(parents=True, exist_ok=True)
+    (phases / ".gitkeep").touch(exist_ok=True)
+    gitignore = vf / ".gitignore"
+    ignored = gitignore.read_text(encoding="utf-8") if gitignore.is_file() else ""
+    for entry in ("init-report.json", "init-pending.json"):
+        if entry not in ignored.splitlines():
+            ignored += ("" if not ignored or ignored.endswith("\n") else "\n") + entry + "\n"
+    gitignore.write_text(ignored, encoding="utf-8")
+
+    records: list[dict[str, str]] = []
+    actions: list[str] = []
+    if agent_source:
+        original = agent_source.read_text(encoding="utf-8")
+        if agents.is_symlink() or not original.strip():
+            backup(agent_source, root, old, "AGENTS.md", records)
+            if agents.is_symlink():
+                agents.unlink()
+            agents.write_text(original if original.strip() else template, encoding="utf-8")
+            actions.append("materializar_AGENTS")
+    else:
+        source = legacy_sources[0][1] if legacy_sources else None
+        agents.write_text(source.read_text(encoding="utf-8") if source else template, encoding="utf-8")
+        actions.append("criar_AGENTS")
+
+    for path, source in legacy_sources:
+        if path.is_symlink():
+            continue
+        backup(source, root, old, path.name if path.parent == root else "REGRAS-vibeflow.md", records)
+    current = agents.read_text(encoding="utf-8")
+    updated = update_header(current, template)
+    if updated != current:
+        if not any(item["from"] == "AGENTS.md" for item in records) and current.strip():
+            backup(agents, root, old, "AGENTS.md", records)
+        agents.write_text(updated, encoding="utf-8", newline="\n")
+        actions.append("atualizar_AGENTS")
+
+    if bridge.exists() and not bridge.is_file():
+        raise RuntimeError(f"TIPO_INESPERADO: {bridge} não é arquivo")
+    if bridge.is_file() and bridge.read_text(encoding="utf-8") != BRIDGE:
+        backup(bridge, root, old, "antigravity-vibeflow.md", records)
+    if not bridge.exists() or bridge.read_text(encoding="utf-8") != BRIDGE:
+        bridge.write_text(BRIDGE, encoding="utf-8")
+        actions.append("atualizar_ponte_antigravity")
+
+    merges = [path.relative_to(root).as_posix() for path, source in legacy_sources if source.read_bytes() != agents.read_bytes()]
+    report = {"root": str(root), "target": "AGENTS.md", "actions": actions, "olds": records, "merges": merges, "legacy_present": [path.relative_to(root).as_posix() for path, _ in legacy_sources]}
+    output = vf / "init-report.json"
+    output.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(output)
+    return output
+
+
+# Converte erros previsíveis em mensagem curta para o usuário.
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--root")
+    args = parser.parse_args()
+    try:
+        run(repo_root(args.root))
         return 0
-    except (OSError, RuntimeError, ValueError, json.JSONDecodeError) as error:
-        write_partial_report(error)
+    except (OSError, RuntimeError, ValueError, UnicodeError) as error:
         print(str(error), file=sys.stderr)
         return 1
 

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Contratos de docs/vibe-init/ARQUITETURA.md §13 no motor Python, mais paridade essencial."""
+"""Contratos de AGENTS.md único, preservação de legados e paridade do init."""
 
 from __future__ import annotations
 
+import hashlib
 import json
-import os
 import shutil
 import subprocess
 import sys
@@ -13,415 +13,109 @@ import uuid
 from pathlib import Path
 
 
-SKILL_DIR = Path(__file__).resolve().parents[3] / "vibe-init"
-SCRIPT = SKILL_DIR / "scripts" / "init.py"
-TEMPLATE = SKILL_DIR / "templates" / "REGRAS.md"
-POWERSHELL_SCRIPT = SKILL_DIR / "scripts" / "init.ps1"
+ROOT = Path(__file__).resolve().parents[3]
+PYTHON = ROOT / "vibe-init" / "scripts" / "init.py"
+POWERSHELL = ROOT / "vibe-init" / "scripts" / "init.ps1"
+TEMPLATE = ROOT / "vibe-init" / "templates" / "AGENTS.md"
 
 
-# Executa o motor Python e devolve processo e relatório, quando produzido.
-def invoke(repo: Path, *arguments: str, check: bool = True, env: dict[str, str] | None = None) -> tuple[subprocess.CompletedProcess[str], dict | None]:
-    process = subprocess.run(
-        [sys.executable, str(SCRIPT), "--root", str(repo), *arguments],
-        capture_output=True,
-        text=True,
-        check=check,
-        env={**os.environ, **(env or {})},
-    )
+# Executa um motor em raiz isolada e carrega o relatório operacional produzido.
+def invoke(repo: Path, powershell: bool = False) -> tuple[subprocess.CompletedProcess[str], dict | None]:
+    command = (["pwsh", "-NoProfile", "-File", str(POWERSHELL), "-Root", str(repo)] if powershell else [sys.executable, str(PYTHON), "--root", str(repo)])
+    process = subprocess.run(command, capture_output=True, text=True, check=False)
     report_path = repo / ".vibeflow" / "init-report.json"
     report = json.loads(report_path.read_text(encoding="utf-8")) if report_path.is_file() else None
     return process, report
 
 
-# Altera o consolidado e usa o token do relatório para concluir o merge.
-def complete_merge(repo: Path, report: dict, text: str) -> dict:
-    target = repo / ".vibeflow" / "REGRAS.md"
-    target.write_text(target.read_text(encoding="utf-8") + f"\n{text}\n", encoding="utf-8")
-    _, final_report = invoke(repo, "--apply-pointers", "--merge-token", report["apply_token"])
-    assert final_report is not None
-    return final_report
+class InitContracts(unittest.TestCase):
+    """Verifica criação mínima, migração segura e execução repetida."""
 
-
-# Monta um REGRAS.md já preenchido, sem SLOT, para os cenários de idempotência.
-def filled_rules(paragraph: str) -> str:
-    template = TEMPLATE.read_text(encoding="utf-8")
-    start = template.index("<!-- VIBEFLOW:CADEIA start -->")
-    end = template.index("<!-- VIBEFLOW:CADEIA end -->") + len("<!-- VIBEFLOW:CADEIA end -->")
-    return (
-        f"# Regras do projeto\n\n{template[start:end]}\n\n"
-        f"## Projeto\n{paragraph}\n\n## Ambiente\nhomolog\n\n"
-        "## Versão (semver)\n- x\n\n## Git\n- y\n\n## Estrutura\n- src\n\n## Regras deste repo\nnada\n"
-    )
-
-
-# Verifica se existe uma versão real de PowerShell 7, única suportada pelo motor gêmeo.
-def powershell7() -> str | None:
-    executable = shutil.which("pwsh")
-    if not executable:
-        return None
-    probe = subprocess.run([executable, "-NoProfile", "-Command", "$PSVersionTable.PSVersion.Major"], capture_output=True, text=True, check=False)
-    return executable if probe.stdout.strip().isdigit() and int(probe.stdout.strip()) >= 7 else None
-
-
-class PythonContracts(unittest.TestCase):
-    """Verifica os invariantes com maior risco de perda, divergência ou path inventado."""
-
-    # Cria uma raiz isolada e remove tudo automaticamente ao fim de cada teste.
+    # Isola cada cenário fora do repositório principal e exige limpeza efetiva.
     def setUp(self) -> None:
         self.repo = Path.cwd() / f".vibe-init-python-{uuid.uuid4().hex}"
         self.repo.mkdir()
 
-    # Libera a árvore isolada inclusive quando uma asserção falha.
+    # Remove apenas a pasta conhecida desta fixture após cada teste.
     def tearDown(self) -> None:
-        shutil.rmtree(self.repo, ignore_errors=True)
+        shutil.rmtree(self.repo)
 
-    # Atalho para os caminhos consultados na maioria dos contratos.
-    def live(self) -> Path:
-        return self.repo / ".vibeflow" / "REGRAS.md"
-
-    # 1. Confirma a criação mínima, os dois links e a ausência de old em repo vazio.
-    def test_new_repository(self) -> None:
-        _, report = invoke(self.repo)
-        bridge = self.repo / ".agents" / "rules" / "vibeflow.md"
-        self.assertEqual("novo", report["flow"])
-        self.assertTrue((self.repo / "AGENTS.md").is_symlink())
-        self.assertTrue((self.repo / "CLAUDE.md").is_symlink())
-        self.assertTrue((self.repo / ".vibeflow" / "phases" / ".gitkeep").is_file())
-        self.assertFalse((self.repo / ".vibeflow" / "old").exists())
-        self.assertFalse((self.repo / "GEMINI.md").exists())
-        self.assertEqual("ausente", report["inventory"]["antigravity"])
-        self.assertEqual("@../../.vibeflow/REGRAS.md\n", bridge.read_text(encoding="utf-8"))
-        self.assertNotIn("# Regras do projeto", bridge.read_text(encoding="utf-8"))
-        self.assertIn("antigravity_bridge_criar", [item["op"] for item in report["actions"]])
-
-    # 1b. Uma ponte já correta permanece byte a byte e não gera ação nova.
-    def test_antigravity_bridge_is_idempotent(self) -> None:
-        invoke(self.repo)
-        bridge = self.repo / ".agents" / "rules" / "vibeflow.md"
-        antes = bridge.read_bytes()
-        _, report = invoke(self.repo)
-        self.assertEqual("ponteiro_ok", report["inventory"]["antigravity"])
-        self.assertEqual(antes, bridge.read_bytes())
-        self.assertNotIn("antigravity_bridge_criar", [item["op"] for item in report["actions"]])
-        self.assertNotIn("antigravity_bridge_reparar", [item["op"] for item in report["actions"]])
-        self.assertEqual([], report["olds"])
-
-    # 1c. Conteúdo divergente é salvo em old antes de a ponte ser reparada.
-    def test_antigravity_bridge_divergence_is_backed_up_before_repair(self) -> None:
-        invoke(self.repo)
-        bridge = self.repo / ".agents" / "rules" / "vibeflow.md"
-        bridge.write_text("regra local do Antigravity\n", encoding="utf-8")
-        _, report = invoke(self.repo)
-        old = self.repo / ".vibeflow" / "old" / "antigravity-vibeflow.md"
-        operations = [item["op"] for item in report["actions"]]
-        self.assertEqual("divergente", report["inventory"]["antigravity"])
-        self.assertEqual("regra local do Antigravity\n", old.read_text(encoding="utf-8"))
-        self.assertEqual("@../../.vibeflow/REGRAS.md\n", bridge.read_text(encoding="utf-8"))
-        self.assertEqual([], report["merges"])
-        self.assertLess(operations.index("old"), operations.index("antigravity_bridge_reparar"))
-        self.assertTrue(any("antigravity-vibeflow.md" in aviso for aviso in report["avisos"]))
-
-    # 2. Sem README nem manifest, o parágrafo continua sendo pergunta para o humano.
-    def test_paragraph_stays_open(self) -> None:
-        _, report = invoke(self.repo)
-        self.assertIn("paragrafo", report["slots_abertos"])
-        self.assertIn("<!-- SLOT:paragrafo -->", self.live().read_text(encoding="utf-8"))
-
-    # 3. Pasta vazia é reparo: cria phases, consolidado e os dois ponteiros.
-    def test_repair_empty_folder(self) -> None:
-        (self.repo / ".vibeflow").mkdir()
-        _, report = invoke(self.repo)
-        self.assertEqual("reparar", report["flow"])
-        self.assertTrue(self.live().is_file())
-        self.assertTrue((self.repo / "AGENTS.md").is_symlink())
-
-    # 3b/3c. phases e .gitkeep são garantidos mesmo quando um dos dois já existe.
-    def test_phases_and_gitkeep_are_restored(self) -> None:
-        (self.repo / ".vibeflow" / "phases").mkdir(parents=True)
-        _, report = invoke(self.repo)
-        self.assertTrue((self.repo / ".vibeflow" / "phases" / ".gitkeep").is_file())
-        self.assertIn(".vibeflow/phases/.gitkeep", [item["alvo"] for item in report["actions"]])
-
-    # 4. Ponteiro faltando não autoriza reescrever o consolidado nem gerar backup.
-    def test_missing_pointer_only(self) -> None:
-        (self.repo / ".vibeflow").mkdir()
-        self.live().write_text(filled_rules("App."), encoding="utf-8")
-        antes = self.live().read_text(encoding="utf-8")
-        (self.repo / "AGENTS.md").symlink_to(".vibeflow/REGRAS.md")
-        _, report = invoke(self.repo)
-        self.assertEqual(antes, self.live().read_text(encoding="utf-8"))
-        self.assertTrue((self.repo / "CLAUDE.md").is_symlink())
-        self.assertEqual([], report["olds"])
-
-    # 5. Legado único vira fonte de merge e só perde o papel de arquivo depois do apply.
-    def test_single_legacy_source(self) -> None:
-        (self.repo / "AGENTS.md").write_text("regra crítica\n", encoding="utf-8")
-        _, report = invoke(self.repo)
-        self.assertEqual(["legado_vs_regras"], [merge["id"] for merge in report["merges"]])
+    # O projeto novo recebe somente AGENTS.md como fonte e uma ponte curta do Antigravity.
+    def test_new_project_has_one_rules_file(self) -> None:
+        process, report = invoke(self.repo)
+        self.assertEqual(0, process.returncode, process.stderr)
+        self.assertEqual("AGENTS.md", report["target"])
+        self.assertTrue((self.repo / "AGENTS.md").is_file())
         self.assertFalse((self.repo / "AGENTS.md").is_symlink())
-        self.assertEqual("regra crítica\n", (self.repo / ".vibeflow" / "old" / "AGENTS.md").read_text(encoding="utf-8"))
-        complete_merge(self.repo, report, "regra crítica")
-        self.assertTrue((self.repo / "AGENTS.md").is_symlink())
+        self.assertFalse((self.repo / "CLAUDE.md").exists())
+        self.assertFalse((self.repo / "REGRAS.md").exists())
+        self.assertFalse((self.repo / ".vibeflow" / "REGRAS.md").exists())
+        self.assertEqual("@../../AGENTS.md\n", (self.repo / ".agents" / "rules" / "vibeflow.md").read_text(encoding="utf-8"))
+        self.assertIn("documentos e edição apenas de texto", (self.repo / "AGENTS.md").read_text(encoding="utf-8"))
+        self.assertTrue((self.repo / ".vibeflow" / "phases" / ".gitkeep").is_file())
 
-    # 6. Dois legados diferentes viram união, não escolha, e nenhum original é convertido antes.
-    def test_two_different_sources(self) -> None:
-        (self.repo / "AGENTS.md").write_text("regra A\n", encoding="utf-8")
-        (self.repo / "CLAUDE.md").write_text("regra C\n", encoding="utf-8")
-        _, report = invoke(self.repo)
-        self.assertEqual(["duas_fontes"], [merge["id"] for merge in report["merges"]])
-        self.assertFalse((self.repo / "AGENTS.md").is_symlink())
-        self.assertFalse((self.repo / "CLAUDE.md").is_symlink())
+    # A segunda execução não cria backup nem altera o conteúdo já consolidado.
+    def test_idempotent_run(self) -> None:
+        invoke(self.repo)
+        before = (self.repo / "AGENTS.md").read_bytes()
+        process, report = invoke(self.repo)
+        self.assertEqual(0, process.returncode, process.stderr)
+        self.assertEqual(before, (self.repo / "AGENTS.md").read_bytes())
+        self.assertEqual([], report["actions"])
 
-    # 6b. Legados idênticos entram uma vez só como fonte, mas os dois backups são gravados.
-    def test_identical_sources_merge_once(self) -> None:
-        (self.repo / "AGENTS.md").write_text("mesmo texto\n", encoding="utf-8")
-        (self.repo / "CLAUDE.md").write_text("mesmo texto\n", encoding="utf-8")
-        _, report = invoke(self.repo)
-        self.assertEqual([".vibeflow/old/AGENTS.md"], report["merges"][0]["sources"])
-        self.assertEqual({".vibeflow/old/AGENTS.md", ".vibeflow/old/CLAUDE.md"}, {old["to"] for old in report["olds"]})
+    # Um AGENTS legado é mantido e recebe somente o cabeçalho obrigatório.
+    def test_existing_agents_preserves_user_rules(self) -> None:
+        (self.repo / "AGENTS.md").write_text("# Projeto\n\nRegra do time\n", encoding="utf-8")
+        process, report = invoke(self.repo)
+        self.assertEqual(0, process.returncode, process.stderr)
+        self.assertIn("Regra do time", (self.repo / "AGENTS.md").read_text(encoding="utf-8"))
+        self.assertEqual("# Projeto\n\nRegra do time\n", (self.repo / ".vibeflow" / "old" / "AGENTS.md").read_text(encoding="utf-8"))
+        self.assertEqual(1, len(report["olds"]))
 
-    # 7. Segundo backup do mesmo nome recebe timestamp e não pisa o original mais antigo.
-    def test_old_collision_keeps_first(self) -> None:
-        (self.repo / "AGENTS.md").write_text("v1\n", encoding="utf-8")
-        _, report = invoke(self.repo)
-        complete_merge(self.repo, report, "v1")
-        (self.repo / "AGENTS.md").unlink()
-        (self.repo / "AGENTS.md").write_text("v2\n", encoding="utf-8")
-        _, second = invoke(self.repo)
-        old_dir = self.repo / ".vibeflow" / "old"
-        self.assertEqual("v1\n", (old_dir / "AGENTS.md").read_text(encoding="utf-8"))
-        stamped = [item for item in old_dir.iterdir() if item.name.startswith("AGENTS.md.")]
-        self.assertEqual(1, len(stamped))
-        self.assertEqual("v2\n", stamped[0].read_text(encoding="utf-8"))
-
-    # 8. Cópia idêntica ao consolidado é backup e vira link, sem entrar em merge.
-    def test_pointer_equal_to_rules(self) -> None:
-        (self.repo / ".vibeflow").mkdir()
-        self.live().write_text(filled_rules("App."), encoding="utf-8")
-        (self.repo / "AGENTS.md").write_text(filled_rules("App."), encoding="utf-8")
-        _, report = invoke(self.repo)
-        self.assertEqual([], report["merges"])
-        self.assertTrue((self.repo / "AGENTS.md").is_symlink())
-        self.assertIn(".vibeflow/old/AGENTS.md", [old["to"] for old in report["olds"]])
-
-    # 9. Backup que não confere impede a substituição do arquivo do usuário.
-    def test_old_hash_mismatch_preserves_original(self) -> None:
-        (self.repo / "AGENTS.md").write_text("regra crítica\n", encoding="utf-8")
-        process, _ = invoke(self.repo, check=False, env={"VIBE_INIT_TEST_CORRUPT_OLD": "1"})
-        self.assertNotEqual(0, process.returncode)
-        self.assertIn("OLD_HASH_MISMATCH", process.stderr)
-        self.assertEqual("regra crítica\n", (self.repo / "AGENTS.md").read_text(encoding="utf-8"))
-
-    # 9b. Falha depois da primeira escrita ainda deixa relatório do que já foi feito no disco.
-    def test_partial_report_on_late_failure(self) -> None:
-        (self.repo / "AGENTS.md").write_text("regra crítica\n", encoding="utf-8")
-        _, report = invoke(self.repo, check=False, env={"VIBE_INIT_TEST_CORRUPT_OLD": "1"})
-        self.assertIsNotNone(report)
-        self.assertTrue(any("run interrompida" in aviso for aviso in report["avisos"]))
-
-    # 10. Disco saudável sem SLOT não gera ação material nem backup novo.
-    def test_healthy_repository_is_idempotent(self) -> None:
-        vibeflow = self.repo / ".vibeflow"
-        (vibeflow / "phases").mkdir(parents=True)
-        (vibeflow / "phases" / ".gitkeep").write_text("", encoding="utf-8")
-        self.live().write_text(filled_rules("App."), encoding="utf-8")
+    # O symlink antigo é materializado depois do backup, e as fontes legadas ficam disponíveis para merge.
+    def test_old_symlinks_are_backed_up_before_migration(self) -> None:
+        vf = self.repo / ".vibeflow"
+        vf.mkdir()
+        old_rules = vf / "REGRAS.md"
+        old_rules.write_text("# Regra crítica\n", encoding="utf-8")
         (self.repo / "AGENTS.md").symlink_to(".vibeflow/REGRAS.md")
         (self.repo / "CLAUDE.md").symlink_to(".vibeflow/REGRAS.md")
-        _, report = invoke(self.repo)
-        material = {"old", "escrever_template", "symlink_criar", "symlink_recriar", "mover", "apagar_raiz", "merge_pendente"}
-        self.assertEqual([], [item for item in report["actions"] if item["op"] in material])
-
-    # 11. Consolidado fora do lugar é movido, com backup, sem virar merge.
-    def test_rules_only_at_root(self) -> None:
-        (self.repo / "REGRAS.md").write_text("regras do time\n", encoding="utf-8")
-        _, report = invoke(self.repo)
-        self.assertEqual([], report["merges"])
-        self.assertFalse((self.repo / "REGRAS.md").exists())
-        self.assertIn("regras do time", self.live().read_text(encoding="utf-8"))
-        self.assertIn(".vibeflow/old/REGRAS-raiz.md", [old["to"] for old in report["olds"]])
-
-    # 11b. Consolidado na raiz somado a legado é união: o legado não pode virar link nesta run.
-    def test_root_rules_with_legacy_pointer_merges(self) -> None:
-        (self.repo / "REGRAS.md").write_text("regra da raiz\n", encoding="utf-8")
-        (self.repo / "AGENTS.md").write_text("regra crítica do agents\n", encoding="utf-8")
-        _, report = invoke(self.repo)
-        self.assertEqual(["legado_vs_regras"], [merge["id"] for merge in report["merges"]])
-        self.assertIn(".vibeflow/old/AGENTS.md", report["merges"][0]["sources"])
+        process, report = invoke(self.repo)
+        self.assertEqual(0, process.returncode, process.stderr)
         self.assertFalse((self.repo / "AGENTS.md").is_symlink())
-        complete_merge(self.repo, report, "regra crítica do agents")
-        self.assertTrue((self.repo / "AGENTS.md").is_symlink())
+        self.assertIn("Regra crítica", (self.repo / "AGENTS.md").read_text(encoding="utf-8"))
+        backup = vf / "old" / "REGRAS-vibeflow.md"
+        self.assertEqual(hashlib.sha256(old_rules.read_bytes()).digest(), hashlib.sha256(backup.read_bytes()).digest())
+        self.assertTrue((self.repo / "CLAUDE.md").is_symlink())
+        self.assertIn(".vibeflow/REGRAS.md", report["legacy_present"])
 
-    # 11c. Duplicado somado a legado precisa listar as três fontes antes de qualquer conversão.
-    def test_duplicated_rules_with_legacy_pointer(self) -> None:
-        (self.repo / ".vibeflow").mkdir()
-        self.live().write_text("viva\n", encoding="utf-8")
-        (self.repo / "REGRAS.md").write_text("raiz\n", encoding="utf-8")
-        (self.repo / "CLAUDE.md").write_text("claude legado\n", encoding="utf-8")
-        _, report = invoke(self.repo)
-        self.assertEqual({"regras_duplicado", "legado_vs_regras"}, {merge["id"] for merge in report["merges"]})
-        fontes = {source for merge in report["merges"] for source in merge["sources"]}
-        self.assertEqual({".vibeflow/old/REGRAS-raiz.md", ".vibeflow/old/REGRAS.md", ".vibeflow/old/CLAUDE.md"}, fontes)
-        self.assertFalse((self.repo / "CLAUDE.md").is_symlink())
+    # Um CLAUDE.md diferente nunca é descartado ou mesclado automaticamente.
+    def test_distinct_claude_is_reported_for_merge(self) -> None:
+        (self.repo / "CLAUDE.md").write_text("regra exclusiva\n", encoding="utf-8")
+        process, report = invoke(self.repo)
+        self.assertEqual(0, process.returncode, process.stderr)
+        self.assertIn("CLAUDE.md", report["merges"])
+        self.assertEqual("regra exclusiva\n", (self.repo / ".vibeflow" / "old" / "CLAUDE.md").read_text(encoding="utf-8"))
+        self.assertEqual("regra exclusiva\n", (self.repo / "CLAUDE.md").read_text(encoding="utf-8"))
 
-    # 12. Interrupção depois do backup preserva o original ainda no lugar.
-    def test_stop_after_old_keeps_original(self) -> None:
-        (self.repo / "AGENTS.md").write_text("regra crítica\n", encoding="utf-8")
-        _, report = invoke(self.repo, "--stop-after-old")
-        self.assertFalse((self.repo / "AGENTS.md").is_symlink())
-        self.assertTrue((self.repo / ".vibeflow" / "old" / "AGENTS.md").is_file())
-
-    # 13. Checkout sem symlink deixa o path como texto: é ponteiro degradado, não regra.
-    def test_pointer_text_is_not_a_source(self) -> None:
-        (self.repo / ".vibeflow").mkdir()
-        self.live().write_text(filled_rules("App."), encoding="utf-8")
-        (self.repo / "AGENTS.md").write_text(".vibeflow/REGRAS.md", encoding="utf-8")
-        _, report = invoke(self.repo)
-        self.assertEqual("ponteiro_texto", report["inventory"]["agents"])
-        self.assertEqual([], report["merges"])
-        self.assertTrue((self.repo / "AGENTS.md").is_symlink())
-
-    # 14. Sem consolidado, o texto do ponteiro degradado não pode entrar no arquivo vivo.
-    def test_pointer_text_without_rules(self) -> None:
-        (self.repo / "AGENTS.md").write_text(".vibeflow/REGRAS.md", encoding="utf-8")
-        _, report = invoke(self.repo)
-        self.assertEqual([], report["merges"])
-        linhas = [linha.strip() for linha in self.live().read_text(encoding="utf-8").splitlines()]
-        self.assertNotIn(".vibeflow/REGRAS.md", linhas)
-
-    # 15. Consolidado sem o roteador recebe o bloco sem perder o texto do usuário.
-    def test_cadeia_upsert_preserves_user_text(self) -> None:
-        (self.repo / ".vibeflow").mkdir()
-        self.live().write_text("# Regras do projeto\n\n## Projeto\ntexto do time\n", encoding="utf-8")
-        _, report = invoke(self.repo)
-        body = self.live().read_text(encoding="utf-8")
-        self.assertIn("<!-- VIBEFLOW:CADEIA start -->", body)
-        self.assertIn("texto do time", body)
-        self.assertIn("cadeia_upsert", [item["op"] for item in report["actions"]])
-
-    # 16. Roteador desatualizado volta ao texto canônico do template, sem tocar no resto.
-    def test_cadeia_refresh(self) -> None:
-        (self.repo / ".vibeflow").mkdir()
-        self.live().write_text(
-            "# Regras do projeto\n\n<!-- VIBEFLOW:CADEIA start -->\ntabela velha\n<!-- VIBEFLOW:CADEIA end -->\n\n## Projeto\ntexto do time\n",
-            encoding="utf-8",
-        )
-        invoke(self.repo)
-        body = self.live().read_text(encoding="utf-8")
-        self.assertNotIn("tabela velha", body)
-        self.assertIn("texto do time", body)
-
-    # 17. Impede que ApplyPointers seja usado antes de o conteúdo legado entrar no consolidado.
-    def test_apply_requires_changed_target(self) -> None:
-        (self.repo / "AGENTS.md").write_text("regra crítica\n", encoding="utf-8")
-        _, report = invoke(self.repo)
-        process, _ = invoke(self.repo, "--apply-pointers", "--merge-token", report["apply_token"], check=False)
+    # O motor recusa usar um link externo como regras do projeto.
+    def test_external_agents_symlink_is_rejected(self) -> None:
+        outside = Path.cwd() / "README.md"
+        (self.repo / "AGENTS.md").symlink_to(outside)
+        process, _ = invoke(self.repo)
         self.assertNotEqual(0, process.returncode)
-        self.assertIn("MERGE_NAO_APLICADO", process.stderr)
-        self.assertFalse((self.repo / "AGENTS.md").is_symlink())
-
-    # 17b. Finaliza um merge válido e elimina o estado operacional pendente.
-    def test_apply_after_merge(self) -> None:
-        (self.repo / "AGENTS.md").write_text("regra crítica\n", encoding="utf-8")
-        _, report = invoke(self.repo)
-        complete_merge(self.repo, report, "regra crítica")
+        self.assertIn("FONTE_EXTERNA", process.stderr)
         self.assertTrue((self.repo / "AGENTS.md").is_symlink())
-        self.assertFalse((self.repo / ".vibeflow" / "init-pending.json").exists())
 
-    # 18. Remove REGRAS.md da raiz somente depois que as duas fontes foram consolidadas.
-    def test_duplicate_rules_cleanup(self) -> None:
-        (self.repo / ".vibeflow").mkdir()
-        self.live().write_text("viva\n", encoding="utf-8")
-        (self.repo / "REGRAS.md").write_text("raiz\n", encoding="utf-8")
-        _, report = invoke(self.repo)
-        self.assertTrue((self.repo / "REGRAS.md").is_file())
-        complete_merge(self.repo, report, "raiz")
-        self.assertFalse((self.repo / "REGRAS.md").exists())
-
-    # 19. Preserva regras preexistentes e inclui todos os arquivos operacionais ignorados.
-    def test_existing_gitignore(self) -> None:
-        (self.repo / ".vibeflow").mkdir()
-        ignore = self.repo / ".vibeflow" / ".gitignore"
-        ignore.write_text("custom.log\n", encoding="utf-8")
-        invoke(self.repo)
-        self.assertEqual({"custom.log", "init-report.json", "init-pending.json"}, set(ignore.read_text(encoding="utf-8").splitlines()))
-
-    # 20. Tipo estrutural inesperado falha antes de criar qualquer ponteiro.
-    def test_unexpected_type_fails_early(self) -> None:
-        (self.repo / ".vibeflow").mkdir()
-        (self.repo / ".vibeflow" / "REGRAS.md").mkdir()
-        process, _ = invoke(self.repo, check=False)
-        self.assertIn("TIPO_INESPERADO", process.stderr)
-        self.assertFalse((self.repo / "AGENTS.md").exists())
-
-    # 21. Garante que migrations em dependências ignoradas não contaminem o scan factual.
-    def test_migration_scan_prunes_dependencies(self) -> None:
-        (self.repo / "node_modules" / "pkg" / "migrations").mkdir(parents=True)
-        _, report = invoke(self.repo)
-        self.assertFalse(report["migrations_detectadas"])
-
-    # 22. Estrutura tem teto: repo grande não transforma o SLOT em dump da árvore.
-    def test_structure_is_capped(self) -> None:
-        for index in range(200):
-            (self.repo / f"pasta{index:03d}").mkdir()
-        _, report = invoke(self.repo)
-        self.assertEqual(121, len(report["scan"]["estrutura"]))
-        self.assertIn("omitidos", report["scan"]["estrutura"][-1])
-
-    # 23. Compara o schema e os principais estados dos dois motores quando existe PowerShell 7.
-    @unittest.skipUnless(powershell7(), "PowerShell 7 indisponível para teste de paridade")
-    def test_new_repository_contract_parity(self) -> None:
-        other = Path.cwd() / f".vibe-init-pwsh-{uuid.uuid4().hex}"
-        other.mkdir()
-        try:
-            subprocess.run([powershell7(), "-NoProfile", "-File", str(POWERSHELL_SCRIPT), "-Root", str(other)], check=True, capture_output=True, text=True)
-            _, python_report = invoke(self.repo)
-            powershell_report = json.loads((other / ".vibeflow" / "init-report.json").read_text(encoding="utf-8-sig"))
-            self.assertEqual(set(powershell_report), set(python_report))
-            self.assertEqual(powershell_report["inventory"], python_report["inventory"])
-            self.assertEqual([item["op"] for item in powershell_report["actions"]], [item["op"] for item in python_report["actions"]])
-            self.assertEqual(powershell_report["slots_abertos"], python_report["slots_abertos"])
-            self.assertEqual(
-                "@../../.vibeflow/REGRAS.md\n",
-                (other / ".agents" / "rules" / "vibeflow.md").read_text(encoding="utf-8"),
-            )
-        finally:
-            shutil.rmtree(other)
-
-    # 24. Reparo de ponte divergente mantém estado, ações e backup equivalentes nos dois motores.
-    @unittest.skipUnless(powershell7(), "PowerShell 7 indisponível para teste de paridade")
-    def test_antigravity_bridge_repair_contract_parity(self) -> None:
-        other = Path.cwd() / f".vibe-init-pwsh-{uuid.uuid4().hex}"
-        other.mkdir()
-        try:
-            invoke(self.repo)
-            subprocess.run(
-                [powershell7(), "-NoProfile", "-File", str(POWERSHELL_SCRIPT), "-Root", str(other)],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-            for repo in (self.repo, other):
-                (repo / ".agents" / "rules" / "vibeflow.md").write_text(
-                    "regra local do Antigravity\n", encoding="utf-8"
-                )
-
-            _, python_report = invoke(self.repo)
-            subprocess.run(
-                [powershell7(), "-NoProfile", "-File", str(POWERSHELL_SCRIPT), "-Root", str(other)],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-            powershell_report = json.loads((other / ".vibeflow" / "init-report.json").read_text(encoding="utf-8-sig"))
-
-            self.assertEqual(powershell_report["inventory"], python_report["inventory"])
-            self.assertEqual(powershell_report["actions"], python_report["actions"])
-            self.assertEqual(powershell_report["olds"], python_report["olds"])
-            self.assertEqual(powershell_report["avisos"], python_report["avisos"])
-            self.assertEqual([], python_report["merges"])
-        finally:
-            shutil.rmtree(other)
+    # Mantém o motor PowerShell equivalente para criação e migração essenciais.
+    @unittest.skipUnless(shutil.which("pwsh"), "PowerShell 7 indisponível")
+    def test_powershell_parity(self) -> None:
+        process, report = invoke(self.repo, powershell=True)
+        self.assertEqual(0, process.returncode, process.stderr)
+        self.assertEqual("AGENTS.md", report["target"])
+        self.assertEqual("@../../AGENTS.md\n", (self.repo / ".agents" / "rules" / "vibeflow.md").read_text(encoding="utf-8"))
+        self.assertFalse((self.repo / "CLAUDE.md").exists())
 
 
 if __name__ == "__main__":
-    unittest.main(verbosity=2)
+    unittest.main()

@@ -45,7 +45,7 @@ class MvpFlow(unittest.TestCase):
         self.vf.mkdir()
         (self.vf / ".gitignore").write_text("init-report.json\n", encoding="utf-8")
         self.rules = b"# Regras\n\nconteudo que os motores nao podem alterar \x00\n"
-        (self.vf / "REGRAS.md").write_bytes(self.rules)
+        (self.repo / "AGENTS.md").write_bytes(self.rules)
 
     def tearDown(self) -> None:
         shutil.rmtree(self.repo, ignore_errors=True)
@@ -63,6 +63,10 @@ class MvpFlow(unittest.TestCase):
 
         for skill in SKILLS:
             report = invoke(self.repo, skill, "--apply", "--mvp")
+            if skill == "implement":
+                self.assertEqual("mvp", report["alvo"]["kind"])
+                self.assertFalse((self.vf / "mvp" / "implement.md").exists())
+                continue
             self.assertEqual("mvp", report["rota"], skill)
             self.assertEqual("mvp", report["created"]["kind"], skill)
             self.assertEqual(".vibeflow/mvp", report["created"]["path"], skill)
@@ -70,10 +74,10 @@ class MvpFlow(unittest.TestCase):
             self.assertNotIn("wip", report, skill)
             write_live(self.vf, skill, artifacts[skill])
 
-        self.assertEqual(set(SKILLS), {path.stem for path in (self.vf / "mvp").glob("*.md")})
+        self.assertEqual(set(SKILLS) - {"implement"}, {path.stem for path in (self.vf / "mvp").glob("*.md")})
         phase_dirs = [path for path in (self.vf / "phases").iterdir() if path.is_dir()]
         self.assertEqual([], phase_dirs)
-        self.assertEqual(self.rules, (self.vf / "REGRAS.md").read_bytes())
+        self.assertEqual(self.rules, (self.repo / "AGENTS.md").read_bytes())
         self.assertEqual([], list(self.vf.glob("*-wip.md")))
         review = (self.vf / "mvp" / "review.md").read_text(encoding="utf-8")
         self.assertIn("Tipo: checkpoint", review)

@@ -1,5 +1,7 @@
 # Regras do projeto
 
+> VibeFlow: documentos e edição apenas de texto ficam fora de `vibe-spec`, `vibe-design`, `vibe-plan`, `vibe-analyze`, `vibe-implement` e `vibe-review`. Essas skills tratam código de software. `vibe-interview` pode esclarecer um briefing ambíguo de documento.
+
 <!-- VIBEFLOW:CADEIA start -->
 | esforço | fluxo | quando |
 |---|---|---|
@@ -37,6 +39,20 @@ Cadeia de skills para inicializar e conduzir o trabalho de agentes num repo. Est
 
 <!-- evidência: README.md -->
 
+## Comandos do projeto
+
+- Suíte Python de uma skill: `python docs/vibe-<nome>/tests/test-<nome>.py`.
+- Contratos de distribuição: `python docs/tests/test-distribuicao.py`.
+- Contrato visual: `python docs/tests/test-visual-contract.py`.
+- Motor Windows: `pwsh vibe-<nome>/scripts/<nome>.ps1 -Root <repo>`; motor Unix: `bash vibe-<nome>/scripts/<nome>.sh --root <repo>`.
+
+## Fluxos e invariantes
+
+- Os motores preparam alvos e emitem relatórios operacionais; a IA interpreta intenção e escreve a prosa dos artefatos vivos.
+- As fases vivem em `.vibeflow/phases/phase-N-slug/`; o baseline único de software novo vive em `.vibeflow/mvp/`.
+- O init preserva fontes legadas em `.vibeflow/old/` com hash verificado antes de substituir qualquer regra.
+- Testes de contrato usam pastas isoladas e precisam removê-las ao terminar; falha de limpeza não deve ser ignorada.
+
 ## Ambiente
 
 homolog
@@ -55,20 +71,18 @@ Este repo não tem banco, migration nem tráfego de usuário. Skills aqui mudam 
 - Sem `Co-Authored-By` de ferramenta em commit/push.
 - `vibe-implement` commita cada task somente depois de teste verde, com staging explícito por path e sem push.
 - `vibe-review` faz o commit residual e o `git push` final da phase somente após Approve, confirmação humana e correções fechadas. Nunca usar `git add -A`, amend, squash ou force push.
-- Commitável: `.vibeflow/REGRAS.md`, `AGENTS.md`, `CLAUDE.md`, `.vibeflow/old/` se existir, `.vibeflow/phases/` (`.gitkeep` e artefatos vivos), pacote da skill, `docs/`.
+- Commitável: `AGENTS.md`, `.vibeflow/old/` se existir, `.vibeflow/phases/` (`.gitkeep` e artefatos vivos), pacote da skill, `docs/`.
 - Não commitar: `init-report.json`, `init-pending.json`, `*-report.json` e `*-pending.json`.
-- `AGENTS.md` e `CLAUDE.md` são symlink para `.vibeflow/REGRAS.md`. Nunca copiar o conteúdo para a raiz.
+- `AGENTS.md` é a fonte editável na raiz. O init não cria `CLAUDE.md` nem `REGRAS.md`.
 
 ## Estrutura
 
 ```
-.vibeflow/REGRAS.md          fonte viva das regras
+AGENTS.md                    fonte viva das regras
 .vibeflow/mvp/               baseline único de um projeto novo na rota max
 .vibeflow/phases/            artefatos da cadeia (phase-N-slug/)
 .vibeflow/old/               backups do init, se houver
-AGENTS.md                    symlink → .vibeflow/REGRAS.md
-CLAUDE.md                    symlink → .vibeflow/REGRAS.md
-.agents/rules/vibeflow.md   include → ../../.vibeflow/REGRAS.md
+.agents/rules/vibeflow.md   include → ../../AGENTS.md
 vibe-<nome>/                 pacote canônico da skill
 skills/vibe-<nome>           symlink → ../vibe-<nome> (descoberta do CLI e plugins)
 .claude-plugin/              marketplace Claude
@@ -107,7 +121,7 @@ docs/vibe-<nome>/
 
 ### Adaptadores por host
 
-A fonte editável é sempre `.vibeflow/REGRAS.md`. `AGENTS.md` e `CLAUDE.md` são ponteiros compatíveis na raiz. O Antigravity recebe somente a ponte mínima descoberta pelo workspace, `.agents/rules/vibeflow.md`, com `@../../.vibeflow/REGRAS.md`; o init cria, verifica e repara esse arquivo sem copiar as regras.
+A fonte editável é sempre `AGENTS.md` na raiz. O Antigravity recebe somente a ponte mínima descoberta pelo workspace, `.agents/rules/vibeflow.md`, com `@../../AGENTS.md`; o init cria, verifica e repara esse arquivo sem copiar as regras.
 
 As regras globais permanecem separadas das regras do workspace: Codex usa `~/.codex/AGENTS.md` ou `~/.codex/AGENTS.override.md`, e Antigravity usa `~/.gemini/GEMINI.md`. O Vibeflow não sincroniza nem sobrescreve esses arquivos e não cria `GEMINI.md` no projeto. Se o host carregar mais de um nome, a carga efetiva deve ser conferida na ferramenta do próprio host.
 
@@ -138,7 +152,7 @@ Testes de contrato ficam em `docs/vibe-<nome>/tests/`, fora do pacote instaláve
 ### 3. Disco: uma fonte, uma pasta de fase, um arquivo por skill
 
 ```
-.vibeflow/REGRAS.md
+AGENTS.md
 .vibeflow/mvp/<artefato>.md
 .vibeflow/phases/phase-<n>-<slug>/<artefato>.md
 ```
@@ -171,9 +185,9 @@ A IA começa entendendo o pedido e o contrato local. Antes de executar um script
 
 A IA audita o resultado no disco e pode ler qualquer path necessário para entender, implementar ou verificar a tarefa. A investigação deve ser dirigida pelo fluxo real e pelas evidências encontradas, sem varredura cega da árvore, dump de arquivos ou leitura de diretórios gerados e irrelevantes.
 
-Decisões transversais usam IDs estáveis por dimensão, como `AUTH-01`. Quando houver decisões vigentes, `REGRAS.md` mantém somente uma tabela compacta com `ID`, decisão atual e fonte. Histórico, justificativa e impacto permanecem no MVP ou na phase de origem. Uma phase posterior só muda a decisão ao declarar explicitamente a substituição; cronologia sozinha não resolve conflito.
+Decisões transversais usam IDs estáveis por dimensão, como `AUTH-01`. Quando houver decisões vigentes, `AGENTS.md` mantém somente uma tabela compacta com `ID`, decisão atual e fonte. Histórico, justificativa e impacto permanecem no MVP ou na phase de origem. Uma phase posterior só muda a decisão ao declarar explicitamente a substituição; cronologia sozinha não resolve conflito.
 
-A tabela de decisões vigentes só muda depois de implementação, review aprovada e confirmação humana. Nesse momento, a IA aplica patch mínimo em `REGRAS.md`. Scripts e relatórios nunca publicam decisões semânticas nem editam esta fonte viva.
+A tabela de decisões vigentes só muda depois de implementação, review aprovada e confirmação humana. Nesse momento, a IA aplica patch mínimo em `AGENTS.md`. Scripts e relatórios nunca publicam decisões semânticas nem editam esta fonte viva.
 
 ### 5. Scripts
 
@@ -275,8 +289,8 @@ Não inverter: skill sem arquitetura vira path inventado (foi o defeito da inter
 
 Escopo ainda não construído, com o que já foi feito marcado, vive em `docs/ESCOPO.md`.
 
-- Copiar `REGRAS.md` para `AGENTS.md`, `CLAUDE.md` ou `.agents/rules/vibeflow.md`.
-- Segunda fonte de regras fora de `.vibeflow/REGRAS.md`.
+- Criar `CLAUDE.md` ou `REGRAS.md` como segunda fonte de regras.
+- Segunda fonte de regras fora de `AGENTS.md`.
 - Criar um `GEMINI.md` no workspace para duplicar a fonte canônica.
 - Tratar a ponte `.agents/rules/vibeflow.md` como fonte editável.
 - Artefato da cadeia fora de `.vibeflow/phases/phase-N-slug/`.
