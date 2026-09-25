@@ -62,7 +62,9 @@ function Update-Header([string]$Content, [string]$Template) {
     $begin = $Template.IndexOf($Start)
     $finish = $Template.IndexOf($End) + $End.Length
     $block = $Template.Substring($begin, $finish - $begin)
-    $scope = $Template.Split(@("`n`n"), 3, [StringSplitOptions]::None)[1].Trim()
+    $paragraphs = @([regex]::Split($Template, '\r?\n\r?\n', 3))
+    if ($paragraphs.Length -lt 2) { throw 'TEMPLATE_SCOPE_MISSING: o template precisa conter o parágrafo de escopo' }
+    $scope = $paragraphs[1].Trim()
     $hasStart = $Content.Contains($Start)
     $hasEnd = $Content.Contains($End)
     if ($hasStart -xor $hasEnd) { throw 'CADEIA_INCOMPLETA: delimitadores do roteador não formam um par' }
