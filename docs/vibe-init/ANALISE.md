@@ -523,7 +523,7 @@ tarefa exigir schema, parar e perguntar.
 
 ## Encerramento
 
-A skill não faz commit.
+A skill faz commit dos arquivos de governança que produziu, com staging explícito e sem push.
 
 Ela orienta commitar:
 

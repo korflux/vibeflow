@@ -89,6 +89,6 @@ O `.vibeflow/REGRAS.md` é um **Documento Vivo**. Sempre que novas fases adicion
 
 ## 6. Fechar
 
-Não commite no git. A fonte viva e o caminho do handoff são a ponte para a etapa seguinte. `init → interview → spec → design` pode continuar no mesmo chat. Recomende novo chat para `vibe-plan`; se o humano preferir, continue no mesmo sem bloquear o fluxo.
+Conclua o init com commit dos arquivos produzidos e auditados: `.vibeflow/REGRAS.md`, ponteiros `AGENTS.md` e `CLAUDE.md`, backups em `.vibeflow/old/` quando houver e `.vibeflow/phases/.gitkeep`. Faça staging explícito por path, confira o diff indexado e exclua `init-report.json` e `init-pending.json`. Não faça push. A fonte viva e o caminho do handoff são a ponte para a etapa seguinte. `init → interview → spec → design` pode continuar no mesmo chat. Recomende novo chat para `vibe-plan`; se o humano preferir, continue no mesmo sem bloquear o fluxo.
 
 Handoff: `vibe-interview`.

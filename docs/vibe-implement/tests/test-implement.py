@@ -482,20 +482,20 @@ class SkillContracts(unittest.TestCase):
     def test_express_precedes_init_and_routes_same_phase_adjustments(self) -> None:
         """Mantém o Express sem fase antes dos motores e retém ajustes na entrega atual."""
         skill = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
-        express_start = skill.index("1. Antes de exigir `.vibeflow/`")
-        script_start = skill.index("2. Para todo pedido fora do Express")
+        express_start = skill.index("1. Classifique Express")
+        script_start = skill.index("2. Fora do Express")
         express = skill[express_start:script_start]
 
         self.assertLess(express_start, script_start)
         self.assertIn("No fluxo padrão, sem `.vibeflow/`: `/vibe-init`", skill)
         self.assertNotIn("Sem `.vibeflow/`: `/vibe-init`.", skill)
         self.assertIn("pedido claro e localizado", express)
-        self.assertIn("Não rode `vibe-init`", express)
-        self.assertIn("não crie ou exija `.vibeflow/`", express)
+        self.assertIn("não rode `vibe-init`", express)
+        self.assertIn("nem crie ou exija `.vibeflow/`", express)
         self.assertIn("atualize a T* aberta", express)
-        self.assertIn("uma T* curta ao `plan.md` existente", express)
+        self.assertIn("uma T* curta ao plan existente", express)
         self.assertIn("o R* existente", express)
-        self.assertIn("saia do Express e use a cadeia aplicável", express)
+        self.assertIn("sai do Express e segue a cadeia aplicável", express)
         for trigger in (
             "privacidade", "obrigação jurídica", "autenticação", "autorização",
             "pagamento", "segredo", "persistência", "perda de dados",
@@ -510,9 +510,10 @@ class SkillContracts(unittest.TestCase):
         self.assertIn("stdout", text)
         self.assertIn("fila.elegiveis", text)
         self.assertIn("restrito a `alvo`, `fila` e `avisos`", text)
-        self.assertIn("não criam `implement.md`", text)
+        self.assertIn("não crie `implement.md`", text)
         self.assertNotIn(".vibeflow/implement-report.json", text)
-        self.assertIn("2+ elegíveis", text)
+        self.assertIn("escolha a elegível de menor número, inclusive quando houver várias", text)
+        self.assertIn("total de T*s da fase e quantas estão concluídas", text)
 
 
     def test_skill_requires_execution_cycle_and_green_test(self) -> None:

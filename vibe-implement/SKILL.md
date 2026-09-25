@@ -8,97 +8,47 @@ description: >
 
 # vibe-implement
 
-Não invente `n` se há plan. Sem prova e sem teste verde, sem `[x]` no `plan.md` ou commit da task. Sem `todo.md` nem `tasks.md`.
-No fluxo padrão, sem `.vibeflow/`: `/vibe-init`. Open Questions no markdown = defeito. Cada task verde gera um commit isolado; o push fica para o fechamento aprovado da phase.
-Proibido pular tasks ou desistir de erros. Diagnostique a causa raiz de qualquer falha no código e repita a prova após corrigir.
-Comentários semânticos obrigatórios em todas as funções criadas ou alteradas.
-`plan.md` é o registro vivo único da execução: status, paths, prova e bloqueios ficam sob cada T*. Execuções novas não criam `implement.md`; arquivos históricos permanecem intactos.
-No MVP, não execute código sem analyze `aprovado` e `limpo`; a fila vem somente de `.vibeflow/mvp/plan.md`.
-
-A investigação começa pela pergunta da T* elegível. Use `rg --files` para localizar os paths da task, seus testes e dependências; use `rg -n` para localizar símbolos, chamadas e contratos que formam o fluxo real. Abra somente essas entradas e expanda a leitura quando uma lacuna bloquear a prova. O inventário é mapa de seleção, não autorização para ler a árvore inteira. O `plan.md` guarda a trilha verificável da execução.
+Sem prova verde, não marque `[x]` nem faça commit. Cada T* concluída gera um commit isolado, sem push. `plan.md` é o registro único; não crie `implement.md`, `todo.md` ou `tasks.md`. No fluxo padrão, sem `.vibeflow/`: `/vibe-init`. No MVP, código exige analyze aprovado e limpo.
 
 ## 0. Classificar Express e usar o script
 
-1. Antes de exigir `.vibeflow/`, consultar a fila ou executar um motor, classifique o pedido como Express ou fluxo padrão.
-   - **Express:** pedido claro e localizado, sem comportamento novo, como copy, rótulo, nome de tela ou ajuste visual pequeno. Inspecione somente os arquivos e chamadas ligados ao recorte.
-   - Se elegível, faça o patch direto e a checagem proporcional no arquivo ou tela afetada. Não rode `vibe-init` nem `implement.ps1`/`implement.py`; não crie ou exija `.vibeflow/`, phase ou artefato VibeFlow. O usuário pode pedir o fluxo completo mesmo quando Express for elegível.
-   - Em ajuste da entrega atual, preserve a phase: atualize a T* aberta ou adicione uma T* curta ao `plan.md` existente; achado formal de review atualiza o R* existente. Não crie phase, spec ou plan só pelo ajuste. Reuse o `design.md` existente quando o ajuste for visual.
-   - Express não pode alterar comportamento, critério de aceite, rota, interação, acessibilidade, consentimento ou obrigação. Se o pedido ou a investigação tocar privacidade, dado pessoal, consentimento, retenção, direitos, obrigação jurídica, autenticação, autorização, pagamento, segredo, persistência ou perda de dados, saia do Express e use a cadeia aplicável.
-   - Se aparecer ambiguidade, risco ou comportamento novo durante o trabalho, pare antes de ampliar o patch e informe o encaminhamento recomendado.
-2. Para todo pedido fora do Express, resolva o diretório desta skill e leia o motor que vai executar (`scripts/implement.ps1` no Windows ou `scripts/implement.py` no Unix). Ele seleciona o alvo e projeta a fila de dependências sem criar artefato de execução.
-3. No cwd do repo:
-   - Windows: `pwsh "<skill>/scripts/implement.ps1"`
-   - Unix: `bash "<skill>/scripts/implement.sh"` (Python 3, senão pwsh 7)
-   - Alvo MVP: acrescente `-Mvp` ou `--mvp`.
-4. Leia o JSON operacional emitido no stdout, restrito a `alvo`, `fila` e `avisos` (no MVP, inclui `analyze_gate`). A escolha da T* sai de `fila.elegiveis`. Use `rg --files` e `rg -n` para localizar `.vibeflow/REGRAS.md`, os paths da T* e os símbolos do fluxo. Abra somente as entradas e dependências relevantes; não leia a árvore inteira.
+1. Classifique Express antes de exigir `.vibeflow/` ou rodar script. Express é pedido claro e localizado, sem comportamento novo: copy, rótulo ou ajuste visual pequeno. Faça patch e checagem proporcionais; não rode `vibe-init` nem crie ou exija `.vibeflow/`. Na entrega atual, atualize a T* aberta ou acrescente uma T* curta ao plan existente; achado de review atualiza o R* existente. Reuse o design existente quando couber. Alterar comportamento, rota, interação, aceite, acessibilidade ou tocar privacidade, obrigação jurídica, autenticação, autorização, pagamento, segredo, persistência ou perda de dados sai do Express e segue a cadeia aplicável.
+2. Fora do Express, leia o motor antes de executá-lo: `scripts/implement.ps1` no Windows ou `scripts/implement.py` no Unix. Ele seleciona alvo e fila; não cria artefato. Execute no repo com `pwsh "<skill>/scripts/implement.ps1"` ou `bash "<skill>/scripts/implement.sh"`. Para MVP, acrescente `-Mvp` ou `--mvp`.
+3. Leia o JSON no stdout, restrito a `alvo`, `fila` e `avisos` (`analyze_gate` no MVP). Escolha pela `fila.elegiveis`. Localize regras, paths e símbolos com `rg --files` e `rg -n`; abra apenas o fluxo relevante.
 
 No fluxo padrão, `INIT_AUSENTE` exige init. `IMPLEMENT_SEM_ALVO`, `IMPLEMENT_SEM_PLAN`, `IMPLEMENT_ANALYZE_AUSENTE`, `IMPLEMENT_ANALYZE_RASCUNHO`, `IMPLEMENT_ANALYZE_BLOQUEADO`, `MVP_INESPERADO`, `MODO_INVALIDO`, `FASE_AUSENTE` e `PHASES_INESPERADO` não são contornados.
 
-## 1. Abrir (5 linhas)
+## 1. Selecionar a execução
 
-ROUTE · modo A/B · alvo · fila · plan · analyze
+Escolha internamente a rota `low|medium|high|xhigh|max`; não anuncie modo, alvo ou fila na abertura do chat. Modo A é o padrão: execute uma T* elegível. “Pode seguir” escolhe a próxima. Modo B percorre o plano inteiro somente se o humano pedir execução completa. “Ok” ou “aprovado”, isoladamente, não autoriza avançar.
 
-Ao iniciar após `vibe-plan` ou `vibe-analyze`, recomende chat novo. Na execução em sequência, recomende um chat por `T*`; se o humano preferir o chat atual, prossiga sem bloquear. Grupo paralelo aprovado é a única exceção e usa um chat coordenador.
+Priorize R* Critical/Required aberto em `review.md`. Se o humano nomeou uma T* elegível, execute-a; caso contrário, escolha a elegível de menor número, inclusive quando houver várias. Se nenhuma estiver elegível, mostre as dependências que faltam ou encaminhe para `vibe-review` quando todas estiverem concluídas. `low`/`medium` sem plan pode ser avulso, com prova proporcional.
 
-```text
-ROUTE: high · modo: A · alvo: phase-1-lock-bloco · fila: T2|T4 elegíveis · plan: sim · analyze: N/A · chat: novo recomendado por T*
-```
+Quando o plan registrar grupo paralelo elegível, informe os IDs e o motivo do agrupamento e pergunte se o humano prefere paralelo ou sequência. Sem resposta afirmativa, execute em sequência. Paralelo exige isolamento e ownership seguros; a autorização vale apenas para o grupo nomeado. Recomende chat novo por T* e para review sem transformar essa recomendação em gate.
 
-`alvo=null` significa que não há fase com `plan.md`; não invente pasta. `high+` para e manda `/vibe-plan`. `fila=null` significa que o alvo não tem plan ou é avulso. `parse=ausente` significa plan sem T*.
+## 2. Verificar impedimentos reais
 
-## 2. Gate
+Para `high+` sem plan, execute o handoff para `vibe-plan`; para `max` sem analyze aprovado e limpo, execute o handoff para `vibe-analyze`. No MVP, analyze ausente, rascunho ou bloqueado impede código. Se o humano pediu esta skill e o único pendente for `# Status: rascunho` do plan, aprove essa linha e prossiga. Nunca contorne erros de proteção do script.
 
-Declare `ROUTE: low|medium|high|xhigh|max` e modo A ou B. Default = **A**.
-
-| Sinal | Ação |
-|---|---|
-| Copy, typo, título ou ajuste visual localizado, sem comportamento novo e sem risco sensível | Classificar como Express antes de exigir init, fila ou script |
-| `high+` sem `plan.md` | **Para.** `/vibe-plan` |
-| `max` sem `analyze.md` | **Para.** `/vibe-analyze` |
-| Analyze ausente, rascunho ou veredito `bloqueado` no MVP | **Para.** Não flipa nem executa. Volta ao analyze |
-| Plan/analyze `# Status: rascunho` e o humano pediu **esta** skill | Flip para `aprovado` (1 linha) e siga, se o veredito não for `bloqueado` |
-| `low`/`medium` claro sem plan | Avulso: prova mínima no código/teste |
-| `review.md` com R* Critical/Required em `[ ]` | Fila = R* primeiro. Q só se houver mais de um |
-| Plan registra grupo paralelo e há 2+ T*s desse grupo elegíveis agora | Antes de codar, mostre os IDs, por que são independentes e como serão isoladas; pergunte se o humano quer executá-las em paralelo ou em sequência. Aguarde a escolha |
-| `fila` com 2+ elegíveis e o humano não nomeou T* | **Para.** Q. Recomenda a de menor `n`. Sem código |
-| `fila` com 1 elegível | Executa essa. Sem Q de escolha |
-| `fila` com 0 elegíveis e 0 abertas | Handoff `vibe-review`. Não dispara |
-| `fila` com 0 elegíveis e `bloqueadas` | Mostra as deps. Sem Q “qual T*” |
-| Humano nomeou T* elegível | Executa essa. Sem Q |
-| Humano nomeou T* bloqueada | Mostra deps. Sem código |
-| Verificação da T* só manual, sem comando | **Para.** Q (automatizar / humano valida / volta plan) |
-| Intenção/sucesso/fora frouxos | Devolve interview/spec |
-| Bloqueio externo intransponível | **Para.** Q + RECOMENDO. Não pule em silêncio |
-
-```text
-Q: <o que trava>
-RECOMENDO: <opção>, <1 linha explicando motivo e impacto>
-(ok / outra?)
-```
-
-Ao apresentar um grupo paralelo, explique antes da pergunta: quais `T*` o plan agrupou e por quê; que um chat coordenador acompanha as fatias isoladas, integra os resultados e mantém prova e commit por task; e que a execução conjunta pode reduzir espera, mas exige integração. Pergunte usando os IDs reais: “Quer executar o grupo `<T*>` em paralelo ou prefere sequência?”. Só inicie a execução paralela após resposta afirmativa. Se não houver isolamento seguro ou suporte do host, explique e siga em sequência.
-
-Modo B completo só se o humano pediu: `auto`, “faz o todo”, “não para” ou “run completa”. Um “sim” para um grupo paralelo autoriza somente as T*s nomeadas naquele grupo, não o plano inteiro.
-“Pode seguir” no modo A = próxima `T*` elegível. Não existe agrupamento intermediário.
+Antes de declarar bloqueio, tente resolver o que está sob controle do agente: diagnostique a falha, use outro motor compatível, instale uma ferramenta necessária quando o ambiente e as permissões permitirem, ou escolha uma prova equivalente. Verificação descrita só manualmente pede uma checagem executável ou inspeção direta quando possível; se depender do humano, peça apenas a validação que falta. Ambiguidade material exige a decisão específica, depois de investigar o fluxo real. Só pare por dependência indisponível, proteção explícita ou decisão que não possa ser inferida com segurança; informe a tentativa, o impedimento e a recomendação.
 
 ## 3. Ciclo da fatia
 
 Execute cada task seguindo as 6 etapas. O coordenador responde pela integração final, pelos artefatos vivos e pelo índice Git.
 
-1. **Reconhecer (O que já existe?):**
-   Formule a pergunta da T*, localize com `rg --files` e `rg -n` os pontos de entrada, símbolos, chamadas e testes da fatia, e trace somente as dependências do fluxo real. Na retomada, confira o checkpoint opcional, o `HEAD`, os hashes Git dos paths da prova e `git status --short`; se um input mudou ou a validade for incerta, invalide somente a prova afetada. Revalide a fila e os gates, inclusive analyze aprovado e limpo no MVP. Com UI, inclua o `design.md` aprovado do alvo como entrada e siga tokens, motion e prova por tela. No Express (ajuste fino sem comportamento novo, low ou medium), reuse a mesma phase e siga só o recorte existente e alterado do design quando houver, sem exigir design ausente, sem rodar apply de design, sem plan novo e sem reabrir tasks antigas. Reutilize helpers, utilitários, componentes visuais, types e módulos existentes da standard library ou do projeto. Não reescreva o que já existe.
+1. **Reconhecer:**
+   Trace o fluxo real da T* com `rg --files` e `rg -n`: entrada, chamadas, código compartilhado e testes. Reuse recursos existentes. Com UI, siga o `design.md` aprovado quando houver. No Express, use só o recorte alterado, sem criar artefatos. Na retomada, confira `git status --short`, `HEAD` e `git hash-object -- <path>` do checkpoint; invalide apenas provas com inputs alterados ou sem snapshot suficiente. Revalide a fila e os gates, inclusive analyze aprovado e limpo no MVP.
 2. **Escolher execução e delegar quando fizer sentido:**
-   Recalcule a fila e valide se os grupos do plan continuam independentes, com ownership não sobreposto e isolamento seguro. Só após o humano aprovar a execução paralela, use delegação nativa se o host oferecer. Sem capacidade de delegação ou isolamento seguro, explique a limitação e execute em sequência. Respeite `Deps` e só libere uma dependente depois que o coordenador registrar suas dependências como concluídas.
-   Delimite cada entrega por resultado, aceite, dependências, paths exclusivos e comando de verificação. Use worktree/branch isolada ou ownership sem sobreposição. Se não houver isolamento nem ownership exclusivo, não delegue escrita. Agentes não alteram os artefatos vivos `plan.md`, `spec.md` ou `review.md`, nem operam o índice Git, criam commits ou fazem push. Peça que retornem os paths alterados, resumo do diff, prova executada e pendências.
+   Recalcule a fila e respeite `Deps`. Só após o humano aprovar a execução paralela, use delegação nativa se o host oferecer e houver worktree/branch isolada ou ownership sem sobreposição; caso contrário, siga em sequência. Delimite cada entrega por resultado, aceite, dependências, paths exclusivos e comando de verificação. Agentes não alteram os artefatos vivos `plan.md`, `spec.md` ou `review.md`, nem operam o índice Git ou criam commits. Peça paths, diff, prova e pendências; o coordenador integra e libera dependentes após a conclusão registrada.
 3. **Codar e integrar:**
-   Implemente de forma direta, enxuta e restrita ao aceite da T*. Antes de criar teste, localize a prova existente da capacidade ou jornada afetada e estenda-a somente se houver comportamento, regressão, caso de borda ou risco sem cobertura. Não crie um teste por alteração, por task ou por `A*` quando a mesma prova já valida o resultado. O coordenador confere cada retorno, integra somente paths autorizados e resolve conflitos antes de prosseguir. Prova relatada por um agente ajuda no diagnóstico, mas não substitui a prova do estado integrado.
+   Implemente só o aceite da T*. Estenda testes existentes apenas para comportamento, regressão, borda ou risco sem cobertura. O coordenador integra os paths autorizados e resolve conflitos; prova de agente não substitui prova do estado integrado.
 4. **Simplificar antes da prova:**
-   Revise o código integrado, remova duplicações e verbosidade desnecessária e preserve validações, segurança e comportamento exigidos. Nos testes da capacidade tocada, una testes redundantes quando exercitam o mesmo caminho e as mesmas afirmações; mantenha casos de erro, borda, permissão e integração que acrescentam cobertura. Antes de remover um teste, confirme que outra prova executável cobre cada cenário e afirmação relevante; rode a prova consolidada após a edição. Não faça uma limpeza geral da suíte sem relação com a task. Deixe comentários semânticos em todas as funções criadas ou alteradas.
+   Remova duplicação e verbosidade no código tocado. Una testes redundantes somente se outra prova executável preservar cada cenário e afirmação relevante; mantenha erro, borda, permissão e integração. Deixe comentários semânticos em cada função criada ou alterada.
 5. **Executar a prova final:**
-   Finalize código e testes, integre e simplifique antes de rodar cada prova planejada necessária, uma vez, no estado integrado. Smoke Test / Walking Skeleton entra somente quando o ponto de entrada real foi criado ou alterado, não por ser T1. Se a prova falhar, diagnostique a causa raiz, corrija e repita a prova afetada. Edição posterior em código ou teste invalida apenas as provas cujos inputs mudaram; edição de plan, spec, review ou outro registro não invalida a prova. Não repita a suíte completa por padrão.
-   Consulte `Visual` no `plan.md` para cada T* que altera UI. Execute inspeção renderizada somente quando o campo disser `Visual: necessária` ou a implementação revelar uma mudança visual relevante que o plano não cobriu; nesse caso, atualize a classificação e a prova da T*. `Visual: dispensada` exige que comando/teste executável cubra o aceite e que não haja resultado renderizado a julgar. Tocar arquivo de UI, HTML ou DOM, sozinho, não abre navegador. Quando necessária, faça uma inspeção focada depois da última edição visual, usando uma ferramenta: navegador integrado (`@Browser` ou equivalente) primeiro, MCP Server `chrome-devtools` em seguida, ou Playwright apenas se já existir no repo ou for solicitado para fluxos repetíveis e assertions. Siga `references/chrome-devtools.md`. Comece pela tela, estado e viewport afetados; amplie quando layout, responsividade, interação ou componente compartilhado exigirem. Registre rota, viewport, estado, ações e evidência observada. Sem capacidade visual, registre a limitação e não marque a task como concluída nem instale ferramenta automaticamente. A review reaproveita essa evidência enquanto seus inputs permanecerem válidos. Para controles compactos, preserve nome acessível, área de interação, foco visível e tooltip quando aplicável; ações ambíguas mantêm texto.
+   Rode cada prova necessária uma vez, no estado integrado, após simplificar. Smoke Test / Walking Skeleton entra somente quando o ponto de entrada real foi criado ou alterado. Se a prova falhar, corrija a causa raiz e repita a prova afetada. Edição posterior em código ou teste invalida apenas as provas cujos inputs mudaram; edição de plan, spec, review ou outro registro não invalida a prova.
+   Inspecione a UI renderizada quando `Visual: necessária` ou quando surgir impacto visual relevante; atualize a classificação nesse caso. `Visual: dispensada` exige prova executável sem resultado visual a julgar. Tocar arquivo de UI, HTML ou DOM, sozinho, não abre navegador. Siga `references/chrome-devtools.md`: navegador integrado, depois `chrome-devtools`, depois Playwright existente ou necessário; comece pela tela, estado e viewport afetados. Registre rota, viewport, ações e evidência. Se faltar ferramenta, tente disponibilizá-la antes de declarar limitação. Quando a prova visual for necessária, não marque conclusão sem executá-la. A review reaproveita essa evidência enquanto seus inputs permanecerem válidos. Preserve nome acessível, área de interação, foco e tooltip dos controles compactos; ações ambíguas mantêm texto.
 6. **Registrar e fechar:**
-   Depois da prova verde, registre no `plan.md` status, paths, prova e bloqueios sob a T*; atualize `spec.md`/`review.md` somente nos critérios provados. Mantenha `# Status: rascunho` enquanto o registro estiver incompleto; não crie `implement.md` nem altere os arquivos históricos.
+   Depois da prova verde, registre no `plan.md` status, paths, prova e bloqueios sob a T*; marque `spec.md`/`review.md` só nos critérios provados. Mantenha `# Status: rascunho` enquanto o registro estiver incompleto; não crie `implement.md` nem altere arquivos históricos. Faça o commit da task antes da resposta final.
    Se a T* permanecer incompleta ou entrar em handoff, adicione sob ela um checkpoint de retomada curto com estado, próximo passo, paths relevantes à prova, `HEAD` de `git rev-parse HEAD` e o hash de `git hash-object -- <path>` para cada input, além do comando e validade da prova. Na retomada, compare `HEAD`, hashes e status do Git; prova sem snapshot suficiente fica inválida. Remova o checkpoint ao concluir a T*, mantendo a prova final e os paths no próprio plan.
 
 Critérios adicionais:
@@ -134,40 +84,14 @@ No MVP, certifique-se de registrar quais IDs críticos foram implementados. Não
 
 Depois de atualizar os artefatos e antes de declarar a fatia concluída:
 
-1. Compare o estado do Git com o snapshot capturado antes da task. Se um path da task já estava alterado, pare e peça isolamento ou decisão humana; não misture alterações.
+1. Compare o Git com o snapshot anterior. Se um path da task já estava alterado, separe o diff preexistente do seu; peça decisão só se não conseguir atribuir as mudanças com segurança.
 2. Em execução delegada, somente o coordenador altera artefatos vivos e o índice Git. Liste os paths integrados e provados pela task e adicione-os explicitamente, por exemplo `git add -- path/da/task outro/path`. Nunca use `git add -A` ou `git add .`; o inventário é transitório no stdout e não cria arquivo no workspace.
 3. Confira `git diff --cached --check` e `git diff --cached --name-only`. Se o diff indexado contiver path fora da task, remova-o do índice e pare se a origem não for clara.
 4. Crie um commit sem `Co-Authored-By`, com mensagem no formato `task(Tn): <outcome curto>`. Não faça `git push` nesta etapa.
 5. Registre a mensagem e o hash retornado por `git rev-parse HEAD` no resultado da execução e no chat. Não reabra o `plan.md` apenas para anexar o hash, pois isso criaria um residual fora do commit da task. O próximo estado começa no commit criado.
 
-## 5. Resposta no Chat
+## 5. Resposta no chat e fechamento
 
-Responda no chat apenas:
+Antes da resposta final, confirme que cada T* concluída tem commit próprio e que `git show --format= --name-only HEAD` contém somente seus paths. Se o commit falhar, resolva a causa e tente novamente; não declare a T* concluída com trabalho verde sem commit. Não faça push: ele pertence ao fechamento aprovado em `vibe-review`.
 
-```text
-Implementação registrada: <alvo>/plan.md
-
-- Fatia: <T* | R* | avulsa>
-- Marcado: <T* / A* / C*>
-- Prova: <comando> -> <resultado>
-- Arquivos: <paths alterados>
-- Handoff: vibe-review | próxima T* | Q
-- Chat recomendado: novo para a próxima T* em sequência ou para review; grupo paralelo aprovado pode continuar neste chat coordenador.
-
-Fatia concluída e registrada em <alvo>/plan.md.
-```
-
-## 6. Modos
-
-**A (default):** executa exatamente a `T*` escolhida ou única elegível, cria o commit dessa task e para. Se o usuário disser apenas "aprovado" ou "ok", permanece parado aguardando a próxima instrução. Se o usuário disser "pode seguir", "segue" ou "pode ir para a próxima fase", avança imediatamente para a próxima task elegível do plano ou para `vibe-review` se a fila estiver concluída. Em execução sequencial, recomende um novo chat por `T*`; se o humano preferir continuar neste chat, siga sem bloquear. O `plan.md` e o diff carregam o contexto verificável.
-
-**Grupo paralelo aprovado:** é a única exceção à recomendação de um chat por `T*`. Use um chat coordenador para conduzir simultaneamente somente as tasks nomeadas e aprovadas pelo humano, com isolamento e ownership por task. Integre cada retorno, prove o estado integrado e mantenha um commit por task. Tasks dependentes só começam depois da integração, prova, marcação e commit das dependências.
-
-**B:** percorre o plano inteiro recalculando `fila.elegiveis` após cada item concluído. Só use após pedido explícito de execução completa. Pode delegar T*s independentes quando houver capacidade no host e isolamento seguro; o coordenador serializa atualizações dos artefatos vivos e do índice Git, cria um commit por task e para em falha, bloqueio ou fila vazia.
-
-Fila zerada (T* da run, ou R* bloqueantes) → handoff `vibe-review`; recomende novo chat para a review. Se o usuário autorizar avançar, inicie `vibe-review`; se preferir continuar aqui, não bloqueie. O `plan.md` e o diff são a ponte.
-
-## 7. Fechar
-
-Avise o commit criado e o que entrou nele. O push fica fora desta porta e só ocorre no fechamento aprovado da phase. Fora do commit: qualquer path pré-existente ou não autorizado.
-Handoff no chat e no arquivo. Não invente work extra.
+Responda de forma curta, com: T*/R*/avulsa executada; **total de T*s da fase e quantas estão concluídas** (conte os cabeçalhos `### T{n}:` do plan, não os itens elegíveis); IDs marcados; prova e resultado; paths no commit; mensagem e hash do commit; próximo passo ou impedimento concreto. Para execução avulsa sem plan, informe que não há contagem de T*. Recomende novo chat para a próxima T* ou review sem bloquear a continuidade aqui. Handoff no chat e no arquivo; não invente trabalho extra.

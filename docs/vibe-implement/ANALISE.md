@@ -45,7 +45,7 @@ Arquivos `implement.md` de execuções anteriores permanecem byte a byte intacto
 
 ## Chat e modos
 
-Implement recomenda um chat por T* na execução em sequência e um novo chat para review. Se o plan apontar um grupo independente, o agente mostra as tasks e pergunta antes de paralelizá-las. Com autorização, um chat coordenador conduz apenas aquele grupo, com isolamento, prova e commit próprios por task. A recomendação de chat não bloqueia a preferência do humano; o plan e o diff carregam o contexto verificável.
+Implement recomenda um chat por T* na execução em sequência e um novo chat para review. Com várias T*s elegíveis, escolhe a menor sem pedir seleção. Se o plan apontar um grupo independente, o agente mostra as tasks e pergunta antes de paralelizá-las. Com autorização, um chat coordenador conduz apenas aquele grupo, com isolamento, prova e commit próprios por task. A resposta final concentra o estado verificável, inclusive total e concluídas da fase e hash do commit; a abertura dispensa relatório de rota, modo e fila.
 
 ## MVP
 
@@ -59,7 +59,7 @@ O gate de analyze continua separado para a rota max. A existência de plan não 
 | Documento acumulativo de implementação | O plan já é a fila e o registro durável da execução. |
 | Inspeção renderizada em toda mudança de UI | Só é exigida quando o aceite depende da renderização; o plan justifica a dispensa nos outros casos e a review reaproveita evidência válida. |
 | Push por task | Mantém o remoto estável durante a implementação; o push fica para a phase aprovada. |
-| Instalação de navegador | Ferramenta nova só entra por necessidade real ou pedido. |
+| Bloqueio imediato por ferramenta ausente | Antes de parar, o agente tenta disponibilizar a ferramenta necessária ou uma prova equivalente, respeitando permissões e o aceite. |
 
 ## Impacto
 

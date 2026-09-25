@@ -25,7 +25,7 @@ O script não codifica, não escreve a prosa da implementação, não marca acei
 
 Sem `.vibeflow/`, `INIT_AUSENTE`. Com plan, o alvo é a maior phase com `plan.md`; `--dir` força uma phase existente. Sem plan, o JSON deixa a fila nula e a skill encaminha `high+` para `vibe-plan`; uma execução avulsa `low/medium` pode usar `--slug`.
 
-O parser lê somente `### T{n}:`, a linha `T{n} concluída` e `Deps`. `fila.elegiveis` contém tasks abertas cujas dependências estão concluídas; `fila.bloqueadas` expõe as dependências faltantes. R* Critical/Required abertos têm prioridade sem alterar o plan.
+O parser lê somente `### T{n}:`, a linha `T{n} concluída` e `Deps`. `fila.elegiveis` contém tasks abertas cujas dependências estão concluídas; `fila.bloqueadas` expõe as dependências faltantes. R* Critical/Required abertos têm prioridade sem alterar o plan. Sem T* nomeada, a skill escolhe a elegível de menor número; múltiplas elegíveis não bloqueiam a execução sequencial.
 
 No MVP, `--mvp` fixa `.vibeflow/mvp/`, exige plan e analyze aprovado com veredito limpo, e não aceita slug ou dir.
 
@@ -57,7 +57,7 @@ Checkpoint de retomada é um bloco opcional sob uma T* que continua incompleta o
 
 `plan.md` mantém o status, a verificação, o resultado da prova, os paths e os bloqueios de cada T*. Achados R* e vereditos continuam no `review.md`. Modo A executa exatamente uma task elegível, cria seu commit e para. Modo B exige autorização explícita; pode delegar T*s independentes, recalcula a fila após cada conclusão e cria um commit por task. O coordenador serializa as marcações e operações no índice Git. A mensagem e o hash do commit ficam no resultado da execução e no chat, sem reabrir o plan após o commit.
 
-Quando a fila da run termina, o handoff é `vibe-review`. Recomende um chat por T* em execução sequencial e novo chat para review. Um grupo paralelo aprovado pode ser conduzido por um chat coordenador, mantendo isolamento e commit próprio por task. Se o humano preferir o mesmo chat, continue sem bloquear; o plan e o diff são a ponte.
+Quando a fila da run termina, o handoff é `vibe-review`. A resposta final informa T* executada, total de T*s da fase, concluídas, prova, paths e hash do commit. Recomende um chat por T* em execução sequencial e novo chat para review. Um grupo paralelo aprovado pode ser conduzido por um chat coordenador, mantendo isolamento e commit próprio por task. Se o humano preferir o mesmo chat, continue sem bloquear; o plan e o diff são a ponte.
 
 ## 7. Erros e testes
 

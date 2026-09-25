@@ -237,7 +237,7 @@ Regras de prosa na skill:
 - Uma pergunta por vez. Várias respostas de uma vez: aceitar e fechar.
 - Patch de SLOT = só aquele trecho, texto do humano, sem reescrever.
 - Não disparar a próxima `vibe-*` a menos que o humano autorize explicitamente o avanço (ex.: "pode ir pro plan", "segue pro implement"). Se autorizado, avançar imediatamente sem perguntar de novo.
-- Skills de definição e análise não commitem. `vibe-implement` commita a task verde e `vibe-review` finaliza a phase. No fechar, dizer o hash, os paths enviados e o que ficou de fora.
+- `vibe-init` commita os arquivos de governança produzidos, sem push. As demais skills de definição e análise não commitem. `vibe-implement` commita a task verde e `vibe-review` finaliza a phase. No fechar, dizer o hash, os paths enviados e o que ficou de fora.
 - Português do Brasil. Frase completa. Sem emoji. Sem travessão longo. Tom factual, calmo, sem acolhimento.
 
 
