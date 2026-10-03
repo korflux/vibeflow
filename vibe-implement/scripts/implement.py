@@ -35,6 +35,18 @@ DONE_LINE_RE = re.compile(r"^- \[([ xX])\] T(\d+) concluída\s*$")
 DEPS_LINE_RE = re.compile(r"^- \*\*Deps:\*\*\s*(.*)$")
 DEP_ID_RE = re.compile(r"T(\d+)")
 
+# Prefixo do aviso emitido para T* sem linha concluída. A derivação da etapa o reconhece, pois a T* some da fila.
+AVISO_SEM_CONCLUIDA = "sem linha concluída"
+
+# Marcas do review.md lidas só para derivar a etapa; o conteúdo semântico do arquivo não é interpretado.
+REVIEW_STATUS_RE = re.compile(r"^# Status:\s*([^\s]+)\s*$", re.MULTILINE | re.IGNORECASE)
+OPEN_BLOCKER_RE = re.compile(r"^\s*- \[ \] R\d+: \*\*(?:Critical|Required)\*\*")
+APPROVE_MARK_RE = re.compile(r"^\s*- \[[xX]\] \*\*Approve(?: com defer)?\*\*")
+VEREDITO_VIGENTE_RE = re.compile(r"^##\s+Veredito vigente\s*$")
+ETAPA_HEADING_RE = re.compile(r"^### Etapa\b")
+ETAPA_VERDICT_RE = re.compile(r"^\s*- Veredito desta etapa:\s*(.*?)\s*$")
+REQUEST_CHANGES_RE = re.compile(r"^Request changes\.?$")
+
 
 # Interpreta somente os parâmetros equivalentes ao contrato público do implement.ps1.
 def parse_args() -> argparse.Namespace:
@@ -260,7 +272,7 @@ def parse_plan_fila(text: str) -> dict[str, Any]:
                 if deps_match:
                     deps_raw = deps_match.group(1)
         if done is None:
-            avisos.append(f"sem linha concluída: {tid}")
+            avisos.append(f"{AVISO_SEM_CONCLUIDA}: {tid}")
             continue
         parsed.append({"id": tid, "done": done, "deps": parse_deps_value(deps_raw)})
 
@@ -302,6 +314,86 @@ def fila_from_alvo(repo: Path, alvo: dict[str, Any] | None) -> dict[str, Any] | 
     return parse_plan_fila(body)
 
 
+# Conta as correções já aplicadas. Cada etapa com veredito Request changes soma 1; a última não conta
+# enquanto houver Critical ou Required em [ ], porque a correção que ela pediu ainda está pendente.
+def count_correction_rounds(lines: list[str], blockers_open: bool) -> int:
+    verdicts: list[str | None] = []
+    in_etapas = False
+    for line in lines:
+        if ETAPA_HEADING_RE.match(line):
+            verdicts.append(None)
+            in_etapas = True
+        elif line.startswith("## "):
+            in_etapas = False
+        elif in_etapas and verdicts[-1] is None:
+            verdict = ETAPA_VERDICT_RE.match(line)
+            if verdict:
+                verdicts[-1] = verdict.group(1)
+    rounds = sum(1 for verdict in verdicts if verdict is not None and REQUEST_CHANGES_RE.match(verdict))
+    if verdicts and verdicts[-1] is not None and REQUEST_CHANGES_RE.match(verdicts[-1]) and blockers_open:
+        rounds -= 1
+    return rounds
+
+
+# Indica se o Veredito vigente tem Approve ou Approve com defer marcado; a lista de alternativas do template não conta.
+def approval_marked(lines: list[str]) -> bool:
+    in_section = False
+    for line in lines:
+        if VEREDITO_VIGENTE_RE.match(line):
+            in_section = True
+        elif line.startswith("## "):
+            in_section = False
+        elif in_section and APPROVE_MARK_RE.match(line):
+            return True
+    return False
+
+
+# Lê as marcas do review.md do alvo. Arquivo ausente devolve None; ilegível ou sem Status vira aviso e
+# legivel=False, para a etapa não ser inventada.
+def read_review(repo: Path, alvo: dict[str, Any] | None, warnings: list[str]) -> dict[str, Any] | None:
+    if not alvo:
+        return None
+    path = repo / alvo["path"] / "review.md"
+    if not path.is_file():
+        return None
+    try:
+        text = path.read_text(encoding="utf-8-sig")
+    except (OSError, UnicodeDecodeError):
+        warnings.append("review.md ilegível: etapa não derivada")
+        return {"legivel": False, "status": None, "bloqueios_abertos": False, "aprovacao_marcada": False, "rodadas": 0}
+    lines = text.splitlines()
+    status_match = REVIEW_STATUS_RE.search(text)
+    if status_match is None:
+        warnings.append("review.md sem '# Status:': etapa não derivada")
+    blockers_open = any(OPEN_BLOCKER_RE.match(line) for line in lines)
+    return {
+        "legivel": status_match is not None,
+        "status": status_match.group(1).lower() if status_match else None,
+        "bloqueios_abertos": blockers_open,
+        "aprovacao_marcada": approval_marked(lines),
+        "rodadas": count_correction_rounds(lines, blockers_open),
+    }
+
+
+# Deriva a etapa da phase só de plan e review, na precedência do contrato. Sem fila legível ou com review
+# ilegível devolve None: o coordenador não recebe um chute no lugar de um estado indeterminado.
+def derive_etapa(fila: dict[str, Any] | None, review: dict[str, Any] | None) -> str | None:
+    if fila is None or fila["parse"] == "ausente":
+        return None
+    if any(aviso.startswith(AVISO_SEM_CONCLUIDA) for aviso in fila["avisos"]):
+        return None
+    if review is not None:
+        if not review["legivel"]:
+            return None
+        if review["status"] == "aprovado":
+            return "concluida"
+        if review["bloqueios_abertos"]:
+            return "corrigir"
+    if not fila["abertas"]:
+        return "confirmar" if review is not None and review["aprovacao_marcada"] else "revisar"
+    return "implementar" if fila["elegiveis"] else "bloqueada"
+
+
 # Resolve --dir explícito ou seleciona a fase mais recente que possui plan.md.
 def resolve_alvo_com_dir(
     existing: list[dict[str, Any]],
@@ -327,7 +419,7 @@ def public_target(item: dict[str, Any] | None) -> dict[str, Any] | None:
     return {key: item[key] for key in ("kind", "dir", "n", "slug", "path") if key in item}
 
 
-# Serializa alvo, fila e avisos necessários para a execução imediata.
+# Serializa alvo, fila, etapa da phase, rodadas de correção e avisos necessários para a execução imediata.
 def emit_report(payload: dict[str, Any]) -> None:
     print(json.dumps(payload, ensure_ascii=False, indent=2))
 
@@ -386,9 +478,13 @@ def run(args: argparse.Namespace) -> None:
             dest_dir.mkdir(parents=True)
             alvo = phase_item(dest_dir)
 
+    fila = fila_from_alvo(repo, alvo)
+    review = read_review(repo, alvo, warnings)
     payload = {
         "alvo": public_target(alvo),
-        "fila": fila_from_alvo(repo, alvo),
+        "fila": fila,
+        "etapa": derive_etapa(fila, review),
+        "rodadas_correcao": review["rodadas"] if review else 0,
         "avisos": warnings,
     }
     if args.mvp:

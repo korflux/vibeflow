@@ -14,6 +14,16 @@ $script:SlugWasBound = $PSBoundParameters.ContainsKey('Slug')
 $script:DirWasBound = $PSBoundParameters.ContainsKey('Dir')
 $script:ChainFiles = @('interview.md', 'spec.md', 'plan.md', 'analyze.md', 'review.md')
 $script:MaxSlug = 48
+# Prefixo do aviso emitido para T* sem linha concluída. A derivação da etapa o reconhece, pois a T* some da fila.
+$script:AvisoSemConcluida = 'sem linha concluída'
+# Marcas do review.md lidas só para derivar a etapa; o conteúdo semântico do arquivo não é interpretado.
+$script:ReviewStatusRe = [regex]::new('^# Status:\s*([^\s]+)\s*$', 'Multiline, IgnoreCase')
+$script:OpenBlockerRe = [regex]::new('^\s*- \[ \] R\d+: \*\*(?:Critical|Required)\*\*')
+$script:ApproveMarkRe = [regex]::new('^\s*- \[[xX]\] \*\*Approve(?: com defer)?\*\*')
+$script:VereditoVigenteRe = [regex]::new('^##\s+Veredito vigente\s*$')
+$script:EtapaHeadingRe = [regex]::new('^### Etapa\b')
+$script:EtapaVerdictRe = [regex]::new('^\s*- Veredito desta etapa:\s*(.*?)\s*$')
+$script:RequestChangesRe = [regex]::new('^Request changes\.?$')
 
 # Obtém o item do sistema de arquivos sem resolver links quebrados em ausência.
 function Get-FsItem([string]$Path) {
@@ -232,7 +242,7 @@ function ConvertFrom-PlanFila([string]$Text) {
             }
         }
         if ($null -eq $done) {
-            $avisos.Add("sem linha concluída: $tid")
+            $avisos.Add("$($script:AvisoSemConcluida): $tid")
             continue
         }
         $depIds = New-Object System.Collections.Generic.List[string]
@@ -292,7 +302,98 @@ function Get-FilaFromAlvo([string]$Repo, $Alvo) {
     return ConvertFrom-PlanFila $text
 }
 
-# Serializa alvo, fila e avisos necessários para a execução imediata.
+# Conta as correções já aplicadas. Cada etapa com veredito Request changes soma 1; a última não conta
+# enquanto houver Critical ou Required em [ ], porque a correção que ela pediu ainda está pendente.
+function Get-CorrectionRounds([string[]]$Lines, [bool]$BlockersOpen) {
+    $verdicts = New-Object System.Collections.Generic.List[string]
+    $inEtapas = $false
+    foreach ($line in $Lines) {
+        if ($script:EtapaHeadingRe.IsMatch($line)) {
+            $verdicts.Add('')
+            $inEtapas = $true
+        } elseif ($line.StartsWith('## ')) {
+            $inEtapas = $false
+        } elseif ($inEtapas -and $verdicts[$verdicts.Count - 1] -eq '') {
+            $m = $script:EtapaVerdictRe.Match($line)
+            if ($m.Success) { $verdicts[$verdicts.Count - 1] = $m.Groups[1].Value }
+        }
+    }
+    $rounds = 0
+    foreach ($verdict in $verdicts) {
+        if ($script:RequestChangesRe.IsMatch($verdict)) { $rounds++ }
+    }
+    if ($verdicts.Count -gt 0 -and $script:RequestChangesRe.IsMatch($verdicts[$verdicts.Count - 1]) -and $BlockersOpen) {
+        $rounds--
+    }
+    return $rounds
+}
+
+# Indica se o Veredito vigente tem Approve ou Approve com defer marcado; a lista de alternativas do template não conta.
+function Test-ApprovalMarked([string[]]$Lines) {
+    $inSection = $false
+    foreach ($line in $Lines) {
+        if ($script:VereditoVigenteRe.IsMatch($line)) {
+            $inSection = $true
+        } elseif ($line.StartsWith('## ')) {
+            $inSection = $false
+        } elseif ($inSection -and $script:ApproveMarkRe.IsMatch($line)) {
+            return $true
+        }
+    }
+    return $false
+}
+
+# Lê as marcas do review.md do alvo. Arquivo ausente devolve $null; ilegível ou sem Status vira aviso e
+# legivel=$false, para a etapa não ser inventada. UTF-8 estrito, como o motor Python, para a paridade do ilegível.
+function Read-ReviewMarks([string]$Repo, $Alvo, $Warnings) {
+    if ($null -eq $Alvo) { return $null }
+    $path = Join-Path (Join-Path $Repo ([string]$Alvo.path)) 'review.md'
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return $null }
+    try {
+        $text = [System.IO.File]::ReadAllText($path, [System.Text.UTF8Encoding]::new($false, $true))
+    } catch {
+        $Warnings.Add('review.md ilegível: etapa não derivada')
+        return [pscustomobject]@{ legivel = $false; status = $null; bloqueiosAbertos = $false; aprovacaoMarcada = $false; rodadas = 0 }
+    }
+    $lines = [string[]]($text -split '\r?\n')
+    $statusMatch = $script:ReviewStatusRe.Match($text)
+    if (-not $statusMatch.Success) {
+        $Warnings.Add("review.md sem '# Status:': etapa não derivada")
+    }
+    $blockersOpen = $false
+    foreach ($line in $lines) {
+        if ($script:OpenBlockerRe.IsMatch($line)) { $blockersOpen = $true; break }
+    }
+    return [pscustomobject]@{
+        legivel          = $statusMatch.Success
+        status           = if ($statusMatch.Success) { $statusMatch.Groups[1].Value.ToLowerInvariant() } else { $null }
+        bloqueiosAbertos = $blockersOpen
+        aprovacaoMarcada = (Test-ApprovalMarked $lines)
+        rodadas          = (Get-CorrectionRounds $lines $blockersOpen)
+    }
+}
+
+# Deriva a etapa da phase só de plan e review, na precedência do contrato. Sem fila legível ou com review
+# ilegível devolve $null: o coordenador não recebe um chute no lugar de um estado indeterminado.
+function Get-Etapa($Fila, $Review) {
+    if ($null -eq $Fila -or $Fila.parse -eq 'ausente') { return $null }
+    foreach ($aviso in $Fila.avisos) {
+        if ($aviso.StartsWith($script:AvisoSemConcluida)) { return $null }
+    }
+    if ($null -ne $Review) {
+        if (-not $Review.legivel) { return $null }
+        if ($Review.status -eq 'aprovado') { return 'concluida' }
+        if ($Review.bloqueiosAbertos) { return 'corrigir' }
+    }
+    if (@($Fila.abertas).Count -eq 0) {
+        if ($null -ne $Review -and $Review.aprovacaoMarcada) { return 'confirmar' }
+        return 'revisar'
+    }
+    if (@($Fila.elegiveis).Count -gt 0) { return 'implementar' }
+    return 'bloqueada'
+}
+
+# Serializa alvo, fila, etapa da phase, rodadas de correção e avisos necessários para a execução imediata.
 function Write-ImplementOutput([hashtable]$Payload) {
     $json = [string](ConvertTo-Json -InputObject $Payload -Depth 8)
     [Console]::Out.WriteLine($json)
@@ -383,10 +484,14 @@ function Invoke-Implement {
         }
     }
 
+    $fila = Get-FilaFromAlvo $repo $alvoItem
+    $review = Read-ReviewMarks $repo $alvoItem $warnings
     $payload = @{
-        alvo   = ConvertTo-PhaseMap $alvoItem
-        fila   = Get-FilaFromAlvo $repo $alvoItem
-        avisos         = $warnings.ToArray()
+        alvo             = ConvertTo-PhaseMap $alvoItem
+        fila             = $fila
+        etapa            = Get-Etapa $fila $review
+        rodadas_correcao = if ($null -ne $review) { [int]$review.rodadas } else { 0 }
+        avisos           = $warnings.ToArray()
     }
     if ($Mvp) { $payload.analyze_gate = $analyzeGate }
     Write-ImplementOutput $payload

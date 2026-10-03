@@ -88,6 +88,148 @@ def seed_mvp(vf: Path, plan: str, status: str | None = "aprovado", verdict: str 
     return mvp
 
 
+# Campos do JSON operacional; analyze_gate acompanha esses somente no alvo MVP.
+REPORT_KEYS = {"alvo", "fila", "etapa", "rodadas_correcao", "avisos"}
+
+
+# Fotografa os bytes de todos os arquivos sob a raiz, para provar que o motor não escreve ao derivar a etapa.
+def tree_snapshot(root: Path) -> dict[str, bytes]:
+    return {str(path.relative_to(root)): path.read_bytes() for path in sorted(root.rglob("*")) if path.is_file()}
+
+
+# Monta um review.md mínimo no formato do template: Status, checklist, Notas, Veredito vigente e Etapas.
+# `status=None` omite a linha; `vigente` marca uma das alternativas; cada item de `etapas` vira um bloco de etapa.
+def review_text(
+    status: str | None = "rascunho",
+    blockers: tuple[str, ...] = (),
+    notas: str = "",
+    vigente: str | None = None,
+    etapas: tuple[str, ...] = (),
+) -> str:
+    lines = ["# Review: fixture", "# Alvo: phase-1-a"]
+    if status is not None:
+        lines.append(f"# Status: {status}")
+    lines += ["", "## Checklist de correções", "", *blockers, "", "## Notas", "", notas, "", "## Veredito vigente", ""]
+    for option in ("Approve", "Request changes", "Approve com defer"):
+        lines.append(f"- [{'x' if option == vigente else ' '}] **{option}**: texto do template")
+    lines += ["", "## Etapas", ""]
+    for number, verdict in enumerate(etapas, start=1):
+        lines += [f"### Etapa {number} - fixture", "", f"- Veredito desta etapa: {verdict}", ""]
+    return "\n".join(lines) + "\n"
+
+
+FILA_ABERTA = plan_tasks(("T1", " ", "nenhuma"), ("T2", " ", "T1"))
+FILA_CONCLUIDA = plan_tasks(("T1", "x", "nenhuma"), ("T2", "x", "T1"))
+CRITICAL_ABERTO = "- [ ] R1: **Critical** - `a.py` - problema - remédio: corrigir - prova: teste"
+CRITICAL_FECHADO = CRITICAL_ABERTO.replace("[ ]", "[x]")
+REQUIRED_FECHADO = "- [x] R2: **Required** - `b.py` - problema - remédio: corrigir - prova: teste"
+NIT_ABERTO = "- [ ] R3: **Nit** - `c.py` - detalhe"
+ALTERNATIVAS_DO_TEMPLATE = "Marco aprovado | Request changes | Approve final | Approve com defer"
+
+# Estados da phase que o motor precisa distinguir. `avisos` é a contagem esperada no campo avisos do JSON.
+ETAPA_CASES: list[dict] = [
+    {"nome": "t-elegivel", "plan": FILA_ABERTA, "review": None, "etapa": "implementar", "rodadas": 0, "avisos": 0},
+    {"nome": "t-bloqueada", "plan": plan_tasks(("T1", " ", "T9")), "review": None, "etapa": "bloqueada", "rodadas": 0, "avisos": 0},
+    {"nome": "fila-concluida-sem-review", "plan": FILA_CONCLUIDA, "review": None, "etapa": "revisar", "rodadas": 0, "avisos": 0},
+    {
+        "nome": "review-com-bloqueio-aberto",
+        "plan": FILA_CONCLUIDA,
+        "review": review_text(blockers=(CRITICAL_ABERTO,), etapas=("Request changes",)),
+        "etapa": "corrigir", "rodadas": 0, "avisos": 0,
+    },
+    {
+        "nome": "bloqueios-fechados-aguardando-nova-review",
+        "plan": FILA_CONCLUIDA,
+        "review": review_text(blockers=(CRITICAL_FECHADO, REQUIRED_FECHADO), etapas=("Request changes",)),
+        "etapa": "revisar", "rodadas": 1, "avisos": 0,
+    },
+    {
+        "nome": "approve-aguardando-confirmacao",
+        "plan": FILA_CONCLUIDA,
+        "review": review_text(
+            blockers=(CRITICAL_FECHADO,), vigente="Approve", etapas=("Request changes", "Approve final"),
+        ),
+        "etapa": "confirmar", "rodadas": 1, "avisos": 0,
+    },
+    {
+        "nome": "approve-com-defer-de-nit",
+        "plan": FILA_CONCLUIDA,
+        "review": review_text(blockers=(NIT_ABERTO,), vigente="Approve com defer", etapas=("Approve com defer",)),
+        "etapa": "confirmar", "rodadas": 0, "avisos": 0,
+    },
+    {
+        "nome": "phase-finalizada",
+        "plan": FILA_CONCLUIDA,
+        "review": review_text(status="aprovado", vigente="Approve", etapas=("Request changes", "Approve final")),
+        "etapa": "concluida", "rodadas": 1, "avisos": 0,
+    },
+    {
+        "nome": "duas-rodadas-usadas-com-bloqueio-aberto",
+        "plan": FILA_CONCLUIDA,
+        "review": review_text(
+            blockers=(CRITICAL_ABERTO,), etapas=("Request changes", "Request changes", "Request changes"),
+        ),
+        "etapa": "corrigir", "rodadas": 2, "avisos": 0,
+    },
+    {
+        "nome": "alternativas-do-template-nao-contam",
+        "plan": FILA_CONCLUIDA,
+        "review": review_text(etapas=(ALTERNATIVAS_DO_TEMPLATE,)),
+        "etapa": "revisar", "rodadas": 0, "avisos": 0,
+    },
+    {
+        "nome": "request-changes-com-ponto-final",
+        "plan": FILA_CONCLUIDA,
+        "review": review_text(blockers=(CRITICAL_FECHADO,), etapas=("Request changes.",)),
+        "etapa": "revisar", "rodadas": 1, "avisos": 0,
+    },
+    {
+        "nome": "nit-aberto-nao-bloqueia",
+        "plan": FILA_CONCLUIDA,
+        "review": review_text(blockers=(NIT_ABERTO,), etapas=("Marco aprovado",)),
+        "etapa": "revisar", "rodadas": 0, "avisos": 0,
+    },
+    {
+        "nome": "approve-fora-do-veredito-vigente-nao-conta",
+        "plan": FILA_CONCLUIDA,
+        "review": review_text(notas="- [x] **Approve**: citado nas notas"),
+        "etapa": "revisar", "rodadas": 0, "avisos": 0,
+    },
+    {
+        "nome": "review-sem-status",
+        "plan": FILA_CONCLUIDA,
+        "review": review_text(status=None, vigente="Approve"),
+        "etapa": None, "rodadas": 0, "avisos": 1,
+    },
+    {
+        "nome": "review-ilegivel",
+        "plan": FILA_CONCLUIDA,
+        "review": b"\x80\x81\x82 nao e utf-8\n",
+        "etapa": None, "rodadas": 0, "avisos": 1,
+    },
+    {"nome": "sem-plan", "plan": None, "review": None, "etapa": None, "rodadas": 0, "avisos": 0},
+    {"nome": "fila-ilegivel", "plan": "# Plan sem tasks\n", "review": None, "etapa": None, "rodadas": 0, "avisos": 0},
+    {
+        "nome": "t-sem-linha-concluida",
+        "plan": "### T1: sem checkbox\n\n- **Deps:** nenhuma\n\n### T2: ok\n\n- [x] T2 concluída\n- **Deps:** nenhuma\n",
+        "review": None,
+        "etapa": None, "rodadas": 0, "avisos": 0,
+    },
+]
+
+
+# Cria a fixture de um caso de etapa na phase-1-a: spec sempre, plan e review só quando o caso os define.
+def seed_etapa_case(repo: Path, case: dict) -> None:
+    vf = seed_vibeflow(repo)
+    phase = seed_phase(vf, "phase-1-a", "spec.md")
+    if case["plan"] is not None:
+        write_plan(phase, case["plan"])
+    if isinstance(case["review"], bytes):
+        (phase / "review.md").write_bytes(case["review"])
+    elif case["review"] is not None:
+        (phase / "review.md").write_text(case["review"], encoding="utf-8")
+
+
 class PythonContracts(unittest.TestCase):
     """Verifica inventário, alvo com plan, apply direto e gitignore."""
 
@@ -122,9 +264,11 @@ class PythonContracts(unittest.TestCase):
         """Mantém o stdout focado no alvo e cria apenas a estrutura phases ausente."""
         seed_vibeflow(self.repo)
         _, report = invoke(self.repo)
-        self.assertEqual({"alvo", "fila", "avisos"}, set(report))
+        self.assertEqual(REPORT_KEYS, set(report))
         self.assertIsNone(report["alvo"])
         self.assertIsNone(report["fila"])
+        self.assertIsNone(report["etapa"])
+        self.assertEqual(0, report["rodadas_correcao"])
         self.assertTrue((self.repo / ".vibeflow" / "phases" / ".gitkeep").is_file())
         self.assertNotIn("wip", report)
 
@@ -182,7 +326,7 @@ class PythonContracts(unittest.TestCase):
         for number in range(1, 21):
             seed_phase(vf, f"phase-{number}-historico", "plan.md")
         process, report = invoke(self.repo)
-        self.assertEqual({"alvo", "fila", "avisos"}, set(report))
+        self.assertEqual(REPORT_KEYS, set(report))
         self.assertEqual("phase-20-historico", report["alvo"]["dir"])
         self.assertNotIn("phase-1-historico", process.stdout)
 
@@ -386,6 +530,29 @@ class PythonContracts(unittest.TestCase):
         self.assertNotIn("wip", report)
         self.assertEqual([], [item.name for item in (vf / "phases").iterdir() if item.is_dir()])
 
+    def test_mvp_etapa_usa_o_review_do_baseline(self) -> None:
+        """No MVP a etapa vem do review do baseline e o gate de analyze continua no JSON."""
+        vf = seed_vibeflow(self.repo)
+        mvp = seed_mvp(vf, FILA_CONCLUIDA)
+        (mvp / "review.md").write_text(review_text(status="aprovado", vigente="Approve"), encoding="utf-8")
+        _, report = invoke(self.repo, "--mvp")
+        self.assertEqual(REPORT_KEYS | {"analyze_gate"}, set(report))
+        self.assertEqual("concluida", report["etapa"])
+
+    def test_etapa_e_rodadas_por_fixture(self) -> None:
+        """Cada estado da phase vira a etapa esperada, e o motor não escreve nada para derivá-la."""
+        for case in ETAPA_CASES:
+            with self.subTest(case["nome"]):
+                repo = self.repo / case["nome"]
+                repo.mkdir()
+                seed_etapa_case(repo, case)
+                before = tree_snapshot(repo)
+                _, report = invoke(repo, "--dir", "phase-1-a")
+                self.assertEqual(case["etapa"], report["etapa"])
+                self.assertEqual(case["rodadas"], report["rodadas_correcao"])
+                self.assertEqual(case["avisos"], len(report["avisos"]), report["avisos"])
+                self.assertEqual(before, tree_snapshot(repo))
+
     def test_mvp_rejects_phase_selectors(self) -> None:
         seed_vibeflow(self.repo)
         process, _ = invoke(self.repo, "--mvp", "--slug", "produto", check=False)
@@ -532,7 +699,7 @@ class PowershellParity(unittest.TestCase):
         self.assertTrue((vf / "phases" / "phase-1-lock-bloco" / "plan.md").is_file())
         report = json.loads(process.stdout)
         self.assertFalse((vf / "implement-report.json").exists())
-        self.assertEqual({"alvo", "fila", "avisos"}, set(report))
+        self.assertEqual(REPORT_KEYS, set(report))
         self.assertNotIn("wip", report)
 
     # Confirma que o motor PowerShell preserva o conteúdo do implement já existente.
@@ -573,8 +740,8 @@ class PowershellParity(unittest.TestCase):
         self.assertEqual(0, process.returncode, process.stderr)
         ps_report = json.loads(process.stdout)
         self.assertFalse((vf / "implement-report.json").exists())
-        self.assertEqual({"alvo", "fila", "avisos"}, set(py_report))
-        self.assertEqual({"alvo", "fila", "avisos"}, set(ps_report))
+        self.assertEqual(REPORT_KEYS, set(py_report))
+        self.assertEqual(REPORT_KEYS, set(ps_report))
         self.assertNotIn("phase-20-historico", process.stdout)
         self.assertEqual(py_report["alvo"], ps_report["alvo"])
         self.assertEqual(py_report["fila"]["elegiveis"], ps_report["fila"]["elegiveis"])
@@ -598,10 +765,34 @@ class PowershellParity(unittest.TestCase):
         report = json.loads(process.stdout)
         self.assertFalse((vf / "implement-report.json").exists())
         self.assertEqual("mvp", report["alvo"]["kind"])
-        self.assertEqual({"alvo", "fila", "avisos", "analyze_gate"}, set(report))
+        self.assertEqual(REPORT_KEYS | {"analyze_gate"}, set(report))
         self.assertTrue(report["analyze_gate"]["pronto"])
         self.assertEqual(["T1"], report["fila"]["elegiveis"])
         self.assertNotIn("wip", report)
+
+    # Compara etapa, rodadas e avisos dos dois motores, com as mesmas fixtures do motor Python, sem escrita no disco.
+    def test_etapa_parity_por_fixture(self) -> None:
+        """Python e PowerShell informam o mesmo estado para cada fixture de etapa."""
+        for case in ETAPA_CASES:
+            with self.subTest(case["nome"]):
+                repo = self.repo / case["nome"]
+                repo.mkdir()
+                seed_etapa_case(repo, case)
+                before = tree_snapshot(repo)
+                _, py_report = invoke(repo, "--dir", "phase-1-a")
+                process = subprocess.run(
+                    [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(repo), "-Dir", "phase-1-a"],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                self.assertEqual(0, process.returncode, process.stderr)
+                ps_report = json.loads(process.stdout)
+                self.assertEqual(case["etapa"], ps_report["etapa"])
+                self.assertEqual(case["rodadas"], ps_report["rodadas_correcao"])
+                # Conta os avisos em vez de comparar o texto: os motores emitem acentos em codificações diferentes no pipe.
+                self.assertEqual(case["avisos"], len(ps_report["avisos"]))
+                self.assertEqual(before, tree_snapshot(repo))
 
 
 if __name__ == "__main__":

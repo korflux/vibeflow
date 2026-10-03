@@ -14,7 +14,7 @@
 | Peça | Responsabilidade |
 |---|---|
 | `SKILL.md` | Gate, escolha de T*/R*, delegação opcional por capacidade do host, ciclo de seis passos, prova final, commit da task, registro e handoff. |
-| `scripts/implement.py`, `implement.ps1`, `implement.sh` | Inventário interno, alvo, fila, gate MVP e JSON operacional compacto no stdout. |
+| `scripts/implement.py`, `implement.ps1`, `implement.sh` | Inventário interno, alvo, fila, etapa da phase, rodadas de correção, gate MVP e JSON operacional compacto no stdout. |
 | `references/chrome-devtools.md` | Prova renderizada proporcional, consultada quando o aceite depende do resultado visual. |
 | `stdout (JSON)` | Alvo, fila e avisos necessários; no MVP também traz o gate de analyze. O inventário completo não é serializado. |
 | `plan.md` | Registro único por T*: status, dependências/bloqueios, verificação, prova, paths e decisões materiais. |
@@ -31,7 +31,26 @@ No MVP, `--mvp` fixa `.vibeflow/mvp/`, exige plan e analyze aprovado com veredit
 
 ## 3. JSON operacional no stdout
 
-O JSON transitório contém somente `alvo`, `fila` e `avisos`. O alvo expõe `kind`, `dir`, `n`, `slug` e `path`; no MVP, `analyze_gate` acompanha esses campos. A fila traz parse, status das T*, elegíveis, dependências bloqueantes e avisos do plan. Nenhum item serializa todas as phases.
+O JSON transitório contém somente `alvo`, `fila`, `etapa`, `rodadas_correcao` e `avisos`. O alvo expõe `kind`, `dir`, `n`, `slug` e `path`; no MVP, `analyze_gate` acompanha esses campos. A fila traz parse, status das T*, elegíveis, dependências bloqueantes e avisos do plan. Nenhum item serializa todas as phases.
+
+### Etapa da phase e rodadas de correção
+
+`etapa` e `rodadas_correcao` permitem retomar e coordenar a run pelo disco, sem depender da memória do chat. Os dois motores os derivam só de `plan.md` e `review.md` do alvo, sem escrever arquivo e sem alterar `alvo`, `fila`, `avisos` ou `analyze_gate`. A etapa é a primeira que se aplica, nesta ordem:
+
+| `etapa` | Condição |
+|---|---|
+| `concluida` | `review.md` com `# Status: aprovado` |
+| `corrigir` | há `- [ ] Rn: **Critical**` ou `**Required**` em aberto |
+| `confirmar` | fila concluída, status ainda não aprovado e `- [x] **Approve**` ou `- [x] **Approve com defer**` marcado em `## Veredito vigente` |
+| `implementar` | há T* elegível |
+| `bloqueada` | há T* aberta e nenhuma elegível, por ciclo ou dependência inexistente |
+| `revisar` | fila concluída sem veredito final de aprovação, inclusive depois de bloqueios fechados |
+
+`etapa` é `null` quando o estado não pode ser derivado: alvo sem `plan.md`, plan sem nenhuma T* legível, plan com T* sem linha `concluída` (ela some da fila e a conclusão ficaria falsa), ou `review.md` ilegível ou sem `# Status:`. Os dois últimos motivos de `review.md` geram um item em `avisos`; os do plan já aparecem em `fila.avisos`. Nunca há etapa inventada.
+
+`rodadas_correcao` conta as correções já aplicadas, não as reviews que pediram mudança. Cada bloco `### Etapa` da seção `## Etapas` cuja linha `- Veredito desta etapa:` tem exatamente o valor `Request changes` (ponto final opcional) soma 1. A última etapa não soma enquanto ainda houver Critical ou Required em `[ ]`, porque a correção que ela pediu está pendente. A lista de alternativas do template não conta como veredito. Sem `review.md`, ou com `review.md` ilegível, o valor é 0. O coordenador do Modo A para quando `etapa` é `corrigir` e `rodadas_correcao` já é 2.
+
+Limitação conhecida: `Approve com defer` com Critical ou Required em aberto cai em `corrigir` pela precedência. A regra de quando o defer é válido pertence ao `vibe-review` (registro em `.erros-encontrados/2026-10-03-review-approve-com-defer-sem-regra.md`).
 
 ## 4. Apply e escrita direta
 
@@ -65,13 +84,13 @@ Quando a fila da run termina, o handoff é `vibe-review`. A resposta final infor
 
 Falhas previstas usam `CODIGO: descrição`, incluindo `IMPLEMENT_SEM_ALVO`, `IMPLEMENT_SEM_PLAN`, `IMPLEMENT_ANALYZE_AUSENTE`, `IMPLEMENT_ANALYZE_RASCUNHO`, `IMPLEMENT_ANALYZE_BLOQUEADO`, `FASE_AUSENTE`, `MODO_INVALIDO` e `PHASES_INESPERADO`.
 
-Suítes: `docs/vibe-implement/tests/test-implement.py` e `docs/vibe-implement/tests/test-implement.sh`. Elas cobrem seleção, fila, phase/MVP, preservação, paridade, ordem de conclusão independente e contratos de delegação, ownership, prova final e retomada.
+Suítes: `docs/vibe-implement/tests/test-implement.py` e `docs/vibe-implement/tests/test-implement.sh`. Elas cobrem seleção, fila, phase/MVP, preservação, paridade, ordem de conclusão independente e contratos de delegação, ownership, prova final e retomada. As mesmas fixtures de `ETAPA_CASES` (T* elegíveis, bloqueadas, fila concluída sem review, bloqueio aberto, bloqueios fechados, Approve aguardando confirmação, phase finalizada, duas rodadas usadas, review ilegível) alimentam o motor Python e a classe de paridade PowerShell, que também comprovam que nada é escrito no disco.
 
 ## 8. Limites
 
 - Sem teste verde executável, não marca `[x]`.
 - Não cria `todo.md`, `tasks.md` ou uma segunda trilha.
-- Não interpreta a prosa do plan para montar a fila.
+- Não interpreta a prosa do plan para montar a fila, nem a prosa do review para derivar a etapa: só as marcas descritas na seção 3.
 - Não cria `implement.md` nem depende dele para selecionar uma execução; arquivos históricos permanecem intactos.
 - Agentes delegados não escrevem artefatos vivos, não operam o índice Git e não criam commits.
 - Não publica decisões vigentes em `REGRAS.md`.
