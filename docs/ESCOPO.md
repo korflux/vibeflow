@@ -146,7 +146,7 @@ Não são backlog. Mudá-los quebra o disco.
 | A IA não escolhe `n`, slug nem path | Disco decide, script calcula. |
 | A IA não escolhe homolog ou produção | Só o humano sabe, e a resposta muda o bloco de migrations. |
 | Commit por task e push final | Implement commita cada task verde com staging explícito; a finalização da phase faz push somente após aprovação humana, executada pela review ou, no Modo A, pelo coordenador do implement depois da confirmação única. |
-| Escritor único dos artefatos vivos e do Git | Só o coordenador altera `plan.md`, `spec.md` e `AGENTS.md`, opera o índice Git e cria commits. Subagentes devolvem relatório; as exceções são o revisor (`review.md`) e o subagente de analyze (`analyze.md`). |
+| Escritor único dos artefatos vivos e do Git | Só o coordenador altera `plan.md`, `spec.md`, `review.md` e `AGENTS.md`, opera o índice Git e cria commits. Subagentes devolvem relatório; as exceções são o revisor (`review.md`) e o subagente de analyze (`analyze.md`). |
 | Motor único ("só Python" ou "só PowerShell") | Os dois motores implementam o mesmo contrato; o launcher `.sh` escolhe, sem versão degradada. |
 | Escrita semântica no script ou em arquivo temporário de promoção | O script prepara o vivo e a IA grava a prosa, preservando o histórico já existente. |
 

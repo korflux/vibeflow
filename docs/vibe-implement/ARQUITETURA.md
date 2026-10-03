@@ -49,7 +49,7 @@ O JSON transitório contém somente `alvo`, `fila`, `etapa`, `rodadas_correcao` 
 
 `etapa` é `null` quando o estado não pode ser derivado: alvo sem `plan.md`, plan sem nenhuma T* legível, plan com T* sem linha `concluída` (ela some da fila e a conclusão ficaria falsa), ou `review.md` ilegível ou sem `# Status:`. Os dois últimos motivos de `review.md` geram um item em `avisos`; os do plan já aparecem em `fila.avisos`. Nunca há etapa inventada.
 
-`rodadas_correcao` conta as correções já aplicadas, não as reviews que pediram mudança. Cada bloco `### Etapa` da seção `## Etapas` cuja linha `- Veredito desta etapa:` tem exatamente o valor `Request changes` (ponto final opcional) soma 1. A última etapa não soma enquanto ainda houver Critical ou Required em `[ ]`, porque a correção que ela pediu está pendente. A lista de alternativas do template não conta como veredito. Sem `review.md`, ou com `review.md` ilegível, o valor é 0. O coordenador do Modo A para quando `etapa` é `corrigir` e `rodadas_correcao` já é 2.
+`rodadas_correcao` conta as correções já aplicadas, não as reviews que pediram mudança. Cada bloco `### Etapa` da seção `## Etapas` cuja linha `- Veredito desta etapa:` começa com `Request changes` soma 1; marcação `*` ou `_` antes e texto depois são aceitos (`**Request changes**. motivo`), pois reviews reais variam, e a menção a `Request changes` no meio de outro veredito não conta. A última etapa não soma enquanto ainda houver Critical ou Required em `[ ]`, porque a correção que ela pediu está pendente. A lista de alternativas do template não conta como veredito. Sem `review.md`, ou com `review.md` ilegível, o valor é 0. O coordenador do Modo A para quando `etapa` é `corrigir` e `rodadas_correcao` já é 2.
 
 Limitação conhecida: `Approve com defer` com Critical ou Required em aberto cai em `corrigir` pela precedência. A regra de quando o defer é válido pertence ao `vibe-review` (registro em `.erros-encontrados/2026-10-03-review-approve-com-defer-sem-regra.md`).
 
@@ -69,7 +69,7 @@ Cada T*/R* segue: reconhecer o fluxo real, selecionar execução sequencial ou d
 
 Ao tocar testes, a unidade preferida é a jornada completa e seus resultados observáveis, por exemplo login, cadastro ou recuperação. A IA procura a prova existente e consolida casos fragmentados da mesma jornada sem perder cenários e afirmações materiais. Testes separados continuam quando risco, comportamento independente ou diagnóstico exigem isolamento.
 
-Delegação tem dois usos. No Modo A ela é o caminho padrão e sempre sequencial: um subagente por T*, na mesma árvore do coordenador. No grupo paralelo do Modo B, só atende T*s elegíveis e independentes, com worktree/branch isolada ou ownership sem sobreposição; sem isolamento seguro, a execução é sequencial. Em ambos, cada entrega recebe resultado, aceite, dependências, paths e comando de verificação, e o coordenador é o único escritor de `plan.md`, `spec.md` e do índice Git (o revisor grava só o `review.md`). No Modo A a prova do implementador vale como prova do estado integrado; no grupo paralelo, a prova reportada por um agente não substitui a verificação do estado integrado.
+Delegação tem dois usos. No Modo A ela é o caminho padrão e sempre sequencial: um subagente por T*, na mesma árvore do coordenador. No grupo paralelo do Modo B, só atende T*s elegíveis e independentes, com worktree/branch isolada ou ownership sem sobreposição; sem isolamento seguro, a execução é sequencial. Em ambos, cada entrega recebe resultado, aceite, dependências, paths e comando de verificação, e o coordenador é o único escritor de `plan.md`, `spec.md`, `review.md` e do índice Git (a exceção é o revisor, que grava o `review.md`). No Modo A a prova do implementador vale como prova do estado integrado; no grupo paralelo, a prova reportada por um agente não substitui a verificação do estado integrado.
 
 Inspeção renderizada segue a classificação `Visual` no `plan.md`: ocorre quando o aceite depende da UI renderizada ou quando a implementação revela uma mudança visual relevante não planejada. Alterar arquivo de UI, HTML ou DOM, sem impacto visual no aceite, não aciona navegador. A seleção é navegador integrado quando disponível, MCP Server `chrome-devtools` em seguida, e Playwright somente se já existir no repositório ou for solicitado. Com UI, o `design.md` aprovado do alvo é entrada do reconhecer, com tokens, motion e prova por tela quando aplicável. A checagem começa pela tela, estado e viewport afetados; amplia quando layout, responsividade, interação, componente compartilhado ou risco exigirem. No Express, a implement segue só o recorte existente e alterado do design quando houver, sem exigir design ausente, sem apply de design, sem plan novo e sem reabrir tasks antigas. A prova registra rota, viewport, estado, ações e evidência; sem capacidade visual, a limitação impede marcar a prova visual necessária.
 
@@ -92,7 +92,7 @@ A cada transição o coordenador reexecuta o motor e age pela `etapa`:
 | `corrigir` | Com `rodadas_correcao` 2, para e relata; senão delega os R* Critical e Required a um corretor, marca os R* provados, cria o commit `task(Rn)` e delega nova review |
 | `confirmar` | Apresenta o relatório final e faz a única pergunta (aprovar a review, publicar as decisões vigentes e fazer push) |
 | `bloqueada`, `null` | Relata dependências, ciclo ou avisos e para; a etapa nunca é adivinhada |
-| `concluida` | Informa o estado; nada a executar |
+| `concluida` | Confere `git status -sb`, `git log @{u}..` e as T* abertas do plan, porque o status aprovado é gravado antes do commit residual e do push. Pendência de Git: pede confirmação e retoma o commit residual e o push. T* aberta num plan aprovado: relata e pede a decisão do humano. Sem pendência, informa o estado e não executa nada |
 
 Antes de delegar uma T*, o coordenador grava o checkpoint de retomada sob ela (estado, próximo passo, `HEAD`), completado com paths e hashes antes de qualquer pausa. Subagente `pergunta` leva a decisão ao humano, e o piloto segue com T* elegíveis que não dependem da parada. Ferramenta ausente é instalada pela regra única do `SKILL.md` (credencial, conta, pagamento, elevação ou integração persistente vão ao humano); prova vermelha é corrigida pela causa raiz, sem enfraquecer teste.
 
@@ -112,13 +112,15 @@ Falhas previstas usam `CODIGO: descrição`, incluindo `IMPLEMENT_SEM_ALVO`, `IM
 
 Suítes: `docs/vibe-implement/tests/test-implement.py` e `docs/vibe-implement/tests/test-implement.sh`. Elas cobrem seleção, fila, phase/MVP, preservação, paridade, ordem de conclusão independente e contratos de delegação, ownership, prova final e retomada. As mesmas fixtures de `ETAPA_CASES` (T* elegíveis, bloqueadas, fila concluída sem review, bloqueio aberto, bloqueios fechados, Approve aguardando confirmação, phase finalizada, duas rodadas usadas, review ilegível) alimentam o motor Python e a classe de paridade PowerShell, que também comprovam que nada é escrito no disco.
 
+Execução piloto: `docs/vibe-implement/tests/piloto-modo-a.py` é a única prova comportamental dos fluxos delegados (analyze delegado, Modo A, retomada e Modo B). Cria fixtures Git descartáveis fora do repo, roda `claude -p` contra uma cópia do plugin e confere commits, `review.md`, etapa do motor, push no remoto local e limpeza. `--prepare-only` valida só as fixtures, sem tokens; `--rounds 0,1,2,3` executa as rodadas, exige `claude auth login`, consome tokens da conta, tem teto de custo por chamada e pede confirmação humana do modo de permissão. Não entra no CI, que executa só os `test-*.py` nomeados no workflow.
+
 ## 8. Limites
 
 - Sem teste verde executável, não marca `[x]`.
 - Não cria `todo.md`, `tasks.md` ou uma segunda trilha.
 - Não interpreta a prosa do plan para montar a fila, nem a prosa do review para derivar a etapa: só as marcas descritas na seção 3.
 - Não cria `implement.md` nem depende dele para selecionar uma execução; arquivos históricos permanecem intactos.
-- Agentes delegados não escrevem `plan.md`, `spec.md` ou `AGENTS.md`, não operam o índice Git e não criam commits. A única exceção é o revisor, que grava o `review.md`.
+- Agentes delegados não escrevem `plan.md`, `spec.md`, `review.md` ou `AGENTS.md`, não operam o índice Git e não criam commits. A única exceção é o revisor, que grava o `review.md`.
 - Sem confirmação humana explícita, o Modo A não aprova a review, não sincroniza decisões vigentes, não faz commit residual nem push.
 - O Modo A não executa checkpoints de review declarados no plan e não paraleliza; a review final cobre a integração e o paralelismo fica para uma phase seguinte.
 - Não publica decisões vigentes em `REGRAS.md`.

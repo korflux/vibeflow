@@ -45,7 +45,10 @@ APPROVE_MARK_RE = re.compile(r"^\s*- \[[xX]\] \*\*Approve(?: com defer)?\*\*")
 VEREDITO_VIGENTE_RE = re.compile(r"^##\s+Veredito vigente\s*$")
 ETAPA_HEADING_RE = re.compile(r"^### Etapa\b")
 ETAPA_VERDICT_RE = re.compile(r"^\s*- Veredito desta etapa:\s*(.*?)\s*$")
-REQUEST_CHANGES_RE = re.compile(r"^Request changes\.?$")
+# O veredito conta quando começa com `Request changes`, com marcação `*` ou `_` opcional antes e texto depois,
+# porque reviews reais o escrevem assim (`**Request changes**. motivo`). A lista de alternativas do template
+# começa com outro valor e não conta. O lookahead recusa só letra ou dígito depois (`_` fecha a marcação).
+REQUEST_CHANGES_RE = re.compile(r"^[*_]*Request changes(?![^\W_])")
 
 
 # Interpreta somente os parâmetros equivalentes ao contrato público do implement.ps1.

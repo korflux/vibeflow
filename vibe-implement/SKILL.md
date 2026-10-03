@@ -63,7 +63,7 @@ Reexecute o motor a cada transição, confira `plan.md`, `review.md` e `git stat
 | `corrigir` | Com `rodadas_correcao` já em 2, pare e relate os R* restantes; senão, delegue a correção (passo C) |
 | `confirmar` | Faça a confirmação única (§6) |
 | `bloqueada` | Nenhuma T* elegível: relate as dependências ou o ciclo e pare |
-| `concluida` | A phase já foi finalizada: informe o estado e não execute nada |
+| `concluida` | O status aprovado não prova que o push ocorreu nem que o plan está fechado. Confira `git status -sb`, `git log @{u}..` e as T* abertas do plan. Commit à frente do upstream ou residual da phase: peça confirmação e retome o commit residual e o push do §6. T* aberta num plan aprovado: relate-a e peça a decisão do humano (nova T* em Modo B ou nova phase). Sem pendência, informe o estado e não execute nada |
 | `null` | Leia os `avisos`, corrija o artefato que o motor não leu ou pergunte; não adivinhe a etapa |
 
 **Ciclo da T*:**

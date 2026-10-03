@@ -37,7 +37,7 @@ pergunta: <só quando o estado é pergunta, com a recomendação>
 
 ## Escritor único e proibições
 
-Somente o coordenador altera `plan.md`, `spec.md` e `AGENTS.md`, opera o índice Git e cria commits. Subagentes devolvem relatório. Há duas exceções controladas, ambas porque o arquivo pertence à skill do próprio subagente: o revisor grava o `review.md`, e o subagente de analyze grava o `analyze.md` e aplica as correções diretas que a `vibe-analyze` prevê em spec, design e plan. O corretor nunca edita o `review.md`.
+Somente o coordenador altera `plan.md`, `spec.md`, `review.md` e `AGENTS.md`, opera o índice Git e cria commits. Subagentes devolvem relatório. Há duas exceções controladas, ambas porque o arquivo pertence à skill do próprio subagente: o revisor grava o `review.md`, e o subagente de analyze grava o `analyze.md` e aplica as correções diretas que a `vibe-analyze` prevê em spec, design e plan. O implementador e o corretor nunca editam o `review.md`.
 
 Todo subagente herda estas proibições:
 

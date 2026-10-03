@@ -35,7 +35,7 @@ Entrega o Modo A do `vibe-implement` como piloto automático da phase (coordenad
   - Regressão: `docs/tests/test-mvp-flow.py` (1 OK), `docs/tests/test-reparse-safety.py` (12 OK), `docs/tests/test-distribuicao.py` (7 OK); `git diff --check` sem achados
 - **Arquivos:** `vibe-implement/scripts/implement.py`, `vibe-implement/scripts/implement.ps1`, `docs/vibe-implement/tests/test-implement.py`, `docs/vibe-implement/ARQUITETURA.md`
 - **Risco:** campo novo no relatório é contrato público (minor isolado, absorvido pelo major da phase); fixtures de paridade PowerShell são puladas quando `pwsh` falta, como hoje.
-- **Decisões:** spec 15 implementada. `etapa` também é `null` com T* sem linha `concluída` no plan, porque ela some da fila e a conclusão ficaria falsa; `Request changes.` com ponto final conta como o valor exato, pois reviews reais o escrevem assim; a paridade compara a contagem de avisos, não o texto, por causa de `.erros-encontrados/2026-10-03-motores-stdout-codificacao-divergente.md`
+- **Decisões:** spec 15 implementada. `etapa` também é `null` com T* sem linha `concluída` no plan, porque ela some da fila e a conclusão ficaria falsa; `Request changes.` com ponto final conta como o valor exato, pois reviews reais o escrevem assim; a paridade compara a contagem de avisos, não o texto, por causa de `.erros-encontrados/2026-10-03-motores-stdout-codificacao-divergente.md`; R1 da review final: o veredito `Request changes` passou a ser casado por prefixo, com marcação `*` ou `_` antes e texto depois, porque a phase 10 o registra como `**Request changes**. motivo`
 
 ### T2: Contrato de delegação distribuído em plan e implement
 

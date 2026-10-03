@@ -23,7 +23,10 @@ $script:ApproveMarkRe = [regex]::new('^\s*- \[[xX]\] \*\*Approve(?: com defer)?\
 $script:VereditoVigenteRe = [regex]::new('^##\s+Veredito vigente\s*$')
 $script:EtapaHeadingRe = [regex]::new('^### Etapa\b')
 $script:EtapaVerdictRe = [regex]::new('^\s*- Veredito desta etapa:\s*(.*?)\s*$')
-$script:RequestChangesRe = [regex]::new('^Request changes\.?$')
+# O veredito conta quando começa com `Request changes`, com marcação `*` ou `_` opcional antes e texto depois,
+# porque reviews reais o escrevem assim (`**Request changes**. motivo`). A lista de alternativas do template
+# começa com outro valor e não conta. O lookahead recusa só letra ou dígito depois (`_` fecha a marcação).
+$script:RequestChangesRe = [regex]::new('^[*_]*Request changes(?![^\W_])')
 
 # Obtém o item do sistema de arquivos sem resolver links quebrados em ausência.
 function Get-FsItem([string]$Path) {

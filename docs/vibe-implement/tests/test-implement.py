@@ -184,6 +184,30 @@ ETAPA_CASES: list[dict] = [
         "etapa": "revisar", "rodadas": 1, "avisos": 0,
     },
     {
+        # Formato real da phase 10: negrito e texto depois do veredito.
+        "nome": "request-changes-com-negrito-e-texto",
+        "plan": FILA_CONCLUIDA,
+        "review": review_text(blockers=(CRITICAL_FECHADO,), etapas=("**Request changes**. As inconsistências persistem",)),
+        "etapa": "revisar", "rodadas": 1, "avisos": 0,
+    },
+    {
+        # A última etapa com bloqueio aberto não soma, mesmo com formatos diferentes nas etapas anteriores.
+        "nome": "request-changes-em-formatos-variados-com-bloqueio-aberto",
+        "plan": FILA_CONCLUIDA,
+        "review": review_text(
+            blockers=(CRITICAL_ABERTO,),
+            etapas=("**Request changes**. texto", "_Request changes_", "Request changes, R1 aberto"),
+        ),
+        "etapa": "corrigir", "rodadas": 2, "avisos": 0,
+    },
+    {
+        # Citar Request changes no meio de outro veredito não é um Request changes.
+        "nome": "mencao-a-request-changes-no-meio-nao-conta",
+        "plan": FILA_CONCLUIDA,
+        "review": review_text(etapas=("Approve final (sem Request changes)",)),
+        "etapa": "revisar", "rodadas": 0, "avisos": 0,
+    },
+    {
         "nome": "nit-aberto-nao-bloqueia",
         "plan": FILA_CONCLUIDA,
         "review": review_text(blockers=(NIT_ABERTO,), etapas=("Marco aprovado",)),
