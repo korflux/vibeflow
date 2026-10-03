@@ -11,10 +11,11 @@ Convenção: `[x]` já existe no repositório hoje. `[ ]` entra, ainda não cons
 - [x] `vibe-spec` — grava o decidido.
 - [x] `vibe-plan` — fatia a spec em T*.
 - [x] `vibe-analyze` — cruza interview, spec e plan.
-- [x] `vibe-implement` — executa a fatia com prova.
+- [x] `vibe-implement`, executa a fatia com prova. Modo A: piloto da phase com subagentes. Modo B: uma T* por run.
 - [x] `vibe-review` — julga o patch e grava o veredito.
 - [x] `vibe-design`, grava `design.md` entre spec e plan somente com UI visível, com N/A explícito sem tela. Pacote com motores, SKILL, template, references e distribuição em oito skills.
 - [ ] **Rota MVP.** Projeto novo usa baseline único em `.vibeflow/mvp/` e percorre interview, spec, plan, analyze, implement e review. Pivôs posteriores voltam às phases.
+- [ ] **Paralelismo no Modo A.** Contrato `Arquivos:` obrigatório, checagem de disjunção no `plan.py`, worktree por T* e pacote de contexto por T*. Phase seguinte, depois que o piloto sequencial estiver estável. Fica de fora também o fan-out da review por dimensão.
 
 Nenhuma skill dispara a seguinte. O handoff é uma linha no artefato.
 
@@ -110,6 +111,18 @@ Contrato: `docs/vibe-review/ARQUITETURA.md` e `templates/review.md` antes de mud
 - [x] `vibe-implement` cria um commit path-scoped depois de cada task verde, sem push, sem `git add -A` e sem misturar paths já alterados.
 - [x] `vibe-review` só faz o commit residual e o `git push` final depois de Approve, confirmação humana, correções fechadas, suíte final, `git diff --check` e gitleaks quando previsto.
 
+### 3.7 Piloto automático de implementação com subagentes
+
+- [x] `vibe-implement` Modo A: coordenador delega cada T* a um subagente, confere, registra e commita; a review final roda em subagente, as correções vão a um corretor (até 2 rodadas) e o piloto termina com uma única confirmação (aprovar a review, publicar decisões vigentes e fazer push).
+- [x] `vibe-implement` Modo B: uma T* por run, por pedido, T* nomeada, rota `low` ou `medium` ou falta de subagentes. O modo de plano inteiro inline deixou de existir.
+- [x] Motor do implement informa `etapa` e `rodadas_correcao` lidos de `plan.md` e `review.md`, para retomar e coordenar pelo disco.
+- [x] `references/delegation.md` idêntico em `vibe-plan` e `vibe-implement` (papéis por perfil, relatório fixo, escritor único, fallback), comparado por bytes em `docs/tests/test-distribuicao.py`.
+- [x] `vibe-plan` delega o analyze a subagente na rota max; o handoff aponta `vibe-analyze` também em phase max e o fechamento recomenda com ênfase chat novo com `/vibe-implement` em Modo A.
+- [x] Regra única de instalação de ferramenta necessária à prova em plan, implement e review, com credencial, conta, pagamento, elevação e integração persistente indo ao humano.
+- [x] Versão major 4.0.0, porque muda o comportamento do Modo A e do Modo B que o humano já usa.
+
+Contrato: `docs/vibe-implement/ARQUITETURA.md`, `docs/vibe-review/ARQUITETURA.md`, `docs/vibe-plan/ARQUITETURA.md` e `docs/vibe-analyze/ARQUITETURA.md`.
+
 ### 3.4 Distribuição Codex, Claude, Grok e Antigravity
 
 - [x] CLI `npx skills add korflux/vibeflow` (projeto ou `-g` global) para `grok`, `claude-code`, `codex`, `antigravity`.
@@ -132,7 +145,8 @@ Não são backlog. Mudá-los quebra o disco.
 | Segunda fonte de regras fora de `AGENTS.md` | Mesma razão. A ponte Antigravity é apenas `@../../AGENTS.md`, não uma cópia. |
 | A IA não escolhe `n`, slug nem path | Disco decide, script calcula. |
 | A IA não escolhe homolog ou produção | Só o humano sabe, e a resposta muda o bloco de migrations. |
-| Commit por task e push final | Implement commita cada task verde com staging explícito; review fecha a phase e faz push somente após aprovação humana. |
+| Commit por task e push final | Implement commita cada task verde com staging explícito; a finalização da phase faz push somente após aprovação humana, executada pela review ou, no Modo A, pelo coordenador do implement depois da confirmação única. |
+| Escritor único dos artefatos vivos e do Git | Só o coordenador altera `plan.md`, `spec.md` e `AGENTS.md`, opera o índice Git e cria commits. Subagentes devolvem relatório; as exceções são o revisor (`review.md`) e o subagente de analyze (`analyze.md`). |
 | Motor único ("só Python" ou "só PowerShell") | Os dois motores implementam o mesmo contrato; o launcher `.sh` escolhe, sem versão degradada. |
 | Escrita semântica no script ou em arquivo temporário de promoção | O script prepara o vivo e a IA grava a prosa, preservando o histórico já existente. |
 

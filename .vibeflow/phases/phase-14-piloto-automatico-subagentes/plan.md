@@ -101,19 +101,24 @@ Entrega o Modo A do `vibe-implement` como piloto automático da phase (coordenad
 
 ### T5: Regras do repo, escopo e versão major
 
-- [ ] T5 concluída
+- [x] T5 concluída
 - **Spec:** A11, C4; decisão 18
 - **O quê:** tabela "Continuidade entre chats" do `AGENTS.md` deste repo documenta delegação de analyze e review, Modo A e Modo B, a frase de grupo paralelo passa a valer só no Modo B e a linha de Git registra que, no Modo A, o coordenador executa a finalização da `vibe-review` após a confirmação humana; `docs/ESCOPO.md` marca o que esta phase entregou e registra a phase de paralelismo como pendente; `README.md` cita os modos em uma linha se já descrever o implement e atualiza a linha de versão dos manifests; versão 4.0.0 nos cinco manifestos versionáveis e em `CONTRACT_VERSION` de `docs/tests/test-distribuicao.py`, que hoje fixa `3.1.0`.
 - **Aceite:**
-  - [ ] Os cinco manifestos versionáveis e `CONTRACT_VERSION` declaram 4.0.0; o `plugin.json` da raiz (Antigravity) continua sem campo de versão.
-  - [ ] Todas as suítes de contrato, de distribuição, de MVP e de reparse passam.
-  - [ ] `gitleaks detect --source . --redact --no-banner` sem achados.
+  - [x] Os cinco manifestos versionáveis e `CONTRACT_VERSION` declaram 4.0.0; o `plugin.json` da raiz (Antigravity) continua sem campo de versão.
+  - [x] Todas as suítes de contrato, de distribuição, de MVP e de reparse passam.
+  - [x] `gitleaks detect --source . --redact --no-banner` sem achados.
 - **Verificação:**
-  - [ ] `python docs/tests/test-distribuicao.py -v`
-  - [ ] `for s in init interview spec design plan analyze implement review; do python docs/vibe-$s/tests/test-$s.py || exit 1; done; python docs/tests/test-mvp-flow.py && python docs/tests/test-reparse-safety.py`
-  - [ ] `gitleaks detect --source . --redact --no-banner`
+  - [x] `python docs/tests/test-distribuicao.py -v`
+  - [x] `for s in init interview spec design plan analyze implement review; do python docs/vibe-$s/tests/test-$s.py || exit 1; done; python docs/tests/test-mvp-flow.py && python docs/tests/test-reparse-safety.py`
+  - [x] `gitleaks detect --source . --redact --no-banner`
 - **Deps:** T3, T4
+- **Prova:**
+  - `python docs/tests/test-distribuicao.py -v` -> Ran 9 tests, OK, com `CONTRACT_VERSION` e os cinco manifestos em 4.0.0; controle negativo: um manifesto devolvido a 3.1.0 fez `test_manifest_contract_versions_match` e `test_grok_and_antigravity_manifests` falharem, e a suíte voltou a passar após restaurar
+  - Laço do plan: init (8), interview (19), spec (19), design (19), plan (16), analyze (16), implement (36) e review (19) OK; `test-mvp-flow.py` e `test-reparse-safety.py` OK; launchers `test-*.sh` das oito skills e `test-init.ps1` sem falha
+  - `gitleaks detect --source . --redact --no-banner` -> no leaks found; `git diff --check` sem achados; nenhuma ocorrência de 3.1.0 resta fora de `.vibeflow/`; o `plugin.json` da raiz (Antigravity) segue sem campo de versão
 - **Arquivos:** `AGENTS.md`, `docs/ESCOPO.md`, `README.md`, `docs/tests/test-distribuicao.py`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `.codex-plugin/plugin.json`, `.agents/plugins/marketplace.json`, `.grok-plugin/marketplace.json`
+- **Decisões:** `AGENTS.md` ganhou a frase de que, no Modo A, o pedido de `/vibe-implement` autoriza a review e a correção delegadas dentro do piloto, para não contradizer a regra de não disparar a próxima skill sem autorização; aprovação da review, sync de decisões e push seguem exigindo a confirmação final; a phase de paralelismo entrou em `docs/ESCOPO.md` como `[ ]` na seção 1, pois a seção 3 é só o que já entrou; a linha de limites do ESCOPO ganhou o escritor único; o README cita os modos na linha do `vibe-implement`; um travessão longo que existia na linha do `vibe-implement` do ESCOPO foi trocado por vírgula
 
 ### T6: Execução piloto do Modo A num repo descartável
 

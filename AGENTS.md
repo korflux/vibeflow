@@ -23,13 +23,13 @@ Design (`vibe-design`, artefato `design.md` na mesma pasta) entra entre spec e p
 |---|---|
 | `init → interview → spec → design` | Pode continuar no mesmo chat. |
 | `spec/design → plan` | Recomende novo chat para o plan. |
-| `plan → analyze` (MVP/max) | Recomende novo chat para o analyze, separado do plan. |
-| `plan/analyze → implement` | Recomende novo chat; na execução em sequência, use um chat por `T*`. |
-| Grupo paralelo aprovado | Exceção ao chat por `T*`: um chat coordenador pode conduzir o grupo junto, mantendo isolamento, prova e commit próprios por task. |
-| `implement → review` | Recomende novo chat para review. |
-| `review → implement` | Recomende novo chat para correções. |
+| `plan → analyze` (rota max) | Com subagentes, o plan delega o analyze a um subagente e conduz as perguntas e a aprovação no próprio chat. Sem subagentes, recomende novo chat para o analyze. |
+| `plan/analyze → implement` | Recomende com ênfase um chat novo. No Modo A (padrão, host com subagentes), esse chat é o coordenador e conduz a fila inteira, a review e as correções com uma única pergunta final. No Modo B (uma `T*` por run, por pedido ou sem subagentes), use um chat por `T*`. |
+| Grupo paralelo aprovado | Só no Modo B, exceção ao chat por `T*`: um chat coordenador pode conduzir o grupo junto, mantendo isolamento, prova e commit próprios por task. O Modo A é sequencial. |
+| `implement → review` | No Modo A, o coordenador delega a review a um subagente de contexto limpo. No Modo B, recomende novo chat para review. |
+| `review → implement` | No Modo A, o coordenador delega as correções a um subagente, com até 2 rodadas antes de parar e relatar. No Modo B, recomende novo chat para correções. |
 
-Separar chats é uma recomendação, nunca um gate. Se o humano preferir continuar no mesmo chat, prossiga e use os artefatos vivos como fonte de contexto. Não crie chats automaticamente. O plan registra grupos paralelizáveis com `T*` e motivo; ao iniciar implement, informe o grupo e pergunte se o humano quer executá-lo em paralelo. Só paralelize após resposta afirmativa e com dependências, ownership e isolamento seguros. Sem isso, execute em sequência.
+Separar chats é uma recomendação, nunca um gate. Se o humano preferir continuar no mesmo chat, prossiga e use os artefatos vivos como fonte de contexto. Não crie chats automaticamente. O plan registra grupos paralelizáveis com `T*` e motivo; no Modo B, ao iniciar implement, informe o grupo e pergunte se o humano quer executá-lo em paralelo. Só paralelize após resposta afirmativa e com dependências, ownership e isolamento seguros. Sem isso, execute em sequência. O Modo A ignora o grupo. No Modo A, o pedido de `/vibe-implement` autoriza a review e a correção delegadas dentro do piloto; a aprovação da review, a sincronização de decisões vigentes e o push continuam exigindo a confirmação humana final.
 
 Texto ou documento avulso segue edição direta, fora da cadeia de implementação e review de código; uma ambiguidade real pode acionar `vibe-interview`. Faixa Express (low ou medium) atende mudanças claras e localizadas em código de software sem comportamento novo, como cor ou espaçamento de UI. Classifique antes de exigir `.vibeflow/`, `vibe-init`, inventário de phase ou script. Sem phase ativa para a entrega, implemente direto, faça a checagem proporcional e não crie init, phase ou artefato VibeFlow. Com phase ativa, reutilize-a: atualize a T* aberta ou acrescente uma T* curta no `plan.md` existente; achado formal de review atualiza o R* existente. Para ajuste visual, atualize o `design.md` existente quando houver. Não crie spec, plan ou design só para o ajuste. Comportamento, rota, interação, critério de aceite ou acessibilidade alterados saem do Express. Também saem mudanças que toquem privacidade, dado pessoal, consentimento, retenção, direitos, obrigação jurídica, autenticação, autorização, pagamento, segredo, persistência ou risco de perda de dados, seguindo a cadeia aplicável.
 
@@ -72,7 +72,7 @@ Este repo não tem banco, migration nem tráfego de usuário. Skills aqui mudam 
 
 - Sem `Co-Authored-By` de ferramenta em commit/push.
 - `vibe-implement` commita cada task somente depois de teste verde, com staging explícito por path e sem push.
-- `vibe-review` faz o commit residual e o `git push` final da phase somente após Approve, confirmação humana e correções fechadas. Nunca usar `git add -A`, amend, squash ou force push.
+- `vibe-review` faz o commit residual e o `git push` final da phase somente após Approve, confirmação humana e correções fechadas. No Modo A, o coordenador do `vibe-implement` executa essa finalização depois da confirmação humana única; a review delegada a subagente não toca Git. Nunca usar `git add -A`, amend, squash ou force push.
 - Commitável: `AGENTS.md`, `.vibeflow/old/` se existir, `.vibeflow/phases/` (`.gitkeep` e artefatos vivos), pacote da skill, `docs/`.
 - Não commitar: `init-report.json`, `init-pending.json`, `*-report.json` e `*-pending.json`.
 - `AGENTS.md` é a fonte editável na raiz. O init não cria `CLAUDE.md` nem `REGRAS.md`.
