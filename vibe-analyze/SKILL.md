@@ -28,7 +28,7 @@ Erros determinísticos previstos: `INIT_AUSENTE` exige `/vibe-init`. `ANALYZE_SE
 ## 1. Abrir
 
 Declare em cerca de cinco linhas: rota, modo, alvo, plan, interview e estado do artefato vivo.
-Ao iniciar após `vibe-plan`, recomende um chat novo. Se o humano preferir continuar no chat atual, prossiga sem bloquear.
+Ao iniciar por conta própria após `vibe-plan`, recomende um chat novo. Se o humano preferir continuar no chat atual, prossiga sem bloquear. Quando o chat do plan delega esta skill a um subagente, aplique o §8.
 
 ```text
 modo: reuse · alvo: phase-1-lock-bloco · plan: sim · interview: sim · artefato vivo: presente · chat: novo recomendado
@@ -68,7 +68,7 @@ Audite, cruze e resolva:
 5. **Qualidade dos Testes e Executabilidade:**
    - Cada T* tem comando executável de prova? O mesmo teste de capacidade pode servir a várias T* e a vários A*/C*; não exija um teste novo por task ou critério. Se a task criar ou alterar um ponto de entrada executável, a prova dessa mesma T* inclui o smoke test real. Não exija uma T1 de baseline para entregas sem ponto de entrada.
    - As tasks possuem comandos reais de teste no repositório? Se houver verificação puramente manual sem comando, converta para comando executável real no `plan.md`.
-   - Confira apenas ferramentas exigidas pelas provas escolhidas, como `gitleaks` ou MCP `chrome-devtools`. Resolva preparo local simples quando disponível e autorizado; só proponha T* para setup persistente que faça parte da entrega do projeto. Registre bloqueio externo sem criar task artificial de instalação.
+   - Confira apenas ferramentas exigidas pelas provas escolhidas, como `gitleaks` ou MCP `chrome-devtools`. Aplique a regra de instalação para ferramenta ausente: instale pelo gerenciador do projeto ou por fonte oficial, quando o ambiente e as permissões permitirem, e planeje a instalação sob a T* que depende dela; credencial, criação de conta, pagamento, elevação administrativa ou configuração persistente de integração (por exemplo, registrar um MCP) são impedimento real e vão ao humano. Só proponha T* para setup persistente que faça parte da entrega do projeto. Registre bloqueio externo sem criar task artificial de instalação.
 6. **Decisões Críticas (MVP):** Cruze cada ID entre interview, spec e plan. Se houver divergência sem declaração de `substitui` ou ID órfão, ajuste a consistência nos artefatos ou pergunte ao usuário se for mudança intencional.
 7. **Conformidade com AGENTS.md:** Violação de regras mandatórias (segurança, auth, dados, segredos, CSP) = aplicar patch corretivo imediato nos artefatos.
 8. **Passes de Consistência:** Duplicação, ambiguidade de adjetivos, furos de aceite e inconsistências de termos = aplicar correção direta.
@@ -109,7 +109,7 @@ Analyze gravado: <created.path>/analyze.md
 - Qualidade de testes: <provas executáveis proporcionais; smoke do ponto de entrada na T* que o entrega; ferramentas ou limitações registradas>
 - Correções aplicadas: <F1... no spec.md / design.md / plan.md ou nenhuma necessária>
 - Handoff: vibe-implement
-- Chat: recomende novo chat para implement; se o humano preferir, continuar aqui é válido.
+- Chat: recomende com ênfase um chat novo com `/vibe-implement`, que rodará em Modo A (host com subagentes: fila inteira da phase e uma pergunta final); se o humano preferir, continuar aqui é válido.
 
 Arquivo disponível em <created.path>/analyze.md. Responda "aprovado" para confirmar, "pode ir pro implement" (ou "pode ir para a próxima fase") para avançar imediatamente, ou indique os ajustes desejados.
 ```
@@ -130,5 +130,15 @@ Rascunho sem "aprovado" e sem pedido da próxima porta não autoriza iniciar o c
 ## 7. Fechar
 
 Não commite no git. Não dispare a próxima skill a menos que o usuário tenha pedido explicitamente para avançar (§6).
-Recomende novo chat para o handoff a `vibe-implement`. Se o humano preferir continuar no chat atual, siga sem bloquear. O `analyze.md` e os artefatos vivos são a ponte.
+Recomende com ênfase um chat novo com `/vibe-implement` e informe que ele rodará em Modo A: num host com subagentes, conduz a fila inteira da phase e só volta ao humano na pergunta final; sem subagentes, roda em Modo B (uma T* por run). Se o humano preferir continuar no chat atual, siga sem bloquear. O `analyze.md` e os artefatos vivos são a ponte.
 Handoff registrado no arquivo: `vibe-implement`. Zero implementação nesta execução.
+
+## 8. Modo subagente (analyze delegado)
+
+Vale quando o chat do `vibe-plan` delega esta skill e o pedido diz que você é o subagente de analyze. O pedido traz o formato fixo do relatório. Execute §0 a §5 como de costume e grave o `analyze.md`, o artefato que este subagente escreve.
+
+- **Correções:** aplique as correções diretas do §3 em `spec.md`, `design.md` e `plan.md` e registre cada uma em Achados e Resoluções.
+- **Humano:** não pergunte ao humano nem espere resposta. Ambiguidade que dependa dele vira achado pendente no `analyze.md` (Resolução: aguardando resposta) e entra em `pergunta` no relatório, com a recomendação. Enquanto houver achado bloqueante pendente, o veredito é `bloqueado`.
+- **Status:** mantenha `# Status: rascunho`. A aprovação é do humano, no chat do plan.
+- **Proibido:** implementar código, criar commit, iniciar `vibe-implement`, editar `AGENTS.md` ou decisões vigentes e instalar ferramenta fora da regra do §3.
+- **Resposta:** o relatório substitui a resposta de chat do §5. Além dos campos fixos, devolva `veredito` (`limpo` ou `bloqueado`), `correcoes` (F* aplicados, com o arquivo de cada um) e `perguntas` (as pendentes, ou nenhuma).

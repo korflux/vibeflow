@@ -32,7 +32,11 @@ No MVP, a interview é obrigatória e IDs críticos precisam atravessar spec e p
 
 ## Chat
 
-Analyze recomenda começar em chat novo após o plan e também recomenda novo chat no handoff para implement. Se o humano preferir manter o chat, prossiga sem bloquear; o arquivo vivo, não a memória do chat, é a fonte de verdade.
+Quando o humano inicia o analyze por conta própria, a skill recomenda chat novo após o plan. Na rota max, porém, o chat do plan delega a análise a um subagente, que já nasce com contexto limpo e dispensa a troca de chat; o plan conduz as perguntas e a aprovação, porque o subagente não conversa com o humano. No handoff para implement, o fechamento recomenda com ênfase um chat novo e informa o Modo A. Se o humano preferir manter o chat, prossiga sem bloquear; o arquivo vivo, não a memória do chat, é a fonte de verdade.
+
+## Analyze delegado
+
+O analyze é a etapa que mais se beneficia de contexto limpo, porque cruza quatro artefatos e corrige lacunas deterministicamente. Delegá-lo encurta a espera entre plan e implement sem tirar do humano nenhuma decisão: o subagente grava o certificado e devolve as perguntas, e o chat do plan as faz uma por vez. O veredito fica `bloqueado` enquanto uma pergunta bloqueante estiver pendente, e a aprovação humana continua sendo o que marca o status. O perfil é o mesmo do revisor (forte), porque uma inconsistência não detectada custa mais caro que o tempo do subagente.
 
 ## Cortes
 
@@ -43,6 +47,7 @@ Analyze recomenda começar em chat novo após o plan e também recomenda novo ch
 | Relatório apenas no chat | O veredito e os achados precisam sobreviver à troca de contexto. |
 | Aplicação automática de decisões vigentes | Evita publicar sem review e confirmação. |
 | Leitura integral do repo | O fluxo real e a busca dirigida são suficientes. |
+| Subagente que pergunta ao humano | Só o chat do plan conversa com o humano; o subagente devolve as perguntas e evita respostas fora do contexto da conversa. |
 
 ## Impacto
 

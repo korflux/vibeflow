@@ -11,7 +11,7 @@
 
 | Peça | Responsabilidade |
 |---|---|
-| `SKILL.md` | Cruzar fontes, resolver achados, perguntar ambiguidades reais e definir o veredito. |
+| `SKILL.md` | Cruzar fontes, resolver achados, perguntar ambiguidades reais, definir o veredito e operar como subagente quando o chat do plan delega. |
 | `scripts/analyze.py`, `analyze.ps1`, `analyze.sh` | Inventário, validação de predecessores, preparação do vivo e JSON operacional no stdout. |
 | `references/coverage.md` | Taxonomia de passes e severidades, consultada sob demanda. |
 | `stdout (JSON)` | Evidência operacional transitória, consumida na mesma execução. |
@@ -50,13 +50,17 @@ Em MVP, conflito crítico sem `substitui` explícito bloqueia. `analyze.md` não
 
 A IA começa pela pergunta de consistência, localiza entradas com `rg --files`, procura A*/C*, T*, IDs e comandos com `rg -n` e abre somente as dependências do cruzamento. O inventário não autoriza ler a árvore inteira.
 
-Recomende novo chat para iniciar analyze após plan e para o handoff a implement. A escolha de continuar no mesmo chat não bloqueia; o `analyze.md` vivo e o handoff são a ponte.
+Quando o humano inicia o analyze por conta própria, recomende novo chat para iniciar após o plan. No handoff a implement, recomende com ênfase um chat novo com `/vibe-implement` e informe que ele rodará em Modo A (host com subagentes) ou Modo B (sem eles). A escolha de continuar no mesmo chat não bloqueia; o `analyze.md` vivo e o handoff são a ponte.
+
+### Modo subagente
+
+Na rota max, o chat do `vibe-plan` delega o analyze a um subagente de contexto limpo. O subagente executa o fluxo normal, grava o `analyze.md` e aplica as correções diretas da seção 4 em `spec.md`, `design.md` e `plan.md`. Não pergunta ao humano: ambiguidade vira achado pendente com veredito `bloqueado` e entra em `pergunta` no relatório. Mantém `# Status: rascunho`; o chat do plan faz as perguntas, aplica as respostas, registra as Clarificações, atualiza o veredito e marca a aprovação quando o humano aprova um veredito `limpo`. O relatório segue o formato fixo de `references/delegation.md` do plan e acrescenta `veredito`, `correcoes` e `perguntas`. O subagente não implementa código, não cria commit, não inicia o implement e não toca `AGENTS.md`.
 
 Suítes: `docs/vibe-analyze/tests/test-analyze.py` e `docs/vibe-analyze/tests/test-analyze.sh`. Elas cobrem predecessores, phase/MVP, atualização, preservação e paridade.
 
 ## 7. Limites
 
 - Não cria phase, `n`, slug ou arquivo auxiliar.
-- Não edita interview, não publica `REGRAS.md` e não substitui a review.
+- Não edita interview, não publica `REGRAS.md` e não substitui a review. Como subagente, também não implementa, não commita e não marca a aprovação humana.
 - O script não interpreta Status, aceite ou veredito.
 - O arquivo vivo entra no Git; o JSON operacional é transitório no stdout; não há commit automático.

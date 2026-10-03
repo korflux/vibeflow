@@ -80,18 +80,24 @@ Entrega o Modo A do `vibe-implement` como piloto automático da phase (coordenad
 
 ### T4: Analyze delegado, handoff forte para o implement e instalação no plan
 
-- [ ] T4 concluída
+- [x] T4 concluída
 - **Spec:** A1, A2, A10; decisões 3, 13, 17
 - **O quê:** `vibe-plan/SKILL.md` passa a: apontar `vibe-analyze` no handoff de MVP e de phase max; delegar o analyze a subagente quando o host oferecer, conduzir clarificações e aprovação no próprio chat e manter o fallback atual; fechar recomendando com ênfase um chat novo com `/vibe-implement` em Modo A; trocar a proibição de instalar (passo 3.3) pela regra única; ajustar a frase de paralelizáveis para valer só no Modo B. `vibe-plan/templates/plan.md` acompanha o handoff. `vibe-analyze/SKILL.md` ganha o modo subagente (devolve veredito, correções e perguntas) e o fechamento com a mesma recomendação de chat novo em Modo A; `vibe-analyze/templates/analyze.md` troca a linha de Chat que hoje manda abrir o analyze em chat novo. `ARQUITETURA.md` e `ANALISE.md` de plan e analyze refletem o contrato.
 - **Aceite:**
-  - [ ] O handoff de phase max no plan aponta `vibe-analyze`.
-  - [ ] Nenhum arquivo de plan ou analyze (SKILL, template e docs) proíbe instalar ferramenta necessária à prova fora das exceções da decisão 13; as referências de implement, review e design são da T3.
-  - [ ] Suítes de plan e analyze continuam verdes.
+  - [x] O handoff de phase max no plan aponta `vibe-analyze`.
+  - [x] Nenhum arquivo de plan ou analyze (SKILL, template e docs) proíbe instalar ferramenta necessária à prova fora das exceções da decisão 13; as referências de implement, review e design são da T3.
+  - [x] Suítes de plan e analyze continuam verdes.
 - **Verificação:**
-  - [ ] `python docs/vibe-plan/tests/test-plan.py -v`
-  - [ ] `python docs/vibe-analyze/tests/test-analyze.py -v`
+  - [x] `python docs/vibe-plan/tests/test-plan.py -v`
+  - [x] `python docs/vibe-analyze/tests/test-analyze.py -v`
 - **Deps:** T2
+- **Prova:**
+  - `python docs/vibe-plan/tests/test-plan.py -v` -> Ran 16 tests, OK; `python docs/vibe-analyze/tests/test-analyze.py -v` -> Ran 16 tests, OK; `test-plan.sh` pass=6 e `test-analyze.sh` pass=7
+  - Regressão: implement (36), review (19), design (19), spec (19), interview (19), init (8), `test-distribuicao.py` (9, inclui as cópias idênticas de `delegation.md`), `test-mvp-flow.py` e `test-reparse-safety.py` OK; `git diff --check` sem achados
+  - Conferência por leitura e `grep`, sem teste textual por regra do repo: nenhum arquivo de plan ou analyze (SKILL, templates, referências e docs) proíbe instalar fora da decisão 13; o handoff de phase max no plan (SKILL §8 e template) aponta `vibe-analyze`; nenhum motor foi tocado nesta T*
+  - Nenhum A* marcado na spec por esta T*: A1 e A2 só são provados pela rodada 0 da T6 e A10 pela execução piloto
 - **Arquivos:** `vibe-plan/SKILL.md`, `vibe-plan/templates/plan.md`, `vibe-analyze/SKILL.md`, `vibe-analyze/templates/analyze.md`, `docs/vibe-plan/ARQUITETURA.md`, `docs/vibe-plan/ANALISE.md`, `docs/vibe-analyze/ARQUITETURA.md`, `docs/vibe-analyze/ANALISE.md`
+- **Decisões:** o subagente de analyze mantém `# Status: rascunho` e grava o veredito `bloqueado` enquanto houver pergunta bloqueante pendente; o chat do plan aplica as respostas, registra as Clarificações, atualiza o veredito para `limpo` e marca a aprovação quando o humano aprova; a linha de instalação do `vibe-analyze` (§3.5), que era permissiva mas divergia da regra, foi alinhada à regra única; o `vibe-plan` ganhou a nova §7 (analyze delegado) e o Fechar passou a §8; o checkpoint de review do plan vale só quando o humano conduz a review à parte, pois o Modo A não o executa (decisão da T3)
 
 ### T5: Regras do repo, escopo e versão major
 

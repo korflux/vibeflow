@@ -75,8 +75,8 @@ limpo | bloqueado
 ## Handoff
 
 vibe-implement
-<!-- No MVP, acrescentar: rota: max -->
+<!-- Na rota max (MVP ou phase), acrescentar: rota: max -->
 
-- Chat: recomende novo chat para iniciar `vibe-analyze` após `vibe-plan` e para o handoff a `vibe-implement`. Se o humano preferir continuar no mesmo chat, isso não bloqueia. O `analyze.md` e os artefatos vivos são a ponte.
+- Chat: com subagentes, o `vibe-analyze` roda a partir do chat do plan; sem eles, recomende chat novo para iniciar a análise. Recomende com ênfase um chat novo com `/vibe-implement`, que rodará em Modo A num host com subagentes e em Modo B sem eles. Se o humano preferir continuar no mesmo chat, isso não bloqueia. O `analyze.md` e os artefatos vivos são a ponte.
 
 - [ ] Aprovação humana (leu o arquivo e confirmou)

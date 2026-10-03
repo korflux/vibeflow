@@ -41,6 +41,8 @@
 
 ## Paralelização (opcional, omitir quando não aplicável)
 
+<!-- Vale só no Modo B do vibe-implement; o Modo A é sequencial e ignora o grupo. -->
+
 - Grupo: <IDs das T*>
 - Motivo: <por que as dependências e os paths permitem execução conjunta>
 - Isolamento: <ownership ou separação necessária para evitar conflito>
@@ -51,8 +53,8 @@
 
 ## Handoff
 
-<vibe-implement no phase sem analyze obrigatório; vibe-analyze no MVP>
-<!-- No MVP, acrescentar: rota: max -->
+<vibe-analyze quando a rota é max (MVP ou phase); vibe-implement nas demais rotas>
+<!-- Na rota max, acrescentar: rota: max -->
 <!-- Não criar T* apenas para a review final; o handoff da implementação encaminha para vibe-review. -->
 
-- Chat: recomende novo chat ao iniciar `vibe-plan` após spec/design e para `vibe-analyze` no MVP ou `vibe-implement` nas demais rotas. Recomende um chat por T* em sequência; grupo paralelo aprovado é a exceção coordenada. O humano pode continuar no chat atual; o `plan.md` vivo é a ponte.
+- Chat: recomende novo chat ao iniciar `vibe-plan` após spec/design. Na rota max, o `vibe-analyze` roda em subagente a partir do chat do plan e o fechamento recomenda com ênfase um chat novo com `/vibe-implement`, que rodará em Modo A; sem subagentes, recomende chat novo para o analyze. Nas demais rotas, recomende chat novo para `vibe-implement`. No Modo B (uma T* por run), recomende um chat por T*; grupo paralelo aprovado é a exceção coordenada. O humano pode continuar no chat atual; o `plan.md` vivo é a ponte.

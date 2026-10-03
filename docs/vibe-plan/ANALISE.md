@@ -15,7 +15,8 @@ spec.md aprovado
   → apply prepara plan.md
   → IA escreve tasks diretamente, cada uma com sua prova
   → humano aprova o arquivo
-  → handoff vibe-implement ou vibe-analyze
+  → rota max: analyze delegado a subagente, perguntas e aprovação no chat do plan
+  → handoff vibe-implement (chat novo, Modo A) ou vibe-analyze sem subagentes
 ```
 
 `--apply` não transporta a prosa do plan. Ele garante o path e evita sobrescrever um arquivo vivo. Isso deixa o parser mecânico restrito a `### T*`, à linha de conclusão e a `Deps`, enquanto a IA continua dona do significado de aceite, ordem e prova.
@@ -32,13 +33,13 @@ Uma T* com UI declara se precisa de inspeção renderizada e por quê. O gatilho
 
 Cada T* reúne um resultado coeso verificável. Uma nova T* só aparece para um resultado separado, uma dependência real de execução, isolamento de risco ou impossibilidade de verificar a fatia como unidade. Número de arquivos, sessões, critérios de aceite, uma pontuação ou a conjunção no título não acionam quebras automáticas. Arquivos e risco são registrados quando ajudam a executar, isolar ou revisar.
 
-O plan registra os requisitos exigidos pelas provas, onde estão disponíveis (local ou CI) e como cada ausência no ambiente de execução escolhido será resolvida. Uma dependência compartilhada ausente nesse ambiente entra na T1; se só for necessária depois, entra na primeira T* que a usa. Ausência local não exige setup quando a prova roda no CI e os requisitos estão atendidos lá. Não fica como checklist opcional e não vira uma T* isolada, salvo quando setup persistente for resultado do projeto. Bloqueios externos são registrados sem fingir prova verde nem instalar ferramentas automaticamente. `Deps` contém apenas dependências de execução e define a fila. Paralelização e checkpoint de review são omitidos quando não alteram execução ou review. Checkpoint de retomada é um registro temporário sob uma T* aberta, diferente do checkpoint de review, e sai quando a task conclui. Se uma T* criar ou alterar um ponto de entrada executável, o smoke test fica na prova dessa mesma T*.
+O plan registra os requisitos exigidos pelas provas, onde estão disponíveis (local ou CI) e como cada ausência no ambiente de execução escolhido será resolvida. Uma dependência compartilhada ausente nesse ambiente entra na T1; se só for necessária depois, entra na primeira T* que a usa. Ausência local não exige setup quando a prova roda no CI e os requisitos estão atendidos lá. Não fica como checklist opcional e não vira uma T* isolada, salvo quando setup persistente for resultado do projeto. Ferramenta ausente é instalada pela regra única (gerenciador do projeto ou fonte oficial, sem credencial, conta, pagamento, elevação ou integração persistente), com a instalação planejada na T* que depende dela; bloqueios sem equivalente são registrados sem fingir prova verde. `Deps` contém apenas dependências de execução e define a fila. Paralelização e checkpoint de review são omitidos quando não alteram execução ou review. Checkpoint de retomada é um registro temporário sob uma T* aberta, diferente do checkpoint de review, e sai quando a task conclui. Se uma T* criar ou alterar um ponto de entrada executável, o smoke test fica na prova dessa mesma T*.
 
 A prova planejada roda depois da última edição de código/teste e é reaproveitada se os inputs permanecerem iguais. Falha ou alteração em um input invalida somente as verificações afetadas. A review consome evidência renderizada válida do plan em vez de abrir o navegador de novo. Uma tarefa sem T* de review final encerra no handoff da implementação para `vibe-review`.
 
 ## Chat e continuidade
 
-Plan recomenda um novo chat quando começa após spec/design e no handoff para analyze (MVP) ou implement. Quando identifica tasks paralelizáveis, lista os IDs e o motivo; ao iniciar implement, o agente pergunta se o humano quer usar o grupo. Separar chats não é gate. O `plan.md` vivo, o status e a linha de handoff são a ponte; o histórico da conversa não é prova.
+Plan recomenda um novo chat quando começa após spec/design, e a spec não vai para subagente. Na rota max, o plan delega o analyze a um subagente de contexto limpo e conduz as perguntas e a aprovação no próprio chat, porque só ele pode conversar com o humano; o subagente só grava e devolve o relatório. Como o handoff era `vibe-analyze` apenas no MVP e o implement redirecionava depois, o handoff passou a apontar o analyze também em phase max, que é onde a delegação precisa saber disso. O fechamento recomenda com ênfase um chat novo com `/vibe-implement`, que rodará em Modo A, porque o ganho do piloto está no implement. Quando identifica tasks paralelizáveis, lista os IDs e o motivo; o grupo só vale no Modo B, onde o agente pergunta se o humano quer usá-lo. Separar chats não é gate. O `plan.md` vivo, o status e a linha de handoff são a ponte; o histórico da conversa não é prova.
 
 ## Cortes
 
@@ -47,7 +48,8 @@ Plan recomenda um novo chat quando começa após spec/design e no handoff para a
 | `todo.md` ou `tasks.md` | Uma casa por fato: índice e corpo ficam no plan. |
 | Escrita do plan pelo script | Mantém o motor mecânico e a prosa sob responsabilidade da IA. |
 | Verificação somente manual | A implement precisa de comando executável. |
-| Instalação automática de navegador | Não adiciona dependência apenas para preencher um gate. |
+| Instalação fora da regra única | Instalar é permitido quando o gerenciador do projeto ou uma fonte oficial resolve e o ambiente permite; credencial, conta, pagamento, elevação e registro de integração persistente, como um MCP, vão ao humano. |
+| Spec e design em subagente | A spec e o design dependem de conversa com o humano; só o analyze, que grava e devolve perguntas, foi delegado. |
 | Checklist opcional ou T* de preparo isolada | As ausências necessárias são resolvidas dentro da T1 ou da primeira T* que as usa; setup persistente só é resultado quando faz parte do projeto. |
 | Quebra por score, sessão, tamanho da lista ou título | A unidade vem do resultado e das dependências reais. |
 | Disparo automático de implement | Handoff é explícito e fica no arquivo. |

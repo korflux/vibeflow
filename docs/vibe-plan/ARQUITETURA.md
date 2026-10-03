@@ -11,7 +11,8 @@
 
 | Peça | Responsabilidade |
 |---|---|
-| `SKILL.md` | Validar a spec, preparo das provas, resultados, dependências e paralelismo seguro. |
+| `SKILL.md` | Validar a spec, preparo das provas, resultados, dependências, paralelismo seguro e delegação do analyze na rota max. |
+| `references/delegation.md` | Papéis por perfil, relatório fixo de subagente, escritor único e fallback. Cópia idêntica à de `vibe-implement`, comparada por bytes em `docs/tests/test-distribuicao.py`. |
 | `scripts/plan.py`, `plan.ps1`, `plan.sh` | Inventário, seleção do alvo, gates mecânicos, preparação do vivo e JSON operacional no stdout. |
 | `templates/plan.md` | Forma compacta de Overview, prontidão das provas, Tasks e handoff. |
 | `stdout (JSON)` | Evidência operacional transitória, consumida na mesma execução. |
@@ -35,7 +36,7 @@ bash plan.sh [--root PATH] [--apply] [--dir phase-N-slug] [--mvp]
 
 ## 3. Pré-requisitos e modalidade da prova
 
-A IA deriva as dependências dos comandos de verificação por T* e confirma runtimes, package managers, serviços e capacidades nos arquivos do repo, workflows de CI e ferramentas disponíveis. `gitleaks` entra quando o repo ou CI exigir a varredura. O plan registra requisito, disponibilidade local ou no CI, e qualquer ausência no ambiente onde a prova vai rodar. Ausência local não exige setup quando a prova roda no CI e os requisitos estão atendidos lá. Dependência compartilhada ausente entra na T1; dependência exclusiva entra na primeira T* que a usa. Setup persistente do projeto só vira T* separada quando for um resultado da entrega. Bloqueio externo permanece explícito; não se marca prova como concluída nem se instala ferramenta automaticamente.
+A IA deriva as dependências dos comandos de verificação por T* e confirma runtimes, package managers, serviços e capacidades nos arquivos do repo, workflows de CI e ferramentas disponíveis. `gitleaks` entra quando o repo ou CI exigir a varredura. O plan registra requisito, disponibilidade local ou no CI, e qualquer ausência no ambiente onde a prova vai rodar. Ausência local não exige setup quando a prova roda no CI e os requisitos estão atendidos lá. Dependência compartilhada ausente entra na T1; dependência exclusiva entra na primeira T* que a usa. Setup persistente do projeto só vira T* separada quando for um resultado da entrega. Ferramenta ausente segue a regra de instalação: instala-se pelo gerenciador do projeto ou por fonte oficial, quando o ambiente e as permissões permitirem, e a instalação é planejada na T* que depende dela. Instalação que exija credencial, conta, pagamento, elevação administrativa ou configuração persistente de integração (por exemplo, registrar um MCP) é impedimento real e vai ao humano. Bloqueio externo sem equivalente permanece explícito, e não se marca a prova como concluída.
 
 Para cada T* que altera UI, o campo `Visual` declara `necessária` quando o aceite depende da UI renderizada, ou `dispensada` com motivo quando outra prova executável cobre o aceite e não há resultado visual a julgar. Tocar arquivos de UI, HTML ou DOM não aciona navegador por si só. Quando necessária, usa navegador integrado, depois MCP `chrome-devtools`; Playwright somente se já existir ou for solicitado para fluxo repetível/assertions. A evidência renderizada registra rota, estado e viewport e pode ser reutilizada na review enquanto os inputs estiverem válidos.
 
@@ -68,7 +69,13 @@ Falhas previstas usam `CODIGO: descrição`, incluindo `INIT_AUSENTE`, `PLAN_SEM
 
 Suítes: `docs/vibe-plan/tests/test-plan.py` e `docs/vibe-plan/tests/test-plan.sh`.
 
-O handoff normal é `vibe-implement`; no MVP é `vibe-analyze`. Recomende novo chat para iniciar plan após spec/design e para a porta seguinte, sem bloquear a continuidade se o humano preferir. Para grupos paralelizáveis, o `plan.md` nomeia as T*s e registra o motivo; o `plan.md` vivo carrega a fila verificável.
+O handoff é `vibe-analyze` quando a rota é max (MVP ou phase max) e `vibe-implement` nas demais rotas. Recomende novo chat para iniciar plan após spec/design, sem bloquear a continuidade se o humano preferir. Para grupos paralelizáveis, o `plan.md` nomeia as T*s e registra o motivo, e o grupo só vale no Modo B do implement; o `plan.md` vivo carrega a fila verificável.
+
+### Analyze delegado
+
+Na rota max, quando o plan está aprovado e o humano pede a próxima porta, o chat do plan verifica se o host oferece subagentes. Com suporte, delega `vibe-analyze` a um subagente de perfil forte, que grava `analyze.md`, aplica as correções diretas previstas pela skill em spec, design e plan e devolve veredito, correções e perguntas, sem implementar nem commitar. O chat do plan confere o relatório contra o disco, faz as perguntas em aberto ao humano uma por vez, aplica as respostas nos artefatos, registra-as em Clarificações e marca o `analyze.md` aprovado quando o veredito é `limpo` e o humano aprova. Veredito `bloqueado` impede recomendar o implement. Sem subagentes, vale o comportamento anterior: chat novo para o analyze.
+
+O fechamento recomenda com ênfase um chat novo com `/vibe-implement` e informa que ele rodará em Modo A. A recomendação nunca é gate.
 
 ## 8. Limites
 
