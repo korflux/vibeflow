@@ -182,14 +182,14 @@ Quem conduz uma phase VibeFlow num host com subagentes passa a implementar a fil
 - [ ] A6: O piloto só interrompe por ambiguidade material ou impedimento real; ferramenta ausente é instalada e prova vermelha é corrigida sem enfraquecer teste.
 - [ ] A7: Uma run interrompida retoma num chat novo a partir de `plan.md`, `review.md`, Git e da etapa informada pelo motor, sem refazer T* concluída nem prova ainda válida.
 - [ ] A8: O Modo B executa uma T* por run, entra por pedido ou por falta de subagentes, e o antigo modo de plano inteiro inline não existe mais.
-- [ ] A9: `vibe-plan` e `vibe-implement` contêm `references/delegation.md` idênticos, com papéis por perfil, formato de relatório, regras de escritor único e fallback.
+- [x] A9: `vibe-plan` e `vibe-implement` contêm `references/delegation.md` idênticos, com papéis por perfil, formato de relatório, regras de escritor único e fallback.
 - [ ] A10: Plan, implement e review seguem a mesma regra de instalação de ferramentas, com as exceções de credencial, conta, pagamento, elevação e configuração persistente.
 - [ ] A11: `ARQUITETURA.md` e `ANALISE.md` das skills alteradas, a tabela de continuidade do `AGENTS.md` deste repo e `docs/ESCOPO.md` refletem o novo fluxo, e a versão publicada sobe como major.
 
 ### Critérios de sucesso
 
 - [x] C1: Os motores Python e PowerShell do implement informam a mesma etapa e o mesmo número de rodadas de correção para fixtures de: T* abertas elegíveis, T* abertas bloqueadas, fila concluída sem review, review com bloqueio aberto, review com bloqueios fechados aguardando nova review, Approve aguardando confirmação e phase finalizada; `review.md` ilegível gera aviso sem etapa inventada.
-- [ ] C2: O teste de distribuição falha quando as cópias de `references/delegation.md` divergem e passa quando são idênticas.
+- [x] C2: O teste de distribuição falha quando as cópias de `references/delegation.md` divergem e passa quando são idênticas.
 - [ ] C3: Execução piloto real num repo de teste descartável, com plan aprovado de pelo menos 3 T*s e ao menos uma prova inicialmente vermelha, termina com um único `/vibe-implement` e uma única pergunta final; uma segunda execução interrompida no meio retoma em chat novo do ponto correto. A evidência fica registrada no plan desta phase.
 - [ ] C4: As suítes existentes de contrato das skills e de distribuição continuam verdes.
 

@@ -39,15 +39,19 @@ Entrega o Modo A do `vibe-implement` como piloto automático da phase (coordenad
 
 ### T2: Contrato de delegação distribuído em plan e implement
 
-- [ ] T2 concluída
+- [x] T2 concluída
 - **Spec:** A9, C2; decisões 1, 6, 7, 8
 - **O quê:** `references/delegation.md` idêntico em `vibe-plan` e `vibe-implement`, com papéis por perfil (explorador, verificador, implementador/corretor, revisor), quando delegar e quando não, formato fixo do relatório de subagente (`verde | bloqueado | pergunta`, paths, prova, pendências, pergunta), escritor único, proibições herdadas, conferência do relatório pelo coordenador e fallback inline sem subagentes ou sem aninhamento. Sem nome de modelo.
 - **Aceite:**
-  - [ ] As duas cópias têm os mesmos bytes.
-  - [ ] O teste de distribuição falha com cópias divergentes e passa com cópias idênticas.
+  - [x] As duas cópias têm os mesmos bytes.
+  - [x] O teste de distribuição falha com cópias divergentes e passa com cópias idênticas.
 - **Verificação:**
-  - [ ] `python docs/tests/test-distribuicao.py -v`
+  - [x] `python docs/tests/test-distribuicao.py -v`
 - **Deps:** nenhuma
+- **Prova:**
+  - `python docs/tests/test-distribuicao.py -v` -> Ran 9 tests, OK; `DelegacaoContracts` compara bytes, e o caso divergente, de fim de linha, ausente e vazio roda em pasta temporária removida no tearDown
+  - Controle negativo nos arquivos reais: um byte a mais em `vibe-plan/references/delegation.md` fez `test_repo_copies_are_identical` falhar; restaurado com `cp`, `cmp` idêntico e suíte verde
+  - Regressão: suítes de plan (16), implement (36), analyze (16) e review (19), `test-mvp-flow.py` e `test-reparse-safety.py` OK; `gitleaks detect --source . --redact --no-banner` sem achados; `git diff --check` limpo
 - **Arquivos:** `vibe-plan/references/delegation.md`, `vibe-implement/references/delegation.md`, `docs/tests/test-distribuicao.py`
 - **Risco:** o teste compara bytes, nunca texto; precisa usar pasta isolada para o caso divergente e removê-la no tearDown.
 
