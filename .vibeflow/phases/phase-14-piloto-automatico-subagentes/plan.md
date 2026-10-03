@@ -122,7 +122,7 @@ Entrega o Modo A do `vibe-implement` como piloto automático da phase (coordenad
 
 ### T6: Execução piloto do Modo A num repo descartável
 
-- [ ] T6 concluída
+- [x] T6 concluída
 - **Spec:** A1–A8, A10, C3
 - **O quê:** um gerador de fixture cria, numa pasta temporária fora do repo, um projeto Git mínimo já inicializado com `.vibeflow/` e uma phase max com spec, plan aprovado de 3 T*s e analyze aprovado e limpo, em que a prova de uma T* começa vermelha por defeito real e um requisito de prova está ausente mas instalável sem credencial; e um remoto bare local para o push. A execução usa `claude -p --plugin-dir <repo>` na pasta temporária. Rodada 0 (A1 e A2): fixture separada com plan aprovado, sem `analyze.md` e com um achado determinístico plantado no plan; sessão no papel do chat do plan, com o pedido da próxima porta; o teste afirma `analyze.md` gravado e o achado corrigido no `plan.md`, e o transcript do fechamento (recomendação de chat novo e anúncio do Modo A) é registrado como evidência. Rodada 1: `/vibe-implement` até a pergunta final, depois confirmação em nova chamada da mesma sessão. Rodada 2: fixture nova, execução interrompida após a primeira T* e retomada em sessão nova. A evidência (commits, `plan.md`, `review.md`, trechos do transcript, número de perguntas ao humano) é registrada sob esta T*; a pasta temporária é removida ao final.
 - **Aceite:**
@@ -134,8 +134,13 @@ Entrega o Modo A do `vibe-implement` como piloto automático da phase (coordenad
 - **Verificação:**
   - [ ] `python docs/vibe-implement/tests/piloto-modo-a.py` (prepara a fixture, executa as rodadas com `claude -p` e afirma commits, etapa final do motor, contagem de perguntas e limpeza)
 - **Deps:** T3, T4
+- **Prova:** encerrada por dispensa do humano em 2026-10-03 ("da como feito"), sem execução piloto. Os itens de Aceite e Verificação acima permanecem em `[ ]` porque não têm prova verde.
+  - Executado: `python docs/vibe-implement/tests/piloto-modo-a.py --prepare-only` -> fixtures das rodadas 0 e 1 válidas (achado plantado, defeito de `normalize` presente, `pytest` ausente na venv, motor informa `implementar` com T1 e T2 elegíveis, remoto bare no baseline), removidas ao final e sem sobras; o script também passou na análise de sintaxe
+  - Não executado: `--rounds 0,1,2,3`. A tentativa da rodada 3 falhou antes de qualquer trabalho, com custo 0, porque a CLI `claude` estava sem login (`claude auth status` -> `loggedIn: false`; "OAuth session expired and could not be refreshed")
+  - Sem prova de execução, portanto: A1 a A8, A10 e C3 da spec. O script não entra no CI, cujo workflow executa só os arquivos `test-*.py` nomeados
 - **Arquivos:** `docs/vibe-implement/tests/piloto-modo-a.py`
 - **Risco:** execução não determinística e com custo de tokens; não entra no CI. O modo de permissão do `claude -p` não confina o agente à pasta temporária: preferir o menor modo que a fixture permita, com `--allowedTools` para Git, Python e o gerenciador de pacotes da fixture, e confirmar o modo com o humano antes da primeira execução. Falha do piloto por comportamento da skill volta para T3 ou T4 como correção, não para o script do piloto.
+- **Decisões:** T6 concluída pelo humano sem a execução piloto, a pedido; a cobertura dos fluxos delegados (analyze, Modo A, retomada e Modo B) fica sem prova comportamental e a review final deve registrar isso. Para provar depois: autenticar a CLI (`claude auth login`) e rodar `python docs/vibe-implement/tests/piloto-modo-a.py --rounds 3`, depois `0,1,2`. O piloto usa modelo `sonnet`, `--permission-mode acceptEdits` com `--allowedTools` para Git, Python e o python da venv, `--setting-sources project,local` para isolar skills globais antigas, uma cópia do plugin dentro da pasta temporária e teto de custo por chamada; `bypassPermissions` exige `--confirmado-pelo-humano`
 
 ## Handoff
 
