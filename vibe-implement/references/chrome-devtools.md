@@ -4,13 +4,13 @@ Abra esta referência quando `Visual: necessária` estiver registrado no plan ou
 
 ## Seleção da ferramenta
 
-Escolha a primeira capacidade disponível, sem instalar ferramenta automaticamente:
+Escolha a primeira capacidade disponível:
 
 1. **Navegador integrado (`@Browser` ou equivalente):** abra a rota local e confira a tela renderizada, os estados e a interação principal.
 2. **MCP Server `chrome-devtools`:** use `navigate_page`, `take_snapshot`, `click` ou `fill`, `take_screenshot` e, quando necessário, a inspeção de DOM, estilos, console, rede e assets.
 3. **Playwright:** use somente quando já existir no repositório ou quando o humano o solicitar, para fluxos repetíveis, viewports, screenshots e assertions de visibilidade ou acessibilidade.
 
-Se a prova visual for necessária e nenhuma capacidade estiver disponível, registre a limitação e não marque a validação visual como concluída. A ausência de navegador não justifica instalar uma dependência nova. Depois de uma prova verde, reutilize-a enquanto os inputs renderizados não mudarem; não repita apenas para produzir outra captura.
+Se a prova visual for necessária e nenhuma capacidade estiver disponível, aplique a regra de instalação da skill antes de declarar limitação: registrar um MCP é configuração persistente de integração e vai ao humano. Se a capacidade continuar ausente, registre a limitação e não marque a validação visual como concluída. Depois de uma prova verde, reutilize-a enquanto os inputs renderizados não mudarem; não repita apenas para produzir outra captura.
 
 ## Checklist renderizada
 

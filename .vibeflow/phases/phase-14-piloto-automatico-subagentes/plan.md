@@ -57,20 +57,26 @@ Entrega o Modo A do `vibe-implement` como piloto automático da phase (coordenad
 
 ### T3: Modo A como piloto da phase e Modo B como fallback no implement
 
-- [ ] T3 concluída
+- [x] T3 concluída
 - **Spec:** A3, A4, A5, A6, A7, A8, A10; decisões 4, 5, 9, 10, 11, 12, 13, 14, 16
 - **O quê:** `vibe-implement/SKILL.md` passa a ter: seleção de modo (Modo A padrão com subagentes; Modo B por pedido, T* nomeada ou falta de subagentes, com aviso de uma linha); coordenação do Modo A guiada pela `etapa` do motor (delegar T*, conferir, registrar, commitar, revisar, corrigir até 2 rodadas, confirmar); pergunta única final com relatório de T*s, hashes, rodadas, Critical corrigidos e decisões; execução da finalização da `vibe-review` após confirmação; tabela de paradas; regra de instalação; prova vermelha sem enfraquecer teste; retomada pela etapa e checkpoint; Modo B com o comportamento atual de uma T* e grupo paralelo; remoção do antigo plano inteiro inline. `vibe-review/SKILL.md` ganha o modo subagente revisor (grava a etapa, devolve relatório e perguntas, não finaliza Git nem sincroniza `AGENTS.md`) e a regra de instalação na prova visual; as três referências que hoje proíbem instalar (`vibe-implement/references/chrome-devtools.md`, `vibe-review/references/ui-visual-quality.md` e `vibe-design/references/kit-e-tokens.md`) passam a apontar a regra única da decisão 13, mantendo a seleção navegador integrado, `chrome-devtools` e Playwright. `ARQUITETURA.md` e `ANALISE.md` de implement e review refletem o contrato.
 - **Aceite:**
-  - [ ] Nenhuma referência ao antigo Modo B de plano inteiro inline permanece nas skills e docs de implement.
-  - [ ] O contrato de commit (`task(Tn)`, staging explícito, sem push) e os códigos de erro dos motores permanecem iguais.
-  - [ ] Nenhum arquivo de implement, review ou das referências de prova visual proíbe instalar ferramenta necessária à prova fora das exceções da decisão 13.
-  - [ ] Suítes de implement e review continuam verdes.
+  - [x] Nenhuma referência ao antigo Modo B de plano inteiro inline permanece nas skills e docs de implement.
+  - [x] O contrato de commit (`task(Tn)`, staging explícito, sem push) e os códigos de erro dos motores permanecem iguais.
+  - [x] Nenhum arquivo de implement, review ou das referências de prova visual proíbe instalar ferramenta necessária à prova fora das exceções da decisão 13.
+  - [x] Suítes de implement e review continuam verdes.
 - **Verificação:**
-  - [ ] `python docs/vibe-implement/tests/test-implement.py -v`
-  - [ ] `python docs/vibe-review/tests/test-review.py -v`
+  - [x] `python docs/vibe-implement/tests/test-implement.py -v`
+  - [x] `python docs/vibe-review/tests/test-review.py -v`
 - **Deps:** T1, T2
+- **Prova:**
+  - `python docs/vibe-implement/tests/test-implement.py -v` -> Ran 36 tests, OK; `python docs/vibe-review/tests/test-review.py -v` -> Ran 19 tests, OK; `test-implement.sh` pass=8 e `test-review.sh` pass=7
+  - Regressão: design (19), plan (16), analyze (16), spec (19), interview (19), init (8), `test-distribuicao.py` (9), `test-mvp-flow.py` e `test-reparse-safety.py` OK; `git diff --check` sem achados
+  - Conferência por leitura e `grep`, sem teste textual por regra do repo: nenhum arquivo de implement, review, design ou das três referências proíbe instalar fora da decisão 13; nenhuma instrução do antigo modo de plano inteiro inline permanece, restando só a linha da tabela de Cortes e um parágrafo em `docs/vibe-implement/ANALISE.md` que registram a remoção; motores, códigos de erro e o formato `task(Tn)` não foram tocados nesta T*
+  - Nenhum A*/C* marcado na spec por esta T*: A3 a A8 só são provados pela execução piloto da T6, e A10 ainda depende da T4
 - **Arquivos:** `vibe-implement/SKILL.md`, `vibe-review/SKILL.md`, `vibe-review/templates/review.md` (campo do relatório do revisor e linha de Chat, que hoje exige chat novo), `vibe-implement/references/chrome-devtools.md`, `vibe-review/references/ui-visual-quality.md`, `vibe-design/references/kit-e-tokens.md`, `docs/vibe-implement/ARQUITETURA.md`, `docs/vibe-implement/ANALISE.md`, `docs/vibe-review/ARQUITETURA.md`, `docs/vibe-review/ANALISE.md`
 - **Risco:** prosa de skill não tem teste textual; a prova comportamental é a T6.
+- **Decisões:** commit de correção do Modo A no formato `task(Rn): <outcome>`, como já usado em `task(R4)` na phase 13; o Modo A não executa checkpoints de review declarados no plan, porque o motor não deriva marcos e a re-review parcial não tem etapa própria (registrado em `ARQUITETURA.md` e nos Cortes de `ANALISE.md`); o relatório do revisor acrescenta `veredito`, `abertos`, `fechados`, `critical_encontrados` e `decisoes_vigencia` e o template de review não ganhou campo novo, pois R*, etapas e a tabela de decisões já são o registro e perguntas não podem ficar no arquivo; a instalação de ferramenta pela review não altera manifesto nem lockfile, para respeitar a regra de que a review não edita lockfile
 
 ### T4: Analyze delegado, handoff forte para o implement e instalação no plan
 

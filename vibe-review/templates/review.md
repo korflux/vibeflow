@@ -96,7 +96,7 @@ vibe-implement | finalização Git da phase
 <!-- Aprovação humana só se aplica à review final, depois do Approve e da fila concluída. -->
 - [ ] Aprovação humana (leu o arquivo e confirmou)
 
-- Chat: esta review deve começar em chat novo, separado da implementação. Para correções `vibe-implement`, recomende outro chat; se o humano preferir continuar aqui, siga sem bloquear. Após Approve e confirmação humana, o handoff é a finalização Git da phase. O `review.md` vivo e o diff são a ponte.
+- Chat: recomende iniciar esta review em chat novo, separado da implementação; no Modo A do `vibe-implement`, ela roda em subagente de contexto limpo, a pedido do coordenador. Para correções `vibe-implement`, recomende outro chat ou, no Modo A, um subagente corretor; se o humano preferir continuar aqui, siga sem bloquear. Após Approve e confirmação humana, o handoff é a finalização Git da phase. O `review.md` vivo e o diff são a ponte.
 
 ## Finalização Git da phase
 

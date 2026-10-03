@@ -7,25 +7,30 @@ A implementação precisava executar uma fila verificável sem perder histórico
 ## Decisão de desenho
 
 ```text
-JSON compacto → alvo, fila.elegiveis e avisos
+JSON compacto → alvo, fila.elegiveis, etapa, rodadas_correcao e avisos
   → apply valida o alvo sem criar artefato de execução
   → investigação dirigida da T* e do fluxo real
-  → execução sequencial ou delegação isolada por capacidade do host
+  → Modo A: coordenador delega a T* a um implementador; Modo B: execução inline
   → integração pelo coordenador e simplificação
   → prova proporcional após a última edição de código/teste, com repetição somente após falha ou invalidação dos inputs
   → IA registra status, paths, prova e bloqueios sob a T* no plan
   → spec/review recebem somente marcações provadas
   → staging explícito e commit da T* sem push
-  → handoff vibe-review ou próxima T*
+  → Modo A: fila concluída → revisor → corretor (até 2 rodadas) → pergunta única → finalização
+  → Modo B: handoff vibe-review ou próxima T*
 ```
 
 O parser continua deliberadamente pequeno. A ordem sai do plan, as dependências saem de `Deps` e o significado de aceite continua na IA. Assim, não há reimplementação do parser em cada chat.
 
 ## Delegação e integração
 
-Delegação é opcional e depende de capacidade nativa do host. O coordenador confere elegibilidade e independência, entrega a cada agente um resultado, aceite, dependências, paths exclusivos e comando de verificação, e integra os retornos. Sem isolamento por worktree/branch ou ownership sem sobreposição, a execução continua sequencial.
+A implementação era a etapa mais lenta: cada T* esperava uma rodada humana, e o contexto inchava quando o plano rodava inteiro num único chat. No Modo A o chat do `/vibe-implement` vira coordenador e entrega cada T* a um subagente que nasce com contexto limpo, o que faz automaticamente o que o chat por T* fazia à mão. O coordenador não escreve código, para que cada papel tenha um único dono.
 
-Só o coordenador altera `plan.md`, `spec.md` e `review.md`, opera o índice Git, decide os paths do commit e registra a conclusão. Um agente retorna paths, resumo do diff, prova executada e pendências. Essa prova é evidência auxiliar; a task só fecha depois da verificação do estado integrado e simplificado. A fila é recalculada após cada task concluída, então uma dependente só se torna elegível depois que suas dependências foram provadas e registradas.
+Os papéis são descritos por perfil (explorador, verificador, implementador ou corretor, revisor) e nunca por nome de modelo, porque nomes envelhecem e variam por host. O contrato mora em `references/delegation.md`, copiado de forma idêntica em `vibe-plan` e `vibe-implement`; o template do `vibe-init` não muda, para a regra de delegação não virar uma segunda fonte nos repositórios dos usuários.
+
+O relatório de subagente é evidência a conferir, como a saída de script. O coordenador confere paths, diff e prova antes de registrar. Só ele altera `plan.md`, `spec.md` e o índice Git, decide os paths do commit e registra a conclusão; o revisor é a exceção controlada porque grava o `review.md`, artefato da própria skill. Como o implementador trabalha na mesma árvore, em sequência, a prova dele vale como prova do estado integrado e não é repetida sem motivo. A fila é recalculada após cada task concluída, então uma dependente só se torna elegível depois que suas dependências foram provadas e registradas.
+
+A etapa vem do motor, não da memória do chat: `etapa` e `rodadas_correcao` são derivados de `plan.md` e `review.md`, e uma etapa que o disco não sustenta é `null`, nunca um chute. Isso torna a retomada em outro chat determinística.
 
 ## Investigação e prova
 
@@ -47,7 +52,11 @@ Arquivos `implement.md` de execuções anteriores permanecem byte a byte intacto
 
 ## Chat e modos
 
-Implement recomenda um chat por T* na execução em sequência e um novo chat para review. Com várias T*s elegíveis, escolhe a menor sem pedir seleção. Se o plan apontar um grupo independente, o agente mostra as tasks e pergunta antes de paralelizá-las. Com autorização, um chat coordenador conduz apenas aquele grupo, com isolamento, prova e commit próprios por task. A resposta final concentra o estado verificável, inclusive total e concluídas da fase e hash do commit; a abertura dispensa relatório de rota, modo e fila.
+O plan recomenda com ênfase um chat novo para o implement, sem tornar isso um gate. Nesse chat o Modo A é o padrão e começa sem perguntar o modo, porque perguntar recriaria a espera que o piloto elimina. O Modo B (uma T* por run, com o ciclo inline) entra por pedido, por T* nomeada, por rota `low` ou `medium`, ou por falta de subagentes, com aviso de uma linha. O antigo Modo B, de plano inteiro inline, foi removido: concentrava a fila num contexto só e perdia a retomada.
+
+O piloto só volta ao humano para a pergunta final (aprovar a review, publicar decisões vigentes e fazer push), para uma ambiguidade material ou para um impedimento real. Ferramenta ausente é instalada pela regra única, e prova vermelha é corrigida pela causa raiz sem limite de tentativas, sem enfraquecer teste. O ciclo review e correção para após 2 rodadas e relata, porque mais que isso indica um problema de entendimento que só o humano resolve; ajustes pedidos na pergunta final não contam. Não há regra especial para Critical: o relatório final apenas os destaca.
+
+No Modo B, com várias T*s elegíveis, a skill escolhe a menor sem pedir seleção. Um grupo paralelo registrado no plan continua sendo oferecido ao humano antes de paralelizar; o Modo A é sequencial e ignora o grupo.
 
 ## MVP
 
@@ -60,7 +69,12 @@ O gate de analyze continua separado para a rota max. A existência de plan não 
 | Documento de tasks paralelo | A fila já está no plan. |
 | Documento acumulativo de implementação | O plan já é a fila e o registro durável da execução. |
 | Inspeção renderizada em toda mudança de UI | Só é exigida quando o aceite depende da renderização; o plan justifica a dispensa nos outros casos e a review reaproveita evidência válida. |
-| Push por task | Mantém o remoto estável durante a implementação; o push fica para a phase aprovada. |
+| Push por task | Mantém o remoto estável durante a implementação; o push fica para a phase aprovada e confirmada. |
+| Plano inteiro inline (antigo Modo B) | Inchava o contexto e dependia do chat para retomar; o Modo A cobre a fila inteira com coordenação e retomada pelo disco. |
+| Hash de commit no `plan.md` | Reabriria o plan depois do commit da task e criaria um residual; o Git é a fonte e o coordenador informa os hashes no relatório final. |
+| Paralelismo no Modo A | Exige contrato de paths, checagem de disjunção e isolamento por worktree; fica para a phase seguinte, depois que o piloto sequencial estiver estável. |
+| Checkpoint de review do plan no Modo A | O motor não deriva marcos do plan e a re-review parcial não tem etapa própria; a review final cobre a integração. |
+| Fan-out da review por dimensão | Custo de tokens maior sem necessidade comprovada; começa com um único revisor. |
 | Bloqueio imediato por ferramenta ausente | Antes de parar, o agente tenta disponibilizar a ferramenta necessária ou uma prova equivalente, respeitando permissões e o aceite. |
 
 ## Impacto

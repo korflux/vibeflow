@@ -11,7 +11,7 @@ Se encontrar `.vibeflow/REGRAS.md`, `REGRAS.md` ou `CLAUDE.md` de uma instalaç�
 Não invente `n` se há plan. Não edite source, teste nem lockfile. Sem `review.md` não há veredito.
 Um arquivo por alvo. Sem `.vibeflow/`: `/vibe-init`. Open Questions no arquivo = defeito. Correções ficam na `vibe-implement`; o Git só é finalizado após Approve e confirmação humana.
 Decisões vigentes em `AGENTS.md` só são sincronizadas após Approve sem bloqueios e confirmação humana explícita.
-Recomende iniciar a review em um chat novo, separado da implementação. Se o humano preferir o chat atual, prossiga sem bloquear.
+Recomende iniciar a review em um chat novo, separado da implementação. Se o humano preferir o chat atual, prossiga sem bloquear. No Modo A do `vibe-implement`, o coordenador delega a review a um subagente de contexto limpo; nesse caso aplique o §6.
 
 A investigação começa pela pergunta de auditoria e pelo T*/diff que precisa ser provado. Use `rg --files` para localizar os artefatos, paths alterados, testes e referências aplicáveis; use `rg -n` para localizar símbolos, contratos e evidências. Abra somente as entradas e dependências do fluxo real e expanda a leitura quando uma lacuna bloquear o veredito. O inventário é mapa de seleção, não autorização para ler a árvore inteira.
 
@@ -105,7 +105,7 @@ Inspecione o código integrado e aplique estes pilares ao escopo da etapa:
    - Reaproveite a evidência visual registrada pela implement quando seus inputs continuam válidos e ela cobre a integração. Só execute ou repita navegador se a prova estiver ausente/desatualizada, faltar cobertura da integração, ou o risco/diff exigir outro estado ou viewport. Quando necessário, selecione nesta ordem conforme `references/ui-visual-quality.md`: navegador integrado (`@Browser` ou equivalente), MCP Server `chrome-devtools`, ou Playwright somente se já existir no repositório ou for solicitado para fluxos repetíveis e assertions.
    - Comece pela rota/tela, estado e viewport afetados pelo diff; amplie quando layout, responsividade, interação, componente compartilhado ou risco exigirem. Registre rota, viewport, estado, ações e evidência observada. Aplique a checklist da referência ao recorte afetado, incluindo acessibilidade e erros relevantes de runtime.
    - Para ações compactas, aceite `icon-only` somente quando a ação for universalmente reconhecível, como lixeira para apagar, com nome acessível, área de interação adequada, foco visível e tooltip quando aplicável. Ações ambíguas continuam com texto.
-   - Se a prova renderizada for necessária e não houver capacidade ou evidência válida, abra `R*` `Required`; não aprove silenciosamente e não instale ferramenta automaticamente.
+   - Se a prova renderizada for necessária e não houver capacidade ou evidência válida, aplique a regra de instalação: instale a ferramenta ausente necessária à prova pelo gerenciador do projeto ou por fonte oficial, quando o ambiente e as permissões permitirem, sem alterar manifesto nem lockfile do projeto e registrando a ferramenta na etapa. Instalação que exija credencial, criação de conta, pagamento, elevação administrativa ou configuração persistente de integração (por exemplo, registrar um MCP) é impedimento real e vai ao humano. Se a capacidade continuar ausente, abra `R*` `Required`; não aprove silenciosamente.
 5. **Simplificação e Qualidade de Código:**
    - Inspecione se o código é o mínimo necessário (YAGNI, sem estruturas especulativas, sem duplicação de lógica ou componentes).
    - Verifique se todas as funções criadas ou modificadas possuem comentários semânticos obrigatórios.
@@ -171,8 +171,8 @@ Arquivo disponível em <created.path>/review.md. Em checkpoint, a fase continua 
 
 ## 5. Fechar
 
-Commitável: o `review.md` vivo e, somente no fechamento final aprovado, os artefatos residuais autorizados da phase. Checkpoint não cria commit residual nem publica a phase. Request changes → handoff `vibe-implement` (arquivo + R* em `[ ]`), com recomendação de novo chat para a correção. Se o usuário pedir para corrigir imediatamente, inicie `vibe-implement`; se preferir permanecer neste chat, prossiga sem bloquear. O `review.md` e o diff são a ponte.
-Approve final sem R* bloqueantes em `[ ]` ainda é proposta até o humano ler e confirmar.
+Commitável: o `review.md` vivo e, somente no fechamento final aprovado, os artefatos residuais autorizados da phase. Checkpoint não cria commit residual nem publica a phase. Request changes → handoff `vibe-implement` (arquivo + R* em `[ ]`), com recomendação de novo chat para a correção; no Modo A, o coordenador do `vibe-implement` delega a correção a um subagente. Se o usuário pedir para corrigir imediatamente, inicie `vibe-implement`; se preferir permanecer neste chat, prossiga sem bloquear. O `review.md` e o diff são a ponte.
+Approve final sem R* bloqueantes em `[ ]` ainda é proposta até o humano ler e confirmar. No Modo A, o coordenador do `vibe-implement` executa a finalização abaixo depois dessa confirmação; o revisor delegado nunca a executa.
 
 Após aprovação humana explícita da review final, com a fila concluída:
 
@@ -192,3 +192,13 @@ Esta seção só se aplica à review final, depois da aprovação humana explíc
 4. Valide `git diff --cached --check` e a lista de paths. Crie `chore(phase-N): finalize review` sem `Co-Authored-By` quando houver mudanças residuais. Não crie commit vazio; se não houver residual, o último commit da task é o HEAD da phase.
 5. Execute `git push` para o upstream do branch atual, sem `--force`. Ausência de upstream, falha de commit ou falha de push mantém o handoff bloqueado e precisa ser informada com a causa segura.
 6. Registre no `review.md` e no chat o hash do commit final ou o HEAD já existente, o resultado do push e os paths enviados. O inventário é JSON transitório no stdout.
+
+## 6. Modo subagente (revisor delegado)
+
+Vale quando o coordenador do `vibe-implement` (Modo A) delega esta skill e o pedido diz que você é o `revisor`. O pedido traz o formato fixo do relatório; você acrescenta apenas os campos abaixo. Execute §0 a §4 como de costume, em review final com a fila concluída, e grave a etapa no `review.md`: ele é o único artefato vivo que o revisor escreve.
+
+- **Veredito vigente:** marque a proposta (`Approve` ou `Request changes`) no `review.md`. O status continua `rascunho` ou `request-changes` conforme o §4; `aprovado` só vem depois da confirmação humana.
+- **Humano:** não pergunte ao humano nem espere resposta. Quando o veredito depender dele, devolva `estado: pergunta` com a recomendação; o coordenador pergunta. Não deixe Open Questions no arquivo.
+- **Re-review após correção:** acrescente nova etapa no mesmo arquivo e confira os R* que o coordenador marcou `[x]` contra o diff e a prova antes de aceitá-los.
+- **Proibido:** finalização Git do §5, commit, push, edição de `AGENTS.md`, aprovação humana marcada no arquivo, correção de código e instalação fora da regra do §3.
+- **Resposta:** o relatório substitui a resposta de chat do §4. Além dos campos fixos, devolva `veredito` (`Approve final`, `Request changes` ou `Approve com defer`), `abertos` (R* Critical e Required em `[ ]`), `fechados` (R* fechados nesta etapa), `critical_encontrados` (R* Critical abertos nesta etapa) e `decisoes_vigencia` (IDs propostos na tabela, ou nenhuma).

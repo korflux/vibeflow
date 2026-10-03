@@ -1,6 +1,6 @@
 # vibe-implement, arquitetura
 
-`/vibe-implement` executa uma fatia de código elegível, prova o resultado e registra status, paths, prova e bloqueios diretamente na task do `plan.md`. A IA inspeciona o fluxo, codifica, testa e simplifica; o motor seleciona alvo e fila sem criar um segundo registro. Edição apenas de texto ou documento avulso fica fora desta skill.
+`/vibe-implement` implementa e prova fatias de código e registra status, paths, prova e bloqueios diretamente na task do `plan.md`. No Modo A, com subagentes, conduz a fila inteira da phase (implementação, review e correção) com uma única confirmação final; no Modo B executa uma T* por run. A IA inspeciona o fluxo, codifica, testa e simplifica; o motor seleciona alvo e fila sem criar um segundo registro. Edição apenas de texto ou documento avulso fica fora desta skill.
 
 ```text
 .vibeflow/phases/phase-<n>-<slug>/plan.md
@@ -13,7 +13,8 @@
 
 | Peça | Responsabilidade |
 |---|---|
-| `SKILL.md` | Gate, escolha de T*/R*, delegação opcional por capacidade do host, ciclo de seis passos, prova final, commit da task, registro e handoff. |
+| `SKILL.md` | Seleção de modo, coordenação do Modo A pela etapa do motor, tabela de paradas e regra de instalação, ciclo de seis passos, prova final, commit da task, confirmação final e retomada. |
+| `references/delegation.md` | Papéis por perfil, pedido e relatório fixo de subagente, escritor único, conferência e fallback. Cópia idêntica à de `vibe-plan`, comparada por bytes em `docs/tests/test-distribuicao.py`. |
 | `scripts/implement.py`, `implement.ps1`, `implement.sh` | Inventário interno, alvo, fila, etapa da phase, rodadas de correção, gate MVP e JSON operacional compacto no stdout. |
 | `references/chrome-devtools.md` | Prova renderizada proporcional, consultada quando o aceite depende do resultado visual. |
 | `stdout (JSON)` | Alvo, fila e avisos necessários; no MVP também traz o gate de analyze. O inventário completo não é serializado. |
@@ -68,7 +69,7 @@ Cada T*/R* segue: reconhecer o fluxo real, selecionar execução sequencial ou d
 
 Ao tocar testes, a unidade preferida é a jornada completa e seus resultados observáveis, por exemplo login, cadastro ou recuperação. A IA procura a prova existente e consolida casos fragmentados da mesma jornada sem perder cenários e afirmações materiais. Testes separados continuam quando risco, comportamento independente ou diagnóstico exigem isolamento.
 
-Delegação só atende T*s elegíveis e independentes. Cada entrega recebe resultado, aceite, dependências, paths exclusivos e comando de verificação. Use worktree/branch isolada ou ownership sem sobreposição; sem isolamento seguro, mantenha a execução sequencial. O coordenador é o único escritor de `plan.md`, `spec.md`, `review.md` e do índice Git. A prova reportada por um agente não substitui a verificação do estado integrado.
+Delegação tem dois usos. No Modo A ela é o caminho padrão e sempre sequencial: um subagente por T*, na mesma árvore do coordenador. No grupo paralelo do Modo B, só atende T*s elegíveis e independentes, com worktree/branch isolada ou ownership sem sobreposição; sem isolamento seguro, a execução é sequencial. Em ambos, cada entrega recebe resultado, aceite, dependências, paths e comando de verificação, e o coordenador é o único escritor de `plan.md`, `spec.md` e do índice Git (o revisor grava só o `review.md`). No Modo A a prova do implementador vale como prova do estado integrado; no grupo paralelo, a prova reportada por um agente não substitui a verificação do estado integrado.
 
 Inspeção renderizada segue a classificação `Visual` no `plan.md`: ocorre quando o aceite depende da UI renderizada ou quando a implementação revela uma mudança visual relevante não planejada. Alterar arquivo de UI, HTML ou DOM, sem impacto visual no aceite, não aciona navegador. A seleção é navegador integrado quando disponível, MCP Server `chrome-devtools` em seguida, e Playwright somente se já existir no repositório ou for solicitado. Com UI, o `design.md` aprovado do alvo é entrada do reconhecer, com tokens, motion e prova por tela quando aplicável. A checagem começa pela tela, estado e viewport afetados; amplia quando layout, responsividade, interação, componente compartilhado ou risco exigirem. No Express, a implement segue só o recorte existente e alterado do design quando houver, sem exigir design ausente, sem apply de design, sem plan novo e sem reabrir tasks antigas. A prova registra rota, viewport, estado, ações e evidência; sem capacidade visual, a limitação impede marcar a prova visual necessária.
 
@@ -76,9 +77,34 @@ Checkpoint de retomada é um bloco opcional sob uma T* que continua incompleta o
 
 ## 6. Artefato, modos e handoff
 
-`plan.md` mantém o status, a verificação, o resultado da prova, os paths e os bloqueios de cada T*. Achados R* e vereditos continuam no `review.md`. Modo A executa exatamente uma task elegível, cria seu commit e para. Modo B exige autorização explícita; pode delegar T*s independentes, recalcula a fila após cada conclusão e cria um commit por task. O coordenador serializa as marcações e operações no índice Git. A mensagem e o hash do commit ficam no resultado da execução e no chat, sem reabrir o plan após o commit.
+`plan.md` mantém status, verificação, prova, paths e bloqueios de cada T*. Achados R* e vereditos continuam no `review.md`. A mensagem e o hash de cada commit ficam no resultado da execução e no chat, sem reabrir o plan após o commit; o Git é a fonte dos hashes (`task(Tn): <outcome>`).
 
-Quando a fila da run termina, o handoff é `vibe-review`. A resposta final informa T* executada, total de T*s da fase, concluídas, prova, paths e hash do commit. Recomende um chat por T* em execução sequencial e novo chat para review. Um grupo paralelo aprovado pode ser conduzido por um chat coordenador, mantendo isolamento e commit próprio por task. Se o humano preferir o mesmo chat, continue sem bloquear; o plan e o diff são a ponte.
+### Modo A (padrão): piloto da phase
+
+Entra sem perguntar o modo quando a rota é `high`, `xhigh` ou `max`, o `plan.md` está aprovado (e o analyze aprovado e limpo quando a rota exige), o host oferece subagentes e o humano não pediu Modo B. O coordenador é o chat do `/vibe-implement`: seleciona, delega, confere, registra e opera o Git, e nunca escreve código. Toda mudança, inclusive correção pequena, passa por um subagente.
+
+A cada transição o coordenador reexecuta o motor e age pela `etapa`:
+
+| `etapa` | Ação |
+|---|---|
+| `implementar` | Delega a T* elegível de menor número a um implementador, confere o relatório contra `git status`, o diff e a prova, registra no plan e cria o commit `task(Tn)` |
+| `revisar` | Delega a review final a um revisor (`vibe-review`, modo subagente) |
+| `corrigir` | Com `rodadas_correcao` 2, para e relata; senão delega os R* Critical e Required a um corretor, marca os R* provados, cria o commit `task(Rn)` e delega nova review |
+| `confirmar` | Apresenta o relatório final e faz a única pergunta (aprovar a review, publicar as decisões vigentes e fazer push) |
+| `bloqueada`, `null` | Relata dependências, ciclo ou avisos e para; a etapa nunca é adivinhada |
+| `concluida` | Informa o estado; nada a executar |
+
+Antes de delegar uma T*, o coordenador grava o checkpoint de retomada sob ela (estado, próximo passo, `HEAD`), completado com paths e hashes antes de qualquer pausa. Subagente `pergunta` leva a decisão ao humano, e o piloto segue com T* elegíveis que não dependem da parada. Ferramenta ausente é instalada pela regra única do `SKILL.md` (credencial, conta, pagamento, elevação ou integração persistente vão ao humano); prova vermelha é corrigida pela causa raiz, sem enfraquecer teste.
+
+Com Approve final proposto pelo revisor, o piloto pede a confirmação única. Sem ela, nada de aprovação, sync de `AGENTS.md`, commit residual ou push. Com ela, o coordenador executa a finalização da `vibe-review` (status aprovado, sync de decisões, commit residual, `git push` sem `--force`). Ajuste pedido na resposta vira correção e não conta para o limite de 2 rodadas.
+
+Retomada: um chat novo lê a etapa do motor, o checkpoint, o `review.md` e o Git, valida `HEAD` e hashes e continua do ponto correto, sem refazer T* concluída.
+
+### Modo B: uma T* por run
+
+Entra quando o humano pede uma T* por vez, nomeia uma T*, a rota é `low` ou `medium`, ou o host não oferece subagentes (aviso de uma linha com o motivo). Executa uma T* elegível com o ciclo da fatia inline, registra, cria o commit e responde; “pode seguir” executa a próxima. Um grupo paralelo registrado no plan é oferecido ao humano e só roda com resposta afirmativa, isolamento e ownership seguros. Um pedido de executar tudo, sem subagentes, executa a próxima T* e informa a limitação.
+
+Quando a fila termina, o handoff é `vibe-review`. A resposta do Modo B informa T* executada, total de T*s da fase, concluídas, prova, paths e hash do commit. Recomende chat novo por T* e para review; se o humano preferir o mesmo chat, continue sem bloquear. O plan e o diff são a ponte.
 
 ## 7. Erros e testes
 
@@ -92,6 +118,8 @@ Suítes: `docs/vibe-implement/tests/test-implement.py` e `docs/vibe-implement/te
 - Não cria `todo.md`, `tasks.md` ou uma segunda trilha.
 - Não interpreta a prosa do plan para montar a fila, nem a prosa do review para derivar a etapa: só as marcas descritas na seção 3.
 - Não cria `implement.md` nem depende dele para selecionar uma execução; arquivos históricos permanecem intactos.
-- Agentes delegados não escrevem artefatos vivos, não operam o índice Git e não criam commits.
+- Agentes delegados não escrevem `plan.md`, `spec.md` ou `AGENTS.md`, não operam o índice Git e não criam commits. A única exceção é o revisor, que grava o `review.md`.
+- Sem confirmação humana explícita, o Modo A não aprova a review, não sincroniza decisões vigentes, não faz commit residual nem push.
+- O Modo A não executa checkpoints de review declarados no plan e não paraleliza; a review final cobre a integração e o paralelismo fica para uma phase seguinte.
 - Não publica decisões vigentes em `REGRAS.md`.
-- Código e artefatos vivos da task entram no commit path-scoped; o JSON do inventário é transitório no stdout. Cada task verde gera commit sem push; o push só ocorre no fechamento aprovado da phase pela review.
+- Código e artefatos vivos da task entram no commit path-scoped; o JSON do inventário é transitório no stdout. Cada task verde gera commit sem push; o push só ocorre no fechamento aprovado da phase, depois da confirmação humana, pela `vibe-review` ou pelo coordenador do Modo A.

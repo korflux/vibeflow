@@ -4,7 +4,7 @@ Abra esta referência quando `Visual: necessária` estiver no plan ou quando o d
 
 ## Ferramenta e evidência
 
-Use a seleção definida em `vibe-implement/references/chrome-devtools.md`: navegador integrado (`@Browser` ou equivalente) primeiro quando disponível, MCP Server `chrome-devtools` para snapshot, screenshot, DOM, estilos, console, rede e assets, e Playwright somente se já existir no repositório ou for solicitado para fluxos repetíveis e assertions. Se a prova renderizada for necessária e não houver capacidade ou evidência válida, registre `R*` `Required`; não aprove silenciosamente e não instale ferramenta automaticamente.
+Use a seleção definida em `vibe-implement/references/chrome-devtools.md`: navegador integrado (`@Browser` ou equivalente) primeiro quando disponível, MCP Server `chrome-devtools` para snapshot, screenshot, DOM, estilos, console, rede e assets, e Playwright somente se já existir no repositório ou for solicitado para fluxos repetíveis e assertions. Se a prova renderizada for necessária e não houver capacidade ou evidência válida, aplique a regra de instalação da review (§3 do `SKILL.md`); se a capacidade continuar ausente, registre `R*` `Required` e não aprove silenciosamente.
 
 Reaproveite a prova registrada no plan quando seus inputs continuarem válidos e cobrirem a integração; não abra o navegador de novo apenas para repetir uma captura. Quando precisar executar a prova, registre rota, viewport, estado, ações e evidência observada do recorte afetado. Screenshot isolado não substitui a inspeção da interação relevante.
 

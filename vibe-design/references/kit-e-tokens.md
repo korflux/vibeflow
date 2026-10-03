@@ -27,4 +27,4 @@ Em viewport estreita, declare o que muda por zona, com regra de overflow, trunca
 
 ## Prova visual esperada
 
-Registre por tela rota, viewport normal e estreita, estado, ações e evidência observada. Inclua console, rede e assets sem erro. A review confere no navegador com a seleção da implement, sem instalar ferramenta automaticamente.
+Registre por tela rota, viewport normal e estreita, estado, ações e evidência observada. Inclua console, rede e assets sem erro. A review confere no navegador com a seleção da implement e aplica a própria regra de instalação de ferramentas quando faltar capacidade.

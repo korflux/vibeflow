@@ -34,7 +34,7 @@ A review final aguarda todas as T* concluídas, julga os critérios de aceite so
 
 ## Finalização Git
 
-Review continua sem corrigir source. Somente a review final pode abrir fechamento Git. Depois de Approve confirmado, todas as tasks e R* bloqueantes fechados e a prova necessária da integração verde, ela valida o escopo restante, cria somente o commit residual da phase quando houver mudanças e faz `git push` para o upstream atual sem force. Checkpoint não fecha a phase nem dispara publicação.
+Review continua sem corrigir source. Somente a review final pode abrir fechamento Git, e só depois da confirmação humana. No Modo A do `vibe-implement`, quem executa esse fechamento é o coordenador, porque o revisor delegado só devolve a proposta e as perguntas. Depois de Approve confirmado, todas as tasks e R* bloqueantes fechados e a prova necessária da integração verde, ela valida o escopo restante, cria somente o commit residual da phase quando houver mudanças e faz `git push` para o upstream atual sem force. Checkpoint não fecha a phase nem dispara publicação.
 
 ## Visual e acessibilidade
 
@@ -45,6 +45,10 @@ Controles compactos reduzem ruído apenas quando a ação é universalmente reco
 ## Chat
 
 Review recomenda novo chat, separado da implementação, para avaliar o resultado com contexto focado. Se o humano preferir continuar na conversa atual, prossiga sem bloquear; `review.md` e diff carregam o contexto verificável.
+
+## Revisor delegado
+
+O contexto limpo que o chat novo dava à review vem de graça num subagente, e o coordenador não perde a vez de falar com o humano: o revisor grava a etapa e devolve veredito, R* e perguntas, e o coordenador conduz a correção e a confirmação. O revisor usa o perfil forte, porque julgar integração e riscos é a etapa em que um erro custa mais. Começa com um único revisor; dividir a review por dimensão aumentaria o custo de tokens sem necessidade comprovada.
 
 ## Cortes
 
@@ -58,6 +62,8 @@ Review recomenda novo chat, separado da implementação, para avaliar o resultad
 | Navegador em toda alteração de UI | A prova visual só abre quando o aceite depende do resultado renderizado; a review reutiliza evidência válida. |
 | Publicação automática de decisões | Exige Approve sem bloqueios e confirmação humana. |
 | Push antes da aprovação | O remoto só recebe a phase depois do fechamento da review. |
+| Revisor delegado com finalização própria | O revisor não pergunta ao humano nem toca Git; a confirmação única e o push ficam com o coordenador. |
+| Campo novo no template para o relatório do revisor | Tudo que o relatório carrega já tem lar no `review.md`, e perguntas em aberto no arquivo são defeito. |
 
 ## Impacto
 

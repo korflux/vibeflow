@@ -11,7 +11,7 @@
 
 | Peça | Responsabilidade |
 |---|---|
-| `SKILL.md` | Gate, auditoria, cobertura A*/C*, eixos, visual, segurança, veredito e finalização Git da phase. |
+| `SKILL.md` | Gate, auditoria, cobertura A*/C*, eixos, visual, segurança, veredito, finalização Git da phase e modo subagente revisor. |
 | `scripts/review.py`, `review.ps1`, `review.sh` | Inventário, cadeia, alvo, preparação do vivo e JSON operacional no stdout. |
 | `templates/review.md` | Checklist e forma de etapas no mesmo arquivo. |
 | `references/ui-visual-quality.md` | Checklist renderizada quando a aceitação exige evidência visual. |
@@ -54,7 +54,7 @@ Review final exige a fila do plan concluída e julga critérios de aceite, códi
 
 A review cruza pedido, spec, plan, analyze e código real. Lê no plan o status, as dependências/bloqueios, os paths e as provas de cada T*, sem exigir `implement.md`. Confere as evidências contra o estado atual e segue a seleção proporcional da seção anterior para executar apenas as verificações que faltam; também verifica falsos positivos, segurança, funções alteradas, dados e migrations quando aplicável.
 
-Aplica os pilares de auditoria ao diff e às superfícies relevantes para o marco ou para a integração final. Usa `Visual` no plan para decidir se o aceite precisa de evidência renderizada; tocar arquivo de UI, HTML ou DOM, sozinho, não aciona navegador. Reaproveita prova de implementação válida e só executa a inspeção se ela estiver ausente/desatualizada ou não cobrir a integração. Quando necessária, seleciona navegador integrado, MCP Server `chrome-devtools` e Playwright somente se já existir ou for solicitado. Começa pela rota/tela, estado e viewport afetados; amplia conforme o impacto em layout, responsividade, interação, componente compartilhado ou risco. Sem capacidade visual para uma prova necessária, abre `R* Required` e não aprova silenciosamente.
+Aplica os pilares de auditoria ao diff e às superfícies relevantes para o marco ou para a integração final. Usa `Visual` no plan para decidir se o aceite precisa de evidência renderizada; tocar arquivo de UI, HTML ou DOM, sozinho, não aciona navegador. Reaproveita prova de implementação válida e só executa a inspeção se ela estiver ausente/desatualizada ou não cobrir a integração. Quando necessária, seleciona navegador integrado, MCP Server `chrome-devtools` e Playwright somente se já existir ou for solicitado. Começa pela rota/tela, estado e viewport afetados; amplia conforme o impacto em layout, responsividade, interação, componente compartilhado ou risco. Faltando capacidade, aplica a regra de instalação da skill: instala a ferramenta necessária fora do projeto, sem alterar manifesto nem lockfile, e registra na etapa; credencial, conta, pagamento, elevação administrativa e registro persistente de integração (por exemplo, um MCP) vão ao humano. Sem capacidade visual depois disso, para uma prova necessária, abre `R* Required` e não aprova silenciosamente.
 
 `icon-only` só é aceito para ação universalmente reconhecível, como lixeira para apagar, com nome acessível, foco visível, área de interação e tooltip quando aplicável. Ações ambíguas permanecem textuais.
 
@@ -66,10 +66,16 @@ Suítes: `docs/vibe-review/tests/test-review.py` e `docs/vibe-review/tests/test-
 
 Handoff: `vibe-implement` com R* bloqueante, retorno à spec quando a intenção quebrou, ou finalização Git da phase após aprovação humana.
 
+### Modo subagente (revisor delegado)
+
+No Modo A do `vibe-implement`, o coordenador delega a review final a um subagente de contexto limpo. O revisor executa o fluxo normal e grava a etapa no `review.md`, o único artefato vivo que escreve. Marca a proposta no Veredito vigente, mas o status só vira `aprovado` depois da confirmação humana. Não pergunta ao humano: devolve `estado: pergunta` com a recomendação, e o coordenador pergunta. Não executa a finalização Git, não faz commit nem push e não edita `AGENTS.md`; a finalização é do coordenador, depois da confirmação.
+
+O relatório segue o formato fixo de `references/delegation.md` do implement e acrescenta `veredito`, `abertos`, `fechados`, `critical_encontrados` e `decisoes_vigencia`. O template não ganhou campo para isso: R*, etapas e a tabela de decisões já são o registro, e perguntas não podem ficar no arquivo. Na re-review após correção, o revisor confere os R* que o coordenador marcou `[x]` contra o diff e a prova.
+
 ## 8. Limites
 
 - Um alvo possui um `review.md`; cada nova execução acrescenta `### Etapa N`.
 - Checkpoint depende de marco explícito no plan; somente a review final pode concluir fase e abrir a finalização Git.
-- Review não edita source, testes, lockfile ou artefatos anteriores.
+- Review não edita source, testes, lockfile ou artefatos anteriores. O revisor delegado também não toca Git, `AGENTS.md` nem a aprovação humana.
 - O motor não interpreta Status, veredito ou diff.
 - O arquivo vivo entra no Git; o JSON operacional é transitório no stdout. Review não corrige source. Após Approve final confirmado, fila concluída e sem R* bloqueante, a review executa a prova necessária da integração, cria o commit residual quando houver e executa `git push` do upstream atual sem force.
