@@ -149,6 +149,26 @@ function Get-AlvoComDir($Existing, [string]$RawDir) {
     throw "FASE_AUSENTE: .vibeflow/phases/$name não é uma pasta de fase existente."
 }
 
+# -Slug identifica a review avulsa: reusa a fase de mesmo slug (reexecução idempotente) ou pede uma nova.
+# Sem isso, Get-Alvo colava o pedido novo na fase de maior N que já tinha review.md e nunca criava phase-N-slug.
+function Get-AlvoPorSlug($Existing, [string]$RawSlug) {
+    $clean = ConvertTo-Slug $RawSlug
+    foreach ($item in $Existing) {
+        if ($clean -and $item.slug -eq $clean) {
+            $modo = if ($item.files -contains 'review.md') { 'atualizar' } else { 'reuse' }
+            return @{ item = $item; modo = $modo }
+        }
+    }
+    return @{ item = $null; modo = 'criar' }
+}
+
+# Precedência do alvo: -Dir explícito, depois -Slug explícito, depois o alvo automático do inventário.
+function Resolve-Alvo($Existing) {
+    if (-not [string]::IsNullOrWhiteSpace($Dir)) { return Get-AlvoComDir $Existing $Dir }
+    if (-not [string]::IsNullOrWhiteSpace($Slug)) { return Get-AlvoPorSlug $Existing $Slug }
+    return Get-Alvo $Existing
+}
+
 # Cria o artefato vivo vazio somente quando ele ainda não existe, sem sobrescrever histórico.
 function New-LiveFile([string]$Path) {
     $item = Get-FsItem $Path
@@ -229,7 +249,7 @@ function Invoke-Review {
     foreach ($w in $listed.warnings) { $warnings.Add($w) }
     $nextN = 1
     if ($existing.Count -gt 0) { $nextN = [int]$existing[-1].n + 1 }
-    $resolved = if (-not [string]::IsNullOrWhiteSpace($Dir)) { Get-AlvoComDir $existing $Dir } else { Get-Alvo $existing }
+    $resolved = Resolve-Alvo $existing
     $alvoItem = $resolved.item
     $modoSugerido = $resolved.modo
     $mvpMap = Get-MvpMap $vf
@@ -311,7 +331,7 @@ function Invoke-Review {
             foreach ($w in $listed.warnings) { $warnings.Add($w) }
             $nextN = 1
             if ($existing.Count -gt 0) { $nextN = [int]$existing[-1].n + 1 }
-            $resolved = if (-not [string]::IsNullOrWhiteSpace($Dir)) { Get-AlvoComDir $existing $Dir } else { Get-Alvo $existing }
+            $resolved = Resolve-Alvo $existing
             $alvoItem = $resolved.item
             $modoSugerido = $resolved.modo
             foreach ($item in $existing) {
