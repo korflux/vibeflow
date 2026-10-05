@@ -126,6 +126,39 @@ class PythonContracts(unittest.TestCase):
         self.assertEqual(["review.md"], report["created"]["files"])
         self.assertNotIn("wip", report)
 
+    # Confirma que --slug vence o alvo automático: a review já existente de outra phase não captura o pedido novo.
+    def test_slug_overrides_automatic_target(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        old = vf / "phases" / "phase-1-antiga"
+        old.mkdir(parents=True)
+        (old / "plan.md").write_text("plan\n", encoding="utf-8")
+        (old / "review.md").write_bytes(b"historico\n")
+
+        _, automatic = invoke(self.repo)
+        self.assertEqual("phase-1-antiga", automatic["alvo"]["dir"])
+
+        _, report = invoke(self.repo, "--apply", "--slug", "pedido-novo")
+        self.assertEqual("criar", report["modo"])
+        self.assertTrue((vf / "phases" / "phase-2-pedido-novo" / "review.md").is_file())
+        self.assertEqual(b"historico\n", (old / "review.md").read_bytes())
+
+    # Confirma que --slug de uma phase existente reusa a pasta e preserva a review já escrita (reexecução idempotente).
+    def test_slug_reuses_existing_phase_idempotently(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        phase = vf / "phases" / "phase-1-mesmo"
+        phase.mkdir(parents=True)
+        (phase / "plan.md").write_text("plan\n", encoding="utf-8")
+
+        _, first = invoke(self.repo, "--apply", "--slug", "mesmo")
+        self.assertEqual("reuse", first["modo"])
+        self.assertTrue((phase / "review.md").is_file())
+        (phase / "review.md").write_bytes(b"etapa 1\n")
+
+        _, second = invoke(self.repo, "--apply", "--slug", "mesmo")
+        self.assertEqual("atualizar", second["modo"])
+        self.assertEqual(b"etapa 1\n", (phase / "review.md").read_bytes())
+        self.assertEqual(["phase-1-mesmo"], [item.name for item in (vf / "phases").iterdir() if item.is_dir()])
+
     def test_dir_without_plan_writes_review(self) -> None:
         vf = seed_vibeflow(self.repo)
         phase = vf / "phases" / "phase-1-so-spec"
@@ -275,6 +308,25 @@ class PowershellParity(unittest.TestCase):
         self.assertEqual("phase-2-outro", report["alvo"]["dir"])
         self.assertTrue((vf / "phases" / "phase-2-outro" / "review.md").is_file())
         self.assertFalse((vf / "phases" / "phase-9-pendente" / "review.md").exists())
+
+    # Confirma que -Slug vence o alvo automático e abre phase-N-slug apesar da review existente em outra phase.
+    def test_slug_overrides_automatic_target(self) -> None:
+        vf = seed_vibeflow(self.repo)
+        old = vf / "phases" / "phase-1-antiga"
+        old.mkdir(parents=True)
+        (old / "plan.md").write_text("plan\n", encoding="utf-8")
+        (old / "review.md").write_bytes(b"historico\n")
+        process = subprocess.run(
+            [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo), "-Slug", "pedido-novo", "-Apply"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(0, process.returncode, process.stderr)
+        report = json.loads(process.stdout)
+        self.assertEqual("criar", report["modo"])
+        self.assertTrue((vf / "phases" / "phase-2-pedido-novo" / "review.md").is_file())
+        self.assertEqual(b"historico\n", (old / "review.md").read_bytes())
 
     # Confirma que o motor PowerShell preserva o conteúdo da review já existente.
     def test_apply_preserves_existing_file(self) -> None:

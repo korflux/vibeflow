@@ -24,7 +24,7 @@ O motor não julga o diff, não edita source, não escreve a prosa e não sincro
 
 ## 2. Alvo e cadeia
 
-Sem `.vibeflow/`, `INIT_AUSENTE`. Com plan, o inventário seleciona a maior phase com plan sem review; uma review existente é atualizada no mesmo arquivo. O script não associa o diff à phase. Antes do apply, a IA compara o alvo sugerido com o diff e usa `--dir` para forçar a phase existente que contém o trabalho quando forem diferentes. Sem alvo, `--slug` pode abrir uma review avulsa em uma phase nova.
+Sem `.vibeflow/`, `INIT_AUSENTE`. Com plan, o inventário seleciona a maior phase com plan sem review; uma review existente é atualizada no mesmo arquivo. O script não associa o diff à phase. Antes do apply, a IA compara o alvo sugerido com o diff e usa `--dir` para forçar a phase existente que contém o trabalho quando forem diferentes. A precedência do alvo é `--dir`, depois `--slug`, depois o alvo automático. `--slug` reusa a phase de mesmo slug (reexecução idempotente) ou abre uma review avulsa em `phase-<próximo N>-<slug>`, mesmo que outra phase já tenha `review.md`.
 
 No MVP, `--mvp` exige `interview.md`, `spec.md`, `plan.md` e `analyze.md`, recusa slug/dir e usa somente `.vibeflow/mvp/`.
 
@@ -62,7 +62,7 @@ Aplica os pilares de auditoria ao diff e às superfícies relevantes para o marc
 
 Recomende iniciar review em novo chat, separado da implementação, especialmente em re-review ou Request changes. Se o humano preferir continuar no mesmo chat, prossiga sem bloquear; o `review.md`, o diff e o plan são a ponte.
 
-Suítes: `docs/vibe-review/tests/test-review.py` e `docs/vibe-review/tests/test-review.sh`. Elas cobrem seleção, override explícito por `--dir`, apply, phase/MVP, atualização e paridade.
+Suítes: `docs/vibe-review/tests/test-review.py` e `docs/vibe-review/tests/test-review.sh`. Elas cobrem seleção, override explícito por `--dir` e `--slug`, apply, phase/MVP, atualização e paridade.
 
 Handoff: `vibe-implement` com R* bloqueante, retorno à spec quando a intenção quebrou, ou finalização Git da phase após aprovação humana.
 

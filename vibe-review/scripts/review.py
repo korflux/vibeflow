@@ -183,6 +183,29 @@ def resolve_dir(existing: list[dict[str, Any]], raw_dir: str) -> tuple[dict[str,
     raise RuntimeError(f"FASE_AUSENTE: .vibeflow/phases/{name} não é uma pasta de fase existente.")
 
 
+# --slug identifica a review avulsa: reusa a fase de mesmo slug (reexecução idempotente) ou pede uma nova.
+# Sem isso, resolve_alvo colava o pedido novo na fase de maior N que já tinha review.md e nunca criava phase-N-slug.
+def resolve_slug(
+    existing: list[dict[str, Any]], raw_slug: str
+) -> tuple[dict[str, Any] | None, str]:
+    clean = sanitize_slug(raw_slug)
+    for item in existing:
+        if clean and item["slug"] == clean:
+            return item, "atualizar" if "review.md" in item["files"] else "reuse"
+    return None, "criar"
+
+
+# Precedência do alvo: --dir explícito, depois --slug explícito, depois o alvo automático do inventário.
+def resolve_alvo_explicito(
+    existing: list[dict[str, Any]], args: argparse.Namespace
+) -> tuple[dict[str, Any] | None, str]:
+    if args.dir:
+        return resolve_dir(existing, args.dir)
+    if (args.slug or "").strip():
+        return resolve_slug(existing, args.slug)
+    return resolve_alvo(existing)
+
+
 # Cria o artefato vivo vazio somente quando ele ainda não existe, sem sobrescrever histórico.
 def prepare_live_file(dest_file: Path) -> bool:
     if dest_file.is_symlink() or dest_file.exists():
@@ -233,10 +256,7 @@ def run(args: argparse.Namespace) -> None:
     next_n = (existing[-1]["n"] + 1) if existing else 1
     pending = find_plan_pendente(existing)
     draft = find_rascunho(existing)
-    if args.dir:
-        alvo, modo_sugerido = resolve_dir(existing, args.dir)
-    else:
-        alvo, modo_sugerido = resolve_alvo(existing)
+    alvo, modo_sugerido = resolve_alvo_explicito(existing, args)
     mvp = get_mvp(vf)
     if args.mvp:
         required = [name for name in ("interview.md", "spec.md", "plan.md", "analyze.md") if mvp is None or name not in mvp["files"]]
@@ -301,10 +321,7 @@ def run(args: argparse.Namespace) -> None:
             next_n = (existing[-1]["n"] + 1) if existing else 1
             pending = find_plan_pendente(existing)
             draft = find_rascunho(existing)
-            if args.dir:
-                alvo, modo_sugerido = resolve_dir(existing, args.dir)
-            else:
-                alvo, modo_sugerido = resolve_alvo(existing)
+            alvo, modo_sugerido = resolve_alvo_explicito(existing, args)
             created = next((item for item in existing if item["dir"] == dest_dir.name), None)
 
     payload = {

@@ -28,7 +28,7 @@ A investigação começa pela pergunta de auditoria e pelo T*/diff que precisa s
 
 Apply:
 - first-pass reuse/atualizar: `pwsh "<skill>/scripts/review.ps1" -Apply` (`--dir` se o alvo errar)
-- avulsa sem cadeia: `… -Apply -Slug "<frase curta>"`
+- avulsa sem cadeia: `… -Apply -Slug "<frase curta>"`. O slug tem precedência sobre o alvo automático, mesmo que outra fase já tenha `review.md`: reusa a fase de mesmo slug (reexecução idempotente) ou cria `phase-<próximo N>-<slug>`. `-Dir` tem precedência sobre o slug.
 - MVP: `… -Apply -Mvp`, sem slug ou dir
 - Unix: `review.sh --apply` / `--apply --slug "…"`
 
