@@ -6,6 +6,12 @@ A implementação precisava executar uma fila verificável sem perder histórico
 
 ## Decisão de desenho
 
+O protocolo `etapas-v1`, selecionado explicitamente no plan, separa código, complementação de testes e validação integrada. O implementador libera dependentes após checagem local válida; o coordenador mantém `[ ]` até o verificador comprovar a integração. Falha pré-review volta ao corretor sem criar R* artificial. Um commit integrado registra todas as T* comprovadas. O protocolo antigo e o Modo B continuam com commits por task, preservando runs em andamento.
+
+Snapshots ficam no próprio plan e identificam HEAD, inputs, comando e resultado. O motor confere os hashes, sem executar o comando informado. Essa separação evita repetir suites completas por task e impede reaproveitar evidência de inputs alterados. O coordenador reutiliza implementadores relacionados quando útil e mantém um único escritor por vez; a review continua independente.
+
+Fluxo histórico (plan sem marcador):
+
 ```text
 JSON compacto → alvo, fila.elegiveis, etapa, rodadas_correcao e avisos
   → apply valida o alvo sem criar artefato de execução
@@ -26,9 +32,9 @@ O parser continua deliberadamente pequeno. A ordem sai do plan, as dependências
 
 A implementação era a etapa mais lenta: cada T* esperava uma rodada humana, e o contexto inchava quando o plano rodava inteiro num único chat. No Modo A o chat do `/vibe-implement` vira coordenador e entrega cada T* a um subagente que nasce com contexto limpo, o que faz automaticamente o que o chat por T* fazia à mão. O coordenador não escreve código, para que cada papel tenha um único dono.
 
-Os papéis são descritos por perfil (explorador, verificador, implementador ou corretor, revisor) e nunca por nome de modelo, porque nomes envelhecem e variam por host. O contrato mora em `references/delegation.md`, copiado de forma idêntica em `vibe-plan` e `vibe-implement`; o template do `vibe-init` não muda, para a regra de delegação não virar uma segunda fonte nos repositórios dos usuários.
+Os papéis são descritos por perfil (explorador, verificador, implementador ou corretor, revisor) e nunca por nome de modelo, porque nomes envelhecem e variam por host. O contrato mora em `references/delegation.md`, copiado de forma idêntica em `vibe-plan` e `vibe-implement`; o template do `vibe-init` recebe somente a regra operacional de registro e Git do novo protocolo, sem duplicar o catálogo de papéis distribuídos ou suas instruções.
 
-O relatório de subagente é evidência a conferir, como a saída de script. O coordenador confere paths, diff e prova antes de registrar. Só ele altera `plan.md`, `spec.md`, `review.md` e o índice Git, decide os paths do commit e registra a conclusão; o revisor é a exceção controlada porque grava o `review.md`, artefato da própria skill. Como o implementador trabalha na mesma árvore, em sequência, a prova dele vale como prova do estado integrado e não é repetida sem motivo. A fila é recalculada após cada task concluída, então uma dependente só se torna elegível depois que suas dependências foram provadas e registradas.
+O relatório de subagente é evidência a conferir, como a saída de script. O coordenador confere paths, diff e prova antes de registrar. Só ele altera `plan.md`, `spec.md`, `review.md` e o índice Git, decide os paths do commit e registra a conclusão; o revisor é a exceção controlada porque grava o `review.md`, artefato da própria skill. Como o implementador trabalha na mesma árvore, em sequência, a prova dele vale para o recorte e inputs efetivamente cobertos e não é repetida sem motivo; no novo protocolo, a integração é delegada ao verificador. A fila é recalculada após cada registro. No legado/B, depende de conclusão; no novo A, código dependente avança com implementação e checagem local válidas, e conclusão aguarda a prova integrada.
 
 A etapa vem do motor, não da memória do chat: `etapa` e `rodadas_correcao` são derivados de `plan.md` e `review.md`, e uma etapa que o disco não sustenta é `null`, nunca um chute. Isso torna a retomada em outro chat determinística.
 

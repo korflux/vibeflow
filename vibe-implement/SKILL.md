@@ -6,13 +6,13 @@ description: >
 
 # vibe-implement
 
-Sem prova verde, não marque `[x]` nem faça commit. Cada T* concluída gera um commit isolado, sem push; no Modo A, o push só ocorre na finalização confirmada pelo humano (§6). `plan.md` é o registro único; não crie `implement.md`, `todo.md` ou `tasks.md`. No fluxo padrão, sem `.vibeflow/`: `/vibe-init`. No MVP, código exige analyze aprovado e limpo.
+Sem prova verde, não marque `[x]` nem faça commit. No protocolo `etapas-v1`, o Modo A cria um commit integrado das T* comprovadas; Modo B e plans sem marcador mantêm commit por task, sem push; no Modo A, o push só ocorre na finalização confirmada pelo humano (§6). `plan.md` é o registro único; não crie `implement.md`, `todo.md` ou `tasks.md`. No fluxo padrão, sem `.vibeflow/`: `/vibe-init`. No MVP, código exige analyze aprovado e limpo.
 
 ## 0. Classificar Express e usar o script
 
 1. Antes de exigir `.vibeflow/` ou rodar script, separe texto/documento avulso de código de software. Texto puro segue edição direta, fora desta skill. Express é mudança de código clara e localizada, sem comportamento novo, como cor ou espaçamento na UI. Faça patch e checagem proporcionais; não rode `vibe-init` nem crie ou exija `.vibeflow/`. Na entrega atual, atualize a T* aberta ou acrescente uma T* curta ao plan existente; achado de review atualiza o R* existente. Reuse o design existente quando couber. Alterar comportamento, rota, interação, aceite, acessibilidade ou tocar privacidade, obrigação jurídica, autenticação, autorização, pagamento, segredo, persistência ou perda de dados sai do Express e segue a cadeia aplicável.
 2. Fora do Express, se encontrar `.vibeflow/REGRAS.md`, `REGRAS.md` ou `CLAUDE.md` de uma instalação anterior, execute `vibe-init` para migrar as regras e retome a implementação. Fontes divergentes continuam para consolidação. Leia o motor antes de executá-lo: `scripts/implement.ps1` no Windows ou `scripts/implement.py` no Unix. Ele seleciona alvo e fila e deriva a etapa da phase; não cria artefato. Execute no repo com `pwsh "<skill>/scripts/implement.ps1"` ou `bash "<skill>/scripts/implement.sh"`. Para MVP, acrescente `-Mvp` ou `--mvp`.
-3. Leia o JSON no stdout: `alvo`, `fila`, `etapa`, `rodadas_correcao` e `avisos` (`analyze_gate` no MVP). `etapa` é `implementar`, `revisar`, `corrigir`, `confirmar`, `bloqueada` ou `concluida`, e é `null` quando o disco não permite derivá-la; nesse caso leia os `avisos`, o plan e o review, e não invente a etapa. Escolha pela `fila.elegiveis`. Localize regras, paths e símbolos com `rg --files` e `rg -n`; abra apenas o fluxo relevante, não a árvore inteira.
+3. Leia o JSON no stdout: `alvo`, `fila`, `etapa`, `rodadas_correcao` e `avisos` (`analyze_gate` no MVP). `etapa` é `implementar`, `testar`, `validar`, `corrigir_validacao`, `commitar_integracao`, `revisar`, `corrigir`, `confirmar`, `bloqueada` ou `concluida`, e é `null` quando o disco não permite derivá-la; nesse caso leia os `avisos`, o plan e o review, e não invente a etapa. Escolha pela `fila.elegiveis`. Localize regras, paths e símbolos com `rg --files` e `rg -n`; abra apenas o fluxo relevante, não a árvore inteira.
 
 No fluxo padrão, `INIT_AUSENTE` exige init. `IMPLEMENT_SEM_ALVO`, `IMPLEMENT_SEM_PLAN`, `IMPLEMENT_ANALYZE_AUSENTE`, `IMPLEMENT_ANALYZE_RASCUNHO`, `IMPLEMENT_ANALYZE_BLOQUEADO`, `MVP_INESPERADO`, `MODO_INVALIDO`, `FASE_AUSENTE` e `PHASES_INESPERADO` não são contornados.
 
@@ -27,6 +27,8 @@ Escolha internamente a rota `low|medium|high|xhigh|max`; não anuncie rota, alvo
 | Avulso | `low` ou `medium` sem plan | uma mudança inline com prova proporcional, sem fila e sem coordenação |
 
 Entre no Modo A sem perguntar o modo. Quando o Modo B vier da falta de subagentes, avise o motivo em uma linha. Um pedido de executar tudo, sem subagentes, executa a próxima T* em Modo B e informa a limitação. No Modo B, “pode seguir” executa a próxima T*.
+
+Para plan novo com `# Protocolo: etapas-v1`, registre `# Modo: A` ou `# Modo: B` conforme seleção acima. Não acrescente marcador nem migre uma run histórica implicitamente. No A inicialize `Execução` por T* e `Integração` conforme §3; no B os registros do novo A não são exigidos. Reexecute o motor e confira `execucao`, inclusive seus avisos. Protocolo desconhecido ou modo inválido não autoriza fallback.
 
 Priorize R* Critical ou Required aberto (`etapa` `corrigir`). No Modo B, se o humano nomeou uma T* elegível, execute-a; caso contrário, escolha a elegível de menor número, inclusive quando houver várias. Se nenhuma estiver elegível, mostre as dependências que faltam ou encaminhe para `vibe-review` quando todas estiverem concluídas.
 
@@ -52,7 +54,31 @@ Antes de declarar bloqueio, resolva o que está sob controle do agente: diagnost
 
 ## 3. Modo A: coordenação da phase
 
+Com `# Protocolo: etapas-v1` use o piloto por etapas abaixo; sem marcador use o piloto legado mais adiante. Nunca troque o protocolo de uma run em andamento. Ambos mantêm um escritor de código por vez, review independente, confirmação humana final e o limite de duas rodadas de correção de review.
+
 Este chat é o coordenador: seleciona, delega, confere, registra e opera o Git. Não escreve código; toda mudança de código, inclusive correção pequena, passa por um subagente. Leia `references/delegation.md` antes da primeira delegação (papéis, pedido, relatório fixo, escritor único, conferência). Sem subagentes, volte ao Modo B (§1).
+
+### Piloto por etapas (`etapas-v1`)
+
+1. Antes de delegar, confira os cinco papéis disponíveis nas ferramentas da sessão. Arquivos de perfil no disco não certificam disponibilidade; papel/modelo ausente não autoriza substituição silenciosa. Leia `references/delegation.md`. Selecione ownership e aceite, preservando trabalho alheio.
+2. Inicialize no plan, antes de `## Tasks`, `- **Integração:** {"testes":"pendentes","prova":null,"commit":"pendente"}`. Sob cada T* ainda não executada, registre `- **Execução:** {"estado":"pendente","local":null}`. Não sobrescreva registros existentes na retomada.
+3. Cada snapshot é JSON com `head`, `inputs` (mapa path relativo → hash de `git hash-object -- <path>`), `comando` e `resultado` (`verde` ou `falha`). Fotografe HEAD real e todos os inputs relevantes de código/teste/configuração, após a última edição. O motor confere hashes e ancestralidade Git; comando é evidência de execução, nunca autorização para executar conteúdo não confiável. Snapshot sem inputs completos não certifica cobertura semântica: confira-os contra o aceite e o diff.
+4. Reexecute o motor a cada transição. Confira `execucao.avisos`, registros por T*, validade dos snapshots, fila, Git e etapa. Use a tabela. Registre estado/próximo passo e evidência no próprio plan antes de pausa, sem criar outro arquivo de estado.
+
+| Etapa | Ação do coordenador |
+|---|---|
+| `implementar` | Delegue código e checagens locais proporcionais da menor elegível. O implementador reconhece o fluxo, implementa, simplifica e executa sintaxe/tipos/teste direcionado; não executa a matriz completa por task. Confira relatório e diff. Registre `estado: implementada` com snapshot local verde, mantendo `[ ] Tn concluída`. Dependentes podem avançar com essa prova. Reuse o mesmo implementador para tasks relacionadas quando ajudar o contexto; mantenha ownership explícito. Snapshot local invalidado exige revalidar/corrigir o código existente, sem reimplementar código válido automaticamente. |
+| `testar` | Depois de todo código integrado, delegue ao implementador a conferência do pedido original, spec, aceite e testes existentes, e a criação somente dos testes faltantes. Preserve cenários relevantes, evite espelhar implementação e não crie testes redundantes. Confira mudanças/checagens direcionadas e registre `testes: prontos`; mantenha conclusões abertas. |
+| `validar` | Delegue ao verificador a suíte relevante, build, auditorias e provas renderizadas exigidas. Consolide comandos que cobrem várias T*. Verificador não escreve testes nem corrige código. Confira saída e cobertura; registre um snapshot integrado com a união dos inputs relevantes e resultado real. Preserve provas independentes não invalidadas; não repita a matriz completa sem motivo. |
+| `corrigir_validacao` | Delegue falhas reais ao corretor com comando, erro, causa investigada e paths autorizados, sem inventar R*. Confira a correção e execute por verificador somente provas afetadas, completando lacunas da integração. Atualize snapshots locais invalidados e prova final. Falha pré-review não consome rodada de review. |
+| `commitar_integracao` | Com provas verdes, marque somente T* efetivamente comprovadas, atualize A*/C* provados e registre `commit: registrado` e `origem` com o HEAD da primeira prova integrada, somente quando ainda ausente. Preserve essa origem nas correções futuras, mesmo ao renovar o HEAD do snapshot. Faça staging explícito e commit `task(T1,T2,...): <resultado>`, com IDs numéricos ordenados. Confira paths e hash no Git. Se falhar, mantenha finalização pendente; registro sem commit real não libera review. Não escreva o hash no plan após o commit. |
+| `revisar`, `corrigir`, `confirmar` | Execute passos R/C e §6 abaixo. Correções de review mantêm commit próprio depois da prova afetada verde e nova review; o limite de duas rodadas permanece. |
+| `bloqueada`, `null` | Leia avisos/dependências/snapshots, corrija o registro que o disco não sustenta ou relate o impedimento concreto; nunca adivinhe a etapa. |
+| `concluida` | Confira estado real de Git e pendências antes do fechamento descrito no piloto legado. |
+
+Checagem local verde comprova somente a etapa delegada, não toda a T* ou integração. Retomada conserva código implementado com snapshot válido e continua em testes, validação, correção ou commit conforme o motor. HEAD ancestral com inputs idênticos permite preservar evidência depois de commit; hash divergente invalida somente a prova afetada. Dependência inexistente, ciclo ou campo inválido não libera fila.
+
+### Piloto legado (plan sem marcador)
 
 Reexecute o motor a cada transição, confira `plan.md`, `review.md` e `git status --short`, e aja pela `etapa`:
 
@@ -82,7 +108,7 @@ Reexecute o motor a cada transição, confira `plan.md`, `review.md` e `git stat
 
 ## 4. Ciclo da fatia
 
-Execute cada task seguindo as 6 etapas. No Modo B, o agente executa as seis. No Modo A, o implementador executa 1, 3, 4 e 5 sobre a T* delegada, e o coordenador executa 2 e 6 (§3). O coordenador responde pela integração final, pelos artefatos vivos e pelo índice Git.
+Execute cada task seguindo as 6 etapas. No Modo B, o agente executa as seis. No Modo A legado, o implementador executa 1, 3, 4 e 5 sobre a T* delegada, e o coordenador executa 2 e 6 (§3). No Modo A por etapas, esses passos se aplicam ao recorte delegado de código, testes ou correção; registro e commit aguardam a integração do §3. O coordenador responde pela integração final, pelos artefatos vivos e pelo índice Git.
 
 1. **Reconhecer:**
    Trace o fluxo real da T* com `rg --files` e `rg -n`: entrada, chamadas, código compartilhado e testes. Reuse helpers, componentes, tipos, biblioteca padrão e recursos nativos existentes. Com UI, siga tokens, motion e provas por tela do `design.md` aprovado quando aplicáveis. No Express, use só o recorte alterado, sem criar artefatos. Na retomada, confira `git status --short`, `HEAD` e `git hash-object -- <path>` do checkpoint; invalide apenas provas com inputs alterados ou sem snapshot suficiente. Revalide a fila e os gates, inclusive analyze aprovado e limpo no MVP.
@@ -96,7 +122,7 @@ Execute cada task seguindo as 6 etapas. No Modo B, o agente executa as seis. No 
    Rode cada prova necessária uma vez, no estado integrado, após simplificar. Smoke Test / Walking Skeleton entra somente quando o ponto de entrada real foi criado ou alterado. Se a prova falhar, corrija a causa raiz e repita a prova afetada (§2). Edição posterior em código ou teste invalida apenas as provas cujos inputs mudaram; edição de plan, spec, review ou outro registro não invalida a prova.
    Inspecione a UI renderizada quando `Visual: necessária` ou quando surgir impacto visual relevante; atualize a classificação nesse caso. `Visual: dispensada` exige prova executável sem resultado visual a julgar. Tocar arquivo de UI, HTML ou DOM, sozinho, não abre navegador. Siga `references/chrome-devtools.md`: navegador integrado, depois `chrome-devtools`, depois Playwright existente ou necessário. Comece pela tela, estado e viewport afetados; amplie se layout, responsividade, interação ou componente compartilhado exigirem. Registre rota, viewport, estado, ações e evidência. Se faltar ferramenta, aplique a regra de instalação (§2) antes de declarar limitação. Quando a prova visual for necessária, não marque conclusão sem executá-la. A review reaproveita essa evidência enquanto seus inputs permanecerem válidos. Preserve nome acessível, área de interação, foco e tooltip dos controles compactos; ações ambíguas mantêm texto.
 6. **Registrar e fechar:**
-   Depois da prova verde, registre no `plan.md` status, paths, prova e bloqueios sob a T*; marque `spec.md`/`review.md` só nos critérios provados. Mantenha `# Status: rascunho` enquanto o registro estiver incompleto; não crie `implement.md` nem altere arquivos históricos. Faça o commit da task antes da resposta final.
+   Depois da prova verde, registre no `plan.md` status, paths, prova e bloqueios sob a T*; marque `spec.md`/`review.md` só nos critérios provados. Mantenha `# Status: rascunho` enquanto o registro estiver incompleto; não crie `implement.md` nem altere arquivos históricos. No B/legado faça o commit da task antes da resposta final; no novo A, aguarde a integração verde e o commit integrado do §3.
    Se a T* permanecer incompleta ou entrar em handoff, adicione sob ela um checkpoint de retomada curto com estado, próximo passo, paths relevantes à prova, `HEAD` de `git rev-parse HEAD` e o hash de `git hash-object -- <path>` para cada input, além do comando e validade da prova. Na retomada, compare `HEAD`, hashes e status do Git; prova sem snapshot suficiente fica inválida. Remova o checkpoint ao concluir a T*, mantendo a prova final e os paths no próprio plan.
 
 Critérios adicionais:
@@ -128,7 +154,7 @@ Outros arquivos marcados:
 
 No MVP, certifique-se de registrar quais IDs críticos foram implementados. Não publique essas decisões em `AGENTS.md`; isso pertence ao pós-review aprovado.
 
-### Commit da task
+### Commit da task (Modo B ou protocolo legado)
 
 Depois de atualizar os artefatos e antes de declarar a fatia concluída:
 
@@ -140,9 +166,9 @@ Depois de atualizar os artefatos e antes de declarar a fatia concluída:
 
 ## 6. Fechamento e resposta final
 
-Antes da resposta final, confirme que cada T* concluída tem commit próprio e que `git show --format= --name-only HEAD` contém somente seus paths. Se o commit falhar, resolva a causa e tente novamente; não declare a T* concluída com trabalho verde sem commit.
+Antes da resposta final, confirme que cada T* concluída aparece em seu commit próprio (Modo B/legado) ou no commit integrado do Modo A por etapas e que `git show --format= --name-only HEAD` contém somente seus paths. Se o commit falhar, resolva a causa e tente novamente; não declare a T* concluída com trabalho verde sem commit.
 
-**Modo A, confirmação única:** com `etapa` `confirmar`, apresente um relatório curto e um único pedido de confirmação. O relatório traz as T*s com o hash de cada commit (`git log --grep '^task('`), as rodadas de correção usadas, os Critical encontrados e corrigidos (R* Critical do `review.md`), as decisões para vigência propostas na review, e o pedido: aprovar a review, publicar as decisões listadas e fazer push.
+**Modo A, confirmação única:** com `etapa` `confirmar`, apresente um relatório curto e um único pedido de confirmação. O relatório traz as T*s com o hash do commit integrado ou de seus commits individuais conforme o protocolo (`git log --grep '^task('`), as rodadas de correção usadas, os Critical encontrados e corrigidos (R* Critical do `review.md`), as decisões para vigência propostas na review, e o pedido: aprovar a review, publicar as decisões listadas e fazer push.
 
 Sem confirmação explícita, não marque a review aprovada, não sincronize `AGENTS.md`, não faça commit residual nem push. Com confirmação, execute a finalização do §5 da skill `vibe-review`: status aprovado, sync das decisões vigentes por patch mínimo, prova final necessária, commit residual quando houver, e `git push` sem `--force`. Informe o hash, os paths e o resultado. Falha de commit ou push mantém a phase aberta; informe a causa segura. Um ajuste pedido pelo humano na resposta é tratado como correção (passo C) e volta à review, sem contar para o limite de 2 rodadas.
 

@@ -61,7 +61,9 @@ O script não escreve prosa, não escolhe a semântica da fila e não dispara im
 
 ## 6. Contrato do artefato
 
-Seções: Overview, prontidão das provas, Tasks e Handoff. Pré-requisitos verificados não são uma checklist opcional: ausências necessárias entram na T1 ou na primeira T* que depende delas, sem criar task de preparo isolada. T* com UI declara a necessidade de prova renderizada e seu motivo; tasks sem UI omitem o campo. `Paralelização` e checkpoint de review aparecem somente quando mudam a execução. Checkpoint de retomada aparece apenas sob T* incompleta durante implementação, registra o snapshot Git dos inputs da prova e é removido ao concluir a task. `Deps` é a única declaração da fila. Cada task usa `T1`, `T2` em sequência, tem um resultado coeso, comando próprio de verificação e é a unidade que a implement pode commitar. A fila não contém T* só para review final; a implement faz handoff para `vibe-review` ao concluir. Não usar `todo.md`, `tasks.md`, `T001`, `[P]`, `[US1]`, `checklists/` ou verificação apenas manual.
+Plans novos declaram `# Protocolo: etapas-v1`. O coordenador da implement registra `# Modo: A|B` ao iniciar, sem inferir modo pelo número de tasks. Não acrescente o marcador a artefatos históricos. No Modo A, `Execução` por T* e `Integração` antes das Tasks armazenam estados e snapshots definidos em `docs/vibe-implement/ARQUITETURA.md`; a task implementada pode liberar código dependente, mas `[x]` exige prova integrada verde. Comandos que cobrem várias tasks podem compartilhar uma prova final. O commit integrado identifica todos os IDs comprovados; Modo B conserva commit por task. Campos operacionais só entram durante execução, não como placeholders JSON inválidos no plano aprovado.
+
+Seções: Overview, prontidão das provas, Tasks e Handoff. Pré-requisitos verificados não são uma checklist opcional: ausências necessárias entram na T1 ou na primeira T* que depende delas, sem criar task de preparo isolada. T* com UI declara a necessidade de prova renderizada e seu motivo; tasks sem UI omitem o campo. `Paralelização` e checkpoint de review aparecem somente quando mudam a execução. Checkpoint de retomada aparece apenas sob T* incompleta durante implementação, registra o snapshot Git dos inputs da prova e é removido ao concluir a task. `Deps` é a única declaração da fila. Cada task usa `T1`, `T2` em sequência, tem um resultado coeso e prova planejada; Modo B/legado commita a task, e o novo Modo A commita as T* comprovadas em integração. A fila não contém T* só para review final; a implement faz handoff para `vibe-review` ao concluir. Não usar `todo.md`, `tasks.md`, `T001`, `[P]`, `[US1]`, `checklists/` ou verificação apenas manual.
 
 ## 7. Erros, testes e handoff
 
@@ -82,4 +84,4 @@ O fechamento recomenda com ênfase um chat novo com `/vibe-implement` e informa 
 - Plan não contém código nem abre fase por conta própria.
 - O inventário não autoriza ler a árvore inteira. A IA localiza evidências com `rg --files` e `rg -n`.
 - O JSON operacional é transitório no stdout; `plan.md` entra no Git.
-- Plan não commita; o commit começa somente quando a implement fecha uma task verde. Não há disparo automático da próxima skill.
+- Plan não commita; o commit começa quando a implement fecha a integração verde no novo Modo A ou uma task verde no Modo B/legado. Não há disparo automático da próxima skill.

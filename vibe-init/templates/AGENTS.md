@@ -35,6 +35,7 @@ Testes das skills devem exercitar os scripts e seus efeitos no disco. É proibid
 
 ## Git
 - Sem `Co-Authored-By` de ferramenta em commit/push.
+- Com `# Protocolo: etapas-v1` e `# Modo: A` no plan, registre implementação/checagem local sem marcar conclusão; complemente testes e valide a integração antes do commit `task(T1,T2,...): <resultado>`. Modo B e plans sem marcador mantêm commit por task. Staging explícito, sem push até a confirmação humana final da review.
 
 ## Padrões de Código e Engenharia
 - **Comentários Semânticos Obrigatórios:** Toda função, componente ou módulo deve ter comentário explicando o que faz, para que serve e a justificativa de decisões não óbvias. Zero funções órfãs.

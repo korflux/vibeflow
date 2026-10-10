@@ -9,8 +9,9 @@ Descreva o papel pelo perfil, nunca por nome de modelo. Host que não permite es
 | Papel | O que faz | Perfil | Escreve |
 |---|---|---|---|
 | `explorador` | lê e busca no código e devolve paths e trechos | rápido e barato | nada |
-| `verificador` | executa provas e devolve um resumo do resultado | rápido e barato | nada |
-| `implementador` ou `corretor` | implementa a T* ou corrige o R* pelo ciclo da fatia | padrão do host | código e testes dos paths da tarefa |
+| `verificador` | executa provas integradas, sem escrever testes ou corrigir código | rápido e barato | somente arquivos normalmente gerados pela prova |
+| `implementador` | implementa código/checagens locais ou complementa testes, conforme a etapa delegada | padrão do host | código ou testes dos paths autorizados |
+| `corretor` | corrige falhas pré-review ou R* pela causa raiz e executa provas afetadas | padrão do host | código e testes dos paths da correção |
 | `revisor` | executa a `vibe-review` no alvo; o analyze delegado usa o mesmo perfil | forte | `review.md` ou `analyze.md`, conforme o escritor único |
 
 ## Quando delegar
@@ -19,7 +20,7 @@ Delegue quando a skill manda (implementador por T*, revisor, analyze) ou quando 
 
 ## Pedido ao subagente
 
-O subagente nasce sem o contexto do chat, então o pedido é autocontido. Inclua o resultado esperado, o ID da tarefa (T*, R* ou A*), `Spec:` e `Deps`, o comando de verificação, os paths conhecidos, as proibições abaixo, a regra de instalação da skill chamadora e o formato do relatório. Passe o recorte da tarefa, não o plan inteiro.
+O subagente nasce sem o contexto do chat, então o pedido é autocontido. Inclua a etapa delegada (código, testes, validação ou correção), o resultado esperado, o ID da tarefa (T*, R* ou A*), `Spec:` e `Deps`, o comando de verificação, os paths conhecidos, as proibições abaixo, a regra de instalação da skill chamadora e o formato do relatório. Passe o recorte da tarefa, não o plan inteiro.
 
 ## Relatório do subagente
 
@@ -33,7 +34,7 @@ pendencias: <o que ficou de fora ou nenhuma>
 pergunta: <só quando o estado é pergunta, com a recomendação>
 ```
 
-`verde` é entrega concluída e provada. `bloqueado` é impedimento real, descrito em `pendencias`. `pergunta` é decisão que só o humano toma. A skill pode acrescentar campos do papel, como o veredito e os R* abertos do revisor, sem remover os cinco acima.
+`verde` comprova somente o recorte delegado. No Modo A por etapas acrescente `etapa: codigo | testes | validacao | correcao` e informe se a evidência é local ou integrada, com inputs e resultado; verde local não autoriza marcar T* concluída. `bloqueado` é impedimento real, descrito em `pendencias`. `pergunta` é decisão que só o humano toma. A skill pode acrescentar campos do papel, como o veredito e os R* abertos do revisor, sem remover os cinco acima.
 
 ## Escritor único e proibições
 
@@ -49,7 +50,7 @@ Todo subagente herda estas proibições:
 
 ## Conferência pelo coordenador
 
-O relatório é evidência, nunca autoridade. Antes de registrar qualquer coisa, confira os paths citados contra `git status` e o diff real, e a saída da prova contra o comando declarado. Quando o subagente trabalha na mesma árvore do coordenador, de forma sequencial, a prova dele vale como prova do estado integrado e o coordenador não a repete; repita só quando o relatório não traz evidência suficiente ou o diff o contradiz. Divergência volta ao mesmo papel com o problema descrito, e nada é registrado antes disso.
+O relatório é evidência, nunca autoridade. Antes de registrar qualquer coisa, confira os paths citados contra `git status` e o diff real, e a saída da prova contra o comando declarado. Quando o subagente trabalha na mesma árvore do coordenador, de forma sequencial, sua prova vale para o recorte e os inputs efetivamente cobertos, e o coordenador não a repete; no Modo A por etapas, a checagem local não substitui a validação integrada delegada ao verificador; repita só quando o relatório não traz evidência suficiente ou o diff o contradiz. Divergência volta ao mesmo papel com o problema descrito, e nada é registrado antes disso.
 
 ## Fallback sem subagentes
 

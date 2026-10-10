@@ -31,6 +31,8 @@ Design (`vibe-design`, artefato `design.md` na mesma pasta) entra entre spec e p
 
 Separar chats é uma recomendação, nunca um gate. Se o humano preferir continuar no mesmo chat, prossiga e use os artefatos vivos como fonte de contexto. Não crie chats automaticamente. O plan registra grupos paralelizáveis com `T*` e motivo; no Modo B, ao iniciar implement, informe o grupo e pergunte se o humano quer executá-lo em paralelo. Só paralelize após resposta afirmativa e com dependências, ownership e isolamento seguros. Sem isso, execute em sequência. O Modo A ignora o grupo. No Modo A, o pedido de `/vibe-implement` autoriza a review e a correção delegadas dentro do piloto; a aprovação da review, a sincronização de decisões vigentes e o push continuam exigindo a confirmação humana final.
 
+No protocolo `etapas-v1`, mantenha um escritor de código por vez. Implementador faz código/checagens locais e depois complementa testes por aceite; verificador executa a integração sem escrever testes; corretor atende também falhas pré-review, sem R* artificial. Registre estados e snapshots no plan existente, renove apenas provas invalidadas e mantenha review independente. Checagem local não autoriza conclusão ou commit integrado.
+
 Texto ou documento avulso segue edição direta, fora da cadeia de implementação e review de código; uma ambiguidade real pode acionar `vibe-interview`. Faixa Express (low ou medium) atende mudanças claras e localizadas em código de software sem comportamento novo, como cor ou espaçamento de UI. Classifique antes de exigir `.vibeflow/`, `vibe-init`, inventário de phase ou script. Sem phase ativa para a entrega, implemente direto, faça a checagem proporcional e não crie init, phase ou artefato VibeFlow. Com phase ativa, reutilize-a: atualize a T* aberta ou acrescente uma T* curta no `plan.md` existente; achado formal de review atualiza o R* existente. Para ajuste visual, atualize o `design.md` existente quando houver. Não crie spec, plan ou design só para o ajuste. Comportamento, rota, interação, critério de aceite ou acessibilidade alterados saem do Express. Também saem mudanças que toquem privacidade, dado pessoal, consentimento, retenção, direitos, obrigação jurídica, autenticação, autorização, pagamento, segredo, persistência ou risco de perda de dados, seguindo a cadeia aplicável.
 
 Review leve no Express cobra rastreabilidade e inspeção renderizada somente quando o aceite depender do resultado visual. Segurança e banco só abrem se o diff tocar essas superfícies.
@@ -71,7 +73,7 @@ Este repo não tem banco, migration nem tráfego de usuário. Skills aqui mudam 
 ## Git
 
 - Sem `Co-Authored-By` de ferramenta em commit/push.
-- `vibe-implement` commita cada task somente depois de teste verde, com staging explícito por path e sem push.
+- No Modo A com `# Protocolo: etapas-v1` e `# Modo: A` no plan, `vibe-implement` registra código/checagem local sem concluir T*, complementa testes e delega a validação integrada ao verificador. Somente depois da prova verde cria `task(T1,T2,...): <resultado>`, com staging explícito e todos os IDs comprovados. Modo B e plans sem marcador mantêm commit por task, sem push. Não migre runs históricas implicitamente.
 - `vibe-review` faz o commit residual e o `git push` final da phase somente após Approve, confirmação humana e correções fechadas. No Modo A, o coordenador do `vibe-implement` executa essa finalização depois da confirmação humana única; a review delegada a subagente não toca Git. Nunca usar `git add -A`, amend, squash ou force push.
 - Commitável: `AGENTS.md`, `.vibeflow/old/` se existir, `.vibeflow/phases/` (`.gitkeep` e artefatos vivos), pacote da skill, `docs/`.
 - Não commitar: `init-report.json`, `init-pending.json`, `*-report.json` e `*-pending.json`.
@@ -253,7 +255,7 @@ Regras de prosa na skill:
 - Uma pergunta por vez. Várias respostas de uma vez: aceitar e fechar.
 - Patch de SLOT = só aquele trecho, texto do humano, sem reescrever.
 - Não disparar a próxima `vibe-*` a menos que o humano autorize explicitamente o avanço (ex.: "pode ir pro plan", "segue pro implement"). Se autorizado, avançar imediatamente sem perguntar de novo.
-- `vibe-init` commita os arquivos de governança produzidos, sem push. As demais skills de definição e análise não commitem. `vibe-implement` commita a task verde e `vibe-review` finaliza a phase. No fechar, dizer o hash, os paths enviados e o que ficou de fora.
+- `vibe-init` commita os arquivos de governança produzidos, sem push. As demais skills de definição e análise não commitem. `vibe-implement` commita a integração verde no novo Modo A ou a task verde no Modo B/legado; `vibe-review` finaliza a phase. No fechar, dizer o hash, os paths enviados e o que ficou de fora.
 - Português do Brasil. Frase completa. Sem emoji. Sem travessão longo. Tom factual, calmo, sem acolhimento.
 
 

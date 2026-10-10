@@ -317,6 +317,173 @@ def fila_from_alvo(repo: Path, alvo: dict[str, Any] | None) -> dict[str, Any] | 
     return parse_plan_fila(body)
 
 
+# Confere snapshots sem executar a prosa do comando; Git e arquivos locais são a evidência mecânica.
+def snapshot_valid(repo: Path, value: Any) -> bool:
+    if not isinstance(value, dict) or set(value) != {"head", "inputs", "comando", "resultado"}:
+        return False
+    if value["resultado"] not in ("verde", "falha") or not isinstance(value["comando"], str) or not value["comando"].strip():
+        return False
+    if not isinstance(value["head"], str) or not re.fullmatch(r"[a-f0-9]{40}|[a-f0-9]{64}", value["head"]):
+        return False
+    if not isinstance(value["inputs"], dict) or not value["inputs"] or not shutil.which("git"):
+        return False
+    ancestry = subprocess.run(["git", "merge-base", "--is-ancestor", value["head"], "HEAD"], cwd=repo, capture_output=True, check=False)
+    if ancestry.returncode:
+        return False
+    for relative, expected in value["inputs"].items():
+        if not isinstance(relative, str) or "\\" in relative or ":" in relative or not relative or any(part in ("", ".", "..") for part in relative.split("/")):
+            return False
+        path = Path(relative)
+        if path.is_absolute() or path.drive or relative.startswith("-") or not isinstance(expected, str) or not re.fullmatch(r"[a-f0-9]{40}|[a-f0-9]{64}", expected):
+            return False
+        destination = repo / path
+        for candidate in (destination, *destination.parents):
+            if candidate == repo:
+                break
+            if is_reparse_point(candidate):
+                return False
+        if not destination.is_file():
+            return False
+        actual = subprocess.run(["git", "hash-object", "--", relative], cwd=repo, capture_output=True, text=True, check=False)
+        if actual.returncode or actual.stdout.strip() != expected:
+            return False
+    return True
+
+
+# Extrai um único campo JSON operacional, sem interpretar prosa ou aceitar registros duplicados.
+def execution_field(lines: list[str], name: str) -> Any:
+    prefix = f"- **{name}:** "
+    found = [line.strip()[len(prefix):] for line in lines if line.strip().startswith(prefix)]
+    if len(found) != 1:
+        raise ValueError(f"campo {name} ausente ou duplicado")
+    try:
+        return json.loads(found[0])
+    except json.JSONDecodeError:
+        raise ValueError(f"campo {name} JSON inválido") from None
+
+
+# Localiza o commit integrado real; uma declaração no plan não prova que o Git concluiu a operação.
+def integration_commit(repo: Path, tasks: list[str], proof: Any, origin: Any = None) -> str | None:
+    if not isinstance(proof, dict) or not shutil.which("git"):
+        return None
+    origin = origin if origin is not None else proof["head"]
+    if not isinstance(origin, str) or not re.fullmatch(r"[a-f0-9]{40}|[a-f0-9]{64}", origin):
+        return None
+    ancestry = subprocess.run(["git", "merge-base", "--is-ancestor", origin, proof["head"]], cwd=repo, capture_output=True, check=False)
+    if ancestry.returncode:
+        return None
+    result = subprocess.run(["git", "log", "--format=%H %s"], cwd=repo, capture_output=True, text=True, check=False)
+    prefix = "task(" + ",".join(tasks) + "): "
+    for line in result.stdout.splitlines() if result.returncode == 0 else []:
+        sha, _, subject = line.partition(" ")
+        if not subject.startswith(prefix) or sha == origin:
+            continue
+        ancestry = subprocess.run(["git", "merge-base", "--is-ancestor", origin, sha], cwd=repo, capture_output=True, check=False)
+        if ancestry.returncode == 0:
+            return sha
+    return None
+
+
+# Projeta somente o protocolo explicitamente selecionado; legado e Modo B mantêm a fila anterior.
+def execution_from_plan(repo: Path, alvo: dict[str, Any] | None, fila: dict[str, Any] | None) -> dict[str, Any] | None:
+    if alvo is None or fila is None:
+        return None
+    text = read_text(repo / alvo["path"] / "plan.md") or ""
+    protocols = re.findall(r"^# Protocolo:\s*(.*?)\s*$", text, re.MULTILINE)
+    if not protocols:
+        return None
+    modes = re.findall(r"^# Modo:\s*(.*?)\s*$", text, re.MULTILINE)
+    result: dict[str, Any] = {"protocolo": protocols[0], "modo": modes[0] if modes else None, "tasks": [], "integracao": None, "avisos": []}
+    errors = result["avisos"]
+    if protocols != ["etapas-v1"] or len(modes) != 1 or modes[0] not in ("A", "B"):
+        errors.append("protocolo ou modo de execução inválido")
+        return result
+    if modes[0] == "B":
+        return result
+    try:
+        sections = split_task_sections(text)
+        if not sections or fila["parse"] != "ok":
+            raise ValueError("fila incompleta ou inválida")
+        known = {tid for tid, _ in sections}
+        if len(known) != len(sections):
+            raise ValueError("T* duplicada")
+        tasks = {}
+        for tid, lines in sections:
+            deps = [match.group(1) for line in lines if (match := DEPS_LINE_RE.match(line.strip()))]
+            done = [match for line in lines if (match := DONE_LINE_RE.match(line.strip())) and f"T{match.group(2)}" == tid]
+            if len(deps) != 1 or len(done) != 1 or not re.fullmatch(r"nenhuma|T[1-9]\d*(?:[ ,]+T[1-9]\d*)*", deps[0]):
+                raise ValueError(f"conclusão ou Deps inválida: {tid}")
+            state = execution_field(lines, "Execução")
+            if not isinstance(state, dict) or set(state) != {"estado", "local"} or state["estado"] not in ("pendente", "implementada"):
+                raise ValueError(f"registro de execução inválido: {tid}")
+            if state["estado"] == "implementada" and not isinstance(state["local"], dict):
+                raise ValueError(f"snapshot local ausente: {tid}")
+            if state["estado"] == "pendente" and state["local"] is not None:
+                raise ValueError(f"snapshot local inesperado: {tid}")
+            tasks[tid] = {"id": tid, "estado": state["estado"], "local_valida": snapshot_valid(repo, state["local"]) and state["local"]["resultado"] == "verde", "deps": parse_deps_value(deps[0]), "done": done[0].group(1) != " "}
+        # A DFS detecta ciclos mesmo quando uma parte da fila já recebeu prova local.
+        visited: set[str] = set()
+        active: set[str] = set()
+        # Percorre a cadeia desta task e recusa retorno a um nó ativo antes de liberar qualquer dependente.
+        def visit(tid: str) -> None:
+            if tid in active:
+                raise ValueError("ciclo de dependências")
+            if tid in visited:
+                return
+            active.add(tid)
+            for dep in tasks[tid]["deps"]:
+                if dep not in tasks:
+                    raise ValueError(f"dependência inexistente: {dep}")
+                visit(dep)
+            active.remove(tid)
+            visited.add(tid)
+        for tid in tasks:
+            visit(tid)
+        prefix = text.split("## Tasks", 1)[0].splitlines()
+        integration = execution_field(prefix, "Integração")
+        if not isinstance(integration, dict) or not {"testes", "prova", "commit"} <= set(integration) <= {"testes", "prova", "commit", "origem"} or integration["testes"] not in ("pendentes", "prontos") or integration["commit"] not in ("pendente", "registrado"):
+            raise ValueError("registro de integração inválido")
+        origin = integration.get("origem")
+        if origin is not None and (not isinstance(origin, str) or not re.fullmatch(r"[a-f0-9]{40}|[a-f0-9]{64}", origin)):
+            raise ValueError("origem da integração inválida")
+        valid = snapshot_valid(repo, integration["prova"])
+        ordered = sorted(tasks, key=task_n)
+        result["tasks"] = [tasks[tid] for tid in ordered]
+        result["integracao"] = {**integration, "prova_valida": valid, "commit_encontrado": integration_commit(repo, ordered, integration["prova"], origin) if valid and integration["commit"] == "registrado" else None}
+        ready = {tid for tid, item in tasks.items() if item["done"] or item["estado"] == "implementada" and item["local_valida"]}
+        pending = [tid for tid in ordered if tid not in ready]
+        fila["elegiveis"] = [tid for tid in pending if all(dep in ready for dep in tasks[tid]["deps"])]
+        fila["bloqueadas"] = [{"id": tid, "deps": [dep for dep in tasks[tid]["deps"] if dep not in ready]} for tid in pending if tid not in fila["elegiveis"]]
+    except (ValueError, TypeError, KeyError) as error:
+        errors.append(str(error))
+        fila["elegiveis"] = []
+    return result
+
+
+# Seleciona a próxima etapa nova sem confundir checagem local, prova final e commit efetivo.
+def execution_etapa(fila: dict[str, Any], review: dict[str, Any] | None, execution: dict[str, Any]) -> str | None:
+    if execution["avisos"]:
+        return None
+    if execution["modo"] == "B":
+        return derive_etapa(fila, review)
+    if review is not None and not review["legivel"]:
+        return None
+    if review is not None and review["bloqueios_abertos"]:
+        return "corrigir"
+    if any(not item["done"] and (item["estado"] != "implementada" or not item["local_valida"]) for item in execution["tasks"]):
+        return "implementar" if fila["elegiveis"] else "bloqueada"
+    integration = execution["integracao"]
+    if integration["testes"] != "prontos":
+        return "testar"
+    if not integration["prova_valida"]:
+        return "validar"
+    if integration["prova"]["resultado"] != "verde":
+        return "corrigir_validacao"
+    if not integration["commit_encontrado"] or fila["abertas"]:
+        return "commitar_integracao"
+    return derive_etapa(fila, review)
+
+
 # Conta as correções já aplicadas. Cada etapa com veredito Request changes soma 1; a última não conta
 # enquanto houver Critical ou Required em [ ], porque a correção que ela pediu ainda está pendente.
 def count_correction_rounds(lines: list[str], blockers_open: bool) -> int:
@@ -483,13 +650,16 @@ def run(args: argparse.Namespace) -> None:
 
     fila = fila_from_alvo(repo, alvo)
     review = read_review(repo, alvo, warnings)
+    execution = execution_from_plan(repo, alvo, fila)
     payload = {
         "alvo": public_target(alvo),
         "fila": fila,
-        "etapa": derive_etapa(fila, review),
+        "etapa": execution_etapa(fila, review, execution) if execution is not None else derive_etapa(fila, review),
         "rodadas_correcao": review["rodadas"] if review else 0,
         "avisos": warnings,
     }
+    if execution is not None:
+        payload["execucao"] = execution
     if args.mvp:
         payload["analyze_gate"] = gate
     emit_report(payload)

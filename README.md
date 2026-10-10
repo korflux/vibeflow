@@ -147,7 +147,7 @@ O mesmo pedido reusa a pasta `phase-N-slug`. Pedido novo: próxima pasta, `n` nu
 
 `init → interview → spec` pode continuar no mesmo chat. As portas `plan`, `analyze`, `implement` e `review` recomendam um novo chat para reduzir contexto residual; na implementação, o chat novo conduz a fila inteira no Modo A (analyze e review rodam em subagente) e, no Modo B, a recomendação é um chat focado por T*. A continuidade é permitida quando o humano a escolhe conscientemente. O artefato vivo e a linha de handoff são a ponte verificável entre chats.
 
-Cada `T*` é executada, testada e commitada isoladamente. O commit da task não faz push. Depois de Approve na review, confirmação humana e correções fechadas, o handoff final valida a phase, cria o commit residual quando necessário e faz `git push` para o upstream atual, sem force. No Modo A, o coordenador executa esse fechamento depois de uma única confirmação.
+No Modo A com protocolo explícito `etapas-v1`, implemente as T* com checagens locais, complemente os testes por aceite e delegue a validação integrada ao verificador. Somente depois da prova verde conclua as T* e crie um commit integrado que identifique seus IDs. Modo B e plans históricos sem marcador conservam commit por task. Nenhum commit de implementação faz push. Depois de Approve na review, confirmação humana e correções fechadas, o handoff final valida a phase, cria o commit residual quando necessário e faz `git push` para o upstream atual, sem force. No Modo A, o coordenador executa esse fechamento depois de uma única confirmação.
 
 No Codex desktop, a prova de UI prioriza o navegador integrado quando disponível. Se ele não estiver disponível, registre a limitação no resultado ou use o fallback visual existente no projeto.
 
@@ -160,7 +160,7 @@ Esta cadeia separa papéis e deixa o disco como fonte:
 - **IA** pilota a run: entende o pedido, investiga o projeto e os scripts, decide a semântica e audita o resultado.
 - **Skill** orienta a IA com invariantes, gates e critérios de fechamento.
 - **Script** auxilia operações determinísticas como inventário, path, número, slug, preparação do alvo e relatório.
-- **Humano** decide apenas o que muda materialmente o resultado e confirma o fechamento. `vibe-implement` commita cada task verde; `vibe-review` faz o commit/push final da phase somente após Approve confirmado.
+- **Humano** decide apenas o que muda materialmente o resultado e confirma o fechamento. `vibe-implement` commita a integração verde no novo Modo A e cada task verde no Modo B/legado; `vibe-review` faz o commit/push final da phase somente após Approve confirmado.
 
 Efeito prático: as regras do projeto ficam numa fonte (`AGENTS.md`), o pedido deixa trilha (interview → spec → plan → implement → review), e “feito” exige comando e resultado, não recap no chat.
 
@@ -174,7 +174,7 @@ Efeito prático: as regras do projeto ficam numa fonte (`AGENTS.md`), o pedido d
 | [`vibe-design`](vibe-design/SKILL.md) | `/vibe-design` | Desenha a apresentação com dois modos de entrada e três usos, sem código nem imagem final | `phase-N-slug/design.md` |
 | [`vibe-plan`](vibe-plan/SKILL.md) | `/vibe-plan` | Fatia a spec em T* verificáveis e reutiliza provas por capacidade quando cobrem a entrega | `phase-N-slug/plan.md` |
 | [`vibe-analyze`](vibe-analyze/SKILL.md) | `/vibe-analyze` | Cruza interview, spec e plan da mesma fase. Corrige lacunas óbvias em `spec.md` e `plan.md`; grava o certificado no vivo | `phase-N-slug/analyze.md` |
-| [`vibe-implement`](vibe-implement/SKILL.md) | `/vibe-implement` | Modo A (padrão, com subagentes): conduz a fila inteira, a review e as correções com uma única confirmação final; Modo B: uma T* por run. Registra prova e paths no plan, marca `[x]` e cria o commit isolado de cada task | `phase-N-slug/plan.md` |
+| [`vibe-implement`](vibe-implement/SKILL.md) | `/vibe-implement` | Modo A (padrão, com subagentes): conduz a fila inteira, a review e as correções com uma única confirmação final; Modo B: uma T* por run. No protocolo `etapas-v1`, separa código, testes e validação integrada; registra snapshots no plan e cria commit integrado depois da prova verde. Modo B e plans históricos mantêm commit por task | `phase-N-slug/plan.md` |
 | [`vibe-review`](vibe-review/SKILL.md) | `/vibe-review` | Julga o patch, conduz correções e faz o commit/push final após aprovação | `phase-N-slug/review.md` |
 
 Arquitetura, análise e testes de contrato de cada skill ficam em `docs/vibe-<nome>/` e **não** entram no pacote instalável.
@@ -218,7 +218,7 @@ vibe-<nome>/
 5. Não inventar path de artefato fora de `.vibeflow/phases/phase-N-slug/`; a única exceção é o baseline fixo `.vibeflow/mvp/`. Manter `AGENTS.md` como única fonte de regras do projeto.
 6. Só `.vibeflow/init-report.json` persiste, pois carrega `apply_token` para retomar um merge pendente; os inventários das demais skills são JSON transitório no stdout. Relatórios e pendências do init ficam fora do git; os artefatos vivos entram no git.
 
-Versão dos manifests: `4.0.0`. O Antigravity mantém o schema mínimo sem campo de versão.
+Versão dos manifests: `5.0.0`. O Antigravity mantém o schema mínimo sem campo de versão.
 
 PR contra `main`. Mudança de contrato (path, schema do relatório, flag pública) é Major; o resto segue o semver em `AGENTS.md`.
 
@@ -237,3 +237,5 @@ PR contra `main`. Mudança de contrato (path, schema do relatório, flag públic
 ## Licença
 
 [MIT](LICENSE). Pode usar, copiar, modificar e redistribuir, com o aviso de copyright. Sem garantia.
+
+O `vibe-init` distribui explorador, implementador, verificador, corretor e revisor em `.codex/agents/` e `.claude/agents/` do projeto. Preserva perfis personalizados como conflitos e orienta conferir a disponibilidade na sessão depois de recarregar o host. Não modifica perfis globais nem configurações gerais.

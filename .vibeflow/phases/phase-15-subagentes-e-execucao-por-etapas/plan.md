@@ -49,27 +49,33 @@ Entregar os perfis dos cinco subagentes pelo init, reorganizar o Modo A em etapa
 
 ### T2: Executar o Modo A em etapas com retomada e commit integrado
 
-- [ ] T2 concluída
+- [x] T2 concluída
 - **Spec:** A4, A5, A6, A7, C1, C2, C4
 - **O quê:** estender o registro no plan e os motores para distinguir implementação, testes e prova final, preservando leitura de plans antigos e comportamento do Modo B. Alinhar prompts, regras, templates e distribuição à mudança de contrato.
 - **Aceite:**
-  - [ ] Definir primeiro em `ARQUITETURA.md` o marcador explícito do novo protocolo no plan, campos por tarefa, estados de execução e precedência de etapas. Ausência de marcador mantém o protocolo antigo; modo escolhido precisa distinguir A de B sem inferência por número de tasks. Nenhum novo arquivo de estado.
-  - [ ] As dependências do novo Modo A liberam implementação após código integrado e checagem local válida, mantendo `[ ] Tn concluída` até a prova integrada. Campos incompletos, inválidos, ciclos e dependências inexistentes não geram conclusão implícita.
-  - [ ] Implementador faz código e checagens rápidas; depois complementa testes a partir do aceite e das provas existentes. Verificador executa integração sem editar testes. Corretor recebe falhas pré-review com evidência, sem inventar R*.
-  - [ ] O coordenador confere relatórios e disco, reutiliza agentes em tarefas relacionadas quando útil, mantém escrita sequencial e review independente. Relatório distingue etapa implementada de entrega comprovada; `verde` local não autoriza conclusão global.
-  - [ ] Retomada compara snapshot e inputs das provas; alterações invalidam somente evidências afetadas. Falha ou interrupção na criação de testes, execução, correção e commit mantém próximo passo correto, sem reimplementar código válido.
-  - [ ] Prova integrada verde permite concluir somente T* comprovadas e criar um commit integrado identificando todos os IDs. Regras de staging explícito, preservação de alterações alheias e confirmação final de push permanecem. Correções de review mantêm as duas rodadas atuais.
-  - [ ] Modo B e plans históricos mantêm o ciclo anterior; o motor não reabre tasks já concluídas. Adaptar o piloto existente para verificar o novo modo e a compatibilidade.
-  - [ ] Atualizar versão de contrato de 4.0.0 para 5.0.0 nos manifestos que possuem versão e no contrato de distribuição, sem acrescentar campo incompatível a manifesto que não o admite. Atualizar README e regras operacionais afetadas; preservar artefatos históricos.
+  - [x] Definir primeiro em `ARQUITETURA.md` o marcador explícito do novo protocolo no plan, campos por tarefa, estados de execução e precedência de etapas. Ausência de marcador mantém o protocolo antigo; modo escolhido precisa distinguir A de B sem inferência por número de tasks. Nenhum novo arquivo de estado.
+  - [x] As dependências do novo Modo A liberam implementação após código integrado e checagem local válida, mantendo `[ ] Tn concluída` até a prova integrada. Campos incompletos, inválidos, ciclos e dependências inexistentes não geram conclusão implícita.
+  - [x] Implementador faz código e checagens rápidas; depois complementa testes a partir do aceite e das provas existentes. Verificador executa integração sem editar testes. Corretor recebe falhas pré-review com evidência, sem inventar R*.
+  - [x] O coordenador confere relatórios e disco, reutiliza agentes em tarefas relacionadas quando útil, mantém escrita sequencial e review independente. Relatório distingue etapa implementada de entrega comprovada; `verde` local não autoriza conclusão global.
+  - [x] Retomada compara snapshot e inputs das provas; alterações invalidam somente evidências afetadas. Falha ou interrupção na criação de testes, execução, correção e commit mantém próximo passo correto, sem reimplementar código válido.
+  - [x] Prova integrada verde permite concluir somente T* comprovadas e criar um commit integrado identificando todos os IDs. Regras de staging explícito, preservação de alterações alheias e confirmação final de push permanecem. Correções de review mantêm as duas rodadas atuais.
+  - [x] Modo B e plans históricos mantêm o ciclo anterior; o motor não reabre tasks já concluídas. Adaptar o piloto existente para verificar o novo modo e a compatibilidade.
+  - [x] Atualizar versão de contrato de 4.0.0 para 5.0.0 nos manifestos que possuem versão e no contrato de distribuição, sem acrescentar campo incompatível a manifesto que não o admite. Atualizar README e regras operacionais afetadas; preservar artefatos históricos.
 - **Verificação:**
-  - [ ] `python docs/vibe-implement/tests/test-implement.py`
-  - [ ] `python docs/vibe-plan/tests/test-plan.py`
-  - [ ] `python docs/vibe-implement/tests/piloto-modo-a.py --prepare-only`
-  - [ ] `& 'C:/Program Files/Git/bin/bash.exe' docs/vibe-implement/tests/test-implement.sh`
-  - [ ] Avaliação comportamental com subagente e fixture descartável: implementação de tasks dependentes, complemento de testes, falha real, correção, retomada e commit integrado. Inspecionar efeitos no disco, comandos e histórico Git; a preparação de fixture sozinha não satisfaz C2.
+  - [x] `python docs/vibe-implement/tests/test-implement.py`
+  - [x] `python docs/vibe-plan/tests/test-plan.py`
+  - [x] `python docs/vibe-implement/tests/piloto-modo-a.py --prepare-only`
+  - [x] `& 'C:/Program Files/Git/bin/bash.exe' docs/vibe-implement/tests/test-implement.sh`
+  - [x] Avaliação comportamental com subagente e fixture descartável: implementação de tasks dependentes, complemento de testes, falha real, correção, retomada e commit integrado. Inspecionar efeitos no disco, comandos e histórico Git; a preparação de fixture sozinha não satisfaz C2.
 - **Deps:** T1
 - **Arquivos:** `docs/vibe-implement/ARQUITETURA.md`, `docs/vibe-implement/ANALISE.md`, `vibe-implement/SKILL.md`, `vibe-implement/scripts/implement.py`, `vibe-implement/scripts/implement.ps1`, `vibe-implement/references/delegation.md`, sua cópia idêntica em `vibe-plan/references/delegation.md`, `vibe-plan/SKILL.md`, `vibe-plan/templates/plan.md`, `docs/vibe-plan/ARQUITETURA.md`, `docs/vibe-plan/ANALISE.md`, `docs/vibe-implement/tests/test-implement.py`, `docs/vibe-implement/tests/piloto-modo-a.py`, perfis da T1 quando necessário, `AGENTS.md`, `vibe-init/templates/AGENTS.md`, `README.md`, `.codex-plugin/plugin.json`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `.agents/plugins/marketplace.json`, `.grok-plugin/marketplace.json`, `docs/tests/test-distribuicao.py`.
 - **Risco:** mudança na interpretação da fila e dos checkpoints. O novo contrato deve ser selecionado explicitamente para não reinterpretar uma execução antiga. A alteração das regras operacionais faz parte da implementação autorizada; eventual tabela de decisões vigentes só é sincronizada no fechamento humano.
+
+- **Avaliação comportamental T2 (2026-10-10):** fixture isolada `.vibe-stage-behavior/etapas/work`, baseline `9cab7391f3900b25923cd7635efb01f8dda91de7`. Coordenador `piloto_etapas`, implementador `codigo`, retomada de contexto limpo `retomada`, verificador `validacao` e corretor `correcao` em sequência. Etapas observadas: implementar T1 → implementar T2 → testar → validar → corrigir_validacao → validar → commitar_integracao → revisar. T1 e T2 permaneceram `[ ]` durante código/testes e dependência T2 liberou após checagem local válida de T1.
+- **Evidência da avaliação T2:** complemento preservou `test_existing.py` e criou `test_textkit.py` por aceite. Primeira checagem direcionada do implementador apresentou três subcasos vermelhos; primeira integração do verificador `python -B -m unittest discover -s tests -v` executou 4 testes e confirmou três subfalhas de normalização em A2. A execução vermelha foi repetida uma vez para captura UTF-8, sem mudança de inputs. Corretor alterou somente `textkit/shared.py`; snapshots que incluíam esse input foram invalidados e renovados após checagens direcionadas, preservando módulos e testes. Nova integração separada pelo verificador: exit 0, 4 testes OK.
+- **Git da avaliação T2:** commit único `a3eb164aa9afcb0336fb71978bb9e015a55af7a3`, `task(T1,T2): normaliza e resume texto com whitespace Unicode`; paths: helper compartilhado, stats/report, teste de jornada e plan/spec da fixture. Nenhum commit por task intermediária, nenhum push. Git limpo; motor da cópia e canônico reconheceram etapa revisar, locais/prova válidos e commit_encontrado real, com avisos vazios. Avaliação certifica o comportamento de implementação/testes/validação/correção/retomada, sem substituir a review final da phase.
+- **Prova final T2:** implement: 40 testes OK (91,425 s); bordas posteriores StageProtocolContracts: 4 OK (67,263 s); origem/commit retry/types: 2 OK (46,512 s), comprovando commit integrado único mais task(R1). Plan: 16 testes OK (3,910 s). Piloto prepare-only: 7 PASS, execução final 9,017 s sem modelos. Launcher Git Bash: 8 PASS/0 FAIL. Diff check verde; delegation idênticas por bytes; fixtures das suítes e avaliação removidas. Temp falhado por restrição sandbox foi removido e ausência confirmada.
+- **Resultado T2:** protocolo etapas-v1 explícito, snapshots e retomada verificáveis, etapas separadas e origem preservada nas correções. Modo B/legado preservados. Versão pública 5.0.0. Patch operacional AGENTS aplicado pelo coordenador, sem tabela de decisões vigentes. Provas compartilhadas ficam T3.
 
 ### T3: Bloquear a review quando a solicitação estiver incompleta
 

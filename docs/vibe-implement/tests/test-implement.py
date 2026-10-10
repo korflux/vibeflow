@@ -819,5 +819,215 @@ class PowershellParity(unittest.TestCase):
                 self.assertEqual(before, tree_snapshot(repo))
 
 
+# Exercita o protocolo novo por efeitos no disco e Git real, mantendo fixtures históricas acima intactas.
+class StageProtocolContracts(unittest.TestCase):
+    # Isola código, testes e histórico Git do protocolo novo para os dois motores.
+    def setUp(self) -> None:
+        self.repo = Path.cwd() / f".vibe-etapas-{uuid.uuid4().hex}"
+        self.repo.mkdir()
+        self.phase = seed_phase(seed_vibeflow(self.repo), "phase-1-a", "plan.md")
+        (self.repo / "core.py").write_text("def twice(value):\n    return value * 2\n", encoding="utf-8")
+        (self.repo / "consumer.py").write_text("from core import twice\ndef total(value):\n    return twice(value) + 1\n", encoding="utf-8")
+        tests = self.repo / "tests"
+        tests.mkdir()
+        (tests / "test_existing.py").write_text("import unittest\nfrom core import twice\nclass Existing(unittest.TestCase):\n    def test_basic(self):\n        self.assertEqual(4, twice(2))\n", encoding="utf-8")
+        (self.repo / ".gitignore").write_text("__pycache__/\n", encoding="utf-8")
+        self.git("init", "-q", "-b", "main")
+        self.git("config", "user.name", "Fixture")
+        self.git("config", "user.email", "fixture@example.invalid")
+        self.git("add", "--", "core.py", "consumer.py", "tests", ".gitignore", ".vibeflow")
+        self.git("commit", "-q", "-m", "fixture: baseline")
+        self.states = {tid: {"estado": "pendente", "local": None} for tid in ("T1", "T2")}
+        self.integration = {"testes": "pendentes", "prova": None, "commit": "pendente"}
+
+    # Exige remoção efetiva inclusive dos objetos Git read-only do Windows.
+    def tearDown(self) -> None:
+        remove_fixture_tree(self.repo)
+
+    # Opera apenas o Git da fixture descartável, sem shell ou índice do repositório real.
+    def git(self, *arguments: str) -> str:
+        result = subprocess.run(["git", *arguments], cwd=self.repo, capture_output=True, text=True, check=False)
+        self.assertEqual(0, result.returncode, result.stderr)
+        return result.stdout.strip()
+
+    # Fotografa os inputs realmente checados e o HEAD de origem, sem inventar sucesso de teste.
+    def proof(self, inputs: tuple[str, ...], command: str, result: str = "verde") -> dict:
+        return {"head": self.git("rev-parse", "HEAD"), "inputs": {path: self.git("hash-object", "--", path) for path in inputs}, "comando": command, "resultado": result}
+
+    # Grava somente o plan operacional da fixture, preservando a forma da fila histórica.
+    def save(self, mode: str = "A", *, done: bool = False) -> None:
+        body = "# Plan: etapas\n# Protocolo: etapas-v1\n# Modo: " + mode + "\n"
+        body += "- **Integração:** " + json.dumps(self.integration) + "\n\n## Tasks\n"
+        for tid, deps in (("T1", "nenhuma"), ("T2", "T1")):
+            body += f"### {tid}: capacidade\n- [{'x' if done else ' '}] {tid} concluída\n- **Deps:** {deps}\n- **Execução:** " + json.dumps(self.states[tid]) + "\n"
+        write_plan(self.phase, body)
+
+    # Compara projeções nativas e prova ausência de mutações do motor.
+    def state(self, stage: str | None, eligible: list[str] | None = None) -> dict:
+        before = tree_snapshot(self.repo)
+        _, py = invoke(self.repo)
+        self.assertEqual(stage, py["etapa"], py)
+        if eligible is not None: self.assertEqual(eligible, py["fila"]["elegiveis"])
+        if powershell7():
+            process = subprocess.run([powershell7(), "-NoProfile", "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo)], capture_output=True, text=True, encoding="utf-8", check=False)
+            self.assertEqual(0, process.returncode, process.stderr)
+            ps = json.loads(process.stdout)
+            self.assertEqual(py, ps)
+        self.assertEqual(before, tree_snapshot(self.repo))
+        return py
+
+    # Percorre dependência implementada, complemento, falha real, correção, retomada e commit integrado.
+    def test_full_stage_journey_and_commit_retry(self) -> None:
+        self.save()
+        self.state("implementar", ["T1"])
+        for tid, path in (("T1", "core.py"), ("T2", "consumer.py")):
+            check = subprocess.run([sys.executable, "-m", "py_compile", path], cwd=self.repo, capture_output=True, text=True)
+            self.assertEqual(0, check.returncode, check.stderr)
+            self.states[tid] = {"estado": "implementada", "local": self.proof((path,), "python -m py_compile " + path)}
+            self.save()
+            self.state("implementar" if tid == "T1" else "testar", ["T2"] if tid == "T1" else [])
+        existing = (self.repo / "tests/test_existing.py").read_bytes()
+        missing = self.repo / "tests/test_boundary.py"
+        missing.write_text("import unittest\nfrom consumer import total\nclass Boundary(unittest.TestCase):\n    def test_negative_rejected(self):\n        with self.assertRaises(ValueError):\n            total(-1)\n", encoding="utf-8")
+        self.assertEqual(existing, (self.repo / "tests/test_existing.py").read_bytes())
+        self.integration["testes"] = "prontos"
+        self.save()
+        self.state("validar")
+        inputs = ("core.py", "consumer.py", "tests/test_existing.py", "tests/test_boundary.py")
+        command = "python -m unittest discover -s tests"
+        failed = subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", "tests"], cwd=self.repo, capture_output=True, text=True)
+        self.assertNotEqual(0, failed.returncode)
+        self.integration["prova"] = self.proof(inputs, command, "falha")
+        self.save()
+        report = self.state("corrigir_validacao")
+        self.assertEqual(0, report["rodadas_correcao"])
+        (self.repo / "consumer.py").write_text("from core import twice\ndef total(value):\n    if value < 0:\n        raise ValueError('valor inválido')\n    return twice(value) + 1\n", encoding="utf-8")
+        check = subprocess.run([sys.executable, "-m", "py_compile", "consumer.py"], cwd=self.repo, capture_output=True, text=True)
+        self.assertEqual(0, check.returncode)
+        self.states["T2"]["local"] = self.proof(("consumer.py",), "python -m py_compile consumer.py")
+        self.save()
+        self.state("validar")
+        passed = subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", "tests"], cwd=self.repo, capture_output=True, text=True)
+        self.assertEqual(0, passed.returncode, passed.stderr)
+        self.integration["prova"] = self.proof(inputs, command)
+        self.save()
+        self.state("commitar_integracao")
+        # Interrupção/falha de commit não é disfarçada pelo registro de conclusão.
+        self.integration["commit"] = "registrado"
+        self.integration["origem"] = self.integration["prova"]["head"]
+        self.save(done=True)
+        self.state("commitar_integracao")
+        self.git("add", "--", "core.py", "consumer.py", "tests/test_existing.py", "tests/test_boundary.py", ".vibeflow/phases/phase-1-a/plan.md")
+        self.git("commit", "-q", "-m", "task(T1,T2): validar capacidades integradas")
+        report = self.state("revisar")
+        self.assertEqual(self.git("rev-parse", "HEAD"), report["execucao"]["integracao"]["commit_encontrado"])
+        self.assertEqual(["T1", "T2"], report["fila"]["concluidas"])
+        self.assertEqual(1, len(self.git("log", "--format=%s", "--grep=^task(").splitlines()))
+        # Correção posterior renova prova/HEAD sem perder a origem da integração nem duplicar seu commit.
+        (self.repo / "consumer.py").write_text("# correção de review\n" + (self.repo / "consumer.py").read_text(encoding="utf-8"), encoding="utf-8")
+        passed = subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", "tests"], cwd=self.repo, capture_output=True, text=True)
+        self.assertEqual(0, passed.returncode, passed.stderr)
+        self.integration["prova"] = self.proof(inputs, command)
+        self.states["T2"]["local"] = self.proof(("consumer.py",), "python -m py_compile consumer.py")
+        self.save(done=True)
+        self.git("add", "--", "consumer.py", ".vibeflow/phases/phase-1-a/plan.md")
+        self.git("commit", "-q", "-m", "task(R1): correção posterior à integração")
+        self.state("revisar")
+        self.assertEqual(1, len(self.git("log", "--format=%s", "--grep=^task(T1,T2)").splitlines()))
+
+    # Alterar um input invalida somente seu snapshot; campos/fila inválidos nunca liberam dependentes.
+    def test_snapshot_invalidation_and_invalid_records(self) -> None:
+        self.states["T1"] = {"estado": "implementada", "local": self.proof(("core.py",), "python -m py_compile core.py")}
+        self.save()
+        self.state("implementar", ["T2"])
+        (self.repo / "core.py").write_text("# mudou\ndef twice(value):\n    return value * 2\n", encoding="utf-8")
+        self.state("implementar", ["T1"])
+        self.states["T1"]["local"] = self.proof(("core.py",), "python -m py_compile core.py")
+        self.save()
+        valid = (self.phase / "plan.md").read_text(encoding="utf-8")
+        variants = {
+            "ciclo": valid.replace("**Deps:** nenhuma", "**Deps:** T2"),
+            "inexistente": valid.replace("**Deps:** T1", "**Deps:** T9"),
+            "deps-invalida": valid.replace("**Deps:** T1", "**Deps:** talvez"),
+            "modo-ausente": valid.replace("# Modo: A\n", ""),
+            "protocolo": valid.replace("etapas-v1", "etapas-v99"),
+            "duplicada": valid + valid[valid.index("### T2:"):],
+            "conclusao-duplicada": valid.replace("- [ ] T1 concluída", "- [ ] T1 concluída\n- [x] T1 concluída"),
+            "registro-ausente": valid.replace('- **Execução:** {"estado": "pendente", "local": null}', ""),
+            "json-invalido": valid.replace('"estado": "pendente"', '"estado": quebrado'),
+            "estado-lista": valid.replace('"estado": "pendente"', '"estado": []'),
+            "estado-objeto": valid.replace('"estado": "pendente"', '"estado": {}'),
+            "integracao-lista": valid.replace(json.dumps(self.integration), "[]"),
+            "registro-maiusculo": valid.replace('"estado": "pendente"', '"ESTADO": "pendente"'),
+        }
+        for name, body in variants.items():
+            with self.subTest(name=name):
+                write_plan(self.phase, body)
+                self.state(None)
+        write_plan(self.phase, valid)
+        self.state("implementar", ["T2"])
+        for relative in ("../README.md", "/etc/passwd", "C:/Windows/x", "core.py:stream"):
+            with self.subTest(relative=relative):
+                self.states["T1"]["local"]["inputs"] = {relative: "a" * 40}
+                self.save()
+                self.state("implementar", ["T1"])
+
+    # Sem marcador a run continua histórica; no B explícito, checagem local não libera Deps.
+    def test_legacy_and_mode_b_keep_task_cycle(self) -> None:
+        self.states["T1"] = {"estado": "implementada", "local": self.proof(("core.py",), "python -m py_compile core.py")}
+        self.save(mode="B")
+        self.state("implementar", ["T1"])
+        write_plan(self.phase, plan_tasks(("T1", " ", "nenhuma"), ("T2", " ", "T1")))
+        report = self.state("implementar", ["T1"])
+        self.assertNotIn("execucao", report)
+        write_plan(self.phase, plan_tasks(("T1", "x", "nenhuma"), ("T2", " ", "T1")))
+        self.state("implementar", ["T2"])
+
+    # Prova final muda somente quando seus inputs mudam e não aceita tipos, links ou commit antigo.
+    def test_integration_snapshot_types_and_old_commit(self) -> None:
+        self.git("commit", "-q", "--allow-empty", "-m", "task(T1,T2): commit antigo")
+        for tid, path in (("T1", "core.py"), ("T2", "consumer.py")):
+            self.states[tid] = {"estado": "implementada", "local": self.proof((path,), "python -m py_compile " + path)}
+        self.integration = {"testes": "prontos", "prova": self.proof(("core.py", "consumer.py", "tests/test_existing.py"), "python -m unittest discover -s tests"), "commit": "registrado"}
+        self.save(done=True)
+        self.state("commitar_integracao")
+        self.git("commit", "-q", "--allow-empty", "-m", "fixture: mudança sem input afetado")
+        self.state("commitar_integracao")
+        valid = json.loads(json.dumps(self.integration["prova"]))
+        for key, wrong in (("resultado", []), ("resultado", {}), ("inputs", []), ("inputs", {}), ("head", 42), ("comando", [])):
+            with self.subTest(key=key, wrong=wrong):
+                self.integration["prova"] = {**valid, key: wrong}
+                self.save(done=True)
+                self.state("validar")
+        self.integration["prova"] = valid
+        wrong_case = dict(valid)
+        wrong_case["HEAD"] = wrong_case.pop("head")
+        self.integration["prova"] = wrong_case
+        self.save(done=True)
+        self.state("validar")
+        self.integration["prova"] = valid
+        self.save(done=True)
+        self.state("commitar_integracao")
+        for origin in ([], {}, "--all", 42):
+            with self.subTest(origin=origin):
+                self.integration["origem"] = origin
+                self.save(done=True)
+                self.state(None)
+        self.integration.pop("origem")
+        self.save(done=True)
+        (self.repo / "tests/test_existing.py").write_text("# prova mudou\n", encoding="utf-8")
+        report = self.state("validar")
+        self.assertTrue(all(task["local_valida"] for task in report["execucao"]["tasks"]))
+        # Link substituído com os mesmos bytes não conserva uma prova de arquivo regular.
+        linked = self.repo / "core.py"
+        data = linked.read_bytes()
+        copy = self.repo / "core-copy.py"
+        copy.write_bytes(data)
+        linked.unlink()
+        linked.symlink_to(copy)
+        report = self.state("validar")
+        self.assertFalse(report["execucao"]["tasks"][0]["local_valida"])
+
+
 if __name__ == "__main__":
     unittest.main()

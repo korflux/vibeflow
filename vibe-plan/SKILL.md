@@ -91,6 +91,8 @@ IDs estáveis: `T1`, `T2`, `T3`... em ordem sequencial. Sem prefixos arbitrário
 
 ## 5. Escrever e Salvar
 
+Em plans novos registre `# Protocolo: etapas-v1`; não migre artefatos históricos. O coordenador da implement escolhe e registra `# Modo: A|B` ao iniciar conforme pedido e capacidades do host. No novo Modo A, planeje checagens locais para liberar código dependente e uma validação integrada compartilhada quando comandos cobrem várias T*. Código implementado não autoriza conclusão; registro operacional e commit integrado seguem a vibe-implement. Modo B conserva prova e commit por task. Não inclua JSON de snapshots inventados ou placeholders operacionais no plan aprovado.
+
 Artefato vivo: `<created.path>/plan.md`. Molde: `templates/plan.md`. Mantenha `# Status: rascunho` enquanto o plano estiver em elaboração.
 Não pergunte se pode salvar e não cole o corpo do documento no chat.
 
@@ -141,7 +143,7 @@ Vale quando a rota exige analyze (MVP ou phase max), o plan está aprovado e o h
 
 ## 8. Fechar
 
-Não commite no git nesta porta. O commit começa na `vibe-implement`, depois da prova verde de cada task. Não dispare a próxima skill a menos que o usuário tenha pedido explicitamente para avançar (§6).
+Não commite no git nesta porta. O commit começa na `vibe-implement`, depois da prova integrada verde no novo Modo A ou da prova verde por task no Modo B/legado. Não dispare a próxima skill a menos que o usuário tenha pedido explicitamente para avançar (§6).
 Handoff: `vibe-analyze` quando a rota é max (MVP ou phase max, que exige análise antes do código) e `vibe-implement` nas demais rotas.
 Com o analyze delegado aprovado (§7), recomende com ênfase um chat novo com `/vibe-implement` e informe que ele rodará em Modo A: num host com subagentes, conduz a fila inteira da phase e só volta ao humano na pergunta final. Sem subagentes, recomende chat novo para o `vibe-analyze` e, depois dele, para o `vibe-implement` (Modo B, uma T* por run). Nas rotas sem analyze, recomende chat novo para `vibe-implement` com o mesmo anúncio do Modo A. A recomendação nunca é gate: se o humano preferir continuar neste chat, siga sem bloquear; os `plan.md` e `analyze.md` vivos e o handoff são a ponte.
 Não crie uma T* apenas para executar a review final. A fila do plan termina com as entregas implementáveis; a review final é a próxima skill do fluxo `vibe-implement` → `vibe-review`.

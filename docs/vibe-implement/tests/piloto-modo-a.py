@@ -691,6 +691,49 @@ ROUNDS = {"0": round0, "1": round1, "2": round2, "3": round3}
 # ============================ Linha de comando ============================
 
 
+# Prepara uma jornada stdlib do protocolo novo para avaliação por agentes do host, sem conta externa.
+def build_stage_fixture(parent: Path) -> Fixture:
+    root = parent / "etapas"
+    work = root / "work"
+    work.mkdir(parents=True)
+    plugin = root / "plugin"
+    remote = root / "remote.git"
+    files = {
+        "AGENTS.md": "# Fixture etapas\nResponda em PT-BR. Use unittest da standard library. Sem rede, instalação, configuração global ou push. Somente o coordenador modifica os artefatos e Git desta fixture.\n",
+        ".gitignore": "__pycache__/\n",
+        "textkit/__init__.py": "# Utilitários de texto da fixture.\n",
+        "textkit/shared.py": "# Normalização compartilhada pelo código existente e pelos novos consumidores.\ndef normalize(text):\n    return text.strip().replace('  ', ' ')\n",
+        "tests/test_existing.py": "import unittest\nfrom textkit.shared import normalize\nclass Existing(unittest.TestCase):\n    def test_existing_normalization(self):\n        self.assertEqual('a b', normalize(' a  b '))\n",
+        f"{PHASE_DIR}/spec.md": "# Spec: utilitários de texto\n# Status: aprovado\nA1: word_count(text) conta palavras após normalização compartilhada, com qualquer espaço em branco, incluindo tabs, repetição, vazio e Unicode.\nA2: summarize(text) devolve {'normalized': texto normalizado com um espaço entre palavras, 'count': contagem} reutilizando word_count e normalize. Nenhum resultado contém espaços repetidos ou tabs.\nFora: UI, rede e dependências externas.\n",
+    }
+    integration = {"testes": "pendentes", "prova": None, "commit": "pendente"}
+    plan = "# Plan: utilitários de texto\n# Status: aprovado\n# Protocolo: etapas-v1\n# Modo: A\n"
+    plan += "- **Integração:** " + json.dumps(integration) + "\n\n## Tasks\n"
+    for tid, deps, description, paths in (("T1", "nenhuma", "Implementar word_count em textkit.stats usando normalização compartilhada", "textkit/stats.py"), ("T2", "T1", "Implementar summarize em textkit.report reutilizando word_count e normalize", "textkit/report.py")):
+        plan += f"### {tid}: {description}\n- [ ] {tid} concluída\n- **Spec:** {'A1' if tid == 'T1' else 'A2'}\n- **Deps:** {deps}\n- **Arquivos:** `{paths}`\n- **Verificação:** `python -m unittest discover -s tests -v`\n- **Execução:** " + json.dumps({"estado": "pendente", "local": None}) + "\n"
+    files[f"{PHASE_DIR}/plan.md"] = plan
+    for relative, content in files.items():
+        path = work / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8", newline="\n")
+    git(work, "init", "-q", "-b", "main")
+    for key, value in (("user.name", "Fixture VibeFlow"), ("user.email", "fixture@example.invalid"), ("core.autocrlf", "false")):
+        git(work, "config", key, value)
+    git(work, "add", "--", "AGENTS.md", ".gitignore", "textkit", "tests", ".vibeflow")
+    git(work, "commit", "-q", "-m", "fixture: baseline etapas")
+    git(root, "init", "-q", "--bare", "-b", "main", str(remote))
+    git(work, "remote", "add", "origin", str(remote))
+    snapshot_plugin(plugin)
+    return Fixture(root, work, remote, plugin, git(work, "rev-parse", "HEAD"))
+
+
+# Verifica estrutura e etapa inicial sem substituir a avaliação comportamental por modelo independente.
+def check_stage_fixture(fx: Fixture) -> bool:
+    state = engine_state(fx)
+    run = subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", "tests"], cwd=fx.work, capture_output=True, text=True)
+    return state["etapa"] == "implementar" and state["fila"]["elegiveis"] == ["T1"] and state["execucao"]["modo"] == "A" and run.returncode == 0
+
+
 # Valida só as fixtures, sem chamar o claude: confirma que o defeito, a ausência do pytest e o remoto estão corretos.
 def prepare_only(parent: Path) -> bool:
     ok = True
@@ -704,7 +747,10 @@ def prepare_only(parent: Path) -> bool:
             check_fixture_start(report, fx)
             report.check(git(fx.remote, "rev-parse", "main") == fx.baseline, "remoto bare no baseline")
         ok = ok and report.passed
-    return ok
+    stages = build_stage_fixture(parent)
+    stage_valid = check_stage_fixture(stages)
+    print("  [PASS] fixture etapas-v1 stdlib" if stage_valid else "  [FAIL] fixture etapas-v1 stdlib")
+    return ok and stage_valid
 
 
 # Escreve o resumo da execução (conferências e notas de evidência) ao lado dos transcripts.
@@ -733,8 +779,23 @@ def main() -> int:
     parser.add_argument("--evidence-dir", help="pasta dos transcripts e do resumo (padrão: temporária, mantida)")
     parser.add_argument("--keep", action="store_true", help="não remove as fixtures ao final (depuração)")
     parser.add_argument("--prepare-only", action="store_true", help="só valida as fixtures, sem chamar o claude")
+    parser.add_argument("--prepare-stages", help="prepara fixture etapas-v1 no diretório explícito, sem chamar modelos; coordenador deve removê-la após avaliação")
     args = parser.parse_args()
     sys.stdout.reconfigure(errors="replace")
+    if args.prepare_stages:
+        destination = Path(args.prepare_stages).absolute()
+        if destination.exists():
+            parser.error("--prepare-stages exige diretório ausente para não substituir trabalho existente")
+        destination.mkdir(parents=True)
+        try:
+            fx = build_stage_fixture(destination)
+            if not check_stage_fixture(fx):
+                raise RuntimeError("fixture etapas-v1 inválida")
+            print(json.dumps({"fixture": str(fx.root), "work": str(fx.work), "plugin": str(fx.plugin), "remote": str(fx.remote), "baseline": fx.baseline}, ensure_ascii=False))
+            return 0
+        except Exception:
+            remove_tree(destination)
+            raise
 
     if args.permission_mode == "bypassPermissions" and not args.confirmado_pelo_humano:
         parser.error("bypassPermissions exige --confirmado-pelo-humano: o modo não confina o agente à pasta temporária")

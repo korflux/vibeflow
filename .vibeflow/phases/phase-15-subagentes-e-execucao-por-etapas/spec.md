@@ -100,16 +100,16 @@ Preparar os cinco papéis de subagente no vibe-init usando como referência os p
 - [x] A1: init instala os cinco papéis nos formatos dos dois hosts, com modelos/esforços de referência e prompts compatíveis com o novo fluxo.
 - [x] A2: repetir init é idempotente; conflitos e destinos inseguros não sobrescrevem personalizações nem escapam da raiz.
 - [x] A3: relatório distingue instalação em disco, conflito e disponibilidade em sessão, com instrução de recarga quando aplicável.
-- [ ] A4: Modo A libera dependências de implementação sem marcar conclusão prematura e retoma corretamente estados intermediários.
-- [ ] A5: etapa de testes complementa cobertura por aceite e preserva testes existentes relevantes; verificador não escreve testes.
-- [ ] A6: validação integrada evita repetir suíte completa por task, corrige falhas e invalida somente provas afetadas.
-- [ ] A7: commit integrado ocorre somente com prova verde, preserva rastreabilidade por T* e mantém confirmação final e Modo B.
+- [x] A4: Modo A libera dependências de implementação sem marcar conclusão prematura e retoma corretamente estados intermediários.
+- [x] A5: etapa de testes complementa cobertura por aceite e preserva testes existentes relevantes; verificador não escreve testes.
+- [x] A6: validação integrada evita repetir suíte completa por task, corrige falhas e invalida somente provas afetadas.
+- [x] A7: commit integrado ocorre somente com prova verde, preserva rastreabilidade por T* e mantém confirmação final e Modo B.
 - [ ] A8: review expõe cobertura de toda solicitação inicial e bloqueia aprovação com item obrigatório ausente ou parcial, mesmo com testes verdes.
 
 ### Critérios de sucesso
 
-- [ ] C1: instalação e estados operacionais têm provas executáveis em diretórios isolados com limpeza obrigatória, incluindo paridade essencial dos motores.
-- [ ] C2: simulação de implementação, testes, falha, correção e retomada não salta validação nem confunde implementado com concluído.
+- [x] C1: instalação e estados operacionais têm provas executáveis em diretórios isolados com limpeza obrigatória, incluindo paridade essencial dos motores.
+- [x] C2: simulação de implementação, testes, falha, correção e retomada não salta validação nem confunde implementado com concluído.
 - [ ] C3: avaliação comportamental da review detecta um requisito omitido do plan, sem teste que apenas busque palavras na documentação.
 - [ ] C4: contratos, templates, referências compartilhadas e distribuição permanecem coerentes com os comportamentos aprovados.
 

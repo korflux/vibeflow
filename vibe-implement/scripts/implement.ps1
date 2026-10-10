@@ -306,6 +306,141 @@ function Get-FilaFromAlvo([string]$Repo, $Alvo) {
 }
 
 # Conta as correções já aplicadas. Cada etapa com veredito Request changes soma 1; a última não conta
+# Confere os mesmos snapshots do motor portátil, sem executar comandos recebidos no plan.
+function Test-Snapshot([string]$Repo, $Value) {
+    if ($Value -isnot [Collections.IDictionary] -or $Value.Count -ne 4 -or @($Value.Keys | Where-Object { $_ -cnotin @('head','inputs','comando','resultado') }).Count) { return $false }
+    if ($Value.resultado -cnotin @('verde','falha') -or $Value.comando -isnot [string] -or -not $Value.comando.Trim() -or $Value.head -isnot [string] -or $Value.head -cnotmatch '^(?:[a-f0-9]{40}|[a-f0-9]{64})$') { return $false }
+    if ($Value.inputs -isnot [Collections.IDictionary] -or $Value.inputs.Count -eq 0 -or -not (Get-Command git -ErrorAction SilentlyContinue)) { return $false }
+    & git -C $Repo merge-base --is-ancestor $Value.head HEAD 2>$null
+    if ($LASTEXITCODE -ne 0) { return $false }
+    foreach ($relative in $Value.inputs.Keys) {
+        $expected = $Value.inputs[$relative]
+        if ($relative -isnot [string] -or -not $relative -or $relative.Contains('\') -or $relative.StartsWith('-') -or [IO.Path]::IsPathRooted($relative) -or $relative.Contains(':') -or @($relative.Split('/') | Where-Object { $_ -in @('', '.', '..') }).Count -or $expected -isnot [string] -or $expected -cnotmatch '^(?:[a-f0-9]{40}|[a-f0-9]{64})$') { return $false }
+        $candidate = Join-Path $Repo $relative
+        $item = Get-FsItem $candidate
+        if ($item -isnot [IO.FileInfo]) { return $false }
+        while ($candidate -ne $Repo) {
+            if (Test-IsReparsePoint (Get-FsItem $candidate)) { return $false }
+            $candidate = [IO.Path]::GetDirectoryName($candidate)
+            if (-not $candidate) { return $false }
+        }
+        $actual = & git -C $Repo hash-object -- $relative 2>$null
+        if ($LASTEXITCODE -ne 0 -or $actual -cne $expected) { return $false }
+    }
+    return $true
+}
+
+# Extrai exatamente um registro JSON; duplicação ou ausência é estado indeterminado.
+function Get-ExecutionField([string[]]$Lines, [string]$Name) {
+    $prefix = "- **${Name}:** "
+    $found = @($Lines | ForEach-Object { $line = $_.Trim(); if ($line.StartsWith($prefix)) { $line.Substring($prefix.Length) } })
+    if ($found.Count -ne 1) { throw "campo $Name ausente ou duplicado" }
+    try { return ConvertFrom-Json -InputObject $found[0] -AsHashtable } catch { throw "campo $Name JSON inválido" }
+}
+
+# Encontra o commit efetivo posterior à prova; declaração no plan não equivale a sucesso de Git.
+function Get-IntegrationCommit([string]$Repo, [string[]]$Tasks, $Proof, $Origin = $null) {
+    if ($Proof -isnot [Collections.IDictionary] -or -not (Get-Command git -ErrorAction SilentlyContinue)) { return $null }
+    if ($null -eq $Origin) { $Origin = $Proof.head }
+    if ($Origin -isnot [string] -or $Origin -cnotmatch '^(?:[a-f0-9]{40}|[a-f0-9]{64})$') { return $null }
+    & git -C $Repo merge-base --is-ancestor $Origin $Proof.head 2>$null
+    if ($LASTEXITCODE -ne 0) { return $null }
+    $history = @(& git -C $Repo log '--format=%H %s' 2>$null)
+    if ($LASTEXITCODE -ne 0) { return $null }
+    $prefix = 'task(' + ($Tasks -join ',') + '): '
+    foreach ($line in $history) {
+        $split = $line.IndexOf(' ')
+        if ($split -lt 0) { continue }
+        $sha = $line.Substring(0, $split)
+        if (-not $line.Substring($split + 1).StartsWith($prefix) -or $sha -eq $Origin) { continue }
+        & git -C $Repo merge-base --is-ancestor $Origin $sha 2>$null
+        if ($LASTEXITCODE -eq 0) { return $sha }
+    }
+    return $null
+}
+
+# Recusa ciclos e dependências inexistentes independentemente do estado implementado.
+function Test-ExecutionDependency([string]$Id, $Tasks, $Active, $Visited) {
+    if ($Active.Contains($Id)) { throw 'ciclo de dependências' }
+    if ($Visited.Contains($Id)) { return }
+    [void]$Active.Add($Id)
+    foreach ($dep in $Tasks[$Id].deps) {
+        if (-not $Tasks.Contains($dep)) { throw "dependência inexistente: $dep" }
+        Test-ExecutionDependency $dep $Tasks $Active $Visited
+    }
+    [void]$Active.Remove($Id)
+    [void]$Visited.Add($Id)
+}
+
+# Projeta somente o protocolo explícito e preserva leitura histórica e Modo B.
+function Get-ExecutionFromPlan([string]$Repo, $Alvo, $Fila) {
+    if ($null -eq $Alvo -or $null -eq $Fila) { return $null }
+    $text = [IO.File]::ReadAllText((Join-Path $Repo ($Alvo.path + '/plan.md')))
+    $protocols = @([regex]::Matches($text, '(?m)^# Protocolo:\s*(.*?)\s*$') | ForEach-Object { $_.Groups[1].Value })
+    if ($protocols.Count -eq 0) { return $null }
+    $modes = @([regex]::Matches($text, '(?m)^# Modo:\s*(.*?)\s*$') | ForEach-Object { $_.Groups[1].Value })
+    $errors = [Collections.Generic.List[string]]::new()
+    $result = @{ protocolo = $protocols[0]; modo = if ($modes.Count) { $modes[0] } else { $null }; tasks = @(); integracao = $null; avisos = $errors }
+    if ($protocols.Count -ne 1 -or $protocols[0] -cne 'etapas-v1' -or $modes.Count -ne 1 -or $modes[0] -cnotin @('A','B')) { $errors.Add('protocolo ou modo de execução inválido'); return $result }
+    if ($modes[0] -eq 'B') { return $result }
+    try {
+        if ($Fila.parse -ne 'ok') { throw 'fila incompleta ou inválida' }
+        $tasks = [ordered]@{}
+        $sections = [regex]::Matches($text, '(?ms)^### (T\d+):[^\r\n]*\r?\n(.*?)(?=^### T\d+:|\z)')
+        if ($sections.Count -eq 0) { throw 'fila incompleta ou inválida' }
+        foreach ($section in $sections) {
+            $tid = $section.Groups[1].Value
+            if ($tasks.Contains($tid)) { throw 'T* duplicada' }
+            $lines = $section.Groups[2].Value -split '\r?\n'
+            $deps = @($lines | ForEach-Object { if ($_.Trim() -cmatch '^- \*\*Deps:\*\*\s*(.*)$') { $Matches[1] } })
+            $done = @($lines | ForEach-Object { if ($_.Trim() -cmatch "^- \[([ xX])\] $tid concluída\s*$") { $Matches[1] } })
+            if ($deps.Count -ne 1 -or $done.Count -ne 1 -or $deps[0] -cnotmatch '^(?:nenhuma|T[1-9]\d*(?:[ ,]+T[1-9]\d*)*)$') { throw "conclusão ou Deps inválida: $tid" }
+            $state = Get-ExecutionField $lines 'Execução'
+            if ($state -isnot [Collections.IDictionary] -or $state.Count -ne 2 -or @($state.Keys | Where-Object { $_ -cnotin @('estado','local') }).Count -or $state.estado -cnotin @('pendente','implementada')) { throw "registro de execução inválido: $tid" }
+            if ($state.estado -eq 'implementada' -and $state.local -isnot [Collections.IDictionary]) { throw "snapshot local ausente: $tid" }
+            if ($state.estado -eq 'pendente' -and $null -ne $state.local) { throw "snapshot local inesperado: $tid" }
+            $tasks[$tid] = @{ id = $tid; estado = $state.estado; local_valida = (Test-Snapshot $Repo $state.local) -and $state.local.resultado -eq 'verde'; deps = @((ConvertFrom-DepsValue $deps[0])); done = $done[0] -ne ' ' }
+        }
+        $active = [Collections.Generic.HashSet[string]]::new()
+        $visited = [Collections.Generic.HashSet[string]]::new()
+        foreach ($tid in $tasks.Keys) { Test-ExecutionDependency $tid $tasks $active $visited }
+        $prefix = ($text -split '(?m)^## Tasks', 2)[0] -split '\r?\n'
+        $integration = Get-ExecutionField $prefix 'Integração'
+        if ($integration -isnot [Collections.IDictionary] -or $integration.Count -notin @(3,4) -or @('testes','prova','commit' | Where-Object { -not $integration.Contains($_) }).Count -or @($integration.Keys | Where-Object { $_ -cnotin @('testes','prova','commit','origem') }).Count -or $integration.testes -cnotin @('pendentes','prontos') -or $integration.commit -cnotin @('pendente','registrado')) { throw 'registro de integração inválido' }
+        if ($null -ne $integration.origem -and ($integration.origem -isnot [string] -or $integration.origem -cnotmatch '^(?:[a-f0-9]{40}|[a-f0-9]{64})$')) { throw 'origem da integração inválida' }
+        $valid = Test-Snapshot $Repo $integration.prova
+        $ordered = @($tasks.Keys | Sort-Object { [int]$_.Substring(1) })
+        $result.tasks = @($ordered | ForEach-Object { $tasks[$_] })
+        $integration.prova_valida = $valid
+        $integration.commit_encontrado = if ($valid -and $integration.commit -eq 'registrado') { Get-IntegrationCommit $Repo $ordered $integration.prova $integration.origem } else { $null }
+        $result.integracao = $integration
+        $ready = @($ordered | Where-Object { $tasks[$_].done -or ($tasks[$_].estado -eq 'implementada' -and $tasks[$_].local_valida) })
+        $pending = @($ordered | Where-Object { $_ -notin $ready })
+        $Fila.elegiveis = @($pending | Where-Object { @($tasks[$_].deps | Where-Object { $_ -notin $ready }).Count -eq 0 })
+        $Fila.bloqueadas = @($pending | Where-Object { $_ -notin $Fila.elegiveis } | ForEach-Object { @{ id = $_; deps = @($tasks[$_].deps | Where-Object { $_ -notin $ready }) } })
+    } catch { $errors.Add($_.Exception.Message); $Fila.elegiveis = @() }
+    return $result
+}
+
+# Mantém implementação, complemento de testes, validação e commit como etapas independentes.
+function Get-ExecutionEtapa($Fila, $Review, $Execution) {
+    if ($Execution.avisos.Count) { return $null }
+    if ($Execution.modo -eq 'B') { return Get-Etapa $Fila $Review }
+    if ($null -ne $Review -and -not $Review.legivel) { return $null }
+    if ($null -ne $Review -and $Review.bloqueiosAbertos) { return 'corrigir' }
+    if (@($Execution.tasks | Where-Object { -not $_.done -and ($_.estado -ne 'implementada' -or -not $_.local_valida) }).Count) {
+        if (@($Fila.elegiveis).Count) { return 'implementar' }
+        return 'bloqueada'
+    }
+    $integration = $Execution.integracao
+    if ($integration.testes -ne 'prontos') { return 'testar' }
+    if (-not $integration.prova_valida) { return 'validar' }
+    if ($integration.prova.resultado -ne 'verde') { return 'corrigir_validacao' }
+    if (-not $integration.commit_encontrado -or @($Fila.abertas).Count) { return 'commitar_integracao' }
+    return Get-Etapa $Fila $Review
+}
+
+# Conta as correções já aplicadas. Cada etapa com veredito Request changes soma 1; a última não conta
 # enquanto houver Critical ou Required em [ ], porque a correção que ela pediu ainda está pendente.
 function Get-CorrectionRounds([string[]]$Lines, [bool]$BlockersOpen) {
     $verdicts = New-Object System.Collections.Generic.List[string]
@@ -489,13 +624,15 @@ function Invoke-Implement {
 
     $fila = Get-FilaFromAlvo $repo $alvoItem
     $review = Read-ReviewMarks $repo $alvoItem $warnings
+    $execution = Get-ExecutionFromPlan $repo $alvoItem $fila
     $payload = @{
         alvo             = ConvertTo-PhaseMap $alvoItem
         fila             = $fila
-        etapa            = Get-Etapa $fila $review
+        etapa            = if ($null -ne $execution) { Get-ExecutionEtapa $fila $review $execution } else { Get-Etapa $fila $review }
         rodadas_correcao = if ($null -ne $review) { [int]$review.rodadas } else { 0 }
         avisos           = $warnings.ToArray()
     }
+    if ($null -ne $execution) { $payload.execucao = $execution }
     if ($Mvp) { $payload.analyze_gate = $analyzeGate }
     Write-ImplementOutput $payload
 }

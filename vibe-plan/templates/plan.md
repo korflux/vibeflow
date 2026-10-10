@@ -2,6 +2,8 @@
 # Alvo: <phase-<n>-<slug> ou mvp>
 # Status: rascunho
 # Spec: spec.md (mesma pasta)
+# Protocolo: etapas-v1
+<!-- O coordenador da implement registra # Modo: A ou B ao iniciar; não migre plans históricos implicitamente. -->
 
 <!-- Escreva diretamente neste artefato vivo; o status permanece rascunho durante a elaboração. -->
 
@@ -31,6 +33,7 @@
 - **Decisões:** <ID (ação); omitir quando N/A>
 - **Arquivos:** `path/...` <!-- opcional, quando orientar execução ou ownership -->
 - **Risco:** <somente se alterar isolamento, verificação ou review>
+<!-- Execução e Integração são registros JSON do coordenador no protocolo etapas-v1. Não inserir placeholders operacionais no plan aprovado. -->
 <!-- Não incluir no plan inicial. Durante implementação, acrescente somente se a T* ficar incompleta ou em handoff; remova ao concluí-la. -->
 - **Checkpoint de retomada (opcional):**
   - Estado: <realizado, pendente ou bloqueio>
