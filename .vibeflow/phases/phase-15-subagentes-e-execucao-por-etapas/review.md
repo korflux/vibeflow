@@ -157,3 +157,5 @@ Marco aprovou a review final e autorizou commit e push em 2026-10-10. Fila T1 a 
 ## Integração remota no fechamento
 
 Commit final aprovado: 7960979, somente review.md. Primeiro push recusado por avanço remoto (fetch first), sem publicação parcial. Fetch revelou 836b53a, correção anterior de slug. Merge preservou todos os commits e manteve byte a byte os motores, skill e arquitetura aprovados em A11; não foi adotada a reutilização por slug nem combinação dir+slug do contrato anterior. Teste remoto adaptado comprova slug repetido em novas phases e continuidade por dir, sem duplicação de casos. Suíte review renovada: 25 testes OK, incluindo PowerShell; diff check verde e fixtures removidas. Nenhuma alteração funcional posterior ao snapshot da Etapa 3; aprovação humana vigente.
+
+Resultado confirmado: merge final 090d2c7 publicado com sucesso em origin/main (836b53a..090d2c7). Paths residuais da finalização: review.md desta phase e docs/vibe-review/tests/test-review.py; demais paths da entrega constam dos commits T1-T3/R1-R6 preservados no histórico. Este registro documental não altera inputs de código ou testes e integra a publicação final.
