@@ -79,28 +79,35 @@ Entregar os perfis dos cinco subagentes pelo init, reorganizar o Modo A em etapa
 
 ### T3: Bloquear a review quando a solicitação estiver incompleta
 
-- [ ] T3 concluída
+- [x] T3 concluída
 - **Spec:** A8, C3, C4; integração de A1 a A7
 - **O quê:** tornar obrigatória na review final a matriz solicitação → implementação → evidência → situação, cruzando a origem antes de olhar apenas para as tasks. Alinhar fechamento e rastreabilidade ao commit integrado do Modo A.
 - **Aceite:**
-  - [ ] Review parte do pedido original, mudanças autorizadas, interview disponível, spec e plan. Item omitido no plan continua sendo obrigação se não houve retirada humana.
-  - [ ] Matriz no review.md classifica atendido, parcial, ausente ou retirado explicitamente pelo humano; retirada cita a decisão. Item obrigatório parcial/ausente abre R* bloqueante e impede Approve, inclusive com testes verdes.
-  - [ ] Falta de contexto de origem é relatada como limitação, sem certificação falsa de completude. Review de checkpoint não certifica a entrega inteira.
-  - [ ] Revisor mantém contexto limpo e não corrige código nem opera Git. Evidências válidas da integração são reaproveitadas; lacunas exigem a menor prova suficiente.
-  - [ ] Fechamento reconhece commits integrados e commits históricos por task, sem depender exclusivamente de `task(Tn)`. A confirmação humana única e a limitação de duas rodadas continuam coerentes com T2.
-  - [ ] Avaliação independente usa solicitação com duas capacidades, plan omitindo uma delas e código/testes corretos para a outra. O revisor deve identificar a omissão, registrar evidência e bloquear aprovação. Segundo cenário contém retirada autorizada e não deve criar falso bloqueio.
-  - [ ] Integração final mantém distribuição, paridade de motores, fluxo MVP e proteção de caminhos. Nenhum teste de documentação por busca de palavras é introduzido.
+  - [x] Review parte do pedido original, mudanças autorizadas, interview disponível, spec e plan. Item omitido no plan continua sendo obrigação se não houve retirada humana.
+  - [x] Matriz no review.md classifica atendido, parcial, ausente ou retirado explicitamente pelo humano; retirada cita a decisão. Item obrigatório parcial/ausente abre R* bloqueante e impede Approve, inclusive com testes verdes.
+  - [x] Falta de contexto de origem é relatada como limitação, sem certificação falsa de completude. Review de checkpoint não certifica a entrega inteira.
+  - [x] Revisor mantém contexto limpo e não corrige código nem opera Git. Evidências válidas da integração são reaproveitadas; lacunas exigem a menor prova suficiente.
+  - [x] Fechamento reconhece commits integrados e commits históricos por task, sem depender exclusivamente de `task(Tn)`. A confirmação humana única e a limitação de duas rodadas continuam coerentes com T2.
+  - [x] Avaliação independente usa solicitação com duas capacidades, plan omitindo uma delas e código/testes corretos para a outra. O revisor deve identificar a omissão, registrar evidência e bloquear aprovação. Segundo cenário contém retirada autorizada e não deve criar falso bloqueio.
+  - [x] Integração final mantém distribuição, paridade de motores, fluxo MVP e proteção de caminhos. Nenhum teste de documentação por busca de palavras é introduzido.
 - **Verificação:**
-  - [ ] `python docs/vibe-review/tests/test-review.py`
-  - [ ] `python docs/tests/test-distribuicao.py`
-  - [ ] `python docs/tests/test-mvp-flow.py`
-  - [ ] `python docs/tests/test-reparse-safety.py`
-  - [ ] `gitleaks dir . --redact --no-banner`
-  - [ ] `git diff --check`
-  - [ ] Avaliação comportamental com revisor independente em fixture temporária; registrar achado, situação dos dois cenários e provas nos resultados desta T*. Não confundir a suíte do motor review com prova da decisão semântica do revisor.
+  - [x] `python docs/vibe-review/tests/test-review.py`
+  - [x] `python docs/tests/test-distribuicao.py`
+  - [x] `python docs/tests/test-mvp-flow.py`
+  - [x] `python docs/tests/test-reparse-safety.py`
+  - [x] `gitleaks dir . --redact --no-banner`
+  - [x] `git diff --check`
+  - [x] Avaliação comportamental com revisor independente em fixture temporária; registrar achado, situação dos dois cenários e provas nos resultados desta T*. Não confundir a suíte do motor review com prova da decisão semântica do revisor.
 - **Deps:** T2
 - **Arquivos:** `vibe-review/SKILL.md`, `vibe-review/templates/review.md`, `docs/vibe-review/ARQUITETURA.md`, `docs/vibe-review/ANALISE.md`, `docs/vibe-review/tests/test-review.py` somente se houver contrato executável alterado, `docs/vibe-implement/tests/piloto-modo-a.py` para fixtures comportamentais reutilizáveis, perfis `revisor` distribuídos em T1 e referências de delegação se o relatório precisar refletir a matriz.
 - **Risco:** inferir completude a partir do diff ou de um plan incompleto. O pedido de avaliação não deve revelar o requisito plantado nem a resposta esperada ao revisor. Todo workspace temporário precisa ser removido após coleta da evidência, com falha de limpeza explícita.
+
+- **Avaliação comportamental T3 (2026-10-10):** revisores independentes `avaliacao_review_a` e `avaliacao_review_b`, contexto limpo, prompts neutros iguais e cópias isoladas da skill/motor. Ambos receberam somente paths, diff baseline..HEAD e pedido de review contra solicitação/artefatos. Escreveram somente review.md. Código word_count com três testes reais verdes; pedido original tinha também slugify, ausente no plan/código.
+- **Cenário A T3:** baseline `c4113d31a5bcb95dbc62ed0f1c0f450d6c389b42`, HEAD `59603c6a7e4435b208793ba4a9616ea1633c1fd0`. Review registrou matriz word_count atendido e slugify ausente, sem retirada humana; abriu R1 Required por falta da solicitação e emitiu Request changes apesar dos três testes verdes e bordas verdes. Abriu também R2 por CRLF do patch da fixture. Esta segunda constatação é separada da prova semântica de omissão.
+- **Cenário B T3:** baseline `ed700826381e88e623ea01da559d36f14b52a86c`, HEAD `ba2a1ffb8e374f2e68a2cb25e7b6fd56b313843a`. Review registrou slugify retirado explicitamente pelo humano, citando alteração autorizada em interview.md; três testes e assertions de vazio literal/NBSP/EM SPACE verdes. Approve final proposto, nenhum R*. Revisor distinguiu CRLF por `git -c core.whitespace=cr-at-eol diff --check`, exit 0, sem editar configuração.
+- **Conferência T3:** coordenador leu matrizes/vereditos e status Git dos dois cenários; somente review.md não rastreado em cada fixture. Gerador canônico corrigido para escrever código/testes com LF e validar diff indexado antes de criar commit. Não houve retirada inferida, teste de palavras em documentação ou correção de código pelo revisor. Alteração de newline não muda a prova semântica coletada. Limpeza das fixtures após coleta foi obrigatória; preflight do gerador corrigido e provas finais registrados abaixo.
+- **Prova final T3:** review 19 testes OK (6,415 s), distribuição 9 OK (0,016 s fora do Temp virtualizado), MVP 1 OK (0,625 s), reparse 12 OK (33,901 s). Gitleaks exit 0 sem vazamentos (1,68 MB). Diff check verde, delegation idênticas. Preflight LF corrigido: 2 fixtures, 3 testes por fixture e diff baseline..HEAD verde, exit 0 em aproximadamente 2,62 s. Fixtures de review, preflight e as duas Temp de distribuição foram removidas, ausência conferida.
+- **Resultado T3:** matriz obrigatória e veredito técnico/completude cobrem a origem antes do plan; omissão bloqueia e retirada humana explícita não gera escopo inventado. Não houve alteração de motor review nem testes de documentação. Erro preexistente externo: limpeza silenciosa em tearDown review, registrado em .erros-encontrados/2026-10-10-review-testes-ignoram-falha-de-limpeza.md pelo coordenador, sem ampliar patch.
 
 ## Handoff
 

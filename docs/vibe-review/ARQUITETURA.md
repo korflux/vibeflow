@@ -20,7 +20,7 @@
 | `review.md` | Tipo e escopo de cada etapa, provas, histórico, veredito final e itens R*. |
 | `plan.md` | Status, dependências/bloqueios, paths e provas registrados sob cada T*. |
 
-O motor não julga o diff, não edita source, não escreve a prosa e não sincroniza `REGRAS.md`.
+O motor não julga o diff, não edita source, não escreve a prosa e não sincroniza `AGENTS.md`.
 
 ## 2. Alvo e cadeia
 
@@ -40,7 +40,7 @@ O JSON transitório contém `vibeflow`, `phases`, `next_n`, `existing`, `plan_pe
 2. Prepara `review.md` vazio somente no first-pass, quando ausente.
 3. Preserva bytes do arquivo vivo existente.
 4. A IA escreve diretamente a primeira etapa ou acrescenta a próxima etapa no mesmo arquivo.
-5. O script não substitui o histórico, não toca source e não altera `REGRAS.md`.
+5. O script não substitui o histórico, não toca source e não altera `AGENTS.md`.
 
 Status: `rascunho` durante checkpoints e enquanto o veredito final aguarda confirmação, `request-changes` com R* bloqueante aberto, `aprovado` somente após review final, fila concluída, Approve e confirmação humana. A sincronização de decisões vigentes ocorre somente depois dessa confirmação, por patch mínimo da IA.
 
@@ -52,7 +52,11 @@ Review final exige a fila do plan concluída e julga critérios de aceite, códi
 
 ## 6. Auditoria e prova visual
 
-A review cruza pedido, spec, plan, analyze e código real. Lê no plan o status, as dependências/bloqueios, os paths e as provas de cada T*, sem exigir `implement.md`. Confere as evidências contra o estado atual e segue a seleção proporcional da seção anterior para executar apenas as verificações que faltam; também verifica falsos positivos, segurança, funções alteradas, dados e migrations quando aplicável.
+A review começa pela solicitação original e pelas alterações explicitamente autorizadas pelo humano, usando o contexto disponível e `interview.md` quando houver. Cruza essa origem com spec, plan, analyze e código real. O plan registra execução e não define sozinho a completude da entrega. Obrigação aplicável omitida pela spec ou pelo plan continua obrigatória até uma retirada humana explícita com fonte verificável.
+
+O `review.md` contém uma matriz obrigatória: item da solicitação e fonte (incluindo A*/C* relacionados quando existirem), implementação concreta, evidência e situação. As situações permitidas são `atendido`, `parcial`, `ausente` e `retirado explicitamente pelo humano`. Retirada exige referência à decisão e ao item retirado; inferência do agente, ausência no plan e cronologia não autorizam retirada. Item obrigatório parcial ou ausente abre R* Required ou Critical conforme impacto e bloqueia Approve. Falta da origem ou de contexto essencial é limitação declarada da cobertura: solicita-se o contexto pelo coordenador e não se certifica completude. Checkpoint limita o julgamento ao marco e nunca certifica toda a solicitação.
+
+A rastreabilidade usa o Git real, paths e provas contra o estado integrado. Aceita commits integrados de várias T*, commits por task e histórico legados; o prefixo `task(Tn)` não é condição exclusiva de evidência. No protocolo etapas-v1, confere origem preservada, snapshot da integração, hashes dos inputs e commit registrado na história, distinguindo checagem local de prova integrada. Um checkbox, frase verde ou assunto de commit isolado não comprova implementação. Lê no plan o status, as dependências/bloqueios, os paths e as provas de cada T*, sem exigir `implement.md`. Confere as evidências contra o estado atual e segue a seleção proporcional da seção anterior para executar apenas as verificações que faltam; também verifica falsos positivos, segurança, funções alteradas, dados e migrations quando aplicável.
 
 Aplica os pilares de auditoria ao diff e às superfícies relevantes para o marco ou para a integração final. Usa `Visual` no plan para decidir se o aceite precisa de evidência renderizada; tocar arquivo de UI, HTML ou DOM, sozinho, não aciona navegador. Reaproveita prova de implementação válida e só executa a inspeção se ela estiver ausente/desatualizada ou não cobrir a integração. Quando necessária, seleciona navegador integrado, MCP Server `chrome-devtools` e Playwright somente se já existir ou for solicitado. Começa pela rota/tela, estado e viewport afetados; amplia conforme o impacto em layout, responsividade, interação, componente compartilhado ou risco. Faltando capacidade, aplica a regra de instalação da skill: instala a ferramenta necessária fora do projeto, sem alterar manifesto nem lockfile, e registra na etapa; credencial, conta, pagamento, elevação administrativa e registro persistente de integração (por exemplo, um MCP) vão ao humano. Sem capacidade visual depois disso, para uma prova necessária, abre `R* Required` e não aprova silenciosamente.
 
@@ -70,7 +74,7 @@ Handoff: `vibe-implement` com R* bloqueante, retorno à spec quando a intenção
 
 No Modo A do `vibe-implement`, o coordenador delega a review final a um subagente de contexto limpo. O revisor executa o fluxo normal e grava a etapa no `review.md`, o único artefato vivo que escreve. Marca a proposta no Veredito vigente, mas o status só vira `aprovado` depois da confirmação humana. Não pergunta ao humano: devolve `estado: pergunta` com a recomendação, e o coordenador pergunta. Não executa a finalização Git, não faz commit nem push e não edita `AGENTS.md`; a finalização é do coordenador, depois da confirmação.
 
-O relatório segue o formato fixo de `references/delegation.md` do implement e acrescenta `veredito`, `abertos`, `fechados`, `critical_encontrados` e `decisoes_vigencia`. O template não ganhou campo para isso: R*, etapas e a tabela de decisões já são o registro, e perguntas não podem ficar no arquivo. Na re-review após correção, o revisor confere os R* que o coordenador marcou `[x]` contra o diff e a prova.
+O relatório segue o formato fixo de `references/delegation.md` do implement e acrescenta `veredito`, `abertos`, `fechados`, `critical_encontrados` e `decisoes_vigencia`. A matriz de cobertura, R*, etapas e a tabela de decisões são o registro. O relatório também indica a cobertura da solicitação e limitações de origem, sem duplicar a matriz; perguntas ficam no relatório ao coordenador, nunca no arquivo. Na re-review após correção, o revisor confere os R* que o coordenador marcou `[x]` contra o diff e a prova.
 
 ## 8. Limites
 

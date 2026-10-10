@@ -18,13 +18,13 @@ diff + artefatos da cadeia
   → review final: integração julgada, Approve confirmado, commit residual e push final da phase
 ```
 
-A IA começa pela pergunta de auditoria e pelos T*/diff relevantes. Usa `rg --files` e `rg -n` para localizar paths, símbolos, testes e referências aplicáveis, abrindo somente as dependências do fluxo. O status, as dependências/bloqueios, os paths e as provas de cada task ficam no `plan.md`, que é conferido contra o diff integrado. `implement.md` histórico não é requisito. O histórico do chat não substitui a prova no disco.
+A IA começa recuperando a solicitação original e suas alterações humanas; depois localiza os T*/diff relevantes à pergunta de auditoria. Usa `rg --files` e `rg -n` para localizar paths, símbolos, testes e referências aplicáveis, abrindo somente as dependências do fluxo. O status, as dependências/bloqueios, os paths e as provas de cada task ficam no `plan.md`, que é conferido contra o diff integrado. `implement.md` histórico não é requisito. O histórico do chat não substitui a prova no disco.
 
 ## Escrita direta e etapas
 
 `review.md` é a fonte viva do julgamento. O motor prepara um arquivo vazio na primeira passagem e preserva o existente em todas as outras. Cada etapa identifica se é checkpoint ou review final e registra seu escopo e as provas reaproveitadas ou executadas. A IA fecha R* com prova e atualiza o veredito final diretamente.
 
-Essa escolha mantém o histórico no mesmo path e permite que implement consuma a fila de remédio sem interpretar outro formato. A sincronização de decisões em `REGRAS.md` continua explicitamente pós-aprovação humana.
+Essa escolha mantém o histórico no mesmo path e permite que implement consuma a fila de remédio sem interpretar outro formato. A sincronização de decisões em `AGENTS.md` continua explicitamente pós-aprovação humana.
 
 ## Checkpoint e review final
 
@@ -68,3 +68,9 @@ O contexto limpo que o chat novo dava à review vem de graça num subagente, e o
 ## Impacto
 
 O `plan.md` mantém a trilha executável das T*, enquanto `review.md` mantém os R*, etapas e vereditos. Implement prova os remédios no plan e a review confere os paths no diff antes de fechar o item. Checkpoints preservam o marco sem simular conclusão de feature; a etapa final valida a integração com provas proporcionais. A troca de chat não perde o julgamento porque os registros vivos permanecem no disco.
+
+## Completude pela origem
+
+A execução começa recuperando o pedido original e suas alterações humanas. Depois confronta spec, plan, implementação e provas. Isso permite identificar uma capacidade obrigatória que desapareceu da decomposição, mesmo quando as tasks previstas e seus testes estão corretos. A matriz no review mantém a fonte, a implementação, a evidência e a situação de cada obrigação em um único lugar. Retirada humana explícita permanece visível com sua decisão, evitando transformar redução autorizada em falso bloqueio.
+
+Ausência ou atendimento parcial de obrigação abre correção bloqueante. Sem origem suficiente, o revisor limita o que pode afirmar e devolve a necessidade de contexto ao coordenador. Provas e commits são conferidos contra a integração atual, incluindo commits de várias tasks e histórico legado; nomes de commits não substituem essa conferência. Os dois cenários descartáveis do piloto exercitam essa decisão com revisor independente, além das suítes mecânicas dos motores.

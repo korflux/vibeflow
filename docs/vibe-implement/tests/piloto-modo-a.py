@@ -734,6 +734,54 @@ def check_stage_fixture(fx: Fixture) -> bool:
     return state["etapa"] == "implementar" and state["fila"]["elegiveis"] == ["T1"] and state["execucao"]["modo"] == "A" and run.returncode == 0
 
 
+# Prepara entregas equivalentes com fontes humanas próprias para revisão independente do host.
+def build_review_fixtures(parent: Path) -> list[Fixture]:
+    fixtures = []
+    for name, withdrawn in (("cenario-a", False), ("cenario-b", True)):
+        root = parent / name
+        work = root / "work"
+        work.mkdir(parents=True)
+        plugin = root / "plugin"
+        remote = root / "remote.git"
+        request = "# Interview: utilitários de texto\n# Status: aprovado\n\n## Solicitação original do humano\nQuero word_count(text) para contar palavras separadas por qualquer espaço em branco, incluindo vazio e Unicode, e slugify(text) para transformar texto em slug minúsculo ASCII com hífens, removendo acentos e pontuação. Ambas devem ser funções importáveis.\n"
+        if withdrawn:
+            request += "\n## Alteração autorizada pelo humano\nMarco: Retiro explicitamente slugify desta entrega. Entregue somente word_count; slugify não é obrigatório nesta phase. Esta decisão substitui somente essa capacidade do pedido original.\n"
+        files = {
+            "AGENTS.md": "# Fixture review\nUse unittest da standard library. Sem rede, instalação, configuração global ou push. Revisor escreve somente review.md; não altera source, testes, outros artefatos ou Git.\n",
+            ".gitignore": "__pycache__/\n",
+            "textkit/__init__.py": "# Utilitários de texto importáveis.\n",
+            f"{PHASE_DIR}/interview.md": request,
+            f"{PHASE_DIR}/spec.md": "# Spec: contagem de palavras\n# Status: aprovado\nA1: word_count(text) conta tokens separados por qualquer espaço em branco; vazio retorna zero e Unicode é aceito.\nF1: importar word_count de textkit.stats e obter um inteiro.\nC1: sem rede, UI ou dependências externas.\n",
+            f"{PHASE_DIR}/plan.md": "# Plan: contagem de palavras\n# Status: aprovado\n## Tasks\n### T1: Implementar contagem importável\n- [x] T1 concluída\n- **Spec:** A1, F1, C1\n- **Deps:** nenhuma\n- **Arquivos:** `textkit/stats.py`, `tests/test_stats.py`\n- **Verificação:** `python -m unittest discover -s tests -v`\n- **Prova:** executada na entrega: 3 testes verdes; revalidar os inputs no Git atual.\n- **Visual:** dispensada: funções importáveis sem saída renderizada.\n",
+        }
+        for relative, content in files.items():
+            path = work / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(content, encoding="utf-8", newline="\n")
+        git(work, "init", "-q", "-b", "main")
+        for key, value in (("user.name", "Fixture VibeFlow"), ("user.email", "fixture@example.invalid"), ("core.autocrlf", "false")):
+            git(work, "config", key, value)
+        git(work, "add", "--", "AGENTS.md", ".gitignore", "textkit", ".vibeflow")
+        git(work, "commit", "-q", "-m", "fixture: baseline review")
+        baseline = git(work, "rev-parse", "HEAD")
+        (work / "textkit/stats.py").write_text("# Conta tokens de qualquer espaço em branco usando a regra nativa Unicode.\ndef word_count(text):\n    return len(text.split())\n", encoding="utf-8", newline="\n")
+        (work / "tests").mkdir()
+        (work / "tests/test_stats.py").write_text("import unittest\nfrom textkit.stats import word_count\nclass Stats(unittest.TestCase):\n    def test_whitespace(self):\n        self.assertEqual(3, word_count(' a\\t b\\n c '))\n    def test_empty(self):\n        self.assertEqual(0, word_count('  '))\n    def test_unicode(self):\n        self.assertEqual(2, word_count('ação café'))\n", encoding="utf-8", newline="\n")
+        proof = subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", "tests", "-v"], cwd=work, capture_output=True, text=True)
+        if proof.returncode:
+            raise RuntimeError("prova da fixture review falhou: " + proof.stderr)
+        git(work, "add", "--", "textkit/stats.py", "tests/test_stats.py")
+        # Recusa defeitos do harness antes de expor a entrega ao revisor independente.
+        git(work, "diff", "--cached", "--check")
+        # Os dois formatos reais exercitam rastreabilidade sem impor convenção única ao revisor.
+        git(work, "commit", "-q", "-m", "task(T1): implementar contagem" if not withdrawn else "feat: entregar contagem importável")
+        git(root, "init", "-q", "--bare", "-b", "main", str(remote))
+        git(work, "remote", "add", "origin", str(remote))
+        snapshot_plugin(plugin)
+        fixtures.append(Fixture(root, work, remote, plugin, baseline))
+    return fixtures
+
+
 # Valida só as fixtures, sem chamar o claude: confirma que o defeito, a ausência do pytest e o remoto estão corretos.
 def prepare_only(parent: Path) -> bool:
     ok = True
@@ -780,8 +828,21 @@ def main() -> int:
     parser.add_argument("--keep", action="store_true", help="não remove as fixtures ao final (depuração)")
     parser.add_argument("--prepare-only", action="store_true", help="só valida as fixtures, sem chamar o claude")
     parser.add_argument("--prepare-stages", help="prepara fixture etapas-v1 no diretório explícito, sem chamar modelos; coordenador deve removê-la após avaliação")
+    parser.add_argument("--prepare-review", help="prepara dois cenários para revisão independente, sem chamar modelos; coordenador remove após avaliação")
     args = parser.parse_args()
     sys.stdout.reconfigure(errors="replace")
+    if args.prepare_review:
+        destination = Path(args.prepare_review).absolute()
+        if destination.exists():
+            parser.error("--prepare-review exige diretório ausente")
+        destination.mkdir(parents=True)
+        try:
+            fixtures = build_review_fixtures(destination)
+            print(json.dumps([{"fixture": str(fx.root), "work": str(fx.work), "plugin": str(fx.plugin), "baseline": fx.baseline, "head": git(fx.work, "rev-parse", "HEAD"), "prova": "python -m unittest discover -s tests -v: 3 testes OK"} for fx in fixtures], ensure_ascii=False))
+            return 0
+        except Exception:
+            remove_tree(destination)
+            raise
     if args.prepare_stages:
         destination = Path(args.prepare_stages).absolute()
         if destination.exists():

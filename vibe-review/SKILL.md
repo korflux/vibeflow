@@ -76,9 +76,15 @@ A review é um processo cético e investigativo. Não confie cegamente em checkb
 | Checkpoint | Somente as T* concluídas do marco declarado, suas provas, o contrato compartilhado ou risco que justifica a revisão. Registre as T* que continuam abertas. | A etapa pode concluir “Marco aprovado” ou “Request changes”. Nunca declare a feature concluída, marque Approve final, sincronize decisões, crie commit residual ou publique a phase. Com fila aberta e sem bloqueios, mantenha `# Status: rascunho` e faça handoff para `vibe-implement`. |
 | Final | Fila do plan concluída; julgue critérios de aceite, código integrado e riscos que o diff alterou. | Approve só depois de comprovar a integração e fechar bloqueios. A finalização Git continua sujeita à confirmação humana explícita. |
 
+### Conferir a solicitação original
+
+1. Recupere a solicitação original e as alterações explicitamente autorizadas pelo humano no contexto e em `interview.md`, quando disponível. Confronte essa origem com spec, plan e implementação; ausência no plan não retira obrigação aplicável.
+2. Preencha a matriz de Cobertura da solicitação no `review.md`: item e fonte, implementação, evidência e situação `atendido`, `parcial`, `ausente` ou `retirado explicitamente pelo humano`. Relacione A*/C* quando existirem. Para retirada, cite a decisão humana e o item exato; não deduza autorização.
+3. Abra R* Required ou Critical conforme o impacto para obrigação parcial ou ausente e bloqueie Approve. Se faltar origem ou contexto essencial, declare a limitação de cobertura e devolva a necessidade de contexto ao coordenador; não certifique completude. No checkpoint, limite a matriz julgada ao marco e indique obrigações restantes.
+
 ### Selecionar e executar provas
 
-1. Use o `plan.md` como registro das execuções: confira o status da T*, `Deps` e bloqueios, `Arquivos` e `Prova`/`Verificação`. Compare os inputs da prova com o estado integrado e reaproveite prova verde somente quando esses inputs permanecem iguais e a prova ainda cobre a integração. Mudança em plan, spec ou review não invalida prova de código; edição posterior em código/teste invalida somente a prova afetada. `implement.md` histórico não é necessário para a review.
+1. Use o `plan.md` como registro das execuções: confira o status da T*, `Deps` e bloqueios, `Arquivos` e `Prova`/`Verificação`. Compare os inputs da prova com o estado integrado e reaproveite prova verde somente quando esses inputs permanecem iguais e a prova ainda cobre a integração. Mudança em plan, spec ou review não invalida prova de código; edição posterior em código/teste invalida somente a prova afetada. `implement.md` histórico não é necessário para a review. Confira a história Git e os paths reais, aceitando commits integrados de várias T* e commits legados sem exigir exclusivamente o prefixo `task(Tn)`. Em etapas-v1, confira origem preservada, snapshot integrado, hashes dos inputs e commit real; checagem local não substitui integração.
 2. Execute somente a menor prova que falta para julgar o marco ou a integração. Reexecute uma prova quando estiver ausente, falhou, ficou desatualizada por edição posterior, não cobre a integração entre tasks, ou quando um risco alterado exigir cobertura adicional.
 3. Não rode automaticamente a matriz de comandos de cada T*. Na review final, prefira uma verificação agregada existente quando ela comprovar a integração; rode o Smoke Test somente quando a entrada real tiver mudado, sua prova estiver ausente/desatualizada ou for necessária para cobrir o fluxo integrado.
 4. Registre em cada etapa as provas reaproveitadas, os comandos executados e o motivo. Se uma prova necessária falhar, abra `R*` `Required` com comando e remédio; não aprove silenciosamente.
@@ -86,7 +92,7 @@ A review é um processo cético e investigativo. Não confie cegamente em checkb
 Inspecione o código integrado e aplique estes pilares ao escopo da etapa:
 
 1. **Rastreabilidade e Verificação Anti-Alucinação (Audit Trail):**
-   - Cruze o pedido (`interview.md` quando houver), a Cobertura da origem da spec, os critérios `A*`/`C*` e o `plan.md`. No checkpoint, julgue só o marco declarado; no final, confirme que as tasks concluídas produziram a integração pedida. Item aplicável da interview sem destino na spec é lacuna de escopo, inclusive em rota sem analyze.
+   - Cruze a matriz da solicitação original e suas decisões humanas com a Cobertura da origem da spec, os critérios `A*`/`C*` e o `plan.md`. No checkpoint, julgue só o marco declarado; no final, confirme que as tasks concluídas produziram a integração pedida. Item aplicável da interview sem destino na spec é lacuna de escopo, inclusive em rota sem analyze.
    - Inspecione os paths e o fluxo real que comprovam esse escopo. T* marcada sem código correspondente vira `R*` `gap: missing` (`Critical`).
 2. **Provas e Integridade dos Testes:**
    - Cace falsos positivos: testes sem asserções reais, testes que dão `assert True`, testes que apenas testam mocks sem exercitar a implementação real.
@@ -189,7 +195,7 @@ Esta seção só se aplica à review final, depois da aprovação humana explíc
 1. Execute a prova final necessária para a integração conforme §3, sem repetir automaticamente a matriz de cada T*. Execute `git diff --check` e gitleaks quando previsto pelo repositório.
 2. Compare o estado atual com o snapshot da review. Se houver path fora da phase, das decisões aprovadas ou da correção registrada, pare e peça isolamento; não misture trabalho pré-existente.
 3. Adicione somente os paths residuais autorizados, com `git add -- path/da/phase AGENTS.md` quando a sincronização foi aprovada. Nunca use `git add -A` ou `git add .`.
-4. Valide `git diff --cached --check` e a lista de paths. Crie `chore(phase-N): finalize review` sem `Co-Authored-By` quando houver mudanças residuais. Não crie commit vazio; se não houver residual, o último commit da task é o HEAD da phase.
+4. Valide `git diff --cached --check` e a lista de paths. Crie `chore(phase-N): finalize review` sem `Co-Authored-By` quando houver mudanças residuais. Não crie commit vazio; se não houver residual, o último commit integrado ou da task é o HEAD da phase.
 5. Execute `git push` para o upstream do branch atual, sem `--force`. Ausência de upstream, falha de commit ou falha de push mantém o handoff bloqueado e precisa ser informada com a causa segura.
 6. Registre no `review.md` e no chat o hash do commit final ou o HEAD já existente, o resultado do push e os paths enviados. O inventário é JSON transitório no stdout.
 
@@ -202,3 +208,5 @@ Vale quando o coordenador do `vibe-implement` (Modo A) delega esta skill e o ped
 - **Re-review após correção:** acrescente nova etapa no mesmo arquivo e confira os R* que o coordenador marcou `[x]` contra o diff e a prova antes de aceitá-los.
 - **Proibido:** finalização Git do §5, commit, push, edição de `AGENTS.md`, aprovação humana marcada no arquivo, correção de código e instalação fora da regra do §3.
 - **Resposta:** o relatório substitui a resposta de chat do §4. Além dos campos fixos, devolva `veredito` (`Approve final`, `Request changes` ou `Approve com defer`), `abertos` (R* Critical e Required em `[ ]`), `fechados` (R* fechados nesta etapa), `critical_encontrados` (R* Critical abertos nesta etapa) e `decisoes_vigencia` (IDs propostos na tabela, ou nenhuma).
+
+Na review delegada, informe também a cobertura da solicitação e qualquer limitação de origem, referenciando a matriz gravada. Approve exige obrigações atendidas ou retiradas explicitamente pelo humano, origem suficiente e nenhum bloqueio aberto.

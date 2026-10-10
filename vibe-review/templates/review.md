@@ -18,14 +18,15 @@
 - Provas reaproveitadas: <T* e resultado | nenhuma>
 - Provas executadas: <comando, motivo e resultado | nenhuma>
 
-## Cobertura
+## Cobertura da solicitação
 
-<!-- omitir se não houver spec.md -->
+<!-- Obrigatória. Comece pela solicitação original e alterações humanas; ausência no plan não retira obrigação. No checkpoint indique o limite do marco. Declare aqui limites de origem/contexto, sem certificar completude quando faltarem. -->
 
-| Chave | Código | Notas |
-|---|---|---|
-| A1 | ok | missing | partial | contradicts | <path ou -> |
-| C1 | ok | ... | ... |
+- Origem e limites: <fontes disponíveis e limites de cobertura | origem completa>
+
+| Item da solicitação e fonte (A*/C* quando houver) | Implementação | Evidência | Situação |
+|---|---|---|---|
+| <obrigação e fonte verificável> | <path e comportamento, ou ausente> | <comando/resultado ou decisão humana com fonte> | <atendido / parcial / ausente / retirado explicitamente pelo humano> |
 
 ## Checklist de correções
 
@@ -35,7 +36,7 @@
 
 ### Critical
 
-- [ ] R1: **Critical** - `path` - <o que está errado> - remédio: <movimento> - prova: <comando> - source: <A*|C*|diff|plan.md> - gap: <missing|partial|contradicts|nenhum>
+- [ ] R1: **Critical** - `path` - <o que está errado> - remédio: <movimento> - prova: <comando> - source: <solicitação|decisão humana|A*|C*|diff|plan.md> - gap: <missing|partial|contradicts|nenhum>
 
 ### Required
 
@@ -75,7 +76,7 @@
 
 <!-- Preencher somente na review final. Checkpoint registra o resultado do marco em Etapas e nunca aprova nem conclui a phase. -->
 
-- [ ] **Approve**: nenhum Critical/Required em `[ ]`
+- [ ] **Approve**: origem suficiente, obrigações atendidas ou retiradas explicitamente pelo humano e nenhum Critical/Required em `[ ]`
 - [ ] **Request changes**: há Critical/Required em `[ ]`
 - [ ] **Approve com defer**: <qual R* e por quê>
 
@@ -103,7 +104,7 @@ vibe-implement | finalização Git da phase
 <!-- Omitir em checkpoint. Só a review final, com fila concluída e aprovação humana, abre este gate. -->
 
 - Pré-condições: Approve final confirmado, todas as `T*` concluídas, Critical/Required fechados, prova necessária da integração verde, `git diff --check` e gitleaks quando previsto.
-- Commit final: `chore(phase-N): finalize review`, somente com paths residuais autorizados e sem `Co-Authored-By`; sem mudanças residuais, manter o último commit da task.
+- Commit final: `chore(phase-N): finalize review`, somente com paths residuais autorizados e sem `Co-Authored-By`; sem mudanças residuais, manter o último commit integrado ou da task.
 - Push: `git push` para o upstream atual, sem `--force`. Registrar hash/HEAD, paths e resultado; falha mantém o handoff bloqueado.
 
 ## Etapas
@@ -115,7 +116,8 @@ vibe-implement | finalização Git da phase
 - T* abertas fora do marco: <IDs ou nenhuma>
 - Provas reaproveitadas: <IDs e resultado | nenhuma>
 - Provas executadas: <comando, motivo e resultado | nenhuma>
-- Leu: plan.md <sim | não havia>
+- Leu: <solicitação original, alterações humanas e artefatos consultados>
+- Cobertura: <mudanças na matriz e limite do marco | conferida sem mudança>
 - Abriu: R1, R2 (ou nenhum)
 - Fechou: nenhum
 - Veredito desta etapa: Marco aprovado | Request changes | Approve final | Approve com defer

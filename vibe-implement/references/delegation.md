@@ -34,7 +34,7 @@ pendencias: <o que ficou de fora ou nenhuma>
 pergunta: <só quando o estado é pergunta, com a recomendação>
 ```
 
-`verde` comprova somente o recorte delegado. No Modo A por etapas acrescente `etapa: codigo | testes | validacao | correcao` e informe se a evidência é local ou integrada, com inputs e resultado; verde local não autoriza marcar T* concluída. `bloqueado` é impedimento real, descrito em `pendencias`. `pergunta` é decisão que só o humano toma. A skill pode acrescentar campos do papel, como o veredito e os R* abertos do revisor, sem remover os cinco acima.
+`verde` comprova somente o recorte delegado. No Modo A por etapas acrescente `etapa: codigo | testes | validacao | correcao` e informe se a evidência é local ou integrada, com inputs e resultado; verde local não autoriza marcar T* concluída. `bloqueado` é impedimento real, descrito em `pendencias`. `pergunta` é decisão que só o humano toma. A skill pode acrescentar campos do papel, como o veredito e os R* abertos do revisor, sem remover os cinco acima. Na review, informe cobertura da solicitação e limitações de origem referenciando a matriz no review.md; plan sozinho não certifica completude.
 
 ## Escritor único e proibições
 
