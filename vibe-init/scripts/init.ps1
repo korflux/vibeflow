@@ -6,15 +6,73 @@ $ErrorActionPreference = 'Stop'
 $Utf8 = [Text.UTF8Encoding]::new($false)
 $Start = '<!-- VIBEFLOW:CADEIA start -->'
 $End = '<!-- VIBEFLOW:CADEIA end -->'
+$Roles = @('explorador', 'implementador', 'verificador', 'corretor', 'revisor')
 
 # Localiza o projeto por argumento, Git ou diretório atual.
 function Get-ProjectRoot {
-    if ($Root) { return (Resolve-Path -LiteralPath $Root).Path }
+    if ($Root) {
+        $project = [IO.Path]::GetFullPath($Root)
+        if (-not (Test-Path -LiteralPath $project -PathType Container)) { throw "RAIZ_AUSENTE: $project" }
+        return $project
+    }
     if (Get-Command git -ErrorAction SilentlyContinue) {
         $gitRoot = & git rev-parse --show-toplevel 2>$null
         if ($LASTEXITCODE -eq 0) { return (Resolve-Path -LiteralPath $gitRoot).Path }
     }
     return (Get-Location).Path
+}
+
+# Inspeciona cada componente por metadados antes de ler ou criar perfis, sem resolver links.
+function Assert-ProfilePath([string]$Path, [bool]$Source = $false) {
+    $candidate = $Path
+    $leaf = $true
+    while ($candidate) {
+        $item = Get-Item -LiteralPath $candidate -Force -ErrorAction SilentlyContinue
+        if (-not $item) {
+            if ($Source) { throw "PERFIL_AUSENTE: $Path" }
+        } else {
+            if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+                ($leaf -and ($item -isnot [IO.FileInfo])) -or
+                (-not $leaf -and ($item -isnot [IO.DirectoryInfo]))) {
+                throw "TIPO_INESPERADO: perfil $candidate não é caminho regular"
+            }
+            if ($Source -and $leaf -and $item.Length -gt 1MB) { throw "FONTE_GRANDE: $Path excede 1 MiB" }
+        }
+        $parent = [IO.Path]::GetDirectoryName($candidate)
+        if ($parent -eq $candidate) { break }
+        $candidate = $parent
+        $leaf = $false
+    }
+}
+
+# Valida a allowlist completa antes de qualquer mutação de regras ou instalação.
+function Get-AgentProfiles([string]$Project) {
+    foreach ($hostName in @('codex', 'claude')) {
+        $extension = if ($hostName -eq 'codex') { '.toml' } else { '.md' }
+        foreach ($role in $Roles) {
+            $source = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot "../templates/agents/$hostName/$role$extension"))
+            $destination = Join-Path $Project ".$hostName/agents/$role$extension"
+            Assert-ProfilePath $source $true
+            Assert-ProfilePath $destination
+            @{ host = $hostName; role = $role; source = $source; destination = $destination }
+        }
+    }
+}
+
+# Preserva perfis idênticos ou personalizados e cria somente arquivos ausentes de forma exclusiva.
+function Install-AgentProfiles([string]$Project, $Profiles) {
+    foreach ($profile in $Profiles) {
+        Assert-ProfilePath $profile.destination
+        if (Test-Path -LiteralPath $profile.destination) {
+            $status = if ((Get-FileHash -LiteralPath $profile.source -Algorithm SHA256).Hash -eq (Get-FileHash -LiteralPath $profile.destination -Algorithm SHA256).Hash) { 'ja_instalado' } else { 'conflito' }
+        } else {
+            New-Item -ItemType Directory -Path (Split-Path -Parent $profile.destination) -Force | Out-Null
+            $stream = [IO.File]::Open($profile.destination, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
+            try { $bytes = [IO.File]::ReadAllBytes($profile.source); $stream.Write($bytes, 0, $bytes.Length) } finally { $stream.Dispose() }
+            $status = 'instalado'
+        }
+        @{ host = $profile.host; role = $profile.role; path = [IO.Path]::GetRelativePath($Project, $profile.destination).Replace('\','/'); status = $status }
+    }
 }
 
 # Confere se a fonte é arquivo local, inclusive quando AGENTS ainda é symlink legado.
@@ -88,6 +146,7 @@ function Update-Header([string]$Content, [string]$Template) {
 # Executa o init e relata arquivos legados que ainda exigem consolidação sem apagá-los.
 function Invoke-VibeInit {
     $project = Get-ProjectRoot
+    $profiles = @(Get-AgentProfiles $project)
     $vf = Join-Path $project '.vibeflow'
     $phases = Join-Path $vf 'phases'
     $old = Join-Path $vf 'old'
@@ -165,6 +224,8 @@ function Invoke-VibeInit {
         $actions.Add('atualizar_ponte_antigravity')
     }
     $report = @{ root = $project; target = 'AGENTS.md'; actions = @($actions); olds = @($records); merges = $merges; migrated = @($migrated | ForEach-Object { [IO.Path]::GetRelativePath($project, $_.path).Replace('\','/') }); legacy_present = @($legacySources | Where-Object { Test-Path -LiteralPath $_.path } | ForEach-Object { [IO.Path]::GetRelativePath($project, $_.path).Replace('\','/') }) }
+    $report.agent_profiles = @(Install-AgentProfiles $project $profiles)
+    $report.agent_session = @{ status = 'nao_verificada'; reload_required = $true }
     $reportPath = Join-Path $vf 'init-report.json'
     [IO.File]::WriteAllText($reportPath, ($report | ConvertTo-Json -Depth 8), $Utf8)
     Write-Output $reportPath

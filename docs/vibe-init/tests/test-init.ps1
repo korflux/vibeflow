@@ -37,6 +37,7 @@ Check-Scenario 'template-crlf-idempotente' {
     New-Item -ItemType Directory -Path $scriptsCopy, $templatesCopy -Force | Out-Null
     $engineCopy = Join-Path $scriptsCopy 'init.ps1'
     Copy-Item -LiteralPath $engine -Destination $engineCopy
+    Copy-Item -LiteralPath (Join-Path $PSScriptRoot '../../../vibe-init/templates/agents') -Destination (Join-Path $templatesCopy 'agents') -Recurse
     $templateSource = Join-Path $PSScriptRoot '../../../vibe-init/templates/AGENTS.md'
     $templateCopy = Join-Path $templatesCopy 'AGENTS.md'
     $templateText = [IO.File]::ReadAllText($templateSource)
@@ -70,6 +71,33 @@ Check-Scenario 'ponte-legada' {
     $report = Get-Content -LiteralPath (Join-Path $vf 'init-report.json') -Raw | ConvertFrom-Json
     if ((Test-Path (Join-Path $vf 'REGRAS.md')) -or (Test-Path (Join-Path $repo 'CLAUDE.md')) -or $report.migrated -notcontains '.vibeflow/REGRAS.md') { throw 'ponte antiga não migrada' }
     if ((Get-Item -LiteralPath (Join-Path $repo 'AGENTS.md')).LinkType) { throw 'AGENTS continua symlink' }
+}
+
+# Confere instalação, repetição e conflito sem interpretar o conteúdo personalizado.
+Check-Scenario 'perfis-instalacao-e-conflito' {
+    param($repo)
+    & $engine -Root $repo | Out-Null
+    $reportPath = Join-Path $repo '.vibeflow/init-report.json'
+    $first = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
+    if ($first.agent_profiles.Count -ne 10 -or @($first.agent_profiles | Where-Object status -ne 'instalado').Count) { throw 'perfis não instalados' }
+    if ($first.agent_session.status -ne 'nao_verificada' -or -not $first.agent_session.reload_required) { throw 'sessão certificada indevidamente' }
+    $snapshots = @{}
+    foreach ($profile in $first.agent_profiles) {
+        $path = Join-Path $repo $profile.path
+        $snapshots[$path] = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash
+    }
+    & $engine -Root $repo | Out-Null
+    $second = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
+    if (@($second.agent_profiles | Where-Object status -ne 'ja_instalado').Count) { throw 'perfis não idempotentes' }
+    foreach ($path in $snapshots.Keys) {
+        if ((Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash -ne $snapshots[$path]) { throw 'bytes alterados' }
+    }
+    $custom = Join-Path $repo '.claude/agents/revisor.md'
+    [IO.File]::WriteAllBytes($custom, [byte[]]@(0, 255, 10))
+    & $engine -Root $repo | Out-Null
+    $last = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
+    $conflicts = @($last.agent_profiles | Where-Object status -eq 'conflito')
+    if ($conflicts.Count -ne 1 -or $conflicts[0].path -ne '.claude/agents/revisor.md' -or [Convert]::ToBase64String([IO.File]::ReadAllBytes($custom)) -ne 'AP8K') { throw 'personalização perdida' }
 }
 
 if ($failed) { exit 1 }

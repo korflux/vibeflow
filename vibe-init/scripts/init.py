@@ -18,6 +18,8 @@ from pathlib import Path
 START = "<!-- VIBEFLOW:CADEIA start -->"
 END = "<!-- VIBEFLOW:CADEIA end -->"
 BRIDGE = "@../../AGENTS.md\n"
+ROLES = ("explorador", "implementador", "verificador", "corretor", "revisor")
+HOSTS = (("codex", ".codex", ".toml"), ("claude", ".claude", ".md"))
 
 
 # Recusa symlinks e junctions nos diretórios e artefatos operacionais do init.
@@ -30,7 +32,7 @@ def is_reparse(path: Path) -> bool:
 # Aceita uma raiz explícita e só usa Git para localizar o projeto quando ela falta.
 def repo_root(value: str | None) -> Path:
     if value:
-        root = Path(value).resolve()
+        root = Path(value).absolute()
     else:
         probe = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True, check=False) if shutil.which("git") else None
         root = Path(probe.stdout.strip()).resolve() if probe and probe.returncode == 0 else Path.cwd().resolve()
@@ -46,6 +48,53 @@ def sha256(path: Path) -> str:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+# Inspeciona cada ancestral sem seguir links, inclusive destinos quebrados e tipos especiais.
+def validate_profile_path(path: Path, *, source: bool = False) -> None:
+    for candidate in (*reversed(path.parents), path):
+        try:
+            info = candidate.lstat()
+        except FileNotFoundError:
+            if source:
+                raise RuntimeError(f"PERFIL_AUSENTE: {path}")
+            continue
+        reparse = bool(getattr(info, "st_file_attributes", 0) & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400))
+        regular = stat.S_ISREG(info.st_mode) if candidate == path else stat.S_ISDIR(info.st_mode)
+        if reparse or stat.S_ISLNK(info.st_mode) or not regular:
+            raise RuntimeError(f"TIPO_INESPERADO: perfil {candidate} não é caminho regular")
+        if source and candidate == path and info.st_size > 1024 * 1024:
+            raise RuntimeError(f"FONTE_GRANDE: {path} excede 1 MiB")
+
+
+# Prepara a allowlist inteira antes das mutações e mantém fontes pessoais fora do fluxo.
+def prepare_profiles(root: Path) -> list[tuple[str, str, Path, Path]]:
+    templates = Path(__file__).absolute().parent.parent / "templates" / "agents"
+    profiles = []
+    for host, folder, extension in HOSTS:
+        for role in ROLES:
+            source = templates / host / f"{role}{extension}"
+            destination = root / folder / "agents" / f"{role}{extension}"
+            validate_profile_path(source, source=True)
+            validate_profile_path(destination)
+            profiles.append((host, role, source, destination))
+    return profiles
+
+
+# Instala somente ausentes; compara hashes sem interpretar customizações ou sobrescrevê-las.
+def install_profiles(root: Path, profiles: list[tuple[str, str, Path, Path]]) -> list[dict[str, str]]:
+    records = []
+    for host, role, source, destination in profiles:
+        validate_profile_path(destination)
+        if destination.exists():
+            status = "ja_instalado" if sha256(source) == sha256(destination) else "conflito"
+        else:
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            with destination.open("xb") as stream:
+                stream.write(source.read_bytes())
+            status = "instalado"
+        records.append({"host": host, "role": role, "path": destination.relative_to(root).as_posix(), "status": status})
+    return records
 
 
 # Recusa links externos e tipos inesperados nas fontes de regras.
@@ -112,6 +161,7 @@ def update_header(content: str, template: str) -> str:
 
 # Prepara diretórios e relatório operacional sem criar outra fonte de regras.
 def run(root: Path) -> Path:
+    profiles = prepare_profiles(root)
     vf = root / ".vibeflow"
     phases = vf / "phases"
     old = vf / "old"
@@ -180,6 +230,8 @@ def run(root: Path) -> Path:
         actions.append("atualizar_ponte_antigravity")
 
     report = {"root": str(root), "target": "AGENTS.md", "actions": actions, "olds": records, "merges": merges, "migrated": [path.relative_to(root).as_posix() for path in migrated], "legacy_present": [path.relative_to(root).as_posix() for path, _ in legacy_sources if path.exists() or path.is_symlink()]}
+    report["agent_profiles"] = install_profiles(root, profiles)
+    report["agent_session"] = {"status": "nao_verificada", "reload_required": True}
     output = vf / "init-report.json"
     output.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print(output)

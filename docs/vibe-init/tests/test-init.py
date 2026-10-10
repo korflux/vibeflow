@@ -7,6 +7,7 @@ import json
 import shutil
 import subprocess
 import sys
+import tomllib
 import unittest
 import uuid
 from pathlib import Path
@@ -15,6 +16,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 PYTHON = ROOT / "vibe-init" / "scripts" / "init.py"
 POWERSHELL = ROOT / "vibe-init" / "scripts" / "init.ps1"
+ROLES = ("explorador", "implementador", "verificador", "corretor", "revisor")
+ENGINES = (False, True) if shutil.which("pwsh") else (False,)
 
 
 # Executa um motor em raiz isolada e carrega o relatório operacional produzido.
@@ -37,6 +40,126 @@ class InitContracts(unittest.TestCase):
     # Remove apenas a pasta conhecida desta fixture após cada teste.
     def tearDown(self) -> None:
         shutil.rmtree(self.repo)
+
+    # Percorre instalação, descoberta estrutural, repetição e conflito preservado em ambos os motores.
+    def test_profiles_install_repeat_and_preserve_customization(self) -> None:
+        for powershell in ENGINES:
+            with self.subTest(powershell=powershell):
+                repo = self.repo / str(powershell)
+                repo.mkdir()
+                process, report = invoke(repo, powershell)
+                self.assertEqual(0, process.returncode, process.stderr)
+                self.assertEqual(10, len(report["agent_profiles"]))
+                self.assertEqual({"instalado"}, {entry["status"] for entry in report["agent_profiles"]})
+                self.assertEqual({"status": "nao_verificada", "reload_required": True}, report["agent_session"])
+                snapshots = {}
+                for entry in report["agent_profiles"]:
+                    host, role = entry["host"], entry["role"]
+                    self.assertIn(role, ROLES)
+                    extension = ".toml" if host == "codex" else ".md"
+                    expected_path = f".{host}/agents/{role}{extension}"
+                    self.assertEqual(expected_path, entry["path"])
+                    profile = repo / expected_path
+                    source = ROOT / "vibe-init/templates/agents" / host / profile.name
+                    self.assertEqual(source.read_bytes(), profile.read_bytes())
+                    snapshots[expected_path] = (profile.read_bytes(), profile.stat().st_mtime_ns)
+                    if host == "codex":
+                        metadata = tomllib.loads(profile.read_text(encoding="utf-8"))
+                        self.assertTrue(set(metadata) <= {"name", "description", "model", "model_reasoning_effort", "developer_instructions", "sandbox_mode"})
+                        self.assertTrue(isinstance(metadata["developer_instructions"], str))
+                        model = "gpt-6-luna" if role in ("explorador", "verificador") else "gpt-6-astra" if role == "revisor" else "gpt-6.1-sol"
+                        effort = "max" if role in ("explorador", "verificador") else "low" if role == "revisor" else "medium"
+                        self.assertEqual(effort, metadata["model_reasoning_effort"])
+                        if role == "explorador": self.assertEqual("read-only", metadata["sandbox_mode"])
+                    else:
+                        # Os recursos usam frontmatter escalar simples, sem depender de parser YAML externo.
+                        lines = profile.read_text(encoding="utf-8").splitlines()
+                        self.assertEqual("---", lines[0])
+                        end = lines.index("---", 1)
+                        metadata = dict(line.split(": ", 1) for line in lines[1:end])
+                        self.assertTrue(set(metadata) <= {"name", "description", "model", "effort", "tools"})
+                        model = "haiku" if role in ("explorador", "verificador") else "opus" if role == "revisor" else "sonnet"
+                        self.assertEqual("medium" if role == "revisor" else "xhigh", metadata["effort"])
+                        if role == "explorador": self.assertEqual("Read, Grep, Glob", metadata["tools"])
+                    self.assertEqual(role, metadata["name"])
+                    self.assertEqual(model, metadata["model"])
+                    self.assertTrue(isinstance(metadata["description"], str))
+                process, report = invoke(repo, powershell)
+                self.assertEqual(0, process.returncode, process.stderr)
+                self.assertEqual({"ja_instalado"}, {entry["status"] for entry in report["agent_profiles"]})
+                for path, (content, modified) in snapshots.items():
+                    self.assertEqual(content, (repo / path).read_bytes())
+                    self.assertEqual(modified, (repo / path).stat().st_mtime_ns)
+                customized = repo / ".codex/agents/implementador.toml"
+                customized.write_bytes(b"personalizado\x00\xff")
+                before = customized.stat().st_mtime_ns
+                for _ in range(2):
+                    process, report = invoke(repo, powershell)
+                    self.assertEqual(0, process.returncode, process.stderr)
+                    conflicts = [entry for entry in report["agent_profiles"] if entry["status"] == "conflito"]
+                    self.assertEqual([".codex/agents/implementador.toml"], [entry["path"] for entry in conflicts])
+                    self.assertEqual(b"personalizado\x00\xff", customized.read_bytes())
+                    self.assertEqual(before, customized.stat().st_mtime_ns)
+
+    # Um destino inválido no último host impede qualquer mutação anterior ou saída para fora da raiz.
+    def test_profiles_preflight_rejects_unsafe_destinations(self) -> None:
+        for powershell in ENGINES:
+            for scenario in ("file_parent", "directory_leaf", "broken_link", "linked_parent", "linked_leaf"):
+                with self.subTest(powershell=powershell, scenario=scenario):
+                    repo = self.repo / f"{powershell}-{scenario}"
+                    repo.mkdir()
+                    outside = self.repo / f"outside-{powershell}-{scenario}"
+                    outside.mkdir()
+                    sentinel = outside / "sentinel"
+                    sentinel.write_bytes(b"preservado")
+                    host = repo / ".claude"
+                    if scenario == "file_parent":
+                        host.write_bytes(b"arquivo")
+                    elif scenario == "linked_parent":
+                        host.symlink_to(outside, target_is_directory=True)
+                    else:
+                        folder = host / "agents"
+                        folder.mkdir(parents=True)
+                        target = folder / "revisor.md"
+                        if scenario == "directory_leaf": target.mkdir()
+                        elif scenario == "broken_link": target.symlink_to(outside / "ausente")
+                        else: target.symlink_to(sentinel)
+                    process, report = invoke(repo, powershell)
+                    self.assertNotEqual(0, process.returncode)
+                    self.assertIn("TIPO_INESPERADO", process.stderr)
+                    self.assertIsNone(report)
+                    self.assertFalse((repo / "AGENTS.md").exists())
+                    self.assertFalse((repo / ".codex").exists())
+                    self.assertEqual(b"preservado", sentinel.read_bytes())
+                    self.assertEqual([sentinel], list(outside.iterdir()))
+
+    # Pacotes danificados são recusados antes de qualquer escrita, inclusive fonte e ancestral linkados.
+    def test_profiles_preflight_rejects_invalid_sources(self) -> None:
+        for powershell in ENGINES:
+            for scenario in ("missing", "large", "directory", "link", "linked_parent"):
+                with self.subTest(powershell=powershell, scenario=scenario):
+                    base = self.repo / f"source-{powershell}-{scenario}"
+                    package = base / "skill"
+                    shutil.copytree(ROOT / "vibe-init", package)
+                    source = package / "templates/agents/claude/revisor.md"
+                    source.unlink()
+                    if scenario == "large": source.write_bytes(b"x" * (1024 * 1024 + 1))
+                    elif scenario == "directory": source.mkdir()
+                    elif scenario == "link": source.symlink_to(package / "templates/agents/codex/revisor.toml")
+                    elif scenario == "linked_parent":
+                        folder = source.parent
+                        moved = base / "claude"
+                        folder.rename(moved)
+                        (moved / "revisor.md").write_text("perfil", encoding="utf-8")
+                        folder.symlink_to(moved, target_is_directory=True)
+                    repo = base / "project"
+                    repo.mkdir()
+                    command = ["pwsh", "-NoProfile", "-File", str(package / "scripts/init.ps1"), "-Root", str(repo)] if powershell else [sys.executable, str(package / "scripts/init.py"), "--root", str(repo)]
+                    process = subprocess.run(command, capture_output=True, text=True, check=False)
+                    self.assertNotEqual(0, process.returncode)
+                    expected = "PERFIL_AUSENTE" if scenario == "missing" else "FONTE_GRANDE" if scenario == "large" else "TIPO_INESPERADO"
+                    self.assertIn(expected, process.stderr)
+                    self.assertEqual([], list(repo.iterdir()))
 
     # O projeto novo recebe somente AGENTS.md como fonte e uma ponte curta do Antigravity.
     def test_new_project_has_one_rules_file(self) -> None:

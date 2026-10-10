@@ -1,0 +1,103 @@
+# Plan: subagentes instalados e execução por etapas
+# Alvo: phase-15-subagentes-e-execucao-por-etapas
+# Status: aprovado
+# Spec: spec.md (mesma pasta)
+
+## Overview
+
+Entregar os perfis dos cinco subagentes pelo init, reorganizar o Modo A em etapas com prova integrada e exigir evidência de completude na review. A spec foi aprovada por Marco em 2026-10-10, incluindo o commit integrado no Modo A. Rota high; nenhuma mudança nos perfis globais pessoais.
+
+- **Design:** N/A, instalação local e orquestração sem UI.
+- **Execução desta phase:** usar o contrato vigente para construir e provar o novo contrato, sem mudar o protocolo da própria run no meio da implementação. As três tasks continuam com prova e commit próprios nesta migração; o novo Modo A é exercitado nas fixtures e passa a valer para novas runs. Isso preserva a regra da spec de não reinterpretar silenciosamente runs antigas.
+- **Contrato de destino:** Modo A sequencial, etapas de implementação, complementação de testes, validação integrada, correção e review, com commit integrado somente após prova verde. Modo B mantém o ciclo por tarefa.
+
+## Prontidão das provas
+
+- **Requisitos verificados em 2026-10-10:** Python 3.13.14, PowerShell 7.6.6, Git e Gitleaks 8.30.1 disponíveis localmente. Git Bash existe em `C:/Program Files/Git/bin/bash.exe`; usar esse executável explicitamente no Windows, sem depender do `bash.exe` do WSL.
+- **CI existente:** `.github/workflows/contrato.yml` executa as suítes Python, paridade PowerShell do init, launchers Unix e Gitleaks. Sem dependências de terceiros ou lockfile, não há SCA aplicável neste pacote.
+- **Capacidade comportamental:** subagentes disponíveis nesta sessão. Avaliações independentes devem usar fixtures isoladas e contexto mínimo, sem acesso de escrita aos perfis pessoais e sem push externo. Não iniciar chamadas pagas adicionais de `claude -p` implicitamente.
+- **Piloto existente:** `docs/vibe-implement/tests/piloto-modo-a.py --prepare-only` prepara e valida fixtures sem chamar modelos. Isso não comprova comportamento da skill; a avaliação com subagente complementa a prova determinística.
+- **Ausências e ação na fila:** nenhuma dependência de instalação identificada. Carregamento real em cada host é distinto da instalação no disco; relatar explicitamente qualquer host indisponível para a prova de descoberta. Não certificar ativação apenas pela presença de arquivos.
+- **Regra de testes:** testar os motores e efeitos no disco. Não criar asserts de palavras, frases ou seções de SKILL.md, templates ou referências. Revisão textual de coerência e avaliação comportamental são evidências separadas.
+- **Provas compartilhadas:** executar uma vez no estado integrado a distribuição, fluxo MVP, segurança de reparse e varredura de segredos; repetir só quando alteração posterior invalidar seus inputs. Não reproduzir toda a suíte em cada task.
+
+## Tasks
+
+### T1: Instalar os cinco papéis nos dois hosts preservando personalizações
+
+- [x] T1 concluída
+- **Spec:** A1, A2, A3, C1, C4
+- **O quê:** empacotar os perfis de Codex e Claude Code baseados nos arquivos pessoais já inspecionados e instalá-los no projeto pelo init. Manter modelos, esforços e restrições por papel; prompts devem delegar o fluxo à skill e resolver referências sem paths pessoais. Instalar os dois adaptadores, sem alterar arquivos globais ou configurações gerais do host.
+- **Aceite:**
+  - [x] Dez perfis distribuídos sob `vibe-init`, cinco TOML e cinco Markdown, são instalados em `.codex/agents/` e `.claude/agents/` pela mesma execução do init.
+  - [x] Motores Python e PowerShell validam previamente fontes e destinos conhecidos, tamanho máximo de 1 MiB, tipo regular e ausência de reparse points em toda a cadeia do destino.
+  - [x] Arquivos ausentes são criados; idênticos são preservados; diferentes permanecem intactos e geram conflito explícito. Repetição não modifica bytes das personalizações.
+  - [x] Relatório estende o contrato existente com resultado por host/papel/path; não afirma que a sessão carregou os perfis. A skill orienta conferir disponibilidade e recarga quando necessária.
+  - [x] Commit do init inclui somente paths produzidos autorizados e backups necessários, sem configuração pessoal, sem relatório transitório e sem push.
+  - [x] Contrato e fluxo são documentados antes dos motores. Os testes exercitam instalação, segunda execução, conflito, arquivo/diretório inesperado, link quebrado, ancestral inseguro e paridade essencial, com limpeza obrigatória.
+- **Verificação:**
+  - [x] `python docs/vibe-init/tests/test-init.py`
+  - [x] `pwsh -NoProfile -File docs/vibe-init/tests/test-init.ps1`
+  - [x] `& 'C:/Program Files/Git/bin/bash.exe' docs/vibe-init/tests/test-init.sh`
+  - [x] Conferir os perfis produzidos por execução real em fixture: estrutura TOML/frontmatter, nomes e campos nativos. Não testar texto de prompt.
+- **Deps:** nenhuma
+- **Arquivos:** `docs/vibe-init/ARQUITETURA.md`, `docs/vibe-init/ANALISE.md`, `vibe-init/SKILL.md`, `vibe-init/scripts/init.py`, `vibe-init/scripts/init.ps1`, novos recursos `vibe-init/templates/agents/codex/*.toml` e `vibe-init/templates/agents/claude/*.md`, `docs/vibe-init/tests/test-init.py`, `docs/vibe-init/tests/test-init.ps1`.
+- **Risco:** nomes de papéis do projeto podem prevalecer sobre os pessoais. Informar a precedência no fluxo sem modificar o global. Conflito não autoriza substituição automática. Preservar os contratos atuais de migração e backup do init.
+
+- **Prova final T1:** Python: 11 testes OK (11,812 s); PowerShell: 5 cenários PASS; launcher Git Bash: exit 0 fora do sandbox, após falha de inicialização 0xC0000142 no sandbox; diff check verde. Fixtures reais de ambos os motores conferiram bytes, estrutura nativa, modelos/esforços, idempotência, conflitos e recusa prévia de fontes/destinos inseguros; limpeza concluída. Nenhum teste textual de prompt.
+- **Resultado T1:** dez perfis distribuídos e motores alinhados. Cinco papéis disponíveis na sessão Codex atual; carregamento dos novos perfis não certificado. Claude indisponível, formato conferido por documentação oficial. Sem mudanças globais ou pendências T1.
+
+### T2: Executar o Modo A em etapas com retomada e commit integrado
+
+- [ ] T2 concluída
+- **Spec:** A4, A5, A6, A7, C1, C2, C4
+- **O quê:** estender o registro no plan e os motores para distinguir implementação, testes e prova final, preservando leitura de plans antigos e comportamento do Modo B. Alinhar prompts, regras, templates e distribuição à mudança de contrato.
+- **Aceite:**
+  - [ ] Definir primeiro em `ARQUITETURA.md` o marcador explícito do novo protocolo no plan, campos por tarefa, estados de execução e precedência de etapas. Ausência de marcador mantém o protocolo antigo; modo escolhido precisa distinguir A de B sem inferência por número de tasks. Nenhum novo arquivo de estado.
+  - [ ] As dependências do novo Modo A liberam implementação após código integrado e checagem local válida, mantendo `[ ] Tn concluída` até a prova integrada. Campos incompletos, inválidos, ciclos e dependências inexistentes não geram conclusão implícita.
+  - [ ] Implementador faz código e checagens rápidas; depois complementa testes a partir do aceite e das provas existentes. Verificador executa integração sem editar testes. Corretor recebe falhas pré-review com evidência, sem inventar R*.
+  - [ ] O coordenador confere relatórios e disco, reutiliza agentes em tarefas relacionadas quando útil, mantém escrita sequencial e review independente. Relatório distingue etapa implementada de entrega comprovada; `verde` local não autoriza conclusão global.
+  - [ ] Retomada compara snapshot e inputs das provas; alterações invalidam somente evidências afetadas. Falha ou interrupção na criação de testes, execução, correção e commit mantém próximo passo correto, sem reimplementar código válido.
+  - [ ] Prova integrada verde permite concluir somente T* comprovadas e criar um commit integrado identificando todos os IDs. Regras de staging explícito, preservação de alterações alheias e confirmação final de push permanecem. Correções de review mantêm as duas rodadas atuais.
+  - [ ] Modo B e plans históricos mantêm o ciclo anterior; o motor não reabre tasks já concluídas. Adaptar o piloto existente para verificar o novo modo e a compatibilidade.
+  - [ ] Atualizar versão de contrato de 4.0.0 para 5.0.0 nos manifestos que possuem versão e no contrato de distribuição, sem acrescentar campo incompatível a manifesto que não o admite. Atualizar README e regras operacionais afetadas; preservar artefatos históricos.
+- **Verificação:**
+  - [ ] `python docs/vibe-implement/tests/test-implement.py`
+  - [ ] `python docs/vibe-plan/tests/test-plan.py`
+  - [ ] `python docs/vibe-implement/tests/piloto-modo-a.py --prepare-only`
+  - [ ] `& 'C:/Program Files/Git/bin/bash.exe' docs/vibe-implement/tests/test-implement.sh`
+  - [ ] Avaliação comportamental com subagente e fixture descartável: implementação de tasks dependentes, complemento de testes, falha real, correção, retomada e commit integrado. Inspecionar efeitos no disco, comandos e histórico Git; a preparação de fixture sozinha não satisfaz C2.
+- **Deps:** T1
+- **Arquivos:** `docs/vibe-implement/ARQUITETURA.md`, `docs/vibe-implement/ANALISE.md`, `vibe-implement/SKILL.md`, `vibe-implement/scripts/implement.py`, `vibe-implement/scripts/implement.ps1`, `vibe-implement/references/delegation.md`, sua cópia idêntica em `vibe-plan/references/delegation.md`, `vibe-plan/SKILL.md`, `vibe-plan/templates/plan.md`, `docs/vibe-plan/ARQUITETURA.md`, `docs/vibe-plan/ANALISE.md`, `docs/vibe-implement/tests/test-implement.py`, `docs/vibe-implement/tests/piloto-modo-a.py`, perfis da T1 quando necessário, `AGENTS.md`, `vibe-init/templates/AGENTS.md`, `README.md`, `.codex-plugin/plugin.json`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `.agents/plugins/marketplace.json`, `.grok-plugin/marketplace.json`, `docs/tests/test-distribuicao.py`.
+- **Risco:** mudança na interpretação da fila e dos checkpoints. O novo contrato deve ser selecionado explicitamente para não reinterpretar uma execução antiga. A alteração das regras operacionais faz parte da implementação autorizada; eventual tabela de decisões vigentes só é sincronizada no fechamento humano.
+
+### T3: Bloquear a review quando a solicitação estiver incompleta
+
+- [ ] T3 concluída
+- **Spec:** A8, C3, C4; integração de A1 a A7
+- **O quê:** tornar obrigatória na review final a matriz solicitação → implementação → evidência → situação, cruzando a origem antes de olhar apenas para as tasks. Alinhar fechamento e rastreabilidade ao commit integrado do Modo A.
+- **Aceite:**
+  - [ ] Review parte do pedido original, mudanças autorizadas, interview disponível, spec e plan. Item omitido no plan continua sendo obrigação se não houve retirada humana.
+  - [ ] Matriz no review.md classifica atendido, parcial, ausente ou retirado explicitamente pelo humano; retirada cita a decisão. Item obrigatório parcial/ausente abre R* bloqueante e impede Approve, inclusive com testes verdes.
+  - [ ] Falta de contexto de origem é relatada como limitação, sem certificação falsa de completude. Review de checkpoint não certifica a entrega inteira.
+  - [ ] Revisor mantém contexto limpo e não corrige código nem opera Git. Evidências válidas da integração são reaproveitadas; lacunas exigem a menor prova suficiente.
+  - [ ] Fechamento reconhece commits integrados e commits históricos por task, sem depender exclusivamente de `task(Tn)`. A confirmação humana única e a limitação de duas rodadas continuam coerentes com T2.
+  - [ ] Avaliação independente usa solicitação com duas capacidades, plan omitindo uma delas e código/testes corretos para a outra. O revisor deve identificar a omissão, registrar evidência e bloquear aprovação. Segundo cenário contém retirada autorizada e não deve criar falso bloqueio.
+  - [ ] Integração final mantém distribuição, paridade de motores, fluxo MVP e proteção de caminhos. Nenhum teste de documentação por busca de palavras é introduzido.
+- **Verificação:**
+  - [ ] `python docs/vibe-review/tests/test-review.py`
+  - [ ] `python docs/tests/test-distribuicao.py`
+  - [ ] `python docs/tests/test-mvp-flow.py`
+  - [ ] `python docs/tests/test-reparse-safety.py`
+  - [ ] `gitleaks dir . --redact --no-banner`
+  - [ ] `git diff --check`
+  - [ ] Avaliação comportamental com revisor independente em fixture temporária; registrar achado, situação dos dois cenários e provas nos resultados desta T*. Não confundir a suíte do motor review com prova da decisão semântica do revisor.
+- **Deps:** T2
+- **Arquivos:** `vibe-review/SKILL.md`, `vibe-review/templates/review.md`, `docs/vibe-review/ARQUITETURA.md`, `docs/vibe-review/ANALISE.md`, `docs/vibe-review/tests/test-review.py` somente se houver contrato executável alterado, `docs/vibe-implement/tests/piloto-modo-a.py` para fixtures comportamentais reutilizáveis, perfis `revisor` distribuídos em T1 e referências de delegação se o relatório precisar refletir a matriz.
+- **Risco:** inferir completude a partir do diff ou de um plan incompleto. O pedido de avaliação não deve revelar o requisito plantado nem a resposta esperada ao revisor. Todo workspace temporário precisa ser removido após coleta da evidência, com falha de limpeza explícita.
+
+## Handoff
+
+`vibe-implement`, rota high. Sem analyze obrigatório e sem design aplicável. As dependências e os arquivos compartilhados pedem execução sequencial; nenhum grupo paralelo seguro foi proposto. Não há checkpoint intermediário de review necessário; a review final é delegada pelo coordenador depois das entregas, não uma T* adicional.
+
+Recomenda-se fortemente um chat novo com `/vibe-implement` e este plan. Com subagentes, o coordenador executa a fila inteira em Modo A, incluindo review e correções, até a confirmação humana final. Permanecer neste chat é válido se Marco preferir. Não iniciar implementação antes de aprovação do plan ou pedido explícito da próxima porta.

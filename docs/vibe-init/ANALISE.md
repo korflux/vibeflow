@@ -6,6 +6,10 @@ O agente lê o motor e executa o init na raiz. O motor cria `AGENTS.md` a partir
 
 ## Decisões
 
+Na mesma execução, o motor pré-valida os dez perfis distribuídos e seus destinos antes de escrever qualquer arquivo. A instalação usa bytes do pacote, sem depender da máquina de autoria. Igualdade preserva o arquivo e conflito preserva a personalização; a IA recebe os paths e pede decisão somente se for necessário substituir uma customização.
+
+O relatório separa instalação no disco de disponibilidade na sessão. A IA confere as ferramentas antes de delegar e orienta recarga quando o host não descobriu os novos papéis. Os perfis de projeto podem prevalecer sobre os pessoais. Os modelos e esforços de referência permanecem explícitos; indisponibilidade não autoriza substituição. Codex usa TOML e Claude usa frontmatter Markdown; ambos apontam para a skill descoberta pelo host, sem paths pessoais.
+
 `AGENTS.md` virou fonte única para evitar três arquivos com o mesmo conteúdo. A ponte Antigravity continua curta e referencia a fonte da raiz. `CLAUDE.md` e os antigos `REGRAS.md` não são criados; na migração, cópias idênticas saem após backup e fontes diferentes permanecem até o conteúdo ser consolidado.
 
 O AGENTS de referência enviado pelo usuário mostra uma estrutura útil: comandos reais de instalação e verificação, mapa de diretórios, invariantes dos fluxos e pontos de mudança frequentes. O template incorpora essas categorias como SLOTs. Stack, paths, comandos e regras do projeto de origem não entram no VibeFlow.
