@@ -44,8 +44,8 @@ Remover testes de risco, trocar validação real por mocks, criar cache persiste
 - [x] A2: coordenação evita delegações curtas e registros repetidos, mantendo etapas obrigatórias e review independente.
 - [x] A3: descoberta de runtime executada uma vez por suíte/processo; comportamento real dos motores, skips e fixtures preservados.
 - [x] A4: prova de equivalência e comparação antes/depois dos mesmos casos, com duração e probes, sem perda de assertions/cobertura; CI inclui novas provas executáveis apropriadas.
-- [ ] A5: oito skills atualizadas nos CLIs instalados, conteúdo verificado e backup preservado.
-- [ ] C1: integração verde e review independente sem bloqueios; sem segredo no diff.
+- [x] A5: oito skills atualizadas nos CLIs instalados, conteúdo verificado e backup preservado.
+- [x] C1: integração verde e review independente sem bloqueios; sem segredo no diff.
 - [x] C2: redução de chamadas redundantes comprovada, ganho temporal medido e limites declarados.
 
 ## Contratos e restrições

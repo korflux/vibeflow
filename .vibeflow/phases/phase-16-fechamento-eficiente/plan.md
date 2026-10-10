@@ -56,3 +56,7 @@ Política geral de coordenação e provas aplicada sem schema novo; patch 5.0.1.
 ## Validação integrada
 
 Verificador independente: nove comandos, 168 testes OK, zero skips; soma de durações 250,789 s (não representa tempo total da phase). Interview 19/5,609 s; spec 19/6,061 s; design 19/6,016 s; plan 16/4,761 s; analyze 16/5,027 s; implement 40/149,034 s; review 25/28,444 s; reparse 12/29,098 s; stream-encoding 2/16,739 s. Discovery 4/0,545 s e distribuição 9/0,021 s reaproveitados pelos mesmos inputs. Cobertos 16 motores; 32 inputs locais sem divergência. CI mantém jobs e agrega duas provas existentes/novas. Diff check verde; Gitleaks detect exit 0, nenhum segredo (64 commits/2,35 MB). Nove TMP isoladas vazias e raiz .tmp-phase16-validation removida com alvo conferido. Sem repetição por T*.
+
+## Atualização dos CLIs comprovada (A5)
+
+Oito pacotes do HEAD integrado 37ed9d139b791abd08dca6c9b1133fdd637a498a sincronizados em .agents/skills, .gemini/antigravity-cli/skills, .gemini/config/skills e .config/opencode/skills. Todos os arquivos versionados conferidos por SHA-256; aliases Codex/Claude/Grok/Antigravity conferidos. Backup prévio com tamanho/hash: C:/Users/marco/.agents/skills-backups/vibeflow-phase16-20261010-143048. Demais skills e regras globais preservadas. Gemini listou oito habilitadas; OpenCode descobriu as oito. Disponibilidade na sessão já aberta não foi inferida da instalação; novas sessões carregarão os arquivos. Commit integrado local criado sem push; aprovação final ainda pendente.
