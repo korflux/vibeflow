@@ -24,7 +24,7 @@ ENGINES = (False, True) if shutil.which("pwsh") else (False,)
 def invoke(repo: Path, powershell: bool = False, package: Path | None = None) -> tuple[subprocess.CompletedProcess[str], dict | None]:
     engine = package / "scripts" / ("init.ps1" if powershell else "init.py") if package else POWERSHELL if powershell else PYTHON
     command = (["pwsh", "-NoProfile", "-File", str(engine), "-Root", str(repo)] if powershell else [sys.executable, str(engine), "--root", str(repo)])
-    process = subprocess.run(command, capture_output=True, text=True, check=False)
+    process = subprocess.run(command, capture_output=True, text=True, encoding="utf-8", check=False)
     report_path = repo / ".vibeflow" / "init-report.json"
     report = json.loads(report_path.read_text(encoding="utf-8")) if report_path.is_file() else None
     return process, report

@@ -284,4 +284,7 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    # Mantém o contrato de saída Unicode independente da página de código do host.
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
     raise SystemExit(main())

@@ -30,6 +30,8 @@ No MVP, `--mvp` exige `interview.md`, `spec.md`, `plan.md` e `analyze.md`, recus
 
 ## 3. JSON operacional no stdout
 
+Os motores emitem stdout e stderr em UTF-8 sem BOM, inclusive em pipes e com caminhos ou mensagens acentuadas. Consumidores devem decodificar esses streams explicitamente como UTF-8.
+
 O JSON transitório contém `vibeflow`, `phases`, `next_n`, `existing`, `plan_pendente`, `rascunho`, `alvo`, `mvp`, `modo_sugerido`, `created`, `modo`, `actions` e `avisos`. `files` lista os artefatos vivos.
 
 `actions` registra apenas criação de phase ou de `review.md`. O JSON do stdout não contém conteúdo do julgamento.

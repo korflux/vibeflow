@@ -34,7 +34,7 @@ def invoke(repo: Path, *arguments: str, check: bool = True) -> tuple[subprocess.
     process = subprocess.run(
         [sys.executable, str(SCRIPT), "--root", str(repo), *arguments],
         capture_output=True,
-        text=True,
+        text=True, encoding="utf-8",
         check=check,
     )
     report = json.loads(process.stdout) if process.returncode == 0 and process.stdout.strip() else None
@@ -274,7 +274,7 @@ class PythonContracts(unittest.TestCase):
             cwd=repo,
             env=git_env,
             capture_output=True,
-            text=True,
+            text=True, encoding="utf-8",
             check=True,
         )
 
@@ -691,7 +691,7 @@ def powershell7() -> str | None:
     executable = shutil.which("pwsh")
     if not executable:
         return None
-    probe = subprocess.run([executable, "-NoProfile", "-Command", "$PSVersionTable.PSVersion.Major"], capture_output=True, text=True, check=False)
+    probe = subprocess.run([executable, "-NoProfile", "-Command", "$PSVersionTable.PSVersion.Major"], capture_output=True, text=True, encoding="utf-8", check=False)
     return executable if probe.stdout.strip().isdigit() and int(probe.stdout.strip()) >= 7 else None
 
 
@@ -714,7 +714,7 @@ class PowershellParity(unittest.TestCase):
         process = subprocess.run(
             [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo), "-Apply"],
             capture_output=True,
-            text=True,
+            text=True, encoding="utf-8",
             check=False,
         )
         self.assertEqual(0, process.returncode, process.stderr)
@@ -736,7 +736,7 @@ class PowershellParity(unittest.TestCase):
         process = subprocess.run(
             [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo), "-Apply"],
             capture_output=True,
-            text=True,
+            text=True, encoding="utf-8",
             check=False,
         )
         self.assertEqual(0, process.returncode, process.stderr)
@@ -758,7 +758,7 @@ class PowershellParity(unittest.TestCase):
         process = subprocess.run(
             [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo)],
             capture_output=True,
-            text=True,
+            text=True, encoding="utf-8",
             check=False,
         )
         self.assertEqual(0, process.returncode, process.stderr)
@@ -781,7 +781,7 @@ class PowershellParity(unittest.TestCase):
         process = subprocess.run(
             [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo), "-Apply", "-Mvp"],
             capture_output=True,
-            text=True,
+            text=True, encoding="utf-8",
             check=False,
         )
         self.assertEqual(0, process.returncode, process.stderr)
@@ -807,15 +807,16 @@ class PowershellParity(unittest.TestCase):
                 process = subprocess.run(
                     [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(repo), "-Dir", "phase-1-a"],
                     capture_output=True,
-                    text=True,
+                    text=True, encoding="utf-8",
                     check=False,
                 )
                 self.assertEqual(0, process.returncode, process.stderr)
                 ps_report = json.loads(process.stdout)
                 self.assertEqual(case["etapa"], ps_report["etapa"])
                 self.assertEqual(case["rodadas"], ps_report["rodadas_correcao"])
-                # Conta os avisos em vez de comparar o texto: os motores emitem acentos em codificações diferentes no pipe.
+                # Compara também o texto Unicode dos avisos no contrato comum dos motores.
                 self.assertEqual(case["avisos"], len(ps_report["avisos"]))
+                self.assertEqual(py_report["avisos"], ps_report["avisos"])
                 self.assertEqual(before, tree_snapshot(repo))
 
 
@@ -846,7 +847,7 @@ class StageProtocolContracts(unittest.TestCase):
 
     # Opera apenas o Git da fixture descartável, sem shell ou índice do repositório real.
     def git(self, *arguments: str) -> str:
-        result = subprocess.run(["git", *arguments], cwd=self.repo, capture_output=True, text=True, check=False)
+        result = subprocess.run(["git", *arguments], cwd=self.repo, capture_output=True, text=True, encoding="utf-8", check=False)
         self.assertEqual(0, result.returncode, result.stderr)
         return result.stdout.strip()
 

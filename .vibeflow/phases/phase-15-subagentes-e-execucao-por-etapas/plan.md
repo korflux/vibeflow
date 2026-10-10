@@ -120,3 +120,7 @@ Recomenda-se fortemente um chat novo com `/vibe-implement` e este plan. Com suba
 ## Correções adicionais autorizadas
 
 Pedido humano de 2026-10-10 inclui review e registros vigentes. R2/R3 corrigidos por causa raiz nas nove suítes afetadas. Provas: review 19, distribuição 9, spec 19, design 19, plan 16, analyze 16, interview 19, MVP 1 e reparse 12 testes OK; falhas simuladas propagam e reparse tenta ambas as remoções. Fixtures ausentes e diff check verde. Código, registros e artefatos serão enviados em commit task(R2,R3), sem push. R4/R5/R6 seguem em correção sequencial e exigem nova review.
+
+## Prova adicional R4
+
+R4 resolvido: oito pares de motores emitem stdout/stderr UTF-8 sem BOM; consumidores decodificam explicitamente e avisos de implement são comparados integralmente. Prova rawbytes: 2 testes, 32 execuções reais com locale legado forçado, caminhos Unicode, avisos e erros. Init 12, implement 40, interview 19, spec 19, design 19, plan 16, analyze 16, review 19, reparse 12 e MVP 1 testes OK; launcher implement 8 PASS. Fixtures removidas, diff check verde. Adaptações dos consumidores de oito suítes entraram antecipadamente no commit e2d808d por concorrência de edição/indexação; a prova verde corresponde ao conjunto completo R2/R3/R4, sem atribuir independência ao commit intermediário.

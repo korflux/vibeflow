@@ -9,6 +9,8 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# Mantém stdout e stderr Unicode em UTF-8 também quando capturados por pipe.
+[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
 $script:DirWasBound = $PSBoundParameters.ContainsKey('Dir')
 $script:ChainFiles = @('interview.md', 'spec.md', 'plan.md', 'analyze.md', 'implement.md', 'review.md')
 

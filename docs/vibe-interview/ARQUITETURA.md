@@ -39,6 +39,8 @@ bash interview.sh [--root PATH] [--apply] [--slug TEXTO] [--mvp]
 
 ## 3. JSON operacional no stdout
 
+Os motores emitem stdout e stderr em UTF-8 sem BOM, inclusive em pipes e com caminhos ou mensagens acentuadas. Consumidores devem decodificar esses streams explicitamente como UTF-8.
+
 O JSON transitório contém `rota`, `modo`, `vibeflow`, `phases`, `next_n`, `existing`, `aberta`, `mvp`, `alvo`, `created`, `actions` e `avisos`. `files` lista somente os seis artefatos da cadeia.
 
 Quando o apply cria um arquivo, `actions` registra `criar_arquivo`. Quando o destino já existe, a ação não substitui bytes e o JSON mantém o estado observado. O JSON não carrega estado de rascunho temporário nem contrato de promoção.

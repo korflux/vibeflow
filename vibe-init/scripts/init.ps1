@@ -3,6 +3,8 @@
 param([string]$Root)
 
 $ErrorActionPreference = 'Stop'
+# Mantém stdout e stderr Unicode em UTF-8 também quando capturados por pipe.
+[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
 $Utf8 = [Text.UTF8Encoding]::new($false)
 $Start = '<!-- VIBEFLOW:CADEIA start -->'
 $End = '<!-- VIBEFLOW:CADEIA end -->'

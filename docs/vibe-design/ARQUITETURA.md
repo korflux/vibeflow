@@ -44,6 +44,8 @@ Três usos no mesmo contrato. Criar páginas novas, corrigir UI com R da review,
 
 ## 4. JSON operacional no stdout
 
+Os motores emitem stdout e stderr em UTF-8 sem BOM, inclusive em pipes e com caminhos ou mensagens acentuadas. Consumidores devem decodificar esses streams explicitamente como UTF-8.
+
 O JSON transitório mantém `vibeflow`, `phases`, `next_n`, `existing`, `spec_pendente`, `rascunho`, `alvo`, `mvp`, `modo_sugerido`, `created`, `modo`, `actions` e `avisos`. Não existe estado de arquivo temporário no contrato.
 
 `actions` registra criação de `phases/.gitkeep`, de phase ou do arquivo vivo. `files` lista os sete artefatos da cadeia, incluindo `design.md`. O JSON do stdout não descreve conteúdo semântico.

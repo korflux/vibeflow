@@ -34,6 +34,8 @@ bash spec.sh [--root PATH] [--apply] [--slug TEXTO] [--dir phase-N-slug] [--mvp]
 
 ## 3. JSON operacional no stdout
 
+Os motores emitem stdout e stderr em UTF-8 sem BOM, inclusive em pipes e com caminhos ou mensagens acentuadas. Consumidores devem decodificar esses streams explicitamente como UTF-8.
+
 O JSON transitório mantém `vibeflow`, `phases`, `next_n`, `existing`, `interview_pendente`, `rascunho`, `alvo`, `mvp`, `modo_sugerido`, `created`, `modo`, `actions` e `avisos`. O campo `files` lista apenas artefatos vivos da cadeia.
 
 `actions` registra criação de `phases/.gitkeep`, phase, MVP ou do arquivo vivo. O JSON não descreve conteúdo semântico nem uma etapa de transporte temporário.

@@ -12,6 +12,8 @@ O motor reconhece `.vibeflow/REGRAS.md`, `REGRAS.md` na raiz e `CLAUDE.md` como 
 
 O relatório JSON contém `root`, `target`, `actions`, `olds`, `merges`, `migrated` e `legacy_present`. Ele é ignorado pelo Git. O stdout contém somente seu path. O arquivo `.vibeflow/.gitignore` preserva entradas existentes e acrescenta `init-report.json` e `init-pending.json` quando faltarem.
 
+Os motores emitem stdout e stderr em UTF-8 sem BOM, inclusive em pipes e com caminhos ou mensagens acentuadas. Consumidores devem decodificar esses streams explicitamente como UTF-8.
+
 ## Adaptadores de subagentes
 
 O pacote distribui `templates/agents/codex/<papel>.toml` e `templates/agents/claude/<papel>.md`. A allowlist é explorador, implementador, verificador, corretor e revisor. Cada execução instala os dez arquivos em `.codex/agents/` e `.claude/agents/` da raiz, sem acessar perfis pessoais nem alterar configurações gerais. Os adaptadores apontam para as skills descobertas pelo host; não duplicam as regras de `AGENTS.md`.

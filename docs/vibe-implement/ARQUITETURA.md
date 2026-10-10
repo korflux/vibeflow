@@ -48,6 +48,8 @@ No MVP, `--mvp` fixa `.vibeflow/mvp/`, exige plan e analyze aprovado com veredit
 
 ## 3. JSON operacional no stdout
 
+Os motores emitem stdout e stderr em UTF-8 sem BOM, inclusive em pipes e com caminhos ou mensagens acentuadas. Consumidores devem decodificar esses streams explicitamente como UTF-8.
+
 O JSON transitório contém somente `alvo`, `fila`, `etapa`, `rodadas_correcao` e `avisos`. O alvo expõe `kind`, `dir`, `n`, `slug` e `path`; no MVP, `analyze_gate` acompanha esses campos. A fila traz parse, status das T*, elegíveis, dependências bloqueantes e avisos do plan. Nenhum item serializa todas as phases.
 
 ### Etapa da phase e rodadas de correção

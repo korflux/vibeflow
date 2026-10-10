@@ -42,7 +42,7 @@
 - [x] R2: **Required** - docs/vibe-review/tests/test-review.py:58 e :237 - tearDown ignora erros de remoção; remédio: propagar falhas e verificar limpeza; prova: suíte review e ausência das fixtures; source: registro 2026-10-10 e pedido humano atual.
 - [x] R3: **Nit** - docs/tests/test-distribuicao.py:122 - seis comentários órfãos sugerem testes removidos; remédio: remover comentários e preservar testes reais; prova: suíte de distribuição; source: registro 2026-10-03 e pedido humano atual.
 
-- [ ] R4: **Required** - stdout dos motores Python/PowerShell - avisos e paths Unicode são emitidos em codificações legadas distintas no Windows; remédio: definir UTF-8 no transporte, adaptar consumidores de testes e provar bytes/texto integral em ambos motores, sem mascarar acentos; source: 2026-10-03-motores-stdout-codificacao-divergente.md.
+- [x] R4: **Required** - stdout dos motores Python/PowerShell - avisos e paths Unicode são emitidos em codificações legadas distintas no Windows; remédio: definir UTF-8 no transporte, adaptar consumidores de testes e provar bytes/texto integral em ambos motores, sem mascarar acentos; source: 2026-10-03-motores-stdout-codificacao-divergente.md.
 - [ ] R5: **Required** - vibe-review/scripts/review.py e review.ps1 - slug explícito perde prioridade para phase com plan pendente; remédio: priorizar criação avulsa quando slug explicitamente informado, validar conflito com dir e preservar alvo/arquivos preexistentes; prova: paridade com plan pendente e slug, sem mutação de fase anterior; source: review-avulsa-ignora-slug-com-plan-pendente.md.
 - [ ] R6: **Required** - vibe-review/SKILL.md e templates/review.md - Approve com defer não limita severidade nem identifica adiamento; remédio: permitir somente Nit/Optional/FYI com ID/fonte/motivo, nunca Critical/Required ou obrigação ausente; prova: inspeção de contrato e estados executáveis do motor, sem testes de palavras da documentação; source: 2026-10-03-review-approve-com-defer-sem-regra.md.
 ## Segurança
@@ -116,3 +116,7 @@ Coordenador do `vibe-implement`: apresentar esta proposta final ao humano. Somen
 ## Correções adicionais R2 e R3
 
 Limpeza silenciosa removida nas nove suítes afetadas; reparse tenta ambos os diretórios e preserva falhas encadeadas. Removidos seis comentários órfãos e classe vazia da review. Provas executáveis: review 19, distribuição 9, spec 19, design 19, plan 16, analyze 16, interview 19, MVP 1 e reparse 12 verdes. Simulações de falha verificaram propagação e segunda tentativa. Fixtures ausentes; diff check verde. R2/R3 fechados pelo coordenador, sujeitos à nova review final.
+
+## Prova adicional R4
+
+R4 resolvido: oito pares de motores emitem stdout/stderr UTF-8 sem BOM; consumidores decodificam explicitamente e avisos de implement são comparados integralmente. Prova rawbytes: 2 testes, 32 execuções reais com locale legado forçado, caminhos Unicode, avisos e erros. Init 12, implement 40, interview 19, spec 19, design 19, plan 16, analyze 16, review 19, reparse 12 e MVP 1 testes OK; launcher implement 8 PASS. Fixtures removidas, diff check verde. Adaptações dos consumidores de oito suítes entraram antecipadamente no commit e2d808d por concorrência de edição/indexação; a prova verde corresponde ao conjunto completo R2/R3/R4, sem atribuir independência ao commit intermediário.
