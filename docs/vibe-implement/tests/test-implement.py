@@ -123,7 +123,7 @@ FILA_CONCLUIDA = plan_tasks(("T1", "x", "nenhuma"), ("T2", "x", "T1"))
 CRITICAL_ABERTO = "- [ ] R1: **Critical** - `a.py` - problema - remédio: corrigir - prova: teste"
 CRITICAL_FECHADO = CRITICAL_ABERTO.replace("[ ]", "[x]")
 REQUIRED_FECHADO = "- [x] R2: **Required** - `b.py` - problema - remédio: corrigir - prova: teste"
-NIT_ABERTO = "- [ ] R3: **Nit** - `c.py` - detalhe"
+NIT_ABERTO = "- [ ] R3: **Nit** - `c.py` - detalhe - defer: cosmético; retomar na revisão visual"
 ALTERNATIVAS_DO_TEMPLATE = "Marco aprovado | Request changes | Approve final | Approve com defer"
 
 # Estados da phase que o motor precisa distinguir. `avisos` é a contagem esperada no campo avisos do JSON.
@@ -154,8 +154,26 @@ ETAPA_CASES: list[dict] = [
     {
         "nome": "approve-com-defer-de-nit",
         "plan": FILA_CONCLUIDA,
-        "review": review_text(blockers=(NIT_ABERTO,), vigente="Approve com defer", etapas=("Approve com defer",)),
+        "review": review_text(blockers=(NIT_ABERTO,), vigente="Approve com defer", etapas=("Approve com defer",)).replace(
+            "**Approve com defer**: texto do template",
+            "**Approve com defer**: R3; fonte: `c.py`; motivo: cosmético; retomar na revisão visual",
+        ),
         "etapa": "confirmar", "rodadas": 0, "avisos": 0,
+    },
+    {
+        # Mesmo marcado como defer, bloqueio Critical permanece na fila de correção.
+        "nome": "approve-com-defer-nao-adia-critical",
+        "plan": FILA_CONCLUIDA,
+        "review": review_text(blockers=(CRITICAL_ABERTO,), vigente="Approve com defer", etapas=("Approve com defer",)),
+        "etapa": "corrigir", "rodadas": 0, "avisos": 0,
+    },
+    {
+        # Obrigação parcial registrada como Required não pode ser adiada pelo veredito.
+        "nome": "approve-com-defer-nao-adia-required",
+        "plan": FILA_CONCLUIDA,
+        "review": review_text(blockers=("- [ ] R4: **Required** - `d.py` - obrigação parcial - defer: próxima fase",),
+                              vigente="Approve com defer", etapas=("Approve com defer",)),
+        "etapa": "corrigir", "rodadas": 0, "avisos": 0,
     },
     {
         "nome": "phase-finalizada",

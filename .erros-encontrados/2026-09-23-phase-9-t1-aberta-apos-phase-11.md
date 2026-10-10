@@ -7,3 +7,7 @@
 - Correção aplicada: `review.py` e `review.ps1` agora resolvem e reportam a phase explícita antes e depois do apply; a suíte cobre o override quando há outra plan pendente mais recente. `vibe-review/SKILL.md` orienta a IA a comparar o diff com o alvo automático e usar `--dir` quando forem diferentes. `implement.md` voltou para `em-curso`; `plan.md` registra a evidência do commit amplo e mantém T1 aberta.
 - Provas: `python docs/vibe-review/tests/test-review.py` e `git diff --check`.
 - Estado restante: T1 segue aberta porque o commit isolado não pode ser recriado sem reescrever histórico já publicado. Não marcar conclusão por aproximação.
+
+## Auditoria atual
+
+Auditoria em 2026-10-10: implementação e correção de alvo explícito estão presentes e verificadas no checkout atual. Permanece somente a evidência histórica de ausência de commit isolado. O pedido atual autoriza corrigir defeitos, mas não recriar fatos históricos, marcar conclusão por aproximação ou reescrever histórico publicado. Nenhum patch funcional adicional aplicável.

@@ -7,3 +7,7 @@
 - Correção: `run_pwsh_only` agora cria um wrapper temporário que chama o executável real, preservando a resolução de `pwsh.dll`; `vibe-init/scripts/init.sh` também valida aliases executáveis de Python e PowerShell antes da seleção.
 - Evidência pós-correção: os sete launchers Git Bash passaram, incluindo `init` 5/5 e o fallback isolado de PowerShell.
 - Estado: corrigido na T8 de integração e regressão do contrato.
+
+## Auditoria atual
+
+Auditoria em 2026-10-10: wrapper para o executável real permanece no harness; provas dos launchers da phase 15 verdes. Correção anterior preservada, sem necessidade de reaplicar.

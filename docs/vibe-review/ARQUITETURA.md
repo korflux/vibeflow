@@ -24,7 +24,7 @@ O motor não julga o diff, não edita source, não escreve a prosa e não sincro
 
 ## 2. Alvo e cadeia
 
-Sem `.vibeflow/`, `INIT_AUSENTE`. Com plan, o inventário seleciona a maior phase com plan sem review; uma review existente é atualizada no mesmo arquivo. O script não associa o diff à phase. Antes do apply, a IA compara o alvo sugerido com o diff e usa `--dir` para forçar a phase existente que contém o trabalho quando forem diferentes. Sem alvo, `--slug` pode abrir uma review avulsa em uma phase nova.
+Sem `.vibeflow/`, `INIT_AUSENTE`. Com plan, o inventário seleciona a maior phase com plan sem review; uma review existente é atualizada no mesmo arquivo. O script não associa o diff à phase. Antes do apply, a IA compara o alvo sugerido com o diff e usa `--dir` para forçar a phase existente que contém o trabalho quando forem diferentes. `--slug` explicitamente fornecido seleciona sempre uma review avulsa em phase nova, mesmo com plan pendente ou rascunho. O preview informa esse novo `alvo` sem criar a phase; o apply prepara somente seu `review.md` vazio e continua reportando esse destino, preservando as phases anteriores. O número é max(n existente) + 1. Slug explícito vazio ou inválido recebe `SLUG_INVALIDO`, sem fallback automático. A combinação `--slug` e `--dir` recebe `MODO_INVALIDO` antes de qualquer mutação. Sem parâmetros explícitos, permanece a seleção automática descrita acima.
 
 No MVP, `--mvp` exige `interview.md`, `spec.md`, `plan.md` e `analyze.md`, recusa slug/dir e usa somente `.vibeflow/mvp/`.
 
@@ -63,6 +63,8 @@ A rastreabilidade usa o Git real, paths e provas contra o estado integrado. Acei
 Aplica os pilares de auditoria ao diff e às superfícies relevantes para o marco ou para a integração final. Usa `Visual` no plan para decidir se o aceite precisa de evidência renderizada; tocar arquivo de UI, HTML ou DOM, sozinho, não aciona navegador. Reaproveita prova de implementação válida e só executa a inspeção se ela estiver ausente/desatualizada ou não cobrir a integração. Quando necessária, seleciona navegador integrado, MCP Server `chrome-devtools` e Playwright somente se já existir ou for solicitado. Começa pela rota/tela, estado e viewport afetados; amplia conforme o impacto em layout, responsividade, interação, componente compartilhado ou risco. Faltando capacidade, aplica a regra de instalação da skill: instala a ferramenta necessária fora do projeto, sem alterar manifesto nem lockfile, e registra na etapa; credencial, conta, pagamento, elevação administrativa e registro persistente de integração (por exemplo, um MCP) vão ao humano. Sem capacidade visual depois disso, para uma prova necessária, abre `R* Required` e não aprova silenciosamente.
 
 `icon-only` só é aceito para ação universalmente reconhecível, como lixeira para apagar, com nome acessível, foco visível, área de interação e tooltip quando aplicável. Ações ambíguas permanecem textuais.
+
+Approve com defer só permite R* Nit, Optional ou FYI. Cada item permanece aberto no checklist e a linha do veredito identifica R*, fonte/path, motivo e encaminhamento com a condição ou momento de retomada. Critical/Required aberto, obrigação aplicável parcial ou ausente e origem insuficiente bloqueiam qualquer Approve, inclusive com defer. A review final mantém a confirmação humana pendente; defer não retira obrigações da solicitação.
 
 ## 7. Chat, testes e handoff
 

@@ -124,3 +124,9 @@ Pedido humano de 2026-10-10 inclui review e registros vigentes. R2/R3 corrigidos
 ## Prova adicional R4
 
 R4 resolvido: oito pares de motores emitem stdout/stderr UTF-8 sem BOM; consumidores decodificam explicitamente e avisos de implement são comparados integralmente. Prova rawbytes: 2 testes, 32 execuções reais com locale legado forçado, caminhos Unicode, avisos e erros. Init 12, implement 40, interview 19, spec 19, design 19, plan 16, analyze 16, review 19, reparse 12 e MVP 1 testes OK; launcher implement 8 PASS. Fixtures removidas, diff check verde. Adaptações dos consumidores de oito suítes entraram antecipadamente no commit e2d808d por concorrência de edição/indexação; a prova verde corresponde ao conjunto completo R2/R3/R4, sem atribuir independência ao commit intermediário.
+
+## Provas adicionais R5/R6 e auditoria dos registros
+
+R5/R6 resolvidos em 2026-10-10: slug explícito prevalece sobre plan pendente/rascunho, preview não cria e apply preserva o novo alvo; slug vazio/inválido, slug+dir e MVP misto recusados antes de mutação. Defer limitado a Nit/Optional/FYI com ID, fonte, motivo e retomada; Critical/Required, obrigação ausente/parcial e origem insuficiente bloqueiam. Provas: review 23 testes OK, estados implement Python/PowerShell 2 testes com 23 fixtures cada, reparse específico review 12 OK. Captura UTF-8 estrita com aviso real; fases anteriores bytes intactos. Fixtures ausentes, diff check verde; Gitleaks exit 0 sem vazamentos (1,78 MB).
+
+Os demais registros foram auditados: problemas de symlinks e harness já corrigidos; restrição Bash depende do sandbox. O checkout C:/projetos/vibeflow citado não existe neste host. A phase 9 conserva somente a falta histórica de commit isolado, sem correção funcional pendente e sem reescrita de histórico. Nova review independente deve conferir A9-A13 e os R* fechados.

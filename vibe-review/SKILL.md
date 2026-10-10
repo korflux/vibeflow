@@ -27,6 +27,8 @@ A investigação começa pela pergunta de auditoria e pelo T*/diff que precisa s
 `INIT_AUSENTE` exige init. `REVIEW_SEM_ALVO`, `REVIEW_CADEIA_INCOMPLETA`, `MVP_INESPERADO`, `MODO_INVALIDO`, `FASE_AUSENTE` e `SLUG_INVALIDO` não são contornados.
 
 Apply:
+
+- Slug explícito: nova phase avulsa, inclusive com plan pendente; confira o novo alvo no preview. Recuse slug vazio/inválido e slug junto de dir antes de escrita.
 - first-pass reuse/atualizar: `pwsh "<skill>/scripts/review.ps1" -Apply` (`--dir` se o alvo errar)
 - avulsa sem cadeia: `… -Apply -Slug "<frase curta>"`
 - MVP: `… -Apply -Mvp`, sem slug ou dir
@@ -130,6 +132,8 @@ Finding: evidência (`path`) + severidade + remédio nomeado + prova. Sem evidê
 |---|---|
 | Critical / Required | Sim |
 | Nit / Optional / FYI | Não |
+
+Use Approve com defer somente para R* Nit/Optional/FYI. Mantenha os itens em `[ ]` e identifique na linha do veredito cada R*, fonte/path, motivo e encaminhamento com condição ou momento de retomada. Critical/Required aberto, obrigação parcial/ausente ou origem insuficiente bloqueiam qualquer Approve; defer não retira obrigações e mantém o gate de confirmação humana.
 
 Remédio aponta `vibe-implement` + o que fazer. Esta skill **não** aplica código.
 

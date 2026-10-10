@@ -47,7 +47,85 @@ def seed_mvp(vf: Path) -> Path:
 
 
 
-class PythonContracts(unittest.TestCase):
+# Exercita a mesma jornada de seleção explícita em ambos os motores, sobre disco isolado.
+class ExplicitTargetContracts:
+    def explicit_invoke(self, *arguments: str) -> tuple[subprocess.CompletedProcess, dict | None]:
+        """Captura bytes reais para também preservar a prova UTF-8 do motor tocado."""
+        if isinstance(self, PowershellParity):
+            flags = {"--apply": "-Apply", "--slug": "-Slug", "--dir": "-Dir", "--mvp": "-Mvp"}
+            command = [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo)]
+            command += [flags.get(arg, arg) for arg in arguments]
+        else:
+            command = [sys.executable, str(SCRIPT), "--root", str(self.repo), *arguments]
+        process = subprocess.run(command, capture_output=True, check=False)
+        stdout = process.stdout.decode("utf-8", errors="strict")
+        process.stderr.decode("utf-8", errors="strict")
+        self.assertFalse(process.stdout.startswith(b"\xef\xbb\xbf"))
+        return process, json.loads(stdout) if process.returncode == 0 else None
+
+    def test_slug_preview_and_apply_override_pending_and_draft(self) -> None:
+        """Nova review tem alvo próprio e n numérico; fases anteriores permanecem intactas."""
+        vf = seed_vibeflow(self.repo)
+        phases = vf / "phases"
+        for name, filename in (("phase-9-rascunho", "review.md"), ("phase-12-pendente", "plan.md")):
+            phase = phases / name
+            phase.mkdir(parents=True)
+            (phase / filename).write_bytes(b"original\x00\r\n")
+        (phases / "aviso-ação.txt").write_bytes(b"fora-do-inventario")
+        originals = {p: p.read_bytes() for p in phases.rglob("*") if p.is_file()}
+        expected = "phase-13-revisao-avulsa"
+        process, preview = self.explicit_invoke("--slug", "Revisão avulsa")
+        self.assertEqual(0, process.returncode, process.stderr)
+        self.assertIn("ignorado (não é pasta de fase): aviso-ação.txt", preview["avisos"])
+        self.assertEqual(expected, preview["alvo"]["dir"])
+        self.assertEqual(13, preview["alvo"]["n"])
+        self.assertEqual("criar", preview["modo_sugerido"])
+        self.assertEqual([], preview["actions"])
+        self.assertIsNone(preview["created"])
+        self.assertFalse((phases / expected).exists())
+        process, applied = self.explicit_invoke("--apply", "--slug", "Revisão avulsa")
+        self.assertEqual(0, process.returncode, process.stderr)
+        self.assertEqual(expected, applied["alvo"]["dir"])
+        self.assertEqual(applied["created"], applied["alvo"])
+        self.assertEqual("criar", applied["modo"])
+        self.assertEqual(14, applied["next_n"])
+        self.assertEqual("phase-12-pendente", applied["plan_pendente"]["dir"])
+        self.assertEqual(["review.md"], applied["alvo"]["files"])
+        self.assertEqual(b"", (phases / expected / "review.md").read_bytes())
+        self.assertFalse((phases / "phase-12-pendente" / "review.md").exists())
+        for path, original in originals.items():
+            self.assertEqual(original, path.read_bytes())
+
+    def test_invalid_explicit_targets_refuse_before_mutation(self) -> None:
+        """Alvos ambíguos, MVP misto e slug inválido não caem no plan automático."""
+        vf = seed_vibeflow(self.repo)
+        pending = vf / "phases" / "phase-12-pendente"
+        pending.mkdir(parents=True)
+        (pending / "plan.md").write_bytes(b"pendente\x00\n")
+        cases = [(("--slug", raw), "SLUG_INVALIDO") for raw in ("", " ", "!", "a")]
+        cases += [(("--slug", "novo", "--dir", pending.name), "MODO_INVALIDO"),
+                  (("--mvp", "--slug", "novo"), "MODO_INVALIDO"),
+                  (("--mvp", "--dir", pending.name), "MODO_INVALIDO")]
+        for arguments, code in cases:
+            for apply in ((), ("--apply",)):
+                with self.subTest(arguments=arguments, apply=bool(apply)):
+                    before = {str(p.relative_to(self.repo)): p.read_bytes() if p.is_file() else None
+                              for p in self.repo.rglob("*")}
+                    process, report = self.explicit_invoke(*apply, *arguments)
+                    self.assertNotEqual(0, process.returncode)
+                    self.assertIn(code, process.stderr.decode("utf-8"))
+                    self.assertIsNone(report)
+                    after = {str(p.relative_to(self.repo)): p.read_bytes() if p.is_file() else None
+                             for p in self.repo.rglob("*")}
+                    self.assertEqual(before, after)
+        # A recusa precede inclusive a preparação automática de phases/.
+        shutil.rmtree(vf / "phases")
+        process, _ = self.explicit_invoke("--apply", "--slug", "novo", "--dir", pending.name)
+        self.assertNotEqual(0, process.returncode)
+        self.assertFalse((vf / "phases").exists())
+
+
+class PythonContracts(ExplicitTargetContracts, unittest.TestCase):
     """Verifica reuse do plan, avulsa com slug e preservação do artefato vivo."""
 
     def setUp(self) -> None:
@@ -227,7 +305,7 @@ def powershell7() -> str | None:
     return executable if probe.stdout.strip().isdigit() and int(probe.stdout.strip()) >= 7 else None
 
 @unittest.skipUnless(powershell7(), "PowerShell 7 indisponível")
-class PowershellParity(unittest.TestCase):
+class PowershellParity(ExplicitTargetContracts, unittest.TestCase):
     """Confere que o apply reuse do PowerShell grava o mesmo path."""
 
     def setUp(self) -> None:

@@ -74,11 +74,12 @@
 
 ## Veredito vigente
 
+<!-- Defer somente para Nit/Optional/FYI. Critical/Required aberto, obrigação parcial/ausente ou origem insuficiente bloqueiam qualquer Approve. -->
 <!-- Preencher somente na review final. Checkpoint registra o resultado do marco em Etapas e nunca aprova nem conclui a phase. -->
 
 - [ ] **Approve**: origem suficiente, obrigações atendidas ou retiradas explicitamente pelo humano e nenhum Critical/Required em `[ ]`
 - [ ] **Request changes**: há Critical/Required em `[ ]`
-- [ ] **Approve com defer**: <qual R* e por quê>
+- [ ] **Approve com defer**: <R* Nit/Optional/FYI; fonte/path; motivo; encaminhamento e condição ou momento de retomada>
 
 ## Decisões para vigência
 
@@ -121,5 +122,6 @@ vibe-implement | finalização Git da phase
 - Abriu: R1, R2 (ou nenhum)
 - Fechou: nenhum
 - Veredito desta etapa: Marco aprovado | Request changes | Approve final | Approve com defer
+- Defer: <R* Nit/Optional/FYI; fonte/path; motivo; encaminhamento e retomada | omitir sem defer>
 
 <!-- etapa seguinte: copie ### Etapa N abaixo. Não apague as anteriores. -->

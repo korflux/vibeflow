@@ -7,3 +7,7 @@
 - Correção: o launcher foi rerodado pelo Git Bash com execução fora da restrição do sandbox, mantendo o script sem alteração.
 - Evidência atual: `C:\Program Files\Git\bin\bash.exe docs/vibe-plan/tests/test-plan.sh` retornou `pass=6 fail=0`.
 - Estado: corrigido em 2026-08-31 para o ambiente de validação. O shim `bash` do sandbox continua sujeito à restrição de criação do signal pipe.
+
+## Auditoria atual
+
+Auditoria em 2026-10-10: launchers init e implement passaram pelo Git Bash fora da restrição de sandbox nas provas da phase 15. Registro preservado como limitação do ambiente, sem defeito funcional vigente.

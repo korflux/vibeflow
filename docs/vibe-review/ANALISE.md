@@ -20,6 +20,10 @@ diff + artefatos da cadeia
 
 A IA começa recuperando a solicitação original e suas alterações humanas; depois localiza os T*/diff relevantes à pergunta de auditoria. Usa `rg --files` e `rg -n` para localizar paths, símbolos, testes e referências aplicáveis, abrindo somente as dependências do fluxo. O status, as dependências/bloqueios, os paths e as provas de cada task ficam no `plan.md`, que é conferido contra o diff integrado. `implement.md` histórico não é requisito. O histórico do chat não substitui a prova no disco.
 
+Um slug explícito expressa outro pedido e deve prevalecer sobre a sugestão automática do inventário. Preview e apply conservam essa seleção para evitar que um plan pendente de outra entrega absorva a review avulsa. Slug e dir juntos são ambíguos e recusados antes de escrita.
+
+O defer adia apenas melhorias não bloqueantes identificadas, com motivo e retomada registrados. Ele não substitui atendimento da solicitação, contexto suficiente ou correção de Critical/Required.
+
 ## Escrita direta e etapas
 
 `review.md` é a fonte viva do julgamento. O motor prepara um arquivo vazio na primeira passagem e preserva o existente em todas as outras. Cada etapa identifica se é checkpoint ou review final e registra seu escopo e as provas reaproveitadas ou executadas. A IA fecha R* com prova e atualiza o veredito final diretamente.

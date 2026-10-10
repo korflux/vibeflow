@@ -209,6 +209,12 @@ def run(args: argparse.Namespace) -> None:
     if args.mvp and (args.slug is not None or args.dir is not None):
         raise RuntimeError("MODO_INVALIDO: o alvo MVP não aceita --slug nem --dir.")
 
+    if args.slug is not None and args.dir is not None:
+        raise RuntimeError("MODO_INVALIDO: --slug e --dir não podem ser usados juntos.")
+    slug = sanitize_slug(args.slug) if args.slug is not None else None
+    if slug is not None and len(slug) < 2:
+        raise RuntimeError("SLUG_INVALIDO: a frase curta não gerou um slug utilizável.")
+
     repo = repo_root(args.root)
     vf = repo / ".vibeflow"
     phases = vf / "phases"
@@ -233,7 +239,13 @@ def run(args: argparse.Namespace) -> None:
     next_n = (existing[-1]["n"] + 1) if existing else 1
     pending = find_plan_pendente(existing)
     draft = find_rascunho(existing)
-    if args.dir:
+    if slug is not None:
+        # Expõe no preview o destino explícito, ainda ausente do inventário.
+        name = f"phase-{next_n}-{slug}"
+        alvo = {"kind": "phase", "dir": name, "n": next_n, "slug": slug,
+                "path": f".vibeflow/phases/{name}", "files": []}
+        modo_sugerido = "criar"
+    elif args.dir:
         alvo, modo_sugerido = resolve_dir(existing, args.dir)
     else:
         alvo, modo_sugerido = resolve_alvo(existing)
@@ -261,17 +273,14 @@ def run(args: argparse.Namespace) -> None:
                     f"FASE_AUSENTE: .vibeflow/phases/{dest_dir.name} não é uma pasta de fase."
                 )
             modo = "atualizar" if (dest_dir / "review.md").is_file() else "reuse"
-        elif alvo:
+        elif alvo and slug is None:
             dest_dir = repo / alvo["path"]
             modo = modo_sugerido
         else:
-            if not (args.slug or "").strip():
+            if slug is None:
                 raise RuntimeError(
                     "REVIEW_SEM_ALVO: sem fase alvo; passe --slug para review avulsa."
                 )
-            slug = sanitize_slug(args.slug or "")
-            if len(slug) < 2:
-                raise RuntimeError("SLUG_INVALIDO: a frase curta não gerou um slug utilizável.")
             dest_dir = phases / f"phase-{next_n}-{slug}"
             if is_reparse_point(dest_dir) or dest_dir.exists():
                 raise RuntimeError(f"FASE_EXISTE: .vibeflow/phases/{dest_dir.name} já existe.")
@@ -301,7 +310,9 @@ def run(args: argparse.Namespace) -> None:
             next_n = (existing[-1]["n"] + 1) if existing else 1
             pending = find_plan_pendente(existing)
             draft = find_rascunho(existing)
-            if args.dir:
+            if slug is not None:
+                alvo, modo_sugerido = resolve_dir(existing, dest_dir.name)
+            elif args.dir:
                 alvo, modo_sugerido = resolve_dir(existing, args.dir)
             else:
                 alvo, modo_sugerido = resolve_alvo(existing)

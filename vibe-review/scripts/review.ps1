@@ -196,6 +196,14 @@ function Invoke-Review {
         throw 'MODO_INVALIDO: o alvo MVP não aceita -Slug nem -Dir.'
     }
 
+    if ($script:SlugWasBound -and $script:DirWasBound) {
+        throw 'MODO_INVALIDO: -Slug e -Dir não podem ser usados juntos.'
+    }
+    $clean = if ($script:SlugWasBound) { ConvertTo-Slug $Slug } else { $null }
+    if ($script:SlugWasBound -and $clean.Length -lt 2) {
+        throw 'SLUG_INVALIDO: a frase curta não gerou um slug utilizável.'
+    }
+
     $repo = Get-RepoRoot
     $vf = Join-Path $repo '.vibeflow'
     $phases = Join-Path $vf 'phases'
@@ -231,7 +239,11 @@ function Invoke-Review {
     foreach ($w in $listed.warnings) { $warnings.Add($w) }
     $nextN = 1
     if ($existing.Count -gt 0) { $nextN = [int]$existing[-1].n + 1 }
-    $resolved = if (-not [string]::IsNullOrWhiteSpace($Dir)) { Get-AlvoComDir $existing $Dir } else { Get-Alvo $existing }
+    # Expõe no preview a nova phase explícita, ainda ausente do inventário.
+    $resolved = if ($script:SlugWasBound) {
+        $name = "phase-$nextN-$clean"
+        @{ item = [pscustomobject]@{ kind = 'phase'; dir = $name; n = $nextN; slug = $clean; path = ".vibeflow/phases/$name"; files = @() }; modo = 'criar' }
+    } elseif (-not [string]::IsNullOrWhiteSpace($Dir)) { Get-AlvoComDir $existing $Dir } else { Get-Alvo $existing }
     $alvoItem = $resolved.item
     $modoSugerido = $resolved.modo
     $mvpMap = Get-MvpMap $vf
@@ -266,16 +278,12 @@ function Invoke-Review {
                 throw "FASE_AUSENTE: $destName não é uma pasta de fase."
             }
             $modo = if (Test-Path -LiteralPath (Join-Path $destDir 'review.md')) { 'atualizar' } else { 'reuse' }
-        } elseif ($null -ne $alvoItem) {
+        } elseif ($null -ne $alvoItem -and -not $script:SlugWasBound) {
             $destDir = Join-Path $repo $alvoItem.path
             $modo = $modoSugerido
         } else {
-            if ([string]::IsNullOrWhiteSpace($Slug)) {
+            if (-not $script:SlugWasBound) {
                 throw 'REVIEW_SEM_ALVO: sem fase alvo; passe -Slug para review avulsa.'
-            }
-            $clean = ConvertTo-Slug $Slug
-            if ($clean.Length -lt 2) {
-                throw 'SLUG_INVALIDO: a frase curta não gerou um slug utilizável.'
             }
             $destDir = Join-Path $phases "phase-$nextN-$clean"
             if ((Test-IsReparsePoint (Get-FsItem $destDir)) -or (Test-Path -LiteralPath $destDir)) {
@@ -313,7 +321,7 @@ function Invoke-Review {
             foreach ($w in $listed.warnings) { $warnings.Add($w) }
             $nextN = 1
             if ($existing.Count -gt 0) { $nextN = [int]$existing[-1].n + 1 }
-            $resolved = if (-not [string]::IsNullOrWhiteSpace($Dir)) { Get-AlvoComDir $existing $Dir } else { Get-Alvo $existing }
+            $resolved = if ($script:SlugWasBound) { Get-AlvoComDir $existing $destName } elseif (-not [string]::IsNullOrWhiteSpace($Dir)) { Get-AlvoComDir $existing $Dir } else { Get-Alvo $existing }
             $alvoItem = $resolved.item
             $modoSugerido = $resolved.modo
             foreach ($item in $existing) {
