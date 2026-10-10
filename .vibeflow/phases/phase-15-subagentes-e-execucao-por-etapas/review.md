@@ -1,6 +1,6 @@
 # Review: subagentes instalados e execução por etapas
 # Alvo: phase-15-subagentes-e-execucao-por-etapas
-# Status: rascunho
+# Status: aprovado
 
 ## Contexto
 
@@ -31,6 +31,12 @@
 | Cobrir toda solicitação e bloquear omissão mesmo com testes verdes; F3/A8, C3 | Skill/template de review, perfis revisor e relatórios de delegação | T3: cenário A abriu Required por slugify ausente; cenário B aceitou retirada humana explícita sem falso bloqueio; três testes verdes em cada entrega | atendido |
 | Manter distribuição, contratos e restrições reais; C4 | Versão 5.0.0, manifestos, referências e contratos atualizados | T3: distribuição 9, MVP 1 e reparse 12 testes verdes; lacuna do alias fechada por R1 com paridade e launcher-alias, conforme Etapa 2 | atendido |
 
+| Limpeza verificável e remoção de cobertura aparente; pedido adicional, A9 | tearDown das suítes, remove_fixtures em reparse, remoção de comentários e classe vazia | R2/R3: suítes verdes registradas; inspeção dos asserts preservados; simulação complementar da Etapa 3 confirmou ambas as tentativas e encadeamento | atendido |
+| Transporte Unicode previsível; registro de codificação, A10 | UTF-8 explícito nos oito pares de motores e consumidores | R4: test-stream-encoding.py, 2 testes/32 processos reais, sucesso e erro com Unicode e locale legado; regressões registradas do conjunto integrado | atendido |
+| Slug explícito cria review avulsa sem atingir phase pendente; A11 | seleção antecipada e validação slug/dir nos dois motores review | R5: 23 testes review; preview, apply, comparação de bytes anteriores e recusas sem mutação; reparse review 12 OK | atendido |
+| Defer somente de achados não bloqueantes, com rastreabilidade; A12 | skill/template e prioridade de bloqueios no consumidor implement | R6: inspeção semântica do contrato; 2 testes de estados com 23 fixtures por motor, incluindo Critical/Required com defer recusado | atendido |
+| Auditar registros sem fabricar reparo histórico; A13 | registros atualizados em .erros-encontrados | Diff preserva ocorrência e limitações; checkout C ausente confirmado; phase 9 conserva ausência histórica de commit isolado | atendido |
+
 ## Checklist de correções
 
 - Correções adicionais autorizadas por Marco em 2026-10-10: auditar os registros de .erros-encontrados e corrigir problemas ainda vigentes. A proposta anterior de Approve será reconferida após essas alterações, sem autorização de push.
@@ -60,7 +66,7 @@
 
 ## Veredito vigente
 
-- [ ] **Approve**: proposta final da Etapa 2. R1 fechado na Etapa 2; os ajustes humanos adicionais R4, R5 e R6 estão abertos e impedem aprovação vigente. Matriz da solicitação atendida dentro das limitações explícitas. Aguarda confirmação humana; status permanece rascunho.
+- [x] **Approve**: proposta técnica final da Etapa 3. R1 permanece fechado; R2 a R6 conferidos e fechados. A1 a A13 e C1 a C4 atendidos dentro das limitações explícitas da matriz. Nenhum bloqueio ou defer. Aguarda confirmação humana; status permanece rascunho.
 
 ## Notas
 
@@ -73,7 +79,7 @@
 
 Coordenador do `vibe-implement`: apresentar esta proposta final ao humano. Somente após confirmação explícita, executar a finalização Git autorizada da phase. Nenhuma decisão de vigência com ID foi proposta; não inventar tabela ou IDs.
 
-- [ ] Aprovação humana (leu o arquivo e confirmou)
+- [x] Aprovação humana (Marco confirmou em 2026-10-10: "aprovo, commit e push final")
 - Correção delegada pelo coordenador; nenhuma operação de índice, commit, push ou alteração de AGENTS.md foi feita pelo revisor.
 
 ## Etapas
@@ -126,3 +132,24 @@ R4 resolvido: oito pares de motores emitem stdout/stderr UTF-8 sem BOM; consumid
 R5/R6 resolvidos em 2026-10-10: slug explícito prevalece sobre plan pendente/rascunho, preview não cria e apply preserva o novo alvo; slug vazio/inválido, slug+dir e MVP misto recusados antes de mutação. Defer limitado a Nit/Optional/FYI com ID, fonte, motivo e retomada; Critical/Required, obrigação ausente/parcial e origem insuficiente bloqueiam. Provas: review 23 testes OK, estados implement Python/PowerShell 2 testes com 23 fixtures cada, reparse específico review 12 OK. Captura UTF-8 estrita com aviso real; fases anteriores bytes intactos. Fixtures ausentes, diff check verde; Gitleaks exit 0 sem vazamentos (1,78 MB).
 
 Os demais registros foram auditados: problemas de symlinks e harness já corrigidos; restrição Bash depende do sandbox. O checkout C:/projetos/vibeflow citado não existe neste host. A phase 9 conserva somente a falta histórica de commit isolado, sem correção funcional pendente e sem reescrita de histórico. Nova review independente deve conferir A9-A13 e os R* fechados.
+
+
+### Etapa 3 - review final independente - extensão A9 a A13 e integração
+
+- Data: 2026-10-10. Contexto limpo. Snapshot: `4475418`; recorte adicional `5f74bb0..4475418`, integração desde `08e65069e93ec9debca84c2f42058ca883697a7a`. T1 a T3 concluídas; extensão autorizada pelo pedido humano de corrigir problemas vigentes da review e de `.erros-encontrados`, registrada na spec. Origem suficiente para este recorte; limitações históricas da Etapa 2 preservadas.
+- Leu: regras AGENTS.md fornecidas e arquivo local, skill review e §6, delegation da implement, rubrica de segurança, origem/spec/plan, revisão anterior, diffs de motores/testes/contratos e registros. Status Git inicial limpo; histórico confirma commits `e2d808d`, `e8bc5c4` e `4475418`. Não se atribuiu verde independente ao commit intermediário com consumidores UTF-8 antecipados: a evidência aceita é do conjunto integrado.
+- R2/R3: remoção de ignore_errors nos pontos afetados torna falha de limpeza visível; remove_fixtures usa finally para tentar também a raiz externa. Comentários órfãos e classe sem testes removidos, sem perda de assertions executáveis. Provas registradas reaproveitadas: review 19, distribuição 9, spec 19, design 19, plan 16, analyze 16, interview 19, MVP 1 e reparse 12. A suíte review posterior de R5 substitui a prova anterior desse input.
+- Prova complementar R2: `python -B -` carregando `docs/tests/test-reparse-safety.py` com runpy e injetando PermissionError em shutil.rmtree. Executados casos de falha apenas na primeira remoção e em ambas; assertions verificaram duas chamadas na ordem, erro propagado e segunda exceção com primeira em __context__. Exit 0, PASS. Motivo: tornar explícita nesta revisão a prova de falha/encadeamento cujo comando não estava reproduzível no registro anterior. Nenhuma fixture ou arquivo foi criado por essa simulação; não é substituto das provas reais de disco reaproveitadas.
+- R4: configuração no entrypoint Python de stdout/stderr e Console.OutputEncoding no PowerShell precede emissão operacional. Consumidores usam decode/encoding UTF-8 explícito; harness lê bytes. Inspecionado test-stream-encoding.py: processos reais dos oito motores em ambos runtimes, captura bytes sem decoder implícito, locale Python legado, paths com acentos/ideogramas, aviso integral, stderr de erro e ausência de BOM em stdout. Reaproveitados 2 testes/32 execuções e regressões registradas: init 12, implement 40, interview 19, spec 19, design 19, plan 16, analyze 16, reparse 12, MVP 1 e launcher implement 8 PASS. Motores review receberam depois R5; sua captura UTF-8 estrita com aviso real foi renovada nos testes de R5.
+- R5: ambos os motores validam combinação de seletores e slug antes da preparação de phases; slug válido prevalece sobre seleção automática no preview/apply, usa próximo n numérico e mantém o alvo criado no relatório posterior. Recusas de reparse e criação exclusiva do vivo permanecem. Inspecionadas assertions que comparam inventário/bytes anteriores e garantem ausência de review na phase pendente. Reaproveitados `python docs/vibe-review/tests/test-review.py` (23 OK) e recorte reparse review (12 OK), posteriores ao último patch; nenhum input pendente os invalida.
+- R6: inspeção semântica da skill/template confirma severidades permitidas, ID/fonte/motivo/retomada e bloqueio por obrigação parcial/ausente ou origem insuficiente. O consumidor implement prioriza Critical/Required abertos antes de confirmação. Reaproveitados 2 testes de estados, 23 fixtures por motor, incluindo defer de Nit e recusa de defer de Critical/Required. Esses testes exercitam o consumidor real, sem testar palavras de documentação. A decisão semântica continua responsabilidade do revisor; o motor não certifica completude sozinho.
+- A13: diff dos registros conserva o problema original e acrescenta situação/evidência; `Test-Path C:/projetos/vibeflow` retornou False. Nenhum reparo foi certificado nesse checkout ausente. A ausência histórica de commit isolado da phase 9 permanece registrada e não exige reescrita de Git. Restrição do launcher continua identificada como dependência do ambiente.
+- Executado após leitura do motor: `pwsh -NoProfile -File vibe-review/scripts/review.ps1 -Root A:/Projetos/vibeflow -Dir phase-15-subagentes-e-execucao-por-etapas`, exit 0, alvo correto, modo atualizar, actions e avisos vazios. Executado `git diff --check 08e65069e93ec9debca84c2f42058ca883697a7a..HEAD`, exit 0. Provas reaproveitadas foram confrontadas com os inputs/diff; nenhuma matriz completa foi repetida sem necessidade.
+- Segurança: validações de destino continuam antes da escrita; UTF-8 não amplia permissões ou execução de dados. Gitleaks final registrado após R5/R6: exit 0, sem vazamentos, 1,78 MB, reaproveitado com código inalterado. Nenhuma superfície de UI, banco ou autenticação web adicional. Nenhum Critical encontrado.
+- Cobertura vigente: matriz ampliada para A9 a A13; A1 a A8/C1 a C4 preservados das Etapas 1/2 com regressões correspondentes renovadas por R4/R5. Carregamento efetivo dos perfis em hosts/sessões e disponibilidade de modelos continuam sem certificação. Não há retirada humana inferida nem omissão aplicável identificada.
+- Abriu: nenhum. Fechou nesta conferência: R2, R3, R4, R5 e R6. R1 permanece fechado. Abertos Critical/Required: nenhum. Decisões para vigência: nenhuma com ID estável.
+- Veredito desta etapa: Approve final como proposta técnica, sem defer. Status rascunho; aprovação humana desmarcada. Somente review.md escrito. Sem índice Git, commit, push, mudança de AGENTS.md ou aprovação em nome do humano. Escrita encerrada para devolução ao coordenador.
+
+## Fechamento humano
+
+Marco aprovou a review final e autorizou commit e push em 2026-10-10. Fila T1 a T3 concluída; R1 a R6 fechados; nenhum Critical, nenhum bloqueio e nenhuma decisão com ID para sincronizar em AGENTS.md. Provas da Etapa 3 reaproveitadas com inputs inalterados; residual autorizado somente review.md. Finalização Git pelo coordenador no upstream origin/main, sem force.
