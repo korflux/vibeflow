@@ -124,6 +124,37 @@ class ExplicitTargetContracts:
         self.assertNotEqual(0, process.returncode)
         self.assertFalse((vf / "phases").exists())
 
+    def test_same_slug_creates_new_phase_and_dir_reuses_exact_target(self) -> None:
+        """Slug repete o título em nova phase; dir identifica a continuidade preservada."""
+        vf = seed_vibeflow(self.repo)
+        old = vf / "phases" / "phase-1-mesmo"
+        old.mkdir(parents=True)
+        (old / "plan.md").write_bytes(b"plan anterior\n")
+        (old / "review.md").write_bytes(b"review anterior\n")
+        originals = {path: path.read_bytes() for path in old.iterdir()}
+        process, preview = self.explicit_invoke("--slug", "mesmo")
+        self.assertEqual(0, process.returncode, process.stderr)
+        self.assertEqual("phase-2-mesmo", preview["alvo"]["dir"])
+        self.assertFalse((vf / "phases" / "phase-2-mesmo").exists())
+        process, first = self.explicit_invoke("--apply", "--slug", "mesmo")
+        self.assertEqual(0, process.returncode, process.stderr)
+        self.assertEqual("criar", first["modo"])
+        self.assertEqual("phase-2-mesmo", first["alvo"]["dir"])
+        review = vf / "phases" / first["alvo"]["dir"] / "review.md"
+        review.write_bytes(b"etapa 1\n")
+        process, second = self.explicit_invoke("--apply", "--dir", first["alvo"]["dir"])
+        self.assertEqual(0, process.returncode, process.stderr)
+        self.assertEqual("atualizar", second["modo"])
+        self.assertEqual(first["alvo"]["dir"], second["alvo"]["dir"])
+        self.assertEqual(b"etapa 1\n", review.read_bytes())
+        process, third = self.explicit_invoke("--apply", "--slug", "mesmo")
+        self.assertEqual(0, process.returncode, process.stderr)
+        self.assertEqual("phase-3-mesmo", third["alvo"]["dir"])
+        self.assertEqual(b"", (vf / "phases" / "phase-3-mesmo" / "review.md").read_bytes())
+        for path, content in originals.items():
+            self.assertEqual(content, path.read_bytes())
+        self.assertEqual(b"etapa 1\n", review.read_bytes())
+
 
 class PythonContracts(ExplicitTargetContracts, unittest.TestCase):
     """Verifica reuse do plan, avulsa com slug e preservação do artefato vivo."""

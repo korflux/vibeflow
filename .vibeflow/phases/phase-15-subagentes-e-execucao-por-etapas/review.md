@@ -153,3 +153,7 @@ Os demais registros foram auditados: problemas de symlinks e harness já corrigi
 ## Fechamento humano
 
 Marco aprovou a review final e autorizou commit e push em 2026-10-10. Fila T1 a T3 concluída; R1 a R6 fechados; nenhum Critical, nenhum bloqueio e nenhuma decisão com ID para sincronizar em AGENTS.md. Provas da Etapa 3 reaproveitadas com inputs inalterados; residual autorizado somente review.md. Finalização Git pelo coordenador no upstream origin/main, sem force.
+
+## Integração remota no fechamento
+
+Commit final aprovado: 7960979, somente review.md. Primeiro push recusado por avanço remoto (fetch first), sem publicação parcial. Fetch revelou 836b53a, correção anterior de slug. Merge preservou todos os commits e manteve byte a byte os motores, skill e arquitetura aprovados em A11; não foi adotada a reutilização por slug nem combinação dir+slug do contrato anterior. Teste remoto adaptado comprova slug repetido em novas phases e continuidade por dir, sem duplicação de casos. Suíte review renovada: 25 testes OK, incluindo PowerShell; diff check verde e fixtures removidas. Nenhuma alteração funcional posterior ao snapshot da Etapa 3; aprovação humana vigente.
