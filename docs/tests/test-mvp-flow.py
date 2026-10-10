@@ -22,7 +22,7 @@ def invoke(repo: Path, skill: str, *arguments: str) -> dict:
     process = subprocess.run(
         [sys.executable, str(script), "--root", str(repo), *arguments],
         capture_output=True,
-        text=True,
+        text=True, encoding="utf-8",
         check=False,
     )
     if process.returncode != 0:
@@ -48,7 +48,8 @@ class MvpFlow(unittest.TestCase):
         (self.repo / "AGENTS.md").write_bytes(self.rules)
 
     def tearDown(self) -> None:
-        shutil.rmtree(self.repo, ignore_errors=True)
+        """Remove a fixture isolada e deixa falhas de limpeza reprovarem a suíte."""
+        shutil.rmtree(self.repo)
 
     # Prova que uma review checkpoint com T* aberta no plan continua sem Approve de fase.
     def test_full_max_chain_uses_only_mvp_target(self) -> None:

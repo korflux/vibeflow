@@ -22,7 +22,7 @@ def invoke(repo: Path, *arguments: str, check: bool = True) -> tuple[subprocess.
     process = subprocess.run(
         [sys.executable, str(SCRIPT), "--root", str(repo), *arguments],
         capture_output=True,
-        text=True,
+        text=True, encoding="utf-8",
         check=check,
     )
     report = json.loads(process.stdout) if process.returncode == 0 and process.stdout.strip() else None
@@ -55,7 +55,8 @@ class PythonContracts(unittest.TestCase):
         self.repo.mkdir()
 
     def tearDown(self) -> None:
-        shutil.rmtree(self.repo, ignore_errors=True)
+        """Remove a fixture isolada e deixa falhas de limpeza reprovarem a suíte."""
+        shutil.rmtree(self.repo)
 
     def test_init_ausente(self) -> None:
         process, report = invoke(self.repo, check=False)
@@ -222,7 +223,7 @@ def powershell7() -> str | None:
     executable = shutil.which("pwsh")
     if not executable:
         return None
-    probe = subprocess.run([executable, "-NoProfile", "-Command", "$PSVersionTable.PSVersion.Major"], capture_output=True, text=True, check=False)
+    probe = subprocess.run([executable, "-NoProfile", "-Command", "$PSVersionTable.PSVersion.Major"], capture_output=True, text=True, encoding="utf-8", check=False)
     return executable if probe.stdout.strip().isdigit() and int(probe.stdout.strip()) >= 7 else None
 
 @unittest.skipUnless(powershell7(), "PowerShell 7 indisponível")
@@ -234,7 +235,8 @@ class PowershellParity(unittest.TestCase):
         self.repo.mkdir()
 
     def tearDown(self) -> None:
-        shutil.rmtree(self.repo, ignore_errors=True)
+        """Remove a fixture isolada e deixa falhas de limpeza reprovarem a suíte."""
+        shutil.rmtree(self.repo)
 
     # Confirma que o motor PowerShell entrega o inventário no stdout sem persistir relatório.
     def test_apply_reuse_same_path(self) -> None:
@@ -245,7 +247,7 @@ class PowershellParity(unittest.TestCase):
         process = subprocess.run(
             [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo), "-Apply"],
             capture_output=True,
-            text=True,
+            text=True, encoding="utf-8",
             check=False,
         )
         self.assertEqual(0, process.returncode, process.stderr)
@@ -267,7 +269,7 @@ class PowershellParity(unittest.TestCase):
         process = subprocess.run(
             [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo), "-Dir", "phase-2-outro", "-Apply"],
             capture_output=True,
-            text=True,
+            text=True, encoding="utf-8",
             check=False,
         )
         self.assertEqual(0, process.returncode, process.stderr)
@@ -287,7 +289,7 @@ class PowershellParity(unittest.TestCase):
         process = subprocess.run(
             [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo), "-Apply"],
             capture_output=True,
-            text=True,
+            text=True, encoding="utf-8",
             check=False,
         )
         self.assertEqual(0, process.returncode, process.stderr)
@@ -306,7 +308,7 @@ class PowershellParity(unittest.TestCase):
         process = subprocess.run(
             [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo), "-Apply", "-Mvp"],
             capture_output=True,
-            text=True,
+            text=True, encoding="utf-8",
             check=False,
         )
         self.assertEqual(0, process.returncode, process.stderr)
@@ -316,18 +318,6 @@ class PowershellParity(unittest.TestCase):
         self.assertFalse((vf / "review-report.json").exists())
         self.assertNotIn("wip", report)
 
-
-class SkillContracts(unittest.TestCase):
-    """Trava os gates semânticos, a cobertura da auditoria e o fechamento Git."""
-
-
-    # Confirma que os eixos obrigatórios continuam disponíveis na review.
-
-    # Garante que a review encontra a prova de implementação no registro único do plan.
-
-    # Garante que checkpoint e review final não compartilhem o gate de conclusão da phase.
-
-    # Garante que a review é a única porta de commit residual e push da phase.
 
 if __name__ == "__main__":
     unittest.main()

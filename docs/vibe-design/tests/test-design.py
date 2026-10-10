@@ -22,7 +22,7 @@ def invoke(repo: Path, *arguments: str, check: bool = True) -> tuple[subprocess.
     process = subprocess.run(
         [sys.executable, str(SCRIPT), "--root", str(repo), *arguments],
         capture_output=True,
-        text=True,
+        text=True, encoding="utf-8",
         check=check,
     )
     report = json.loads(process.stdout) if process.returncode == 0 and process.stdout.strip() else None
@@ -45,7 +45,8 @@ class PythonContracts(unittest.TestCase):
         self.repo.mkdir()
 
     def tearDown(self) -> None:
-        shutil.rmtree(self.repo, ignore_errors=True)
+        """Remove a fixture isolada e deixa falhas de limpeza reprovarem a suíte."""
+        shutil.rmtree(self.repo)
 
     # Recusa sem .vibeflow para exigir init antes de qualquer escrita.
     def test_init_ausente(self) -> None:
@@ -200,7 +201,7 @@ def powershell7() -> str | None:
     executable = shutil.which("pwsh")
     if not executable:
         return None
-    probe = subprocess.run([executable, "-NoProfile", "-Command", "$PSVersionTable.PSVersion.Major"], capture_output=True, text=True, check=False)
+    probe = subprocess.run([executable, "-NoProfile", "-Command", "$PSVersionTable.PSVersion.Major"], capture_output=True, text=True, encoding="utf-8", check=False)
     return executable if probe.stdout.strip().isdigit() and int(probe.stdout.strip()) >= 7 else None
 
 @unittest.skipUnless(powershell7(), "PowerShell 7 indisponível")
@@ -212,7 +213,8 @@ class PowershellParity(unittest.TestCase):
         self.repo.mkdir()
 
     def tearDown(self) -> None:
-        shutil.rmtree(self.repo, ignore_errors=True)
+        """Remove a fixture isolada e deixa falhas de limpeza reprovarem a suíte."""
+        shutil.rmtree(self.repo)
 
     # Confirma que o motor PowerShell reusa a pasta da spec como o motor Python.
     def test_apply_reuse_same_path(self) -> None:
@@ -223,7 +225,7 @@ class PowershellParity(unittest.TestCase):
         process = subprocess.run(
             [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo), "-Apply"],
             capture_output=True,
-            text=True,
+            text=True, encoding="utf-8",
             check=False,
         )
         self.assertEqual(0, process.returncode, process.stderr)
@@ -241,7 +243,7 @@ class PowershellParity(unittest.TestCase):
         process = subprocess.run(
             [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo), "-Apply", "-Mvp"],
             capture_output=True,
-            text=True,
+            text=True, encoding="utf-8",
             check=False,
         )
         self.assertEqual(0, process.returncode, process.stderr)
@@ -262,7 +264,7 @@ class PowershellParity(unittest.TestCase):
         process = subprocess.run(
             [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo), "-Apply"],
             capture_output=True,
-            text=True,
+            text=True, encoding="utf-8",
             check=False,
         )
         self.assertEqual(0, process.returncode, process.stderr)
@@ -283,7 +285,7 @@ class PowershellParity(unittest.TestCase):
         process = subprocess.run(
             [powershell7(), "-File", str(POWERSHELL_SCRIPT), "-Root", str(self.repo), "-Apply", "-Dir", "phase-1-lock"],
             capture_output=True,
-            text=True,
+            text=True, encoding="utf-8",
             check=False,
         )
         self.assertNotEqual(0, process.returncode)

@@ -119,19 +119,6 @@ class DistribuicaoContracts(unittest.TestCase):
         self.assertIsInstance(antigravity["description"], str)
         self.assertNotIn("commands", antigravity)
 
-    # C4: README traz escopos, caminhos por host, fallbacks e verificações de descoberta.
-
-    # T5: cada skill investiga por relevância, usa artefato vivo e não revive o contrato operacional removido.
-
-    # C5: o contrato Git fica distribuído entre implement, review e o template de execução.
-
-    # C5: retomada fica na T* aberta; review mantém checkpoint de marco e publicação final.
-
-    # C4: apenas o estado persistido do init permanece no ignore operacional do Vibeflow.
-
-    # C5: o workflow de contrato executa esta suíte.
-
-
 # Compara os bytes das cópias distribuídas de delegation.md sob `root` e devolve os problemas encontrados.
 # A comparação é por bytes, nunca por texto: qualquer diferença, inclusive de fim de linha, é divergência.
 def delegation_copy_problems(root: Path) -> list[str]:

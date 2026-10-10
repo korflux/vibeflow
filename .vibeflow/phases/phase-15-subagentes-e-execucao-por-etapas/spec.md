@@ -159,3 +159,15 @@ vibe-plan. Design N/A: mudança de instalação e orquestração, sem UI visíve
 Recomenda-se novo chat para o plan; continuar neste chat é válido.
 
 - [x] Aprovação humana: Marco confirmou em 2026-10-10 e autorizou seguir para o plan, incluindo o commit integrado do Modo A.
+
+## Correções adicionais autorizadas em 2026-10-10
+
+Marco solicitou auditar os achados da review e `.erros-encontrados/` e corrigir os problemas ainda atuais. A proposta anterior de fechamento da phase será revista depois dessas alterações; nenhuma autorização de push foi dada.
+
+- A9: testes não ocultam falhas de remoção de fixtures e não anunciam cobertura inexistente em comentários/classes vazias. Preservar asserções e segurança dos caminhos; remover resíduos após provas.
+- A10: os motores emitem stdout e mensagens operacionais em UTF-8 explícito em ambos os runtimes, incluindo avisos acentuados e paths Unicode. Prova é sobre bytes/processo e efeitos no disco, sem varredura de palavras em documentação.
+- A11: review avulsa com slug explícito cria/reporta sua própria phase, mesmo com plan pendente; não altera a phase automática. Alvo explícito ambíguo slug+dir é recusado antes de mutação.
+- A12: Approve com defer permite somente Nit/Optional/FYI com referência, motivo e encaminhamento. Critical/Required aberto, obrigação parcial/ausente ou origem insuficiente continuam bloqueando a aprovação.
+- A13: atualizar os registros com situação real e evidência. Erros já corrigidos e limitações de ambiente não geram novo patch de produto. A ausência histórica de commit isolado na phase 9 é preservada; não reescrever Git nem produzir commit artificial para simular correção.
+
+Rastreabilidade das correções: R2 a R6 no review vivo desta phase. Implementação sequencial, commit de correção após provas e nova review independente; sem novo arquivo de estado ou migração da própria run para etapas-v1.

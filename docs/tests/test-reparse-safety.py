@@ -34,7 +34,7 @@ def powershell7() -> str | None:
     probe = subprocess.run(
         [executable, "-NoProfile", "-Command", "$PSVersionTable.PSVersion.Major"],
         capture_output=True,
-        text=True,
+        text=True, encoding="utf-8",
         check=False,
     )
     return executable if probe.stdout.strip().isdigit() and int(probe.stdout.strip()) >= 7 else None
@@ -92,7 +92,7 @@ def invoke_engine(skill: str, repo: Path, arguments: list[str], powershell: bool
             "--apply",
             *arguments,
         ]
-    return subprocess.run(command, capture_output=True, text=True, check=False)
+    return subprocess.run(command, capture_output=True, text=True, encoding="utf-8", check=False)
 
 
 # Decodifica o inventário JSON transitório para confirmar o contrato dos motores.
@@ -111,7 +111,7 @@ def invoke_init(repo: Path, powershell: bool) -> subprocess.CompletedProcess[str
         command = [powershell7() or "pwsh", "-NoProfile", "-File", str(INIT_POWERSHELL_SCRIPT), "-Root", str(repo)]
     else:
         command = [sys.executable, str(INIT_SCRIPT), "--root", str(repo)]
-    return subprocess.run(command, capture_output=True, text=True, check=False)
+    return subprocess.run(command, capture_output=True, text=True, encoding="utf-8", check=False)
 
 
 # Prepara um alvo válido para alcançar a emissão transitória do inventário.
@@ -123,6 +123,14 @@ def prepare_engine_target(phases: Path, skill: str, prerequisites: tuple[str, ..
     for prerequisite in prerequisites:
         (phase / prerequisite).write_text("pré-requisito\n", encoding="utf-8")
     return ["--dir", phase.name]
+
+
+# Remove ambas as fixtures mesmo se a primeira falhar; finally preserva os erros encadeados.
+def remove_fixtures(repo: Path, outside: Path) -> None:
+    try:
+        shutil.rmtree(repo)
+    finally:
+        shutil.rmtree(outside)
 
 
 class PythonReparseSafety(unittest.TestCase):
@@ -140,8 +148,7 @@ class PythonReparseSafety(unittest.TestCase):
                     self.assertIn("MVP_INESPERADO", process.stderr)
                     self.assertEqual([], list(outside.iterdir()))
                 finally:
-                    shutil.rmtree(repo, ignore_errors=True)
-                    shutil.rmtree(outside, ignore_errors=True)
+                    remove_fixtures(repo, outside)
 
     def test_phase_link_is_never_selected_or_written(self) -> None:
         for skill, _artifact, _prerequisites in ENGINES:
@@ -159,8 +166,7 @@ class PythonReparseSafety(unittest.TestCase):
                         self.assertIn("FASE_AUSENTE", process.stderr)
                         self.assertEqual([], list(outside.iterdir()))
                 finally:
-                    shutil.rmtree(repo, ignore_errors=True)
-                    shutil.rmtree(outside, ignore_errors=True)
+                    remove_fixtures(repo, outside)
 
     def test_live_artifact_link_is_rejected(self) -> None:
         for skill, artifact, prerequisites in ENGINES:
@@ -190,8 +196,7 @@ class PythonReparseSafety(unittest.TestCase):
                     self.assertIn("ARTEFATO_INESPERADO", process.stderr)
                     self.assertEqual(sentinel, external_file.read_bytes())
                 finally:
-                    shutil.rmtree(repo, ignore_errors=True)
-                    shutil.rmtree(outside, ignore_errors=True)
+                    remove_fixtures(repo, outside)
 
     # R5: o caminho legado de relatório não é escrito nem redireciona saída para fora do repo.
     def test_legacy_report_link_is_ignored(self) -> None:
@@ -209,8 +214,7 @@ class PythonReparseSafety(unittest.TestCase):
                     self.assertTrue((repo / ".vibeflow" / f"{skill}-report.json").is_symlink())
                     self.assertEqual(sentinel, external_file.read_bytes())
                 finally:
-                    shutil.rmtree(repo, ignore_errors=True)
-                    shutil.rmtree(outside, ignore_errors=True)
+                    remove_fixtures(repo, outside)
 
     # R5: os motores de inventário não alteram o gitignore operacional.
     def test_gitignore_link_is_ignored_by_inventory(self) -> None:
@@ -229,8 +233,7 @@ class PythonReparseSafety(unittest.TestCase):
                     self.assertTrue((repo / ".vibeflow" / ".gitignore").is_symlink())
                     self.assertEqual(sentinel, external_file.read_bytes())
                 finally:
-                    shutil.rmtree(repo, ignore_errors=True)
-                    shutil.rmtree(outside, ignore_errors=True)
+                    remove_fixtures(repo, outside)
 
     # R6: .vibeflow linkado não pode fazer o init gravar REGRAS, phases ou relatórios no alvo externo.
     def test_vibeflow_link_is_rejected(self) -> None:
@@ -250,8 +253,7 @@ class PythonReparseSafety(unittest.TestCase):
             self.assertFalse((outside / "phases").exists())
             self.assertFalse((outside / "init-report.json").exists())
         finally:
-            shutil.rmtree(repo, ignore_errors=True)
-            shutil.rmtree(outside, ignore_errors=True)
+            remove_fixtures(repo, outside)
 
 
 @unittest.skipUnless(powershell7(), "PowerShell 7 indisponível")
@@ -270,8 +272,7 @@ class PowershellReparseSafety(unittest.TestCase):
                     self.assertIn("MVP_INESPERADO", process.stderr)
                     self.assertEqual([], list(outside.iterdir()))
                 finally:
-                    shutil.rmtree(repo, ignore_errors=True)
-                    shutil.rmtree(outside, ignore_errors=True)
+                    remove_fixtures(repo, outside)
 
     def test_phase_link_is_never_selected_or_written(self) -> None:
         for skill, _artifact, _prerequisites in ENGINES:
@@ -289,8 +290,7 @@ class PowershellReparseSafety(unittest.TestCase):
                         self.assertIn("FASE_AUSENTE", process.stderr)
                         self.assertEqual([], list(outside.iterdir()))
                 finally:
-                    shutil.rmtree(repo, ignore_errors=True)
-                    shutil.rmtree(outside, ignore_errors=True)
+                    remove_fixtures(repo, outside)
 
     def test_live_artifact_link_is_rejected(self) -> None:
         for skill, artifact, prerequisites in ENGINES:
@@ -320,8 +320,7 @@ class PowershellReparseSafety(unittest.TestCase):
                     self.assertIn("ARTEFATO_INESPERADO", process.stderr)
                     self.assertEqual(sentinel, external_file.read_bytes())
                 finally:
-                    shutil.rmtree(repo, ignore_errors=True)
-                    shutil.rmtree(outside, ignore_errors=True)
+                    remove_fixtures(repo, outside)
 
     # R5: o caminho legado de relatório não é escrito nem redireciona saída para fora do repo.
     def test_legacy_report_link_is_ignored(self) -> None:
@@ -339,8 +338,7 @@ class PowershellReparseSafety(unittest.TestCase):
                     self.assertTrue((repo / ".vibeflow" / f"{skill}-report.json").is_symlink())
                     self.assertEqual(sentinel, external_file.read_bytes())
                 finally:
-                    shutil.rmtree(repo, ignore_errors=True)
-                    shutil.rmtree(outside, ignore_errors=True)
+                    remove_fixtures(repo, outside)
 
     # R5: os motores de inventário não alteram o gitignore operacional.
     def test_gitignore_link_is_ignored_by_inventory(self) -> None:
@@ -359,8 +357,7 @@ class PowershellReparseSafety(unittest.TestCase):
                     self.assertTrue((repo / ".vibeflow" / ".gitignore").is_symlink())
                     self.assertEqual(sentinel, external_file.read_bytes())
                 finally:
-                    shutil.rmtree(repo, ignore_errors=True)
-                    shutil.rmtree(outside, ignore_errors=True)
+                    remove_fixtures(repo, outside)
 
     # R6: .vibeflow linkado não pode fazer o init gravar REGRAS, phases ou relatórios no alvo externo.
     def test_vibeflow_link_is_rejected(self) -> None:
@@ -380,8 +377,7 @@ class PowershellReparseSafety(unittest.TestCase):
             self.assertFalse((outside / "phases").exists())
             self.assertFalse((outside / "init-report.json").exists())
         finally:
-            shutil.rmtree(repo, ignore_errors=True)
-            shutil.rmtree(outside, ignore_errors=True)
+            remove_fixtures(repo, outside)
 
 
 if __name__ == "__main__":

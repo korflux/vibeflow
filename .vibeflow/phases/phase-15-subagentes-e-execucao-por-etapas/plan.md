@@ -116,3 +116,7 @@ Entregar os perfis dos cinco subagentes pelo init, reorganizar o Modo A em etapa
 `vibe-implement`, rota high. Sem analyze obrigatório e sem design aplicável. As dependências e os arquivos compartilhados pedem execução sequencial; nenhum grupo paralelo seguro foi proposto. Não há checkpoint intermediário de review necessário; a review final é delegada pelo coordenador depois das entregas, não uma T* adicional.
 
 Recomenda-se fortemente um chat novo com `/vibe-implement` e este plan. Com subagentes, o coordenador executa a fila inteira em Modo A, incluindo review e correções, até a confirmação humana final. Permanecer neste chat é válido se Marco preferir. Não iniciar implementação antes de aprovação do plan ou pedido explícito da próxima porta.
+
+## Correções adicionais autorizadas
+
+Pedido humano de 2026-10-10 inclui review e registros vigentes. R2/R3 corrigidos por causa raiz nas nove suítes afetadas. Provas: review 19, distribuição 9, spec 19, design 19, plan 16, analyze 16, interview 19, MVP 1 e reparse 12 testes OK; falhas simuladas propagam e reparse tenta ambas as remoções. Fixtures ausentes e diff check verde. Código, registros e artefatos serão enviados em commit task(R2,R3), sem push. R4/R5/R6 seguem em correção sequencial e exigem nova review.
