@@ -47,6 +47,8 @@ Entregar os perfis dos cinco subagentes pelo init, reorganizar o Modo A em etapa
 - **Prova final T1:** Python: 11 testes OK (11,812 s); PowerShell: 5 cenários PASS; launcher Git Bash: exit 0 fora do sandbox, após falha de inicialização 0xC0000142 no sandbox; diff check verde. Fixtures reais de ambos os motores conferiram bytes, estrutura nativa, modelos/esforços, idempotência, conflitos e recusa prévia de fontes/destinos inseguros; limpeza concluída. Nenhum teste textual de prompt.
 - **Resultado T1:** dez perfis distribuídos e motores alinhados. Cinco papéis disponíveis na sessão Codex atual; carregamento dos novos perfis não certificado. Claude indisponível, formato conferido por documentação oficial. Sem mudanças globais ou pendências T1.
 
+- **Correção R1 pós-review:** entrypoints por alias instalados são suportados resolvendo somente a raiz física do pacote; links internos continuam recusados. Prova final init 12 testes OK (25,299 s), PS 5 PASS, launcher-alias exit 0, Gitleaks/diff verdes. Corrigidos init.py/init.ps1, teste Python/launcher e docs do init. R1 rastreado no review, sem reabrir task concluída.
+
 ### T2: Executar o Modo A em etapas com retomada e commit integrado
 
 - [x] T2 concluída

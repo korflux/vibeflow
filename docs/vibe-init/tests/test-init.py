@@ -21,8 +21,9 @@ ENGINES = (False, True) if shutil.which("pwsh") else (False,)
 
 
 # Executa um motor em raiz isolada e carrega o relatório operacional produzido.
-def invoke(repo: Path, powershell: bool = False) -> tuple[subprocess.CompletedProcess[str], dict | None]:
-    command = (["pwsh", "-NoProfile", "-File", str(POWERSHELL), "-Root", str(repo)] if powershell else [sys.executable, str(PYTHON), "--root", str(repo)])
+def invoke(repo: Path, powershell: bool = False, package: Path | None = None) -> tuple[subprocess.CompletedProcess[str], dict | None]:
+    engine = package / "scripts" / ("init.ps1" if powershell else "init.py") if package else POWERSHELL if powershell else PYTHON
+    command = (["pwsh", "-NoProfile", "-File", str(engine), "-Root", str(repo)] if powershell else [sys.executable, str(engine), "--root", str(repo)])
     process = subprocess.run(command, capture_output=True, text=True, check=False)
     report_path = repo / ".vibeflow" / "init-report.json"
     report = json.loads(report_path.read_text(encoding="utf-8")) if report_path.is_file() else None
@@ -40,6 +41,42 @@ class InitContracts(unittest.TestCase):
     # Remove apenas a pasta conhecida desta fixture após cada teste.
     def tearDown(self) -> None:
         shutil.rmtree(self.repo)
+
+    # Percorre os entrypoints públicos e instalações com alias no pacote ou ancestral, sem reescrita.
+    def test_installed_package_aliases_install_and_repeat(self) -> None:
+        installation = self.repo / "installation"
+        package = installation / "vibe-init"
+        shutil.copytree(ROOT / "vibe-init", package)
+        package_alias = self.repo / "package-alias"
+        package_alias.symlink_to(package, target_is_directory=True)
+        parent_alias = self.repo / "parent-alias"
+        parent_alias.symlink_to(installation, target_is_directory=True)
+        entries = (ROOT / "skills/vibe-init", package_alias, parent_alias / "vibe-init")
+        for index, entry in enumerate(entries):
+            for powershell in ENGINES:
+                with self.subTest(entry=str(entry), powershell=powershell):
+                    repo = self.repo / f"project-{index}-{powershell}"
+                    repo.mkdir()
+                    process, report = invoke(repo, powershell, entry)
+                    self.assertEqual(0, process.returncode, process.stderr)
+                    self.assertEqual(10, len(report["agent_profiles"]))
+                    self.assertEqual({"instalado"}, {item["status"] for item in report["agent_profiles"]})
+                    snapshots = {}
+                    for item in report["agent_profiles"]:
+                        profile = repo / item["path"]
+                        source = package / "templates/agents" / item["host"] / profile.name
+                        self.assertEqual(source.read_bytes(), profile.read_bytes())
+                        snapshots[item["path"]] = (profile.read_bytes(), profile.stat().st_mtime_ns)
+                    before = (repo / "AGENTS.md").read_bytes()
+                    process, report = invoke(repo, powershell, entry)
+                    self.assertEqual(0, process.returncode, process.stderr)
+                    self.assertEqual(10, len(report["agent_profiles"]))
+                    self.assertEqual({"ja_instalado"}, {item["status"] for item in report["agent_profiles"]})
+                    self.assertEqual([], report["actions"])
+                    self.assertEqual(before, (repo / "AGENTS.md").read_bytes())
+                    for path, (content, modified) in snapshots.items():
+                        self.assertEqual(content, (repo / path).read_bytes())
+                        self.assertEqual(modified, (repo / path).stat().st_mtime_ns)
 
     # Percorre instalação, descoberta estrutural, repetição e conflito preservado em ambos os motores.
     def test_profiles_install_repeat_and_preserve_customization(self) -> None:
@@ -104,7 +141,7 @@ class InitContracts(unittest.TestCase):
     # Um destino inválido no último host impede qualquer mutação anterior ou saída para fora da raiz.
     def test_profiles_preflight_rejects_unsafe_destinations(self) -> None:
         for powershell in ENGINES:
-            for scenario in ("file_parent", "directory_leaf", "broken_link", "linked_parent", "linked_leaf"):
+            for scenario in ("file_parent", "directory_leaf", "broken_link", "linked_parent", "linked_leaf", "linked_root"):
                 with self.subTest(powershell=powershell, scenario=scenario):
                     repo = self.repo / f"{powershell}-{scenario}"
                     repo.mkdir()
@@ -113,7 +150,10 @@ class InitContracts(unittest.TestCase):
                     sentinel = outside / "sentinel"
                     sentinel.write_bytes(b"preservado")
                     host = repo / ".claude"
-                    if scenario == "file_parent":
+                    if scenario == "linked_root":
+                        repo.rmdir()
+                        repo.symlink_to(outside, target_is_directory=True)
+                    elif scenario == "file_parent":
                         host.write_bytes(b"arquivo")
                     elif scenario == "linked_parent":
                         host.symlink_to(outside, target_is_directory=True)
@@ -154,8 +194,9 @@ class InitContracts(unittest.TestCase):
                         folder.symlink_to(moved, target_is_directory=True)
                     repo = base / "project"
                     repo.mkdir()
-                    command = ["pwsh", "-NoProfile", "-File", str(package / "scripts/init.ps1"), "-Root", str(repo)] if powershell else [sys.executable, str(package / "scripts/init.py"), "--root", str(repo)]
-                    process = subprocess.run(command, capture_output=True, text=True, check=False)
+                    alias = base / "installed"
+                    alias.symlink_to(package, target_is_directory=True)
+                    process, _ = invoke(repo, powershell, alias)
                     self.assertNotEqual(0, process.returncode)
                     expected = "PERFIL_AUSENTE" if scenario == "missing" else "FONTE_GRANDE" if scenario == "large" else "TIPO_INESPERADO"
                     self.assertIn(expected, process.stderr)

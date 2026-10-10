@@ -67,9 +67,9 @@ def validate_profile_path(path: Path, *, source: bool = False) -> None:
             raise RuntimeError(f"FONTE_GRANDE: {path} excede 1 MiB")
 
 
-# Prepara a allowlist inteira antes das mutações e mantém fontes pessoais fora do fluxo.
+# Resolve somente a raiz do pacote instalado; links internos continuam visíveis ao preflight.
 def prepare_profiles(root: Path) -> list[tuple[str, str, Path, Path]]:
-    templates = Path(__file__).absolute().parent.parent / "templates" / "agents"
+    templates = Path(__file__).absolute().parent.parent.resolve(strict=True) / "templates" / "agents"
     profiles = []
     for host, folder, extension in HOSTS:
         for role in ROLES:

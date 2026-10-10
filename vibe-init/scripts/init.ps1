@@ -45,12 +45,25 @@ function Assert-ProfilePath([string]$Path, [bool]$Source = $false) {
     }
 }
 
-# Valida a allowlist completa antes de qualquer mutação de regras ou instalação.
-function Get-AgentProfiles([string]$Project) {
+# Resolve a identidade física somente da raiz instalada, inclusive aliases em seus ancestrais.
+function Get-PackageRoot([string]$Path) {
+    $item = Get-Item -LiteralPath $Path -Force
+    if ($item -isnot [IO.DirectoryInfo]) { throw "TIPO_INESPERADO: pacote $Path não é diretório" }
+    if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) {
+        $target = $item.ResolveLinkTarget($true)
+        if (-not $target) { throw "TIPO_INESPERADO: pacote $Path não é link de instalação" }
+        return Get-PackageRoot $target.FullName
+    }
+    if (-not $item.Parent) { return $item.FullName }
+    return Join-Path (Get-PackageRoot $item.Parent.FullName) $item.Name
+}
+
+# Valida a allowlist completa sem resolver links internos ao pacote físico.
+function Get-AgentProfiles([string]$Project, [string]$Package) {
     foreach ($hostName in @('codex', 'claude')) {
         $extension = if ($hostName -eq 'codex') { '.toml' } else { '.md' }
         foreach ($role in $Roles) {
-            $source = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot "../templates/agents/$hostName/$role$extension"))
+            $source = Join-Path $Package "templates/agents/$hostName/$role$extension"
             $destination = Join-Path $Project ".$hostName/agents/$role$extension"
             Assert-ProfilePath $source $true
             Assert-ProfilePath $destination
@@ -146,13 +159,14 @@ function Update-Header([string]$Content, [string]$Template) {
 # Executa o init e relata arquivos legados que ainda exigem consolidação sem apagá-los.
 function Invoke-VibeInit {
     $project = Get-ProjectRoot
-    $profiles = @(Get-AgentProfiles $project)
+    $package = Get-PackageRoot ([IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..')))
+    $profiles = @(Get-AgentProfiles $project $package)
     $vf = Join-Path $project '.vibeflow'
     $phases = Join-Path $vf 'phases'
     $old = Join-Path $vf 'old'
     $agents = Join-Path $project 'AGENTS.md'
     $bridge = Join-Path $project '.agents/rules/vibeflow.md'
-    $templatePath = Join-Path $PSScriptRoot '../templates/AGENTS.md'
+    $templatePath = Join-Path $package 'templates/AGENTS.md'
     $template = [IO.File]::ReadAllText($templatePath)
     foreach ($directory in @($vf, $phases, $old, (Join-Path $project '.agents'), (Split-Path -Parent $bridge))) {
         $item = Get-Item -LiteralPath $directory -Force -ErrorAction SilentlyContinue
