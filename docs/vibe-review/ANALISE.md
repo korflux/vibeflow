@@ -32,6 +32,8 @@ Essa escolha mantém o histórico no mesmo path e permite que implement consuma 
 
 ## Checkpoint e review final
 
+Re-review começa pelo remédio aplicado e seus consumidores/dependências. O julgamento das partes inalteradas e suas provas válidas continua aproveitável; repetir uma auditoria inteira exige lacuna ou risco concreto. O revisor independente verifica as referências, o diff e os inputs atuais, sem reproduzir no review o snapshot que já pertence ao plan. Essa economia alcança a coordenação e qualquer suíte do projeto consumidor, além dos testes internos do VibeFlow.
+
 Checkpoint só ocorre no marco declarado e justificado pelo `plan.md`, depois que as tasks desse marco estão concluídas. Ele verifica o contrato compartilhado ou risco antes das tasks seguintes. A fila ainda aberta fica explícita; o resultado limita-se ao marco, mantém a fase em andamento e não libera decisão, commit residual ou push.
 
 A review final aguarda todas as T* concluídas, julga os critérios de aceite sobre o código integrado e revisa os riscos tocados pelo diff. Provas verdes por task são reaproveitadas quando os inputs cobertos continuam iguais e o estado atual continua no escopo. Uma edição posterior em código/teste invalida somente a prova afetada; atualizar os artefatos de registro não a invalida. A review executa somente o que falta para provar a integração ou um risco alterado, evitando rodar a matriz completa de cada T* por padrão.

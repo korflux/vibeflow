@@ -38,6 +38,12 @@ jobs:
           echo "::group::reparse-safety"
           python "docs/tests/test-reparse-safety.py" -v
           echo "::endgroup::"
+          echo "::group::runtime-discovery"
+          python "docs/tests/test-runtime-discovery.py" -v
+          echo "::endgroup::"
+          echo "::group::stream-encoding"
+          python "docs/tests/test-stream-encoding.py" -v
+          echo "::endgroup::"
 
       - name: Paridade essencial do init (PowerShell)
         shell: pwsh

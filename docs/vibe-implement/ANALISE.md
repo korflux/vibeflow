@@ -6,7 +6,7 @@ A implementação precisava executar uma fila verificável sem perder histórico
 
 ## Decisão de desenho
 
-O protocolo `etapas-v1`, selecionado explicitamente no plan, separa código, complementação de testes e validação integrada. O implementador libera dependentes após checagem local válida; o coordenador mantém `[ ]` até o verificador comprovar a integração. Falha pré-review volta ao corretor sem criar R* artificial. Um commit integrado registra todas as T* comprovadas. O protocolo antigo e o Modo B continuam com commits por task, preservando runs em andamento.
+O protocolo `etapas-v1`, selecionado explicitamente no plan, separa código, complementação de testes e validação integrada. O implementador libera dependentes após checagem local válida; o coordenador mantém `[ ]` até a integração ser comprovada por executor separado do escritor. Falha pré-review volta ao corretor sem criar R* artificial. Um commit integrado registra todas as T* comprovadas. O protocolo antigo e o Modo B continuam com commits por task, preservando runs em andamento.
 
 Snapshots ficam no próprio plan e identificam HEAD, inputs, comando e resultado. O motor confere os hashes, sem executar o comando informado. Essa separação evita repetir suites completas por task e impede reaproveitar evidência de inputs alterados. O coordenador reutiliza implementadores relacionados quando útil e mantém um único escritor por vez; a review continua independente.
 
@@ -39,6 +39,10 @@ O relatório de subagente é evidência a conferir, como a saída de script. O c
 A etapa vem do motor, não da memória do chat: `etapa` e `rodadas_correcao` são derivados de `plan.md` e `review.md`, e uma etapa que o disco não sustenta é `null`, nunca um chute. Isso torna a retomada em outro chat determinística.
 
 ## Investigação e prova
+
+Provas proporcionais também se aplicam a qualquer projeto consumidor das skills. A seleção cruza diff, fluxo/consumidores, risco e aceite; código usa checagem local direcionada e a integração executa os comandos compartilhados uma vez sobre os inputs finais. Correções renovam somente evidências afetadas, incluindo suas dependências. Uma prova necessária permanece mesmo quando lenta.
+
+O coordenador reaproveita contexto, agentes relacionados e evidências verificáveis. Busca curta, conferência de relatório e prova integrada já válida não ganham handoff só para representar uma etapa. Execução ampla, vários fluxos/ambientes ou diagnóstico pedem verificador; prova integrada curta já definida pode ser executada pelo coordenador, que não escreveu código/testes. O revisor mantém contexto independente. Registrar o resultado uma vez e referenciá-lo evita transformar a execução em sucessivas reinvestigações e cópias, sem mudar estados, snapshots ou autorização.
 
 A IA formula a pergunta da T*, usa `rg --files` e `rg -n` para localizar pontos de entrada, chamadas, helpers, testes e referências, e expande a leitura apenas quando uma lacuna bloqueia a prova. O inventário seleciona o alvo, mas não autoriza ler a árvore inteira.
 

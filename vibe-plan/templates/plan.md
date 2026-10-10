@@ -16,6 +16,7 @@
 
 - **Requisitos verificados:** <runtime, comandos, serviços ou capacidades exigidos; informe se estão disponíveis localmente ou no CI>
 - **Ausências e ação na fila:** nenhuma | <resolução na T1 ou na primeira task que depende do requisito; limitação externa registrada>
+<!-- Quando várias T* compartilham uma prova integrada, defina comando/cobertura aqui uma vez e referencie em Verificação. Não crie outra checklist ou schema. -->
 
 ## Tasks
 
@@ -27,7 +28,7 @@
 - **Aceite:**
   - [ ] <condição testável>
 - **Verificação:**
-  - [ ] `<comando do repo que cobre a capacidade; pode ser reutilizado por outras T*>`
+  - [ ] <local: comando direcionado; integração: comando/cobertura ou referência à prova compartilhada na prontidão; escolha pelo fluxo, consumidores, risco e aceite>
 - **Visual:** <necessária | dispensada; justifique pela relação entre o aceite e a UI renderizada> <!-- Somente tasks que alteram UI; omitir nas demais. -->
 - **Deps:** nenhuma
 - **Decisões:** <ID (ação); omitir quando N/A>

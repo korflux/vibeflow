@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+from functools import cache
+
 import json
 import shutil
 import subprocess
@@ -27,7 +29,9 @@ ENGINES = (
 
 
 # Verifica a disponibilidade do PowerShell 7 antes de iniciar a suíte gêmea.
+@cache
 def powershell7() -> str | None:
+    """Descobre uma vez por processo; simulações de ambiente devem limpar o cache."""
     executable = shutil.which("pwsh")
     if not executable:
         return None

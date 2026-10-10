@@ -16,7 +16,7 @@ Descreva o papel pelo perfil, nunca por nome de modelo. Host que não permite es
 
 ## Quando delegar
 
-Delegue quando a skill manda (implementador por T*, revisor, analyze) ou quando a busca ou a prova é ampla o bastante para encher o contexto do coordenador: varredura de vários módulos, suíte longa, muitos arquivos lidos só para localizar um símbolo. Não delegue a leitura de um ou dois arquivos conhecidos, um `rg` pontual nem uma prova curta: o pedido custa mais que a tarefa. Delegação em paralelo segue a regra da skill chamadora, com isolamento e ownership definidos; este contrato não a autoriza sozinho.
+Delegue papéis obrigatórios da skill (implementador, revisor, analyze) e investigação/validação ampla, com vários fluxos/ambientes ou diagnóstico. Faça inline buscas pontuais, conferências e prova curta com comando/cobertura definidos, respeitando a separação entre escritor e executor da integração. Reutilize agentes para trabalho relacionado; mantenha review independente. Não crie handoff ou nova execução só para representar etapa com evidência já válida. Paralelo depende da skill chamadora e de isolamento/ownership; este contrato não o autoriza.
 
 ## Pedido ao subagente
 
@@ -50,7 +50,7 @@ Todo subagente herda estas proibições:
 
 ## Conferência pelo coordenador
 
-O relatório é evidência, nunca autoridade. Antes de registrar qualquer coisa, confira os paths citados contra `git status` e o diff real, e a saída da prova contra o comando declarado. Quando o subagente trabalha na mesma árvore do coordenador, de forma sequencial, sua prova vale para o recorte e os inputs efetivamente cobertos, e o coordenador não a repete; no Modo A por etapas, a checagem local não substitui a validação integrada delegada ao verificador; repita só quando o relatório não traz evidência suficiente ou o diff o contradiz. Divergência volta ao mesmo papel com o problema descrito, e nada é registrado antes disso.
+O relatório é evidência, nunca autoridade. Confira paths, diff, comando/resultado, cobertura e inputs atuais antes de registrar. Preserve contexto já conferido, sem reabrir investigação de inputs inalterados ou repetir provas suficientes. No Modo A por etapas, checagem local não substitui integração: reutilize somente evidência que cubra o estado integrado e tenha executor separado do escritor. Deixe resultado/snapshot no lar definido pela skill e referencie em vez de copiar para vários artefatos. Divergência ou lacuna concreta volta ao mesmo papel; renove só as provas afetadas, incluindo consumidores/dependências, e registre o motivo. Relatório incompleto não autoriza conclusão.
 
 ## Fallback sem subagentes
 

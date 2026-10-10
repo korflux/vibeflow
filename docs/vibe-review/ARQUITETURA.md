@@ -48,6 +48,8 @@ Status: `rascunho` durante checkpoints e enquanto o veredito final aguarda confi
 
 ## 5. Tipos de review e seleção de provas
 
+A auditoria relaciona o diff ao fluxo e seus consumidores, risco e aceite antes de selecionar comandos. Re-review verifica correções e dependências afetadas, conserva o julgamento/provas das partes inalteradas e amplia somente diante de lacuna ou risco concreto. Registra referência à evidência do plan e motivo de reaproveitamento ou execução; não duplica snapshots nem exige execução para formalizar uma evidência integrada já válida. Segurança, paridade e inspeção renderizada necessárias permanecem obrigatórias, qualquer que seja sua duração.
+
 Checkpoint só é permitido quando `plan.md` declarar o marco e sua justificativa e todas as T* desse marco estiverem concluídas. A etapa julga apenas o marco, suas provas e o contrato ou risco compartilhado indicado. Registra T* ainda abertas, não declara a feature concluída, não marca Approve final e não autoriza sincronização de decisões, commit residual ou push.
 
 Review final exige a fila do plan concluída e julga critérios de aceite, código integrado e riscos alterados. Para cada T*, confere status, `Deps`, bloqueios, `Arquivos` e `Prova`/`Verificação` no `plan.md`; compara os inputs cobertos com o estado integrado e reaproveita evidência verde quando esses paths continuam iguais e a prova ainda cobre a integração. Edição posterior em código/teste invalida somente a prova afetada; atualização de plan, spec ou review não invalida a prova. Executa apenas a verificação necessária que falta para integração ou risco. Não repete automaticamente cada comando da matriz de T*. Toda prova executada ou reaproveitada fica registrada no `review.md` com seu motivo.

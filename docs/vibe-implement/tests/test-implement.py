@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+from functools import cache
+
 import json
 import os
 import shutil
@@ -705,7 +707,9 @@ class PythonContracts(unittest.TestCase):
 
 
 # Verifica se existe uma versão real de PowerShell 7, única suportada pelo motor gêmeo.
+@cache
 def powershell7() -> str | None:
+    """Descobre uma vez por processo; simulações de ambiente devem limpar o cache."""
     executable = shutil.which("pwsh")
     if not executable:
         return None

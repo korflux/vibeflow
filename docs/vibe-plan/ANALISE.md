@@ -25,6 +25,8 @@ O pedido explícito de plan também fecha a aprovação pendente do `design.md` 
 
 ## Investigação e ferramentas
 
+O custo de fechamento depende tanto dos comandos quanto da coordenação. Planejar checagem local e integração separadamente permite liberar código dependente sem repetir uma suíte compartilhada em cada task. A escolha parte do aceite, do fluxo/consumidores e do risco; os comandos compartilhados têm uma única definição na prontidão das provas, e cada task os referencia. Essa economia preserva a cobertura necessária e o CI completo.
+
 A investigação começa pela pergunta de fatiamento e pela dependência que precisa ser provada. A IA usa `rg --files` para localizar spec, regras, entradas e testes, e `rg -n` para localizar A*/C*, decisões, símbolos e comandos. Só abre as entradas e dependências do fluxo. Para cada verificação, confirma a disponibilidade dos runtimes, comandos, serviços e capacidades necessários com manifests, workflows de CI e ferramentas disponíveis.
 
 Uma T* com UI declara se precisa de inspeção renderizada e por quê. O gatilho é o aceite depender da aparência, layout, responsividade, estado ou interação visíveis no navegador; tocar HTML, DOM ou arquivo de componente não basta. Se um comando ou teste existente prova o aceite e não há saída renderizada a julgar, a prova visual pode ser dispensada. Quando necessária, a ordem é navegador integrado, MCP Server `chrome-devtools`, Playwright existente ou explicitamente solicitado.

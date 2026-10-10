@@ -1,6 +1,6 @@
 {
   "name": "vibeflow",
-  "version": "5.0.0",
+  "version": "5.0.1",
   "description": "Cadeia de skills para inicializar e conduzir o trabalho de agentes num repo.",
   "author": {
     "name": "Marco Kormoczi",
