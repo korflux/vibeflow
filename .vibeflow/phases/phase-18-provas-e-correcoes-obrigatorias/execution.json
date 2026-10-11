@@ -103,7 +103,7 @@
   "commit": "d16ad7c8c29652b099282487a2c34f514f01b487",
   "schema": 1,
   "correcao": {
-    "commit": null,
+    "commit": "fde90244bcb70fcf214c78c144f58d15212b35b3",
     "base": {
       "resultado": "verde",
       "comando": "python docs/vibe-implement/tests/test-implement.py -v; python docs/tests/test-distribuicao.py -v (TEMP/TMP no workspace); git diff --check; gitleaks git . --verbose --redact --no-banner; gitleaks dir . --verbose --redact --no-banner; inspeção semântica independente A1/A3",
