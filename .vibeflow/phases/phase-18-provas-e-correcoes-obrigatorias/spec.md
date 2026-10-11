@@ -105,13 +105,13 @@ Tornar explícita a divisão de testes entre implementação, verificação e re
 - [x] A1: contratos distinguem provas locais, integração e auditoria, com execução proporcional e reaproveitamento por inputs válidos.
 - [x] A2: todos os R* de correção abertos bloqueiam aprovação e permanecem na fila, inclusive classificações legadas; aprovação com defer deixa de ser uma saída válida para pendências.
 - [x] A3: simplificação, reutilização e otimização fundamentada permanecem explícitas, sem enfraquecer comportamento, segurança ou cobertura.
-- [ ] A4: depois da aprovação final e push bem-sucedido, instalações locais do VibeFlow são atualizadas e conferidas, ou falhas são individualizadas como pendências.
+- [x] A4: depois da aprovação final e push bem-sucedido, instalações locais do VibeFlow são atualizadas e conferidas, ou falhas são individualizadas como pendências.
 
 ### Critérios de sucesso
 
 - [x] C1: motores Python e PowerShell apresentam o mesmo bloqueio e encaminhamento para cenários de achados abertos, fechados e vereditos legados.
 - [x] C2: skill, referências, templates, contratos e motores não oferecem caminhos conflitantes para dispensar correções ou repetir provas sem necessidade.
-- [ ] C3: relatório final identifica revisão publicada, destinos atualizados e qualquer instalação pendente.
+- [x] C3: relatório final identifica revisão publicada, destinos atualizados e qualquer instalação pendente.
 
 ## Contratos e restrições necessárias
 

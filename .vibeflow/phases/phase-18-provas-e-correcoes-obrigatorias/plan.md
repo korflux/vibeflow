@@ -37,7 +37,7 @@ Não executar suíte geral do repositório localmente por padrão. O motor revie
 
 ### T1: Exigir resolução de toda correção na aprovação e na retomada
 - [x] T1 concluída
-- **Execução:** implementação e integração independentes comprovadas; R1 textual corrigido e commit de correção registrado, com provas executáveis válidas reaproveitadas. Re-review pendente.
+- **Execução:** implementação e integração independentes comprovadas; R1 textual corrigido e commit de correção registrado, com provas executáveis válidas reaproveitadas. Review final aprovada, sem correções abertas.
 - **Spec:** A2, C1, C2
 - **Deps:** nenhuma
 - **O quê:** alinhar parser, fila, registro de correções, prompt de review e distribuição à obrigatoriedade de todos os R* pertinentes. Remover aprovação com defer como saída oferecida para novas reviews e tratar entradas legadas sem liberar pendências. Publicar a mudança de contrato como 7.0.0.
@@ -49,7 +49,7 @@ Não executar suíte geral do repositório localmente por padrão. O motor revie
 
 ### T2: Delimitar provas por papel e preservar otimizações
 - [x] T2 concluída
-- **Execução:** contratos de prova e otimização alinhados; inspeção semântica renovada para R1 e commit de correção registrado. Re-review pendente.
+- **Execução:** contratos de prova e otimização alinhados; inspeção semântica renovada para R1 e commit de correção registrado. Review final aprovada, sem correções abertas.
 - **Spec:** A1, A3, C2
 - **Deps:** nenhuma
 - **O quê:** explicitar que implementador entrega código/testes e prova localizada; verificador certifica integração proporcional; revisor audita código/cobertura/evidência e executa somente lacunas. Manter simplificação e otimização fundamentada no recorte autorizado.
@@ -82,3 +82,7 @@ Esta seção cobre A4/C3 após a review; não é T* prévia à aprovação, pois
 `vibe-implement`, após aprovação deste plan. Sem checkpoint intermediário de review necessário.
 
 Recomenda-se iniciar a implementação em novo chat com este alvo. No Modo A, o coordenador conduz ambas as entregas, integração, review e correções delegadas até a confirmação humana final. Continuar neste chat é permitido; não iniciar código nesta porta nem criar chat automaticamente.
+
+## Resultado do fechamento
+
+Review final e distribuição local certificadas independentemente; A4/C3 atendidos. Oito pacotes atualizados nas quatro raízes existentes, com backups íntegros e aliases preservados. Nenhuma instalação pendente. Reabrir sessões ativas dos CLIs para carregar as skills atualizadas. Aprovação humana de push e atualização aplicada ao fechamento.
