@@ -1,62 +1,110 @@
 {
   "tasks": {
     "T1": {
-      "actor": "implementador",
+      "actor": "corretor",
       "proof": {
-        "head": "267d263749b4c052c4dc667383465ec2d438eae1",
-        "comando": "python docs/vibe-implement/tests/test-implement.py PythonContracts.test_etapa_e_rodadas_por_fixture PowershellParity.test_etapa_parity_por_fixture PythonContracts.test_mvp_etapa_usa_o_review_do_baseline -v; python docs/vibe-implement/tests/test-execution.py ExecutionContracts.test_review_correction_commit_preserves_original_and_returns_to_review PowerShellExecutionContracts.test_review_correction_commit_preserves_original_and_returns_to_review -v",
-        "resultado": "verde",
+        "comando": "R1: leitura contextual e git diff --check verdes pelo corretor; provas locais anteriores reutilizadas por certificação independente, pois somente artigo excedente documental foi removido",
         "inputs": {
-          "vibe-implement/scripts/execution.py": "aaa891782c246166531b8755dbec906d67e01e74",
-          "vibe-implement/SKILL.md": "a276a2cee7e39142886b9eec59c08e9b7baecb49",
-          ".agents/plugins/marketplace.json": "5c4c967cc0a66fb0e6ae7bf7397268994e84bd8e",
-          "vibe-implement/references/protocolos-historicos.md": "00d21dfd697994b63c86f3a45554e116e294a3a8",
-          "vibe-implement/references/execution.md": "f7ef769809b68df3408441348c2b622d5f0117db",
-          "docs/vibe-implement/tests/test-execution.py": "c57a44f05545bdef76b2d8c6439399dddae6b328",
-          "docs/vibe-implement/ANALISE.md": "d972abbe8325e35ac75c7676a956acae0ac9c7a4",
           ".codex-plugin/plugin.json": "8ff72fd50b9efe4b130fe4295b2f707c61cecfc8",
-          "docs/vibe-implement/ARQUITETURA.md": "a6228addc7e3414956637ce82a004b8688be11bd",
-          "vibe-implement/scripts/execution.ps1": "7874027fb4c7eb7bd40cab577140dfb42efac0b5",
-          "vibe-review/templates/review.md": "afdd1585d2669151ccca12373a8bcc37afbbb4a0",
+          "vibe-implement/scripts/implement.ps1": "39e6d60f8a7713a2e7f2ada432164f8d5bf81434",
           ".claude-plugin/plugin.json": "af522c2c820c8e550ea0d35874ed7c4e58472b70",
+          ".claude-plugin/marketplace.json": "da88141bb3035deeb2a30896d0f1fde96f1f9093",
+          "docs/vibe-review/ANALISE.md": "230ee2ec8466a69ba15dd6138c8de6966c755410",
+          "vibe-implement/scripts/execution.py": "aaa891782c246166531b8755dbec906d67e01e74",
+          "docs/vibe-implement/tests/test-execution.py": "c57a44f05545bdef76b2d8c6439399dddae6b328",
+          "docs/vibe-review/ARQUITETURA.md": "223198569f4d096ff459351ccdf1b13d94ddc52c",
+          "docs/vibe-implement/ARQUITETURA.md": "a6228addc7e3414956637ce82a004b8688be11bd",
           "docs/vibe-implement/tests/test-implement.py": "679f7f25fa80d9306f22f4e18e25a82e41062859",
           "vibe-review/SKILL.md": "a4611822bd14865dfb8885bc0582651e053bdad9",
-          "vibe-implement/scripts/implement.ps1": "39e6d60f8a7713a2e7f2ada432164f8d5bf81434",
-          "vibe-review/references/security-and-hardening.md": "46c7d65df8bc2f9852f883f871f7f55ec784534d",
-          "vibe-implement/scripts/implement.py": "1c7e979a4b49779ea9ab106642d13ee0fb728674",
-          "docs/tests/test-distribuicao.py": "0c9280c0fb5ec0d90e94e31a9bbc0e66fde40812",
-          ".grok-plugin/marketplace.json": "1a1a8576746b77321f6b7daa7a86253e07ca521a",
-          ".claude-plugin/marketplace.json": "da88141bb3035deeb2a30896d0f1fde96f1f9093",
           "README.md": "52701067b53957697bab4b230b35ed480be9b1f1",
-          "docs/vibe-review/ARQUITETURA.md": "223198569f4d096ff459351ccdf1b13d94ddc52c",
-          "docs/vibe-review/ANALISE.md": "230ee2ec8466a69ba15dd6138c8de6966c755410"
-        }
+          ".agents/plugins/marketplace.json": "5c4c967cc0a66fb0e6ae7bf7397268994e84bd8e",
+          ".grok-plugin/marketplace.json": "1a1a8576746b77321f6b7daa7a86253e07ca521a",
+          "vibe-implement/references/protocolos-historicos.md": "318aee5dae8e4a3cb867c97ace592803bbb59fe9",
+          "docs/tests/test-distribuicao.py": "0c9280c0fb5ec0d90e94e31a9bbc0e66fde40812",
+          "vibe-review/templates/review.md": "afdd1585d2669151ccca12373a8bcc37afbbb4a0",
+          "docs/vibe-implement/ANALISE.md": "d972abbe8325e35ac75c7676a956acae0ac9c7a4",
+          "vibe-review/references/security-and-hardening.md": "46c7d65df8bc2f9852f883f871f7f55ec784534d",
+          "vibe-implement/SKILL.md": "a276a2cee7e39142886b9eec59c08e9b7baecb49",
+          "vibe-implement/scripts/execution.ps1": "7874027fb4c7eb7bd40cab577140dfb42efac0b5",
+          "vibe-implement/references/execution.md": "f7ef769809b68df3408441348c2b622d5f0117db",
+          "vibe-implement/scripts/implement.py": "1c7e979a4b49779ea9ab106642d13ee0fb728674"
+        },
+        "head": "d16ad7c8c29652b099282487a2c34f514f01b487",
+        "resultado": "verde"
       }
     },
     "T2": {
+      "actor": "corretor",
       "proof": {
-        "resultado": "verde",
-        "head": "267d263749b4c052c4dc667383465ec2d438eae1",
+        "comando": "R1: leitura contextual e git diff --check verdes pelo corretor; provas locais anteriores reutilizadas por certificação independente, pois somente artigo excedente documental foi removido",
         "inputs": {
-          "vibe-implement/SKILL.md": "a276a2cee7e39142886b9eec59c08e9b7baecb49",
-          "docs/vibe-review/ARQUITETURA.md": "223198569f4d096ff459351ccdf1b13d94ddc52c",
-          "docs/vibe-review/ANALISE.md": "230ee2ec8466a69ba15dd6138c8de6966c755410",
-          "vibe-implement/references/protocolos-historicos.md": "00d21dfd697994b63c86f3a45554e116e294a3a8",
-          "vibe-review/SKILL.md": "a4611822bd14865dfb8885bc0582651e053bdad9",
-          "docs/vibe-implement/ANALISE.md": "d972abbe8325e35ac75c7676a956acae0ac9c7a4",
+          "docs/vibe-implement/ARQUITETURA.md": "a6228addc7e3414956637ce82a004b8688be11bd",
           "README.md": "52701067b53957697bab4b230b35ed480be9b1f1",
           "vibe-implement/references/delegation.md": "a9a6123995c2fe134a108f95d1e3dc7a6d5ba3dc",
           "vibe-plan/references/delegation.md": "a9a6123995c2fe134a108f95d1e3dc7a6d5ba3dc",
-          "docs/vibe-implement/ARQUITETURA.md": "a6228addc7e3414956637ce82a004b8688be11bd",
-          "vibe-implement/references/definition-of-done.md": "6c9df9bf248bfd090a24b3abb24cefff118020d0"
+          "vibe-implement/references/definition-of-done.md": "6c9df9bf248bfd090a24b3abb24cefff118020d0",
+          "vibe-implement/SKILL.md": "a276a2cee7e39142886b9eec59c08e9b7baecb49",
+          "docs/vibe-review/ARQUITETURA.md": "223198569f4d096ff459351ccdf1b13d94ddc52c",
+          "docs/vibe-review/ANALISE.md": "230ee2ec8466a69ba15dd6138c8de6966c755410",
+          "vibe-implement/references/protocolos-historicos.md": "318aee5dae8e4a3cb867c97ace592803bbb59fe9",
+          "docs/vibe-implement/ANALISE.md": "d972abbe8325e35ac75c7676a956acae0ac9c7a4",
+          "vibe-review/SKILL.md": "a4611822bd14865dfb8885bc0582651e053bdad9"
         },
-        "comando": "git diff --check; inspeção semântica local e conferência de igualdade das cópias delegation"
-      },
-      "actor": "implementador"
+        "head": "d16ad7c8c29652b099282487a2c34f514f01b487",
+        "resultado": "verde"
+      }
     }
   },
   "integracao": {
+    "actor": "verificador",
     "proof": {
+      "comando": "R1: inspeção semântica independente e git diff --check verdes; reutilizadas provas integradas anteriores: test-implement.py 62 testes, test-distribuicao.py 9 testes e gitleaks git/dir, com inputs executáveis inalterados",
+      "inputs": {
+        "vibe-init/SKILL.md": "211901a9dfbf1a3fd64a242e5103fa6df1c39c36",
+        "vibe-review/templates/review.md": "afdd1585d2669151ccca12373a8bcc37afbbb4a0",
+        "vibe-implement/SKILL.md": "a276a2cee7e39142886b9eec59c08e9b7baecb49",
+        "plugin.json": "04d1133befcad2e107423b26b59c4dcd3eded7a6",
+        "docs/vibe-review/ARQUITETURA.md": "223198569f4d096ff459351ccdf1b13d94ddc52c",
+        "vibe-interview/SKILL.md": "edd3363ff6133a9d8293ca2c1763ce152aecf0e5",
+        ".grok-plugin/marketplace.json": "1a1a8576746b77321f6b7daa7a86253e07ca521a",
+        "vibe-review/references/security-and-hardening.md": "46c7d65df8bc2f9852f883f871f7f55ec784534d",
+        "vibe-implement/references/protocolos-historicos.md": "318aee5dae8e4a3cb867c97ace592803bbb59fe9",
+        ".claude-plugin/marketplace.json": "da88141bb3035deeb2a30896d0f1fde96f1f9093",
+        "vibe-analyze/SKILL.md": "0538e4e17f5aa8409e0f4dba29de399e3cda4022",
+        "vibe-spec/SKILL.md": "a45e30dda8cbf53910cd07c90af9d407425836c3",
+        "vibe-implement/references/delegation.md": "a9a6123995c2fe134a108f95d1e3dc7a6d5ba3dc",
+        "docs/vibe-review/ANALISE.md": "230ee2ec8466a69ba15dd6138c8de6966c755410",
+        "vibe-implement/references/definition-of-done.md": "6c9df9bf248bfd090a24b3abb24cefff118020d0",
+        "docs/vibe-implement/tests/test-implement.py": "679f7f25fa80d9306f22f4e18e25a82e41062859",
+        "docs/vibe-implement/tests/test-execution.py": "c57a44f05545bdef76b2d8c6439399dddae6b328",
+        "vibe-review/SKILL.md": "a4611822bd14865dfb8885bc0582651e053bdad9",
+        "README.md": "52701067b53957697bab4b230b35ed480be9b1f1",
+        "vibe-plan/references/delegation.md": "a9a6123995c2fe134a108f95d1e3dc7a6d5ba3dc",
+        "vibe-implement/scripts/execution.py": "aaa891782c246166531b8755dbec906d67e01e74",
+        "vibe-implement/scripts/implement.py": "1c7e979a4b49779ea9ab106642d13ee0fb728674",
+        "docs/tests/test-distribuicao.py": "0c9280c0fb5ec0d90e94e31a9bbc0e66fde40812",
+        "vibe-implement/scripts/implement.ps1": "39e6d60f8a7713a2e7f2ada432164f8d5bf81434",
+        "docs/vibe-implement/ARQUITETURA.md": "a6228addc7e3414956637ce82a004b8688be11bd",
+        "vibe-implement/references/execution.md": "f7ef769809b68df3408441348c2b622d5f0117db",
+        "vibe-implement/scripts/execution.ps1": "7874027fb4c7eb7bd40cab577140dfb42efac0b5",
+        ".agents/plugins/marketplace.json": "5c4c967cc0a66fb0e6ae7bf7397268994e84bd8e",
+        ".claude-plugin/plugin.json": "af522c2c820c8e550ea0d35874ed7c4e58472b70",
+        ".codex-plugin/plugin.json": "8ff72fd50b9efe4b130fe4295b2f707c61cecfc8",
+        "vibe-design/SKILL.md": "158e7cc145be5f6e370c4e6a5deacbda228a3817",
+        "vibe-plan/SKILL.md": "498e850b9f83a8d954d6efb9882b57a585cea84a",
+        "docs/vibe-implement/ANALISE.md": "d972abbe8325e35ac75c7676a956acae0ac9c7a4"
+      },
+      "head": "d16ad7c8c29652b099282487a2c34f514f01b487",
+      "resultado": "verde"
+    },
+    "origem": "267d263749b4c052c4dc667383465ec2d438eae1"
+  },
+  "protocolo": "coordenacao-v1",
+  "commit": "d16ad7c8c29652b099282487a2c34f514f01b487",
+  "schema": 1,
+  "correcao": {
+    "commit": null,
+    "base": {
       "resultado": "verde",
       "comando": "python docs/vibe-implement/tests/test-implement.py -v; python docs/tests/test-distribuicao.py -v (TEMP/TMP no workspace); git diff --check; gitleaks git . --verbose --redact --no-banner; gitleaks dir . --verbose --redact --no-banner; inspeção semântica independente A1/A3",
       "head": "267d263749b4c052c4dc667383465ec2d438eae1",
@@ -95,11 +143,6 @@
         ".codex-plugin/plugin.json": "8ff72fd50b9efe4b130fe4295b2f707c61cecfc8",
         "vibe-design/SKILL.md": "158e7cc145be5f6e370c4e6a5deacbda228a3817"
       }
-    },
-    "origem": "267d263749b4c052c4dc667383465ec2d438eae1",
-    "actor": "verificador"
-  },
-  "protocolo": "coordenacao-v1",
-  "commit": null,
-  "schema": 1
+    }
+  }
 }

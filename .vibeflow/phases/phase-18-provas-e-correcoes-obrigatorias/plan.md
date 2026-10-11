@@ -36,8 +36,8 @@ Não executar suíte geral do repositório localmente por padrão. O motor revie
 ## Tasks
 
 ### T1: Exigir resolução de toda correção na aprovação e na retomada
-- [ ] T1 concluída
-- **Execução:** implementação e provas locais direcionadas verdes; integração independente certificada, aguardando commit integrado.
+- [x] T1 concluída
+- **Execução:** implementação e provas locais direcionadas verdes; integração independente certificada e commit integrado registrado. Review pendente.
 - **Spec:** A2, C1, C2
 - **Deps:** nenhuma
 - **O quê:** alinhar parser, fila, registro de correções, prompt de review e distribuição à obrigatoriedade de todos os R* pertinentes. Remover aprovação com defer como saída oferecida para novas reviews e tratar entradas legadas sem liberar pendências. Publicar a mudança de contrato como 7.0.0.
@@ -48,8 +48,8 @@ Não executar suíte geral do repositório localmente por padrão. O motor revie
 - **Risco:** corrigir só o prompt deixa o motor liberando pendências; corrigir só a fila pode impedir reconhecimento de commits de Nit. Compatibilidade de leitura não autoriza manter a dispensa antiga.
 
 ### T2: Delimitar provas por papel e preservar otimizações
-- [ ] T2 concluída
-- **Execução:** contratos de prova e otimização alinhados; integração e inspeção semântica independentes certificadas, aguardando commit integrado.
+- [x] T2 concluída
+- **Execução:** contratos de prova e otimização alinhados; integração e inspeção semântica independentes certificadas, com commit integrado registrado. Review pendente.
 - **Spec:** A1, A3, C2
 - **Deps:** nenhuma
 - **O quê:** explicitar que implementador entrega código/testes e prova localizada; verificador certifica integração proporcional; revisor audita código/cobertura/evidência e executa somente lacunas. Manter simplificação e otimização fundamentada no recorte autorizado.
