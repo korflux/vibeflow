@@ -10,6 +10,33 @@ HERE=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
 LAUNCHER="$HERE/../../../vibe-implement/scripts/implement.sh"
 set -e
 
+# Esta suíte é dona das capturas; a saída por erro também libera os arquivos.
+capture_paths=()
+cleanup_captures() {
+  local status=$?
+  trap - EXIT
+  if [ "${#capture_paths[@]}" -gt 0 ]; then
+    if ! rm -f -- "${capture_paths[@]}"; then
+      printf 'Falha ao remover capturas temporárias da suíte implement.\n' >&2
+      status=1
+    fi
+  fi
+  exit "$status"
+}
+trap cleanup_captures EXIT
+
+# Substitui somente a captura local do harness, mantendo seu contrato de execução.
+run_sh() {
+  last_out=$(mktemp)
+  capture_paths+=("$last_out")
+  last_err=$(mktemp)
+  capture_paths+=("$last_err")
+  set +e
+  "$@" >"$last_out" 2>"$last_err"
+  last_rc=$?
+  set -e
+}
+
 # 1. Sem .vibeflow o motor responde INIT_AUSENTE.
 s=$(new_sandbox)
 root=$(native_root "$s")
@@ -93,6 +120,37 @@ root=$(native_root "$s")
 run_sh bash "$LAUNCHER" --root "$root" --force
 assert "$( [ "$last_rc" -eq 2 ] && grep -q 'uso: implement.sh' "$last_err" && echo 1 || echo 0 )" \
   "8-flag-desconhecida" "rc=$last_rc err=$(cat "$last_err")"
+rm -rf "$s"
+
+# 9. Cada flag com valor recusa ausência antes de escolher o motor.
+for flag in --root --slug --dir --operation --task --input --command --result --actor; do
+  run_sh bash "$LAUNCHER" "$flag"
+  assert "$( [ "$last_rc" -eq 2 ] && grep -q 'uso: implement.sh' "$last_err" && echo 1 || echo 0 )" \
+    "9-sem-valor-$flag" "rc=$last_rc err=$(cat "$last_err")"
+done
+
+# 10. Flags novas, inputs repetidos e texto literal chegam ao motor completo.
+# INIT_AUSENTE comprova que parsing/binding aceitou a interface antes do gate.
+s=$(new_sandbox)
+root=$(native_root "$s")
+run_sh bash "$LAUNCHER" --root "$root" --operation local --task T1 \
+  --input 'arquivo com espaço.py' --input outro.py --command 'teste "literal"; $nao_executar' \
+  --result verde --actor implementador --details
+assert "$( [ "$last_rc" -ne 0 ] && grep -q INIT_AUSENTE "$last_err" && echo 1 || echo 0 )" \
+  "10-flags-novas-python" "rc=$last_rc err=$(cat "$last_err")"
+
+# 11. O adaptador PowerShell aceita a mesma interface sem Python no PATH.
+run_pwsh_only bash "$LAUNCHER" --root "$root" --operation local --task T1 \
+  --input 'arquivo com espaço.py' --input outro.py --command 'teste "literal"; $nao_executar' \
+  --result verde --actor implementador --details
+if [ "$last_rc" -eq 127 ]; then
+  # Sem pwsh, o harness cria capturas fora de run_sh; a suíte também as assume.
+  capture_paths+=("$last_out" "$last_err")
+  printf 'SKIP 11-flags-novas-pwsh: pwsh 7+ ausente\n'
+else
+  assert "$( [ "$last_rc" -ne 0 ] && grep -q INIT_AUSENTE "$last_err" && echo 1 || echo 0 )" \
+    "11-flags-novas-pwsh" "rc=$last_rc err=$(cat "$last_err")"
+fi
 rm -rf "$s"
 
 finish

@@ -1052,5 +1052,16 @@ class StageProtocolContracts(unittest.TestCase):
         self.assertFalse(report["execucao"]["tasks"][0]["local_valida"])
 
 
+# Inclui o contrato novo na entrada histórica usada pelo CI, sem suíte paralela esquecida.
+def load_tests(loader, tests, pattern):
+    import importlib.util
+    source = Path(__file__).with_name("test-execution.py")
+    spec = importlib.util.spec_from_file_location("execution_contracts", source)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    tests.addTests(loader.loadTestsFromModule(module))
+    return tests
+
+
 if __name__ == "__main__":
     unittest.main()

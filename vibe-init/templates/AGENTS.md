@@ -35,7 +35,8 @@ Testes das skills devem exercitar os scripts e seus efeitos no disco. É proibid
 
 ## Git
 - Sem `Co-Authored-By` de ferramenta em commit/push.
-- Com `# Protocolo: etapas-v1` e `# Modo: A` no plan, registre implementação/checagem local sem marcar conclusão; complemente testes e valide a integração antes do commit `task(T1,T2,...): <resultado>`. Modo B e plans sem marcador mantêm commit por task. Staging explícito, sem push até a confirmação humana final da review.
+- Plans novos usam `# Protocolo: coordenacao-v1`. No Modo A, coordenador seleciona resultados, responsáveis e colaboração e delega inventário, conferência técnica, provas, registros e Git; implementador entrega código/testes, verificador certifica integração e finalizador genérico/default apto registra execution.json e opera Git com ownership exclusivo. Leitura/preparação podem colaborar com comunicação direta e ownership seguro; código paralelo exige autorização aplicável e isolamento. Plan contém definição e resumo curto, sem hashes/logs/saída detalhada; conclusão exige integração verde e commit real. Etapas-v1/legado/B conservam contrato, sem migração.
+- Staging somente de paths autorizados, sem add -A/add ., amend, squash ou force push. Finalizador não recebe permissão por renomear perfil que proíba Git; sem agente apto, relate a limitação sem fallback operacional implícito. Aprovação de review, decisões vigentes e push exigem confirmação humana final explícita; revisor nunca opera Git.
 
 ## Padrões de Código e Engenharia
 - **Comentários Semânticos Obrigatórios:** Toda função, componente ou módulo deve ter comentário explicando o que faz, para que serve e a justificativa de decisões não óbvias. Zero funções órfãs.

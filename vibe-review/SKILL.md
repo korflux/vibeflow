@@ -45,17 +45,21 @@ final · etapa 1 first-pass · alvo: phase-2-vibe-review · fila: concluída · 
 `modo_sugerido=criar` e sem `--slug` = não há pasta. Não grude review nova no N de outro pedido.
 Já existe `review.md` = próxima etapa no **mesmo** arquivo.
 
+### Fonte da execução por protocolo
+
+Em `coordenacao-v1` A, obtenha a fila e validade pelo motor da vibe-implement em leitura no alvo; consulte execution.json/--details para conferir inputs, integração, origem e commit real. Checkboxes do plan são resumo, sem autoridade de conclusão. Execution ausente/ilegível/inválido ou integração/commit sem comprovação bloqueia review final. Em B, etapas-v1 e legado, mantenha fonte/checkpoints anteriores. Resíduo previsto de execution.json pós-registro de commit é operacional, desde que nenhum input provado tenha mudado; cobre-o na finalização autorizada, sem novo ciclo para registrar hash.
+
 ## 2. Gate
 
 | Sinal | Ação |
 |---|---|
 | Sem alvo e sem diff | **Para.** Peça path, branch, PR ou `--dir` |
 | Alvo do inventário difere da phase do diff/pedido | Não use o alvo automático. Identifique a phase existente do diff e rode com `--dir`; se ela não puder ser determinada, pare e peça o path |
-| T* obrigatórias em `[ ]` e o humano pediu “pronto da feature” | Recuse Approve de feature. Pode revisar o diff e listar o que falta no plan |
+| T* obrigatórias abertas na fonte do protocolo e o humano pediu “pronto da feature” | Recuse Approve de feature. Pode revisar o diff e listar o que falta no plan |
 | Plan declara checkpoint e todas as T* do marco estão concluídas | Faça checkpoint somente do marco, das provas relevantes e do contrato ou risco declarado; registre as T* restantes |
 | Plan declara checkpoint, mas alguma T* do marco está aberta | **Para.** Informe a dependência aberta e faça handoff para `vibe-implement` |
 | Há T* abertas e não existe checkpoint aplicável no plan | Não faça review final nem invente checkpoint; informe a fila e faça handoff para `vibe-implement` |
-| Todas as T* do plan estão concluídas | Faça review final da integração e dos riscos alterados |
+| Todas as T* estão comprovadamente concluídas na fonte do protocolo | Faça review final da integração e dos riscos alterados |
 | Intenção/sucesso/fora frouxos | Devolve interview/spec. Finding de código não reabre plan |
 | Etapa 2+ | Mesmo `review.md`. Edite o vivo diretamente e acrescente a etapa sem substituir o histórico |
 | “Já corrige” | Grave o veredito **primeiro**. Handoff implement. Não patche aqui |
@@ -86,10 +90,10 @@ A review é um processo cético e investigativo. Não confie cegamente em checkb
 
 ### Selecionar e executar provas
 
-1. Use o `plan.md` como registro das execuções: confira o status da T*, `Deps` e bloqueios, `Arquivos` e `Prova`/`Verificação`. Compare os inputs da prova com o estado integrado e reaproveite prova verde somente quando esses inputs permanecem iguais e a prova ainda cobre a integração. Mudança em plan, spec ou review não invalida prova de código; edição posterior em código/teste invalida somente a prova afetada. `implement.md` histórico não é necessário para a review. Confira a história Git e os paths reais, aceitando commits integrados de várias T* e commits legados sem exigir exclusivamente o prefixo `task(Tn)`. Em etapas-v1, confira origem preservada, snapshot integrado, hashes dos inputs e commit real; checagem local não substitui integração.
+1. Em coordenacao-v1 A, use execution.json como registro e plan como definição/resumo; nos protocolos históricos, use o `plan.md` como registro das execuções: confira o status da T*, `Deps` e bloqueios, `Arquivos` e `Prova`/`Verificação`. Compare os inputs da prova com o estado integrado e reaproveite prova verde somente quando esses inputs permanecem iguais e a prova ainda cobre a integração. Mudança em plan, spec ou review não invalida prova de código; edição posterior em código/teste invalida somente a prova afetada. `implement.md` histórico não é necessário para a review. Confira a história Git e os paths reais, aceitando commits integrados de várias T* e commits legados sem exigir exclusivamente o prefixo `task(Tn)`. Em etapas-v1, confira origem preservada, snapshot integrado, hashes dos inputs e commit real; checagem local não substitui integração.
 2. Relacione diff, fluxo e consumidores, risco e aceite; execute somente a prova que falta para julgar o marco ou integração. Reexecute por falha, inputs/dependências relevantes alterados, lacuna de integração ou risco concreto. Em re-review, confira correções e impacto nos consumidores; preserve julgamento e provas válidas das partes inalteradas. Duração não dispensa segurança, paridade ou prova renderizada necessárias.
 3. Não rode automaticamente a matriz de comandos de cada T*. Na review final, prefira uma verificação agregada existente quando ela comprovar a integração; rode o Smoke Test somente quando a entrada real tiver mudado, sua prova estiver ausente/desatualizada ou for necessária para cobrir o fluxo integrado.
-4. Registre em cada etapa referências às provas reaproveitadas, comandos novos e motivo; não copie snapshots do plan nem reinvestigue inputs inalterados sem lacuna concreta. Se uma prova necessária falhar, abra `R*` `Required` com comando e remédio; não aprove silenciosamente.
+4. Registre em cada etapa referências às provas reaproveitadas, comandos novos e motivo; não copie snapshots do lar operacional do protocolo nem reinvestigue inputs inalterados sem lacuna concreta. Se uma prova necessária falhar, abra `R*` `Required` com comando e remédio; não aprove silenciosamente.
 
 Inspecione o código integrado e aplique estes pilares ao escopo da etapa:
 
@@ -182,7 +186,7 @@ Arquivo disponível em <created.path>/review.md. Em checkpoint, a fase continua 
 ## 5. Fechar
 
 Commitável: o `review.md` vivo e, somente no fechamento final aprovado, os artefatos residuais autorizados da phase. Checkpoint não cria commit residual nem publica a phase. Request changes → handoff `vibe-implement` (arquivo + R* em `[ ]`), com recomendação de novo chat para a correção; no Modo A, o coordenador do `vibe-implement` delega a correção a um subagente. Se o usuário pedir para corrigir imediatamente, inicie `vibe-implement`; se preferir permanecer neste chat, prossiga sem bloquear. O `review.md` e o diff são a ponte.
-Approve final sem R* bloqueantes em `[ ]` ainda é proposta até o humano ler e confirmar. No Modo A, o coordenador do `vibe-implement` executa a finalização abaixo depois dessa confirmação; o revisor delegado nunca a executa.
+Approve final sem R* bloqueantes em `[ ]` ainda é proposta até o humano ler e confirmar. No novo Modo A, o coordenador transmite a confirmação e o escopo ao finalizador genérico/default apto, que executa a finalização abaixo. Em etapas-v1/legado, coordenador conserva operação. Revisor delegado nunca finaliza nem recebe Git.
 
 Após aprovação humana explícita da review final, com a fila concluída:
 
@@ -201,7 +205,7 @@ Esta seção só se aplica à review final, depois da aprovação humana explíc
 3. Adicione somente os paths residuais autorizados, com `git add -- path/da/phase AGENTS.md` quando a sincronização foi aprovada. Nunca use `git add -A` ou `git add .`.
 4. Valide `git diff --cached --check` e a lista de paths. Crie `chore(phase-N): finalize review` sem `Co-Authored-By` quando houver mudanças residuais. Não crie commit vazio; se não houver residual, o último commit integrado ou da task é o HEAD da phase.
 5. Execute `git push` para o upstream do branch atual, sem `--force`. Ausência de upstream, falha de commit ou falha de push mantém o handoff bloqueado e precisa ser informada com a causa segura.
-6. Registre no `review.md` e no chat o hash do commit final ou o HEAD já existente, o resultado do push e os paths enviados. O inventário é JSON transitório no stdout.
+6. No novo A, relate hash final/HEAD, resultado do push e paths enviados sem reabrir arquivos só para guardar o próprio hash; nos protocolos históricos, conserve registro de fechamento no review e chat. O inventário é JSON transitório no stdout.
 
 ## 6. Modo subagente (revisor delegado)
 
@@ -209,7 +213,7 @@ Vale quando o coordenador do `vibe-implement` (Modo A) delega esta skill e o ped
 
 - **Veredito vigente:** marque a proposta (`Approve` ou `Request changes`) no `review.md`. O status continua `rascunho` ou `request-changes` conforme o §4; `aprovado` só vem depois da confirmação humana.
 - **Humano:** não pergunte ao humano nem espere resposta. Quando o veredito depender dele, devolva `estado: pergunta` com a recomendação; o coordenador pergunta. Não deixe Open Questions no arquivo.
-- **Re-review após correção:** acrescente nova etapa no mesmo arquivo e confira os R* que o coordenador marcou `[x]` contra o diff e a prova antes de aceitá-los.
+- **Re-review após correção:** acrescente nova etapa no mesmo arquivo e confira os R* marcados pelo responsável de registro do protocolo contra o diff e a prova antes de aceitá-los.
 - **Proibido:** finalização Git do §5, commit, push, edição de `AGENTS.md`, aprovação humana marcada no arquivo, correção de código e instalação fora da regra do §3.
 - **Resposta:** o relatório substitui a resposta de chat do §4. Além dos campos fixos, devolva `veredito` (`Approve final`, `Request changes` ou `Approve com defer`), `abertos` (R* Critical e Required em `[ ]`), `fechados` (R* fechados nesta etapa), `critical_encontrados` (R* Critical abertos nesta etapa) e `decisoes_vigencia` (IDs propostos na tabela, ou nenhuma).
 

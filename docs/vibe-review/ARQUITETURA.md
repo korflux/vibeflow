@@ -7,6 +7,12 @@
 .vibeflow/mvp/review.md
 ```
 
+## Fonte operacional por protocolo
+
+Em coordenacao-v1 A, leitura do motor da implement e execution.json determinam fila/validade/conclusão; plan define trabalho e apresenta resumo. Review confere snapshots/inputs/origem e Git reais e não depende de checkbox copiado para certificar execução. Ausência/corrupção ou integração/commit inválidos bloqueiam review final. Residual previsto do sidecar pós-registro de commit pode seguir ao fechamento aprovado sem invalidar inputs; não cria ciclo de commit para guardar hash. Etapas-v1/B/legado conservam fontes anteriores.
+
+Finalização operacional do novo A pertence a finalizador genérico/default apto, com autorização/paths/operações explícitos. Coordenador conduz decisão humana e handoff; verificador certifica prova faltante; revisor permanece independente e sem Git. Na re-review, confira R* registrados pelo finalizador contra prova e diff. As referências seguintes ao coordenador como operador e snapshots no plan aplicam-se somente aos protocolos históricos.
+
 ## 1. Papéis e ownership
 
 | Peça | Responsabilidade |
@@ -78,7 +84,7 @@ Handoff: `vibe-implement` com R* bloqueante, retorno à spec quando a intenção
 
 ### Modo subagente (revisor delegado)
 
-No Modo A do `vibe-implement`, o coordenador delega a review final a um subagente de contexto limpo. O revisor executa o fluxo normal e grava a etapa no `review.md`, o único artefato vivo que escreve. Marca a proposta no Veredito vigente, mas o status só vira `aprovado` depois da confirmação humana. Não pergunta ao humano: devolve `estado: pergunta` com a recomendação, e o coordenador pergunta. Não executa a finalização Git, não faz commit nem push e não edita `AGENTS.md`; a finalização é do coordenador, depois da confirmação.
+No Modo A do `vibe-implement`, o coordenador delega a review final a um subagente de contexto limpo. O revisor executa o fluxo normal e grava a etapa no `review.md`, o único artefato vivo que escreve. Marca a proposta no Veredito vigente, mas o status só vira `aprovado` depois da confirmação humana. Não pergunta ao humano: devolve `estado: pergunta` com a recomendação, e o coordenador pergunta. Não executa a finalização Git, não faz commit nem push e não edita `AGENTS.md`; a finalização segue o responsável operacional do protocolo, depois da confirmação.
 
 O relatório segue o formato fixo de `references/delegation.md` do implement e acrescenta `veredito`, `abertos`, `fechados`, `critical_encontrados` e `decisoes_vigencia`. A matriz de cobertura, R*, etapas e a tabela de decisões são o registro. O relatório também indica a cobertura da solicitação e limitações de origem, sem duplicar a matriz; perguntas ficam no relatório ao coordenador, nunca no arquivo. Na re-review após correção, o revisor confere os R* que o coordenador marcou `[x]` contra o diff e a prova.
 

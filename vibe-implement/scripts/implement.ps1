@@ -1,15 +1,23 @@
 #Requires -Version 7.0
 # vibe-implement/scripts/implement.ps1
-# Seleciona alvo e fila do plan sem criar artefato de execução.
+# Seleciona alvo/fila e registra estado somente no novo protocolo explícito.
 param(
     [string]$Root,
     [switch]$Apply,
     [string]$Slug,
     [string]$Dir,
-    [switch]$Mvp
+    [switch]$Mvp,
+    [ValidateSet('init','local','integracao','commit')][string]$Operation,
+    [string]$Task,
+    [string[]]$InputPath = @(),
+    [string]$Command,
+    [ValidateSet('verde','falha')][string]$Result,
+    [string]$Actor,
+    [switch]$Details
 )
 
 $ErrorActionPreference = 'Stop'
+. "$PSScriptRoot/execution.ps1"
 # Mantém stdout e stderr Unicode em UTF-8 também quando capturados por pipe.
 [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
 $script:SlugWasBound = $PSBoundParameters.ContainsKey('Slug')
@@ -43,12 +51,12 @@ function Test-IsReparsePoint($Item) {
 
 # Resolve a raiz por parâmetro, Git ou cwd sem exigir que Git esteja instalado.
 function Get-RepoRoot {
-    if ($Root) { return (Resolve-Path -LiteralPath $Root).Path }
+    if ($Root) { return [IO.Path]::GetFullPath((Resolve-Path -LiteralPath $Root).Path) }
     if (Get-Command git -ErrorAction SilentlyContinue) {
         $git = & git rev-parse --show-toplevel 2>$null
-        if ($LASTEXITCODE -eq 0 -and $git) { return $git.Trim() }
+        if ($LASTEXITCODE -eq 0 -and $git) { return [IO.Path]::GetFullPath($git.Trim()) }
     }
-    return (Get-Location).Path
+    return [IO.Path]::GetFullPath((Get-Location).Path)
 }
 
 # Transforma a frase curta da fase em slug ASCII [a-z0-9-], 2–48 chars.
@@ -535,7 +543,7 @@ function Get-Etapa($Fila, $Review) {
 
 # Serializa alvo, fila, etapa da phase, rodadas de correção e avisos necessários para a execução imediata.
 function Write-ImplementOutput([hashtable]$Payload) {
-    $json = [string](ConvertTo-Json -InputObject $Payload -Depth 8)
+    $json = [string](ConvertTo-Json -InputObject $Payload -Depth 20)
     [Console]::Out.WriteLine($json)
 }
 
@@ -587,7 +595,7 @@ function Invoke-Implement {
     }
     $analyzeGate = if ($Mvp) { Get-AnalyzeGate (Join-Path (Join-Path $vf 'mvp') 'analyze.md') } else { $null }
 
-    if ($Apply) {
+    if ($Apply -or $Operation) {
         if ($Mvp) {
             if ($analyzeGate.status -eq 'ausente' -and $analyzeGate.veredito -eq 'ausente') {
                 throw 'IMPLEMENT_ANALYZE_AUSENTE: falta .vibeflow/mvp/analyze.md.'
@@ -624,13 +632,33 @@ function Invoke-Implement {
         }
     }
 
+    if ($alvoItem) { foreach ($filename in @('plan.md','review.md')) { $null = Get-CoordinatePath $repo ($alvoItem.path + '/' + $filename) } }
     $fila = Get-FilaFromAlvo $repo $alvoItem
     $review = Read-ReviewMarks $repo $alvoItem $warnings
-    $execution = Get-ExecutionFromPlan $repo $alvoItem $fila
+    $planText = if ($alvoItem -and $fila) { [IO.File]::ReadAllText((Join-Path (Join-Path $repo $alvoItem.path) 'plan.md')) } else { '' }
+    $protocols = @([regex]::Matches($planText, '(?m)^# Protocolo:\s*([^\r\n]*)') | ForEach-Object { $_.Groups[1].Value.Trim() })
+    $modes = @([regex]::Matches($planText, '(?m)^# Modo:\s*([^\r\n]*)') | ForEach-Object { $_.Groups[1].Value.Trim() })
+    # Protocolo explícito escolhe leitor; operação nunca migra artefatos históricos.
+    if ($protocols.Count -eq 1 -and $protocols[0] -ceq $script:CoordinateProtocol -and $modes.Count -eq 1 -and $modes[0] -cin @('A','B')) {
+        if ($modes[0] -ceq 'B') {
+            if ($Operation -or $Details) { Stop-Coordinate 'Modo B não usa execution.json' }
+            $execution = @{ protocolo = $script:CoordinateProtocol; modo = 'B'; avisos = @() }
+            $stage = Get-Etapa $fila $review
+        } else {
+            $coordinate = Invoke-Coordinate $repo $alvoItem.path $planText $fila $review
+            $execution = $coordinate.execucao
+            $stage = $coordinate.etapa
+        }
+    } else {
+        if ($Operation -or $Details) { Stop-Coordinate 'operação exige coordenacao-v1 Modo A' }
+        $execution = Get-ExecutionFromPlan $repo $alvoItem $fila
+        $stage = if ($null -ne $execution) { Get-ExecutionEtapa $fila $review $execution } else { Get-Etapa $fila $review }
+    }
+    if (-not $Operation -and ($Task -or $InputPath.Count -or $Command -or $Result -or $Actor)) { Stop-Coordinate 'campos exigem operation' }
     $payload = @{
         alvo             = ConvertTo-PhaseMap $alvoItem
         fila             = $fila
-        etapa            = if ($null -ne $execution) { Get-ExecutionEtapa $fila $review $execution } else { Get-Etapa $fila $review }
+        etapa            = $stage
         rodadas_correcao = if ($null -ne $review) { [int]$review.rodadas } else { 0 }
         avisos           = $warnings.ToArray()
     }

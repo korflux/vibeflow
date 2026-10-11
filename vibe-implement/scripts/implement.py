@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Seleciona alvo e fila do plan sem criar artefato de execução."""
+"""Seleciona alvo/fila e registra estado somente no novo protocolo explícito."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ import stat
 import subprocess
 import sys
 import unicodedata
+from execution import coordinate, PROTOCOL, safe_path
 from pathlib import Path
 from typing import Any
 
@@ -59,6 +60,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--slug")
     parser.add_argument("--dir")
     parser.add_argument("--mvp", action="store_true")
+    parser.add_argument("--operation", choices=("init", "local", "integracao", "commit"))
+    parser.add_argument("--task")
+    parser.add_argument("--input", action="append")
+    parser.add_argument("--command")
+    parser.add_argument("--result", choices=("verde", "falha"))
+    parser.add_argument("--actor")
+    parser.add_argument("--details", action="store_true")
     return parser.parse_args()
 
 
@@ -626,7 +634,7 @@ def run(args: argparse.Namespace) -> None:
         alvo = mvp
     gate = analyze_gate(vf / "mvp" / "analyze.md") if args.mvp else None
 
-    if args.apply:
+    if args.apply or args.operation:
         if args.mvp:
             if gate["status"] == "ausente" and gate["veredito"] == "ausente":
                 raise RuntimeError("IMPLEMENT_ANALYZE_AUSENTE: falta .vibeflow/mvp/analyze.md.")
@@ -648,13 +656,36 @@ def run(args: argparse.Namespace) -> None:
             dest_dir.mkdir(parents=True)
             alvo = phase_item(dest_dir)
 
+    if alvo:
+        for filename in ("plan.md", "review.md"):
+            safe_path(repo, alvo["path"] + "/" + filename, is_reparse_point)
     fila = fila_from_alvo(repo, alvo)
     review = read_review(repo, alvo, warnings)
-    execution = execution_from_plan(repo, alvo, fila)
+    plan_text = read_text(repo / alvo["path"] / "plan.md") if alvo else ""
+    protocols = re.findall(r"^# Protocolo:\s*(.*?)\s*$", plan_text or "", re.MULTILINE)
+    modes = re.findall(r"^# Modo:\s*(.*?)\s*$", plan_text or "", re.MULTILINE)
+    # O protocolo explícito decide o leitor; mutações não podem alterar runs históricas.
+    if protocols == [PROTOCOL] and modes in (["A"], ["B"]):
+        if modes == ["B"]:
+            if args.operation or args.details:
+                raise ValueError("EXECUTION_INVALIDO: Modo B não usa execution.json")
+            execution = {"protocolo": PROTOCOL, "modo": "B", "avisos": []}
+            stage = derive_etapa(fila, review)
+        else:
+            execution, stage = coordinate(repo, alvo["path"], plan_text, args, fila, review,
+                                          split_task_sections, parse_deps_value, is_reparse_point,
+                                          snapshot_valid, derive_etapa)
+    else:
+        if args.operation or args.details:
+            raise ValueError("EXECUTION_INVALIDO: operação exige coordenacao-v1 Modo A")
+        execution = execution_from_plan(repo, alvo, fila)
+        stage = execution_etapa(fila, review, execution) if execution is not None else derive_etapa(fila, review)
+    if not args.operation and any((args.task, args.input, args.command, args.result, args.actor)):
+        raise ValueError("EXECUTION_INVALIDO: campos exigem operation")
     payload = {
         "alvo": public_target(alvo),
         "fila": fila,
-        "etapa": execution_etapa(fila, review, execution) if execution is not None else derive_etapa(fila, review),
+        "etapa": stage,
         "rodadas_correcao": review["rodadas"] if review else 0,
         "avisos": warnings,
     }

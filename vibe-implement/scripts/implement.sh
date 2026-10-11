@@ -1,50 +1,58 @@
 #!/usr/bin/env bash
-# vibe-implement/scripts/implement.sh — seleciona uma implementação completa com o mesmo contrato no Unix.
+# Launcher integral: valida flags públicas e preserva argv para ambos os motores.
 set -euo pipefail
 
-ROOT=""
-APPLY=0
-SLUG=""
-DIR=""
-MVP=0
+# Recusa sintaxe inválida com a mesma mensagem em qualquer runtime disponível.
+usage_error() {
+  echo "uso: implement.sh [--root DIR] [--apply] [--slug SLUG] [--dir PASTA] [--mvp] [--operation OP] [--task ID] [--input PATH] [--command TEXTO] [--result RESULTADO] [--actor PAPEL] [--details]" >&2
+  exit 2
+}
 
-while [[ $# -gt 0 ]]; do
-  case "$1" in
-    --root) ROOT="$2"; shift 2 ;;
-    --apply) APPLY=1; shift ;;
-    --slug) SLUG="$2"; shift 2 ;;
-    --dir) DIR="$2"; shift 2 ;;
-    --mvp) MVP=1; shift ;;
-    *) echo "uso: implement.sh [--root DIR] [--apply] [--dir PASTA] [--slug SLUG] [--mvp]" >&2; exit 2 ;;
+# Valida a interface antes de escolher o motor; valores continuam sendo dados.
+arguments=("$@")
+for ((index=0; index<${#arguments[@]}; index++)); do
+  case "${arguments[index]}" in
+    --apply|--mvp|--details) ;;
+    --root|--slug|--dir|--operation|--task|--input|--command|--result|--actor)
+      if ((index + 1 < ${#arguments[@]})); then
+        index=$((index + 1))
+        continue
+      fi
+      usage_error ;;
+    *) usage_error ;;
   esac
 done
 
-# Prefere Python 3 por ser portátil; pwsh permanece como fallback integral, não degradado.
-PYTHON_BIN=""
-if command -v python3 >/dev/null 2>&1 && python3 -c 'import sys; raise SystemExit(sys.version_info.major != 3)' >/dev/null 2>&1; then
-  PYTHON_BIN="python3"
-elif command -v python >/dev/null 2>&1 && python -c 'import sys; raise SystemExit(sys.version_info.major != 3)' >/dev/null 2>&1; then
-  PYTHON_BIN="python"
-fi
+for runtime in python3 python; do
+  if command -v "$runtime" >/dev/null 2>&1 && "$runtime" -c 'import sys; raise SystemExit(sys.version_info.major != 3)' >/dev/null 2>&1; then
+    exec "$runtime" "$(dirname "$0")/implement.py" "$@"
+  fi
+done
 
-if [[ -n "$PYTHON_BIN" ]]; then
-  args=()
-  [[ -n "$ROOT" ]] && args+=(--root "$ROOT")
-  [[ "$APPLY" -eq 1 ]] && args+=(--apply)
-  [[ -n "$SLUG" ]] && args+=(--slug "$SLUG")
-  [[ -n "$DIR" ]] && args+=(--dir "$DIR")
-  [[ "$MVP" -eq 1 ]] && args+=(--mvp)
-  exec "$PYTHON_BIN" "$(dirname "$0")/implement.py" "${args[@]}"
-fi
-
+# Conversão nativa de flags e arrays: nenhuma string de evidência vira código.
 if command -v pwsh >/dev/null 2>&1 && pwsh -NoProfile -Command 'exit [int]($PSVersionTable.PSVersion.Major -lt 7)' >/dev/null 2>&1; then
-  args=()
-  [[ -n "$ROOT" ]] && args+=(-Root "$ROOT")
-  [[ "$APPLY" -eq 1 ]] && args+=(-Apply)
-  [[ -n "$SLUG" ]] && args+=(-Slug "$SLUG")
-  [[ -n "$DIR" ]] && args+=(-Dir "$DIR")
-  [[ "$MVP" -eq 1 ]] && args+=(-Mvp)
-  exec pwsh -NoProfile -ExecutionPolicy Bypass -File "$(dirname "$0")/implement.ps1" "${args[@]}"
+  export VIBE_IMPLEMENT_SCRIPT="$(dirname "$0")/implement.ps1"
+  export VIBE_IMPLEMENT_COUNT="$#"
+  index=0
+  for argument in "$@"; do
+    export "VIBE_IMPLEMENT_ARG_${index}=$argument"
+    index=$((index + 1))
+  done
+  exec pwsh -NoProfile -Command '
+    $scriptPath = $env:VIBE_IMPLEMENT_SCRIPT
+    $arguments = @(for ($index=0; $index -lt [int]$env:VIBE_IMPLEMENT_COUNT; $index++) { [Environment]::GetEnvironmentVariable("VIBE_IMPLEMENT_ARG_$index") })
+    $values = @{}
+    $map = @{ "--root"="Root"; "--slug"="Slug"; "--dir"="Dir"; "--operation"="Operation"; "--task"="Task"; "--command"="Command"; "--result"="Result"; "--actor"="Actor" }
+    for ($i=0; $i -lt $arguments.Count; $i++) {
+      $flag = $arguments[$i]
+      if ($flag -cin @("--apply", "--mvp", "--details")) { $values[$flag.Substring(2)] = $true }
+      elseif ($flag -ceq "--input" -and $i+1 -lt $arguments.Count) { $values.InputPath = @($values.InputPath | Where-Object { $null -ne $_ }) + $arguments[++$i] }
+      elseif ($map.ContainsKey($flag) -and $i+1 -lt $arguments.Count) { $values[$map[$flag]] = $arguments[++$i] }
+      else { [Console]::Error.WriteLine("ARGUMENTO_INVALIDO: flag desconhecida ou sem valor"); exit 2 }
+    }
+    & $scriptPath @values
+    exit $LASTEXITCODE
+  '
 fi
 
 echo "implement.sh precisa de Python 3 ou PowerShell 7+." >&2

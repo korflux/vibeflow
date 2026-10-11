@@ -83,7 +83,7 @@ Crie outra T* somente quando houver um resultado entregável separado, uma depen
 3. **Decisões críticas:** Quando a task implementar ou substituir decisão crítica, adicionar `Decisões: <ID> (<ação>)`.
 4. **Verificação:** Relacione resultado/aceite, fluxo e consumidores, risco e comandos existentes. Distinga no campo atual checagem local direcionada e prova integrada; defina comandos compartilhados uma vez na prontidão das provas e referencie nas T*. Não planeje matriz completa por task nem teste novo por critério; complemente somente lacunas de comportamento, erro ou risco. Prove depois da última edição e repita por falha, inputs relevantes alterados ou cobertura insuficiente, incluindo dependências/configuração. Segurança, paridade e prova renderizada necessárias permanecem, mesmo lentas; CI completo continua. Smoke acompanha entrada real alterada. Verificação só manual não basta.
 5. **Dependências (`Deps`):** Declarar apenas predecessores reais de execução. Fatias independentes usam `Deps: nenhuma`; a linha de dependências define a fila, sem repetir a ordem em outra seção.
-6. **Paralelização e checkpoints:** Indique no `plan.md` os IDs das T* que podem executar juntas e um motivo curto, somente quando dependências, ownership dos arquivos e ausência de conflito estiverem claros. Grupos paralelos valem só no Modo B do `vibe-implement` (uma T* por run); o Modo A é sequencial e ignora o grupo. No chat, mostre os grupos ao humano e diga que o `vibe-implement` os oferecerá, no Modo B, para executar em paralelo. Registre checkpoint de review apenas quando um risco ou contrato compartilhado precisar ser julgado antes de outra T*; o Modo A não o executa, e ele vale quando o humano conduz a review à parte. O checkpoint de retomada é diferente: só aparece sob uma T* incompleta, com estado, próximo passo, paths da prova, snapshot Git e validade da prova; omita-o no plano inicial.
+6. **Colaboração e checkpoints:** Registre IDs e motivo curto somente quando leitura/preparação conjunta ou grupo paralelo trouxer benefício, com dependências e ownership seguros. No novo Modo A, coordenador escolhe interlocutores e colaboração sem intermediar cada detalhe; código paralelo ainda exige autorização aplicável e isolamento. B mantém oferta de grupo ao humano antes de paralelizar; etapas-v1/legado conservam sequência. Checkpoint de review só aparece quando risco/contrato exige julgamento antes de outra task. Plan novo mantém resumo curto; snapshots, hashes e logs pertencem a execution.json no A, sem checkpoint operacional extenso em Markdown.
 7. **UI Greenfield:** Entregue componentes e tokens dentro de fatias de resultado; não crie task de preparo visual sem entrega verificável.
 8. **Banco de dados e migrations:** Mantenha migrations e schemas nas respectivas fatias verticais e inclua comandos executáveis de migration e seed mínimo. Migrations devem ser não destrutivas (padrão expand/contract).
 
@@ -91,7 +91,7 @@ IDs estáveis: `T1`, `T2`, `T3`... em ordem sequencial. Sem prefixos arbitrário
 
 ## 5. Escrever e Salvar
 
-Em plans novos registre `# Protocolo: etapas-v1`; não migre artefatos históricos. O coordenador da implement escolhe e registra `# Modo: A|B` ao iniciar conforme pedido e capacidades do host. No novo Modo A, planeje checagens locais para liberar código dependente e uma validação integrada compartilhada quando comandos cobrem várias T*. Código implementado não autoriza conclusão; registro operacional e commit integrado seguem a vibe-implement. Modo B conserva prova e commit por task. Não inclua JSON de snapshots inventados ou placeholders operacionais no plan aprovado.
+Em plans novos registre `# Protocolo: coordenacao-v1`; não migre artefatos históricos. Coordenador escolhe modo e finalizador registra `# Modo: A|B` ao iniciar. No novo A, implementação entrega código/testes juntos com checagem local; verificador certifica integração e finalizador registra execution.json e commit. Plan mantém somente definição de trabalho e resumo curto derivado; execução estruturada é autoridade operacional. Modo B conserva prova/commit por task sem sidecar. Não inclua snapshots, hashes, logs, histórico de comandos nem placeholders operacionais no plan aprovado.
 
 Artefato vivo: `<created.path>/plan.md`. Molde: `templates/plan.md`. Mantenha `# Status: rascunho` enquanto o plano estiver em elaboração.
 Não pergunte se pode salvar e não cole o corpo do documento no chat.
@@ -112,7 +112,7 @@ Plan gravado: <created.path>/plan.md
 - Overview: <1 linha>
 - Resultados e dependências: <resumo curto da fila, sem repetir cada Deps>
 - Prontidão das provas: <requisitos reais, onde estão disponíveis e ação para ausências>
-- Paralelizáveis: <IDs + motivo curto ou “nenhum grupo seguro”; se houver grupo, diga que o implement o oferece só no Modo B>
+- Paralelizáveis: <IDs + motivo curto ou “nenhum grupo seguro”; informe colaboração útil no novo A e oferta de código paralelo no B quando autorizado>
 - Checkpoint: <somente se aplicável>
 - Chat: na rota max, o analyze roda em subagente a partir deste chat quando o humano pedir a próxima porta; nas demais rotas, recomende novo chat para o implement. Continuar aqui é válido se o humano preferir.
 

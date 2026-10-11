@@ -1,5 +1,35 @@
 # vibe-implement, arquitetura
 
+## Contrato novo: `coordenacao-v1`
+
+Esta seção prevalece somente para `# Protocolo: coordenacao-v1` e `# Modo: A`. O novo marcador no Modo B conserva o ciclo B e não lê/escreve sidecar. O restante deste documento conserva o contrato de `etapas-v1`, Modo B e legado. Nenhuma leitura ou operação migra um plan histórico. O plan define tasks, Deps e aceites; seu checkbox é resumo, nunca autoridade de conclusão neste protocolo.
+
+`execution.json`, versionado na mesma pasta do plan, guarda exclusivamente execução. Ausência significa todas as tasks pendentes, sem escrita automática. Registro existente inválido bloqueia com `EXECUTION_INVALIDO`, sem fallback. O motor emite resumo em `execucao` (`protocolo`, `modo`, `registro`, `tasks` com validade local, `integracao` com validade/commit e `avisos`); snapshots só aparecem com `--details`/`-Details` ou leitura direta do arquivo. Não existe etapa obrigatória `testar`.
+
+### CLI e fonte dos fatos
+
+Os parâmetros anteriores permanecem. `--operation`/`-Operation` aceita `init`, `local`, `integracao` ou `commit`. `--task`/`-Task` identifica T* em `local`; `--input` repetível/`-InputPath` array informa arquivos relativos; `--command`/`-Command` guarda comando executado como evidência, nunca o executa; `--result`/`-Result` aceita `verde|falha`; `--actor`/`-Actor` identifica executor (ASCII, 1–64 caracteres, letras, números, ponto, hífen ou sublinhado). `--details` é somente leitura. Mutação exige plan aprovado, protocolo/modo exatos e gate MVP aprovado/limpo. Campos fora da operação são recusados.
+
+`init` cria registro vazio ou conserva os bytes existentes. `local` substitui apenas o snapshot para task elegível, inclusive revalidação de tarefa já implementada; verde válido libera dependentes. `integracao` exige todas as provas locais verdes atuais, executor distinto dos escritores locais e inputs incluindo todos os inputs locais. Verificador certifica semanticamente diff, cobertura e seleção dos inputs; motor certifica integridade mecânica. `commit` exige integração verde atual e encontra no Git commit posterior à primeira prova integrada, com assunto `task(T1,T2,...): <resultado>` e blobs de todos os inputs iguais à prova. Motor nunca opera índice, commit ou push. Conclusão deriva do commit real e integração válida, ignorando checkboxes do plan.
+
+### Schema 1 e limites
+
+Objeto JSON exato: `{"schema":1,"protocolo":"coordenacao-v1","tasks":{},"integracao":null,"commit":null}`. Cada task registrada tem exatamente `{actor,proof}`; integração tem `{actor,proof,origem}` ou é nula. Commit é hash real ou nulo. Snapshot exato reutiliza `{head,inputs,comando,resultado}`. HEAD e hashes são calculados pelo motor via Git; não aceitos do chamador. Cada operação substitui só o recorte autorizado; integração conserva a origem da primeira prova, mesmo nas correções. Histórico pertence ao Git/review, sem diário crescente duplicado. Task registrada inexistente no plan é corrupção. Registrar hash depois do commit pode deixar residual de execution.json para o fechamento final; não criar outro commit apenas para registrar o próprio hash.
+
+Limites: JSON UTF-8 até 1 MiB, 500 tasks, 256 inputs por prova, caminhos até 512 caracteres e comando até 2.048 caracteres. Recusar chaves duplicadas, campos extras, schema/tipos inválidos, IDs desconhecidos, ciclos, dependências inexistentes, hash malformado, path absoluto, traversal, backslash, colon, componente vazio, links/reparse e paths internos `.git`; os próprios plan/review/registro não podem ser inputs de prova. Rejeitar registro/diretório alvo não regular ou ligado. Inputs ausentes/alterados invalidam a prova correspondente sem apagar evidências. Provas inválidas nunca liberam conclusão ou dependente.
+
+Escrita: arquivo temporário exclusivo no mesmo diretório, flush e troca atômica, removendo temporário em falha. Um finalizador tem ownership exclusivo da escrita; o motor não resolve escritores concorrentes. `ponytail: exclusividade operacional do escritor, adicionar controle de concorrência se o protocolo passar a permitir múltiplos finalizadores simultâneos`. Execução local não confiável pode declarar resultado, mas não comprova cobertura semântica; independência do verificador/revisor permanece obrigação dos papéis.
+
+### Coordenação e autoria
+
+Coordenador seleciona resultado/dependências/responsáveis e colaboração útil e recebe resumos certificados; inventário, registros, conferência técnica, provas e Git são delegados. Verificador confere diff/ownership/cobertura e integração; finalizador genérico/default apto recebe handoff operacional explícito e escreve registros/índice exclusivamente. Perfis específicos atuais continuam sem Git; não há novo perfil obrigatório. Revisor julga independentemente e escreve review, sem operar Git. Leitura/preparação pode colaborar com comunicação direta; código paralelo exige autorização aplicável e isolamento. A referência compartilhada de delegação mantém os papéis e limites operacionais.
+
+### Provas do contrato
+
+`docs/vibe-implement/tests/test-execution.py` exercita CLI/disco com fixtures Git isoladas nos dois motores: ausência/init, dependências, comandos inertes, integração independente, commit real, invalidação, corrupção, limites, paths/reparse e não migração. A entrada de CI `test-implement.py` carrega esta suíte automaticamente. As suítes históricas continuam cobrindo `etapas-v1`, Modo B e legado.
+
+## Contrato histórico: etapas-v1, B e legado
+
 `/vibe-implement` implementa e prova fatias de código e registra status, paths, prova e bloqueios diretamente na task do `plan.md`. No Modo A, com subagentes, conduz a fila inteira da phase (implementação, review e correção) com uma única confirmação final; no Modo B executa uma T* por run. A IA inspeciona o fluxo, codifica, testa e simplifica; o motor seleciona alvo e fila sem criar um segundo registro. Edição apenas de texto ou documento avulso fica fora desta skill.
 
 ```text

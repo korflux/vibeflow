@@ -2,63 +2,44 @@
 # Alvo: <phase-<n>-<slug> ou mvp>
 # Status: rascunho
 # Spec: spec.md (mesma pasta)
-# Protocolo: etapas-v1
-<!-- O coordenador da implement registra # Modo: A ou B ao iniciar; não migre plans históricos implicitamente. -->
-
-<!-- Escreva diretamente neste artefato vivo; o status permanece rascunho durante a elaboração. -->
+# Protocolo: coordenacao-v1
+<!-- Na abertura da implement, finalizador registra # Modo: A ou B. Preserve protocolos históricos. -->
 
 ## Overview
 
-<1 parágrafo: o que esta entrega realiza, apontando a spec>
+<resultado da entrega, apontando a spec>
 - **Design:** <path aprovado ou N/A>
 
 ## Prontidão das provas
 
-- **Requisitos verificados:** <runtime, comandos, serviços ou capacidades exigidos; informe se estão disponíveis localmente ou no CI>
-- **Ausências e ação na fila:** nenhuma | <resolução na T1 ou na primeira task que depende do requisito; limitação externa registrada>
-<!-- Quando várias T* compartilham uma prova integrada, defina comando/cobertura aqui uma vez e referencie em Verificação. Não crie outra checklist ou schema. -->
+<requisitos reais e onde estão disponíveis; ausências entram na primeira task dependente>
+<!-- Defina comando/cobertura integrada compartilhada uma vez e referencie nas T*. -->
 
 ## Tasks
 
 ### T1: <verbo + resultado coeso>
-
 - [ ] T1 concluída
 - **Spec:** A1, C1
-- **O quê:** <resultado observável>
-- **Aceite:**
-  - [ ] <condição testável>
-- **Verificação:**
-  - [ ] <local: comando direcionado; integração: comando/cobertura ou referência à prova compartilhada na prontidão; escolha pelo fluxo, consumidores, risco e aceite>
-- **Visual:** <necessária | dispensada; justifique pela relação entre o aceite e a UI renderizada> <!-- Somente tasks que alteram UI; omitir nas demais. -->
 - **Deps:** nenhuma
-- **Decisões:** <ID (ação); omitir quando N/A>
-- **Arquivos:** `path/...` <!-- opcional, quando orientar execução ou ownership -->
-- **Risco:** <somente se alterar isolamento, verificação ou review>
-<!-- Execução e Integração são registros JSON do coordenador no protocolo etapas-v1. Não inserir placeholders operacionais no plan aprovado. -->
-<!-- Não incluir no plan inicial. Durante implementação, acrescente somente se a T* ficar incompleta ou em handoff; remova ao concluí-la. -->
-- **Checkpoint de retomada (opcional):**
-  - Estado: <realizado, pendente ou bloqueio>
-  - Próximo passo: <ação curta>
-  - Paths da prova: `<path>=<hash retornado por git hash-object>`, <inclua inputs de código, teste e configuração>
-  - Git: `HEAD=<hash retornado por git rev-parse HEAD>`
-  - Prova: <válida no snapshot, invalidada ou ausente>; `<comando>` -> <resultado>
+- **O quê:** <resultado observável>
+- **Aceite:** <condição testável>
+- **Verificação:** <checagem local; prova integrada ou referência à prontidão>
+- **Visual:** <necessária ou dispensada + motivo; somente quando alterar UI>
+<!-- Arquivos, decisões críticas e risco são opcionais quando orientam execução/ownership/prova. -->
+<!-- Durante execução, mantenha só resumo curto de entrega/bloqueio e próximo responsável. No novo A, execution.json é autoridade de execução; não copie snapshots, hashes, logs ou --details. -->
 
-## Paralelização (opcional, omitir quando não aplicável)
+## Colaboração (opcional, omitir sem benefício concreto)
 
-<!-- Vale só no Modo B do vibe-implement; o Modo A é sequencial e ignora o grupo. -->
+- Grupo: <IDs/recortes e interlocutores>
+- Benefício: <incerteza ou dependência destravada>
+- Ownership: <paths/contrato; um escritor por recurso compartilhado>
+<!-- Leitura/preparação conjunta pode ajudar no A. Código paralelo exige autorização aplicável e isolamento. B oferece grupo ao humano; histórico conserva sequência. -->
 
-- Grupo: <IDs das T*>
-- Motivo: <por que as dependências e os paths permitem execução conjunta>
-- Isolamento: <ownership ou separação necessária para evitar conflito>
+## Checkpoint de review (opcional, somente risco/contrato real)
 
-## Checkpoint de review (opcional, omitir quando não houver justificativa)
-
-- <marco, superfície a revisar e risco ou contrato compartilhado que justifica o checkpoint>
+<marco, superfície e risco que exige julgamento antes da próxima entrega>
 
 ## Handoff
 
-<vibe-analyze quando a rota é max (MVP ou phase); vibe-implement nas demais rotas>
-<!-- Na rota max, acrescentar: rota: max -->
-<!-- Não criar T* apenas para a review final; o handoff da implementação encaminha para vibe-review. -->
-
-- Chat: recomende novo chat ao iniciar `vibe-plan` após spec/design. Na rota max, o `vibe-analyze` roda em subagente a partir do chat do plan e o fechamento recomenda com ênfase um chat novo com `/vibe-implement`, que rodará em Modo A; sem subagentes, recomende chat novo para o analyze. Nas demais rotas, recomende chat novo para `vibe-implement`. No Modo B (uma T* por run), recomende um chat por T*; grupo paralelo aprovado é a exceção coordenada. O humano pode continuar no chat atual; o `plan.md` vivo é a ponte.
+<vibe-analyze na rota max; vibe-implement nas demais>
+<!-- Não crie T* somente para review final. Recomende novo chat sem bloquear continuidade. Na implementação A, coordenador conduz fila, review e correções com confirmação humana final; B executa uma T* por run. -->

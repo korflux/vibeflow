@@ -35,3 +35,7 @@ As provas executam os dois motores em fixtures isoladas, conferem formatos nativ
 ## Git
 
 Após consolidação, o commit local inclui `AGENTS.md`, a ponte Antigravity, `.vibeflow/.gitignore`, `.vibeflow/phases/.gitkeep`, os paths de perfis com status `instalado` e backups necessários. Perfis conflitantes ou personalizados não entram por varredura de diretório; perfis já instalados não exigem staging. Legados do antigo VibeFlow só saem depois de preservação e merge auditados. O init não faz push.
+
+## Regra operacional distribuída
+
+Template de AGENTS anuncia coordenacao-v1 para plans novos, ownership do finalizador genérico/default e gate humano de fechamento. Os cinco perfis existentes permanecem com suas proibições de Git; finalizador não é perfil novo nem exige atualização de instalações. Init conserva conflitos/customizações pelos mecanismos existentes, sem migrar protocolo de phases.

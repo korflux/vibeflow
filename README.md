@@ -16,6 +16,7 @@ AGENTS.md                                  fonte única de regras do projeto
 .vibeflow/phases/phase-N-slug/interview.md
 .vibeflow/phases/phase-N-slug/spec.md
 .vibeflow/phases/phase-N-slug/plan.md
+.vibeflow/phases/phase-N-slug/execution.json  estado operacional do novo Modo A
 .vibeflow/phases/phase-N-slug/analyze.md
 .vibeflow/phases/phase-N-slug/review.md
 # implement.md pode existir como histórico, mas não é criado por novas execuções
@@ -24,7 +25,7 @@ AGENTS.md                                  fonte única de regras do projeto
 
 `n` e o slug das phases saem do script, não da IA. Projeto novo classificado como MVP usa uma única `.vibeflow/mvp/`, sem número nem slug, e percorre a rota max completa. Skills seguintes do mesmo pedido gravam na mesma pasta, outro arquivo. Nenhuma skill dispara a próxima: o handoff é uma linha no artefato.
 
-O `--apply` das skills de artefato executa os gates mecânicos e prepara o arquivo vivo somente quando ele ainda não existe. A execução de `vibe-implement` registra status, paths e prova sob a T* no `plan.md`, sem criar `implement.md`; arquivos históricos são preservados. A IA escreve e atualiza a prosa diretamente em `interview.md`, `spec.md`, `plan.md`, `analyze.md` e `review.md`.
+O `--apply` das skills de artefato executa os gates mecânicos e prepara o arquivo vivo somente quando ele ainda não existe. No protocolo coordenacao-v1, a implement mantém plan enxuto e execução em execution.json versionado ao lado. B/etapas-v1/legado conservam seus registros; não há migração implícita nem novo implement.md. A IA escreve e atualiza a prosa diretamente em `interview.md`, `spec.md`, `plan.md`, `analyze.md` e `review.md`.
 
 Escopo do produto: [`docs/ESCOPO.md`](docs/ESCOPO.md). Contrato de cada skill: `docs/vibe-<nome>/ARQUITETURA.md`. CI: [`.github/workflows/contrato.yml`](.github/workflows/contrato.yml).
 
@@ -147,7 +148,7 @@ O mesmo pedido reusa a pasta `phase-N-slug`. Pedido novo: próxima pasta, `n` nu
 
 `init → interview → spec` pode continuar no mesmo chat. As portas `plan`, `analyze`, `implement` e `review` recomendam um novo chat para reduzir contexto residual; na implementação, o chat novo conduz a fila inteira no Modo A (analyze e review rodam em subagente) e, no Modo B, a recomendação é um chat focado por T*. A continuidade é permitida quando o humano a escolhe conscientemente. O artefato vivo e a linha de handoff são a ponte verificável entre chats.
 
-No Modo A com protocolo explícito `etapas-v1`, implemente as T* com checagens locais, complemente somente lacunas de cobertura e prove a integração por executor separado do escritor: coordenador para prova curta já definida, verificador para execução ampla ou diagnóstico. Selecione provas pelo diff, fluxo/consumidores, risco e aceite; reutilize evidência válida e execute comandos compartilhados uma vez por estado/inputs, preservando segurança e CI completo. Somente depois da prova verde conclua as T* e crie um commit integrado que identifique seus IDs. Modo B e plans históricos sem marcador conservam commit por task. Nenhum commit de implementação faz push. Depois de Approve na review, confirmação humana e correções fechadas, o handoff final valida a phase, cria o commit residual quando necessário e faz `git push` para o upstream atual, sem force. No Modo A, o coordenador executa esse fechamento depois de uma única confirmação.
+No novo Modo A (`coordenacao-v1`), coordenador escolhe entregas, responsáveis, dependências e colaboração útil; subagentes podem preparar recortes em conjunto e conversar diretamente com ownership seguro. Implementador entrega código/testes, verificador confere entrega/aceite e prova integração, finalizador genérico/default apto registra estado e opera Git, e revisor julga independentemente. Coordenador recebe resumo e intervém por contradição ou decisão estratégica. Plan define trabalho; execution.json versionado guarda estado atual e snapshots, com hashes calculados pelo motor e stdout compacto. Integração verde e commit real liberam conclusão. Provas inalteradas são reaproveitadas; código paralelo exige autorização aplicável e isolamento. Etapas-v1, legado e B conservam contrato, sem migração. Approve, decisões vigentes e push exigem confirmação humana final; finalizador executa fechamento delimitado após essa confirmação.
 
 No Codex desktop, a prova de UI prioriza o navegador integrado quando disponível. Se ele não estiver disponível, registre a limitação no resultado ou use o fallback visual existente no projeto.
 
@@ -174,7 +175,7 @@ Efeito prático: as regras do projeto ficam numa fonte (`AGENTS.md`), o pedido d
 | [`vibe-design`](vibe-design/SKILL.md) | `/vibe-design` | Desenha a apresentação com dois modos de entrada e três usos, sem código nem imagem final | `phase-N-slug/design.md` |
 | [`vibe-plan`](vibe-plan/SKILL.md) | `/vibe-plan` | Fatia a spec em T* verificáveis e reutiliza provas por capacidade quando cobrem a entrega | `phase-N-slug/plan.md` |
 | [`vibe-analyze`](vibe-analyze/SKILL.md) | `/vibe-analyze` | Cruza interview, spec e plan da mesma fase. Corrige lacunas óbvias em `spec.md` e `plan.md`; grava o certificado no vivo | `phase-N-slug/analyze.md` |
-| [`vibe-implement`](vibe-implement/SKILL.md) | `/vibe-implement` | Modo A (padrão, com subagentes): conduz a fila inteira, a review e as correções com uma única confirmação final; Modo B: uma T* por run. No protocolo `etapas-v1`, separa código, testes e validação integrada; registra snapshots no plan e cria commit integrado depois da prova verde. Modo B e plans históricos mantêm commit por task | `phase-N-slug/plan.md` |
+| [`vibe-implement`](vibe-implement/SKILL.md) | `/vibe-implement` | Novo Modo A: coordenação por resultados, colaboração dirigida, conferência/integração delegadas, finalizador exclusivo e review independente; plan enxuto e execução estruturada. B/etapas-v1/legado preservados | `phase-N-slug/plan.md` + `execution.json` no novo A |
 | [`vibe-review`](vibe-review/SKILL.md) | `/vibe-review` | Julga o patch, conduz correções e faz o commit/push final após aprovação | `phase-N-slug/review.md` |
 
 Arquitetura, análise e testes de contrato de cada skill ficam em `docs/vibe-<nome>/` e **não** entram no pacote instalável.
@@ -216,9 +217,9 @@ vibe-<nome>/
 3. Teste de contrato em `docs/vibe-<nome>/tests/`, `unittest`, pasta isolada. Depois: `python docs/vibe-<nome>/tests/test-<nome>.py -v`.
 4. Distribuição: `python docs/tests/test-distribuicao.py -v`.
 5. Não inventar path de artefato fora de `.vibeflow/phases/phase-N-slug/`; a única exceção é o baseline fixo `.vibeflow/mvp/`. Manter `AGENTS.md` como única fonte de regras do projeto.
-6. Só `.vibeflow/init-report.json` persiste, pois carrega `apply_token` para retomar um merge pendente; os inventários das demais skills são JSON transitório no stdout. Relatórios e pendências do init ficam fora do git; os artefatos vivos entram no git.
+6. Inventários são JSON transitório no stdout. O init mantém relatório/pending ignorados para retomada; no novo Modo A, execution.json é estado operacional versionado junto dos artefatos vivos, sem snapshots no plan.
 
-Versão dos manifests: `5.0.1`. O Antigravity mantém o schema mínimo sem campo de versão.
+Versão dos manifests: `6.0.0`. O Antigravity mantém o schema mínimo sem campo de versão.
 
 PR contra `main`. Mudança de contrato (path, schema do relatório, flag pública) é Major; o resto segue o semver em `AGENTS.md`.
 

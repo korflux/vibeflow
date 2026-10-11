@@ -32,7 +32,7 @@ Essa escolha mantém o histórico no mesmo path e permite que implement consuma 
 
 ## Checkpoint e review final
 
-Re-review começa pelo remédio aplicado e seus consumidores/dependências. O julgamento das partes inalteradas e suas provas válidas continua aproveitável; repetir uma auditoria inteira exige lacuna ou risco concreto. O revisor independente verifica as referências, o diff e os inputs atuais, sem reproduzir no review o snapshot que já pertence ao plan. Essa economia alcança a coordenação e qualquer suíte do projeto consumidor, além dos testes internos do VibeFlow.
+Re-review começa pelo remédio aplicado e seus consumidores/dependências. O julgamento das partes inalteradas e suas provas válidas continua aproveitável; repetir uma auditoria inteira exige lacuna ou risco concreto. O revisor independente verifica as referências, o diff e os inputs atuais, sem reproduzir no review o snapshot que pertence ao registro do protocolo (execution.json no novo A, plan nos históricos). Essa economia alcança a coordenação e qualquer suíte do projeto consumidor, além dos testes internos do VibeFlow.
 
 Checkpoint só ocorre no marco declarado e justificado pelo `plan.md`, depois que as tasks desse marco estão concluídas. Ele verifica o contrato compartilhado ou risco antes das tasks seguintes. A fila ainda aberta fica explícita; o resultado limita-se ao marco, mantém a fase em andamento e não libera decisão, commit residual ou push.
 
@@ -40,7 +40,7 @@ A review final aguarda todas as T* concluídas, julga os critérios de aceite so
 
 ## Finalização Git
 
-Review continua sem corrigir source. Somente a review final pode abrir fechamento Git, e só depois da confirmação humana. No Modo A do `vibe-implement`, quem executa esse fechamento é o coordenador, porque o revisor delegado só devolve a proposta e as perguntas. Depois de Approve confirmado, todas as tasks e R* bloqueantes fechados e a prova necessária da integração verde, ela valida o escopo restante, cria somente o commit residual da phase quando houver mudanças e faz `git push` para o upstream atual sem force. Checkpoint não fecha a phase nem dispara publicação.
+Review continua sem corrigir source. Somente a review final pode abrir fechamento Git, e só depois da confirmação humana. No Modo A do `vibe-implement`, coordenacao-v1 delega esse fechamento ao finalizador genérico/default apto; coordenador conduz a confirmação e o revisor delegado só devolve a proposta e perguntas. Etapas-v1/legado conservam operação do coordenador. Depois de Approve confirmado, todas as tasks e R* bloqueantes fechados e a prova necessária da integração verde, ela valida o escopo restante, cria somente o commit residual da phase quando houver mudanças e faz `git push` para o upstream atual sem force. Checkpoint não fecha a phase nem dispara publicação.
 
 ## Visual e acessibilidade
 
@@ -68,7 +68,7 @@ O contexto limpo que o chat novo dava à review vem de graça num subagente, e o
 | Navegador em toda alteração de UI | A prova visual só abre quando o aceite depende do resultado renderizado; a review reutiliza evidência válida. |
 | Publicação automática de decisões | Exige Approve sem bloqueios e confirmação humana. |
 | Push antes da aprovação | O remoto só recebe a phase depois do fechamento da review. |
-| Revisor delegado com finalização própria | O revisor não pergunta ao humano nem toca Git; a confirmação única e o push ficam com o coordenador. |
+| Revisor delegado com finalização própria | O revisor não pergunta ao humano nem toca Git; coordenador conduz a confirmação única; finalizador apto opera push no novo A após autorização explícita. |
 | Campo novo no template para o relatório do revisor | Tudo que o relatório carrega já tem lar no `review.md`, e perguntas em aberto no arquivo são defeito. |
 
 ## Impacto

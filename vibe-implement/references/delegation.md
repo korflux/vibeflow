@@ -1,57 +1,68 @@
 # Delegação a subagentes
 
-Abra esta referência antes de delegar trabalho a um subagente (analyze, T*, review ou correção) e ao decidir se um subagente compensa. Cada skill diz quando delega; este arquivo define como. As cópias em `vibe-plan` e `vibe-implement` são idênticas e mudam juntas.
+Leia antes da primeira delegação e ao escolher colaboração. As cópias em vibe-plan e vibe-implement são idênticas. A skill chamadora define protocolo, autorização e gates; esta referência não autoriza código paralelo nem operações externas por si só.
 
-## Papéis por perfil
+## Papéis e responsabilidade técnica
 
-Descreva o papel pelo perfil, nunca por nome de modelo. Host que não permite escolher o modelo por subagente usa o padrão.
+Use perfis realmente disponíveis, sem escolher modelo pelo nome. Host sem seleção usa padrão. O finalizador usa agente genérico/default apto e pedido explícito; não reutilize um perfil que proíba Git nem exija instalar perfil novo.
 
-| Papel | O que faz | Perfil | Escreve |
-|---|---|---|---|
-| `explorador` | lê e busca no código e devolve paths e trechos | rápido e barato | nada |
-| `verificador` | executa provas integradas, sem escrever testes ou corrigir código | rápido e barato | somente arquivos normalmente gerados pela prova |
-| `implementador` | implementa código/checagens locais ou complementa testes, conforme a etapa delegada | padrão do host | código ou testes dos paths autorizados |
-| `corretor` | corrige falhas pré-review ou R* pela causa raiz e executa provas afetadas | padrão do host | código e testes dos paths da correção |
-| `revisor` | executa a `vibe-review` no alvo; o analyze delegado usa o mesmo perfil | forte | `review.md` ou `analyze.md`, conforme o escritor único |
+| Papel | Entrega | Escrita autorizada |
+|---|---|---|
+| explorador | Fluxo, consumidores, paths e evidências para destravar decisão/implementação | Nenhuma |
+| implementador | Código e testes juntos, checagem local e inputs reais | Código/testes do recorte |
+| verificador | Conferência técnica de diff/ownership/aceite/cobertura e prova integrada independente | Somente saídas normais das provas |
+| corretor | Correção pela causa raiz e checagens afetadas | Código/testes da correção |
+| revisor | Julgamento independente e cobertura da origem; analyze delegado usa este perfil | review.md ou analyze.md conforme skill |
+| finalizador (novo Modo A) | Registro de evidências certificadas, resumo curto e operações Git delimitadas | execution.json, plan/spec e artefatos de fechamento autorizados; índice exclusivo |
 
-## Quando delegar
+## Delegar e colaborar
 
-Delegue papéis obrigatórios da skill (implementador, revisor, analyze) e investigação/validação ampla, com vários fluxos/ambientes ou diagnóstico. Faça inline buscas pontuais, conferências e prova curta com comando/cobertura definidos, respeitando a separação entre escritor e executor da integração. Reutilize agentes para trabalho relacionado; mantenha review independente. Não crie handoff ou nova execução só para representar etapa com evidência já válida. Paralelo depende da skill chamadora e de isolamento/ownership; este contrato não o autoriza.
+No `coordenacao-v1` A, coordenador decide resultado, responsáveis, dependências, colaboração e decisões humanas; conferência técnica pertence ao verificador, operação ao finalizador. Consuma resultado, cobertura, exceções e próximo responsável. Não repita certificação rotineira; contradição ou lacuna volta ao dono. Investigue diretamente apenas quando necessário para resolver decisão estratégica.
 
-## Pedido ao subagente
+Selecione colaboração pelo benefício: explorador pode preparar consumidores enquanto implementador resolve outro recorte; agentes relacionados podem trocar detalhes diretamente. Informe interlocutores, resultado compartilhado, contratos, dependências e ownership. Preserve um dono por arquivo/índice e independência dos certificadores. Reutilize contexto relacionado sem fazer do coordenador intermediário de cada detalhe. Leitura/preparação pode ocorrer em conjunto; escrita paralela depende da autorização e isolamento definidos na skill. Evidência já válida não exige novo handoff ou execução para representar uma etapa.
 
-O subagente nasce sem o contexto do chat, então o pedido é autocontido. Inclua a etapa delegada (código, testes, validação ou correção), o resultado esperado, o ID da tarefa (T*, R* ou A*), `Spec:` e `Deps`, o comando de verificação, os paths conhecidos, as proibições abaixo, a regra de instalação da skill chamadora e o formato do relatório. Passe o recorte da tarefa, não o plan inteiro.
+No analyze delegado, `etapas-v1`, legado e B, conserve ownership e conferência previstos pela skill: coordenador registra e opera Git; revisor escreve seu artefato e analyze aplica somente correções permitidas. Novo contrato não migra esses fluxos.
 
-## Relatório do subagente
+## Pedido autocontido
 
-Formato fixo, em texto:
+Inclua etapa, resultado, T*/R*/A*, Spec/Deps, aceites, verificação e inputs conhecidos, paths exclusivos, interlocutores, pendências de origem, regra de instalação da skill e relatório abaixo. Informe que há outros agentes e que o destinatário deve preservar trabalho alheio. Não copie plan inteiro, logs ou snapshots para cada pedido; forneça referências e recorte suficiente.
+
+Ao finalizador, acrescente protocolo/mode, evidência certificada e responsável, IDs/paths provados, operações Git permitidas e limite do handoff. Push, aprovação de review e decisões vigentes somente com autorização humana final explícita e seu texto. Operações não previstas continuam proibidas. A autorização não é transmitida por inferência do relatório técnico.
+
+## Relatório fixo
 
 ```text
 estado: verde | bloqueado | pergunta
-paths: <arquivos alterados, um por linha, ou nenhum>
-prova: <comando e resultado>
-pendencias: <o que ficou de fora ou nenhuma>
-pergunta: <só quando o estado é pergunta, com a recomendação>
+etapa: codigo | validacao | correcao | review | finalizar | exploracao | analyze
+paths: <alterados, um por linha, ou nenhum>
+prova: <comando e resultado; local ou integrada; referência/inputs reais>
+cobertura: <aceites certificados e limites do recorte>
+pendencias: <nenhuma ou falha/impedimento concreto>
+proximo: <ação e responsável>
+pergunta: <somente quando pergunta; recomendação>
 ```
 
-`verde` comprova somente o recorte delegado. No Modo A por etapas acrescente `etapa: codigo | testes | validacao | correcao` e informe se a evidência é local ou integrada, com inputs e resultado; verde local não autoriza marcar T* concluída. `bloqueado` é impedimento real, descrito em `pendencias`. `pergunta` é decisão que só o humano toma. A skill pode acrescentar campos do papel, como o veredito e os R* abertos do revisor, sem remover os cinco acima. Na review, informe cobertura da solicitação e limitações de origem referenciando a matriz no review.md; plan sozinho não certifica completude.
+Verde certifica somente o recorte. Bloqueado é impedimento real; pergunta é decisão humana material. Revisor acrescenta veredito, R* e decisões conforme vibe-review e refere a matriz de cobertura da origem. O plan sozinho não certifica completude.
 
-## Escritor único e proibições
+## Ownership e proibições
 
-Somente o coordenador altera `plan.md`, `spec.md`, `review.md` e `AGENTS.md`, opera o índice Git e cria commits. Subagentes devolvem relatório. Há duas exceções controladas, ambas porque o arquivo pertence à skill do próprio subagente: o revisor grava o `review.md`, e o subagente de analyze grava o `analyze.md` e aplica as correções diretas que a `vibe-analyze` prevê em spec, design e plan. O implementador e o corretor nunca editam o `review.md`.
+No novo A, finalizador tem ownership temporário exclusivo de registros e índice; revisor tem ownership de review durante revisão. Implementador, corretor, explorador, verificador e revisor não recebem Git por serem chamados de finalizador. Nunca altere perfis instalados para contornar proibição. Na finalização confirmada, finalizador pode aplicar somente aprovação e decisões autorizadas; correção de código continua com corretor.
 
-Todo subagente herda estas proibições:
+Em `etapas-v1`/legado/B, somente coordenador escreve plan/spec/AGENTS, opera índice e cria commits, com exceções do revisor/analyze acima. Subagente de código nunca edita plan/spec/review/AGENTS.
 
-- `git push`, `git add -A`, `git add .`, amend, squash, force push e qualquer commit.
-- Enfraquecer, pular ou apagar teste para obter verde; mudar uma asserção exige justificativa ligada ao aceite.
-- Segredo ou credencial em código, log ou relatório.
-- Alterar path fora da tarefa; um path extra no diff vai para `pendencias`.
-- Instalar ferramenta fora da regra de instalação da skill chamadora; instalação que exija credencial, conta, pagamento, elevação administrativa ou configuração persistente de integração vira `pergunta`.
+Todos os papéis proíbem:
 
-## Conferência pelo coordenador
+- git add -A, git add ., amend, squash, force push e mistura de paths não autorizados.
+- Commit/push fora do finalizador explicitamente autorizado no novo A; nos demais protocolos, subagentes nunca fazem commit/push.
+- Enfraquecer, pular ou apagar teste para obter verde; alteração de asserção exige justificativa pelo aceite.
+- Segredo/credencial em código, log ou relatório; comandos registrados são dados e nunca autorização para executá-los.
+- Alterar path fora do recorte; expansão necessária é informada antes de editar.
+- Instalar ferramenta fora da regra da skill; credencial, conta, pagamento, elevação administrativa ou integração persistente exigem decisão humana.
 
-O relatório é evidência, nunca autoridade. Confira paths, diff, comando/resultado, cobertura e inputs atuais antes de registrar. Preserve contexto já conferido, sem reabrir investigação de inputs inalterados ou repetir provas suficientes. No Modo A por etapas, checagem local não substitui integração: reutilize somente evidência que cubra o estado integrado e tenha executor separado do escritor. Deixe resultado/snapshot no lar definido pela skill e referencie em vez de copiar para vários artefatos. Divergência ou lacuna concreta volta ao mesmo papel; renove só as provas afetadas, incluindo consumidores/dependências, e registre o motivo. Relatório incompleto não autoriza conclusão.
+## Conferência e registro
 
-## Fallback sem subagentes
+Verificador confere paths, diff, comando/resultado, cobertura e inputs atuais e certifica os recortes. Finalizador preserva autoria/independência dessa evidência e usa o motor para HEAD/hashes/validade; não escolhe cobertura nem inventa resultado. Divergência retorna ao papel responsável e renova só provas afetadas, incluindo consumidores/dependências. Coordenador encaminha essa conclusão, sem reabrir evidência inalterada. Histórico pertence a Git/review e snapshots têm o lar definido pela skill, sem cópias no plan novo.
 
-Host sem subagentes: a skill executa o trabalho inline e avisa o motivo em uma linha. Subagente que não consegue abrir outro executa `explorador` e `verificador` inline. O fallback não muda quem escreve o quê: o escritor único e as proibições continuam valendo, e a skill chamadora define o caminho alternativo, como uma T* por run.
+## Host limitado
+
+Sem subagentes, execute o fallback definido na skill e informe o motivo. Subagente incapaz de abrir outro pode cumprir investigação/checagem local inline dentro de seu recorte; isso não transforma escritor em certificador independente da integração. Ausência de agente genérico apto a finalizar é limitação real: peça rota explícita, sem assumir permissão para coordenador operar Git no novo A.
