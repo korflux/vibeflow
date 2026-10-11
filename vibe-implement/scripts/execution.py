@@ -114,7 +114,7 @@ def load(path, graph, repo, reparse, target):
         state = json.loads(path.read_text(encoding="utf-8-sig"), object_pairs_hook=unique_object)
     except (UnicodeError, json.JSONDecodeError, RecursionError):
         fail("JSON/encoding inválido")
-    if not isinstance(state, dict) or set(state) != set(empty) or type(state["schema"]) is not int or state["schema"] != 1 or state["protocolo"] != PROTOCOL or not isinstance(state["tasks"], dict):
+    if not isinstance(state, dict) or set(state) not in (set(empty), set(empty) | {"correcao"}) or type(state["schema"]) is not int or state["schema"] != 1 or state["protocolo"] != PROTOCOL or not isinstance(state["tasks"], dict):
         fail("schema inválido")
     for tid, row in state["tasks"].items():
         if tid not in graph or not isinstance(row, dict) or set(row) != {"actor", "proof"} or not actor_valid(row["actor"]):
@@ -129,6 +129,14 @@ def load(path, graph, repo, reparse, target):
             fail("integração sem independência")
     if state["commit"] is not None and (integration is None or not isinstance(state["commit"], str) or not re.fullmatch(HASH, state["commit"])):
         fail("commit inválido")
+    if "correcao" in state:
+        correction = state["correcao"]
+        if (state["commit"] is None or not isinstance(correction, dict) or set(correction) != {"base", "commit"}
+                or correction["commit"] is not None and (not isinstance(correction["commit"], str) or not re.fullmatch(HASH, correction["commit"]))):
+            fail("correção inválida")
+        proof_schema(correction["base"], repo, reparse, target)
+        if correction["base"]["resultado"] != "verde":
+            fail("base da correção não é verde")
     return state
 
 
@@ -160,6 +168,25 @@ def commit_matches(repo, sha, tasks, integration):
         return False
 
 
+# Separa a integração histórica T* dos blobs atuais de uma correção R* real.
+def correction_matches(repo, sha, tasks, state, correction_ids):
+    correction = state["correcao"]
+    baseline = {"origem": state["integracao"]["origem"], "proof": correction["base"]}
+    if not commit_matches(repo, state["commit"], tasks, baseline):
+        return False
+    try:
+        subject = git(repo, "show", "-s", "--format=%s", sha)
+        match = re.fullmatch(r"task\((R[1-9]\d*(?:,R[1-9]\d*)*)\): .+", subject)
+        ids = match.group(1).split(",") if match else []
+        if not ids or ids != sorted(set(ids), key=lambda rid: int(rid[1:])) or not set(ids) <= correction_ids or sha == state["commit"]:
+            return False
+        git(repo, "merge-base", "--is-ancestor", state["commit"], sha)
+        git(repo, "merge-base", "--is-ancestor", sha, "HEAD")
+        return all(git(repo, "rev-parse", sha + ":" + relative) == hashed for relative, hashed in state["integracao"]["proof"]["inputs"].items())
+    except ValueError:
+        return False
+
+
 # Troca atômica no mesmo diretório; falha nunca trunca a evidência existente.
 def save(path, state):
     data = json.dumps(state, ensure_ascii=False, indent=2).encode("utf-8") + b"\n"
@@ -183,13 +210,17 @@ def coordinate(repo, target, text, args, fila, review, split, deps_parser, repar
     path = safe_path(repo, target + "/execution.json", reparse)
     state = load(path, graph, repo, reparse, target)
     ordered = sorted(graph, key=lambda tid: int(tid[1:]))
+    review_path = safe_path(repo, target + "/review.md", reparse)
+    correction_ids = set(re.findall(r"(?m)^\s*- \[[ x]\] (R[1-9]\d*): \*\*(?:Critical|Required)\*\*", review_path.read_text(encoding="utf-8-sig"))) if review is not None and review["legivel"] and review_path.is_file() else set()
     # Invalidação é projetada, sem apagar a evidência ou modificar arquivo na leitura.
     def projection():
         ready = {tid for tid, row in state["tasks"].items() if snapshot_valid(repo, row["proof"]) and row["proof"]["resultado"] == "verde"}
         integration = state["integracao"]
         covered = integration is not None and set().union(*(row["proof"]["inputs"] for row in state["tasks"].values())) <= set(integration["proof"]["inputs"])
         valid = covered and ready == set(graph) and snapshot_valid(repo, integration["proof"])
-        committed = bool(valid and integration["proof"]["resultado"] == "verde" and state["commit"] and commit_matches(repo, state["commit"], ordered, integration))
+        commit_valid = (bool(state["correcao"]["commit"] and correction_matches(repo, state["correcao"]["commit"], ordered, state, correction_ids))
+                        if "correcao" in state else bool(state["commit"] and commit_matches(repo, state["commit"], ordered, integration))) if integration else False
+        committed = bool(valid and integration["proof"]["resultado"] == "verde" and commit_valid)
         return ready, valid, committed
     ready, valid, committed = projection()
     operation = args.operation
@@ -217,14 +248,22 @@ def coordinate(repo, target, text, args, fila, review, split, deps_parser, repar
             if not set().union(*(row["proof"]["inputs"] for row in state["tasks"].values())) <= set(proof["inputs"]):
                 fail("integração não cobre inputs locais")
             origin = state["integracao"]["origem"] if state["integracao"] else proof["head"]
+            if ("correcao" not in state and state["commit"] and proof["inputs"] != state["integracao"]["proof"]["inputs"]
+                    and commit_matches(repo, state["commit"], ordered, state["integracao"])):
+                state["correcao"] = {"base": state["integracao"]["proof"], "commit": None}
             state["integracao"] = {"actor": args.actor, "proof": proof, "origem": origin}
         elif operation == "commit":
             if not valid or state["integracao"]["proof"]["resultado"] != "verde":
                 fail("commit exige integração verde atual")
-            sha = next((sha for sha in git(repo, "log", "--format=%H").splitlines() if commit_matches(repo, sha, ordered, state["integracao"])), None)
+            sha = next((sha for sha in git(repo, "log", "--format=%H").splitlines()
+                        if (correction_matches(repo, sha, ordered, state, correction_ids) if "correcao" in state
+                            else commit_matches(repo, sha, ordered, state["integracao"]))), None)
             if sha is None:
                 fail("commit integrado não encontrado")
-            state["commit"] = sha
+            if "correcao" in state:
+                state["correcao"]["commit"] = sha
+            else:
+                state["commit"] = sha
         if operation != "init" or not path.exists():
             save(path, state)
         ready, valid, committed = projection()
@@ -246,7 +285,8 @@ def coordinate(repo, target, text, args, fila, review, split, deps_parser, repar
         stage = None
     elif review is not None and review["bloqueios_abertos"]:
         stage = "corrigir"
-    summary = {"protocolo": PROTOCOL, "modo": "A", "registro": target + "/execution.json", "tasks": [{"id": tid, "local_valida": tid in ready} for tid in ordered], "integracao": {"prova_valida": valid, "commit_encontrado": state["commit"] if committed else None}, "avisos": []}
+    current_commit = state["correcao"]["commit"] if "correcao" in state else state["commit"]
+    summary = {"protocolo": PROTOCOL, "modo": "A", "registro": target + "/execution.json", "tasks": [{"id": tid, "local_valida": tid in ready} for tid in ordered], "integracao": {"prova_valida": valid, "commit_encontrado": current_commit if committed else None}, "avisos": []}
     if args.details:
         summary["detalhes"] = state
     return summary, stage

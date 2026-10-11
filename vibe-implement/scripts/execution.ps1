@@ -96,7 +96,7 @@ function Read-CoordinateState([string]$Path, $Graph, [string]$Repo, [string]$Tar
         try { Assert-CoordinateJson $document.RootElement } finally { $document.Dispose() }
         $state = ConvertFrom-Json -InputObject $text -AsHashtable -Depth 20
     } catch { Stop-Coordinate 'JSON/encoding inválido' }
-    if (-not (Test-CoordinateKeys $state @('schema','protocolo','tasks','integracao','commit')) -or $state.schema -is [bool] -or $state.schema -is [double] -or $state.schema -is [string] -or $state.schema -ne 1 -or $state.protocolo -cne $script:CoordinateProtocol -or $state.tasks -isnot [Collections.IDictionary]) { Stop-Coordinate 'schema inválido' }
+    if ((-not (Test-CoordinateKeys $state @('schema','protocolo','tasks','integracao','commit')) -and -not (Test-CoordinateKeys $state @('schema','protocolo','tasks','integracao','commit','correcao'))) -or $state.schema -is [bool] -or $state.schema -is [double] -or $state.schema -is [string] -or $state.schema -ne 1 -or $state.protocolo -cne $script:CoordinateProtocol -or $state.tasks -isnot [Collections.IDictionary]) { Stop-Coordinate 'schema inválido' }
     foreach ($tid in $state.tasks.Keys) {
         $row = $state.tasks[$tid]
         if ($tid -cnotin $Graph.Keys -or -not (Test-CoordinateKeys $row @('actor','proof')) -or -not (Test-CoordinateActor $row.actor)) { Stop-Coordinate 'task registrada inválida' }
@@ -109,6 +109,12 @@ function Read-CoordinateState([string]$Path, $Graph, [string]$Repo, [string]$Tar
         if ($state.tasks.Count -ne $Graph.Count -or $integration.actor -cin @($state.tasks.Values | ForEach-Object { $_.actor })) { Stop-Coordinate 'integração sem independência' }
     }
     if ($null -ne $state.commit -and ($null -eq $integration -or $state.commit -isnot [string] -or $state.commit -cnotmatch $script:CoordinateHash)) { Stop-Coordinate 'commit inválido' }
+    if ($state.ContainsKey('correcao')) {
+        $correction = $state.correcao
+        if ($null -eq $state.commit -or -not (Test-CoordinateKeys $correction @('base','commit')) -or ($null -ne $correction.commit -and ($correction.commit -isnot [string] -or $correction.commit -cnotmatch $script:CoordinateHash))) { Stop-Coordinate 'correção inválida' }
+        Assert-CoordinateProof $correction.base $Repo $Target
+        if ($correction.base.resultado -cne 'verde') { Stop-Coordinate 'base da correção não é verde' }
+    }
     return $state
 }
 
@@ -139,6 +145,26 @@ function Test-CoordinateCommit([string]$Repo, [string]$Sha, [string[]]$Tasks, $I
     } catch { return $false }
 }
 
+# A base T* conserva sua prova; o commit R* precisa conter os blobs atuais.
+function Test-CoordinateCorrection([string]$Repo, [string]$Sha, [string[]]$Tasks, $State, [string[]]$CorrectionIds) {
+    $baseline = @{ origem = $State.integracao.origem; proof = $State.correcao.base }
+    if (-not (Test-CoordinateCommit $Repo $State.commit $Tasks $baseline)) { return $false }
+    try {
+        $subject = Invoke-CoordinateGit $Repo @('show','-s','--format=%s',$Sha)
+        $match = [regex]::Match($subject, '^task\((R[1-9]\d*(?:,R[1-9]\d*)*)\): .+$')
+        if (-not $match.Success -or $Sha -ceq $State.commit) { return $false }
+        $ids = @($match.Groups[1].Value.Split(','))
+        $orderedIds = @($ids | Sort-Object { [int]$_.Substring(1) } -Unique)
+        if (($ids -join ',') -cne ($orderedIds -join ',') -or @($ids | Where-Object { $_ -cnotin $CorrectionIds }).Count) { return $false }
+        $null = Invoke-CoordinateGit $Repo @('merge-base','--is-ancestor',$State.commit,$Sha)
+        $null = Invoke-CoordinateGit $Repo @('merge-base','--is-ancestor',$Sha,'HEAD')
+        foreach ($relative in $State.integracao.proof.inputs.Keys) {
+            if ((Invoke-CoordinateGit $Repo @('rev-parse',"${Sha}:$relative")) -cne $State.integracao.proof.inputs[$relative]) { return $false }
+        }
+        return $true
+    } catch { return $false }
+}
+
 # Troca atômica: arquivo temporário exclusivo no mesmo diretório e limpeza em falha.
 function Save-CoordinateState([string]$Path, $State) {
     $data = [Text.UTF8Encoding]::new($false).GetBytes((ConvertTo-Json -InputObject $State -Depth 20) + "`n")
@@ -152,11 +178,12 @@ function Save-CoordinateState([string]$Path, $State) {
 }
 
 # Deriva validade sem apagar evidências antigas nem executar strings registradas.
-function Get-CoordinateValidity([string]$Repo, $Graph, $State, [string[]]$Ordered) {
+function Get-CoordinateValidity([string]$Repo, $Graph, $State, [string[]]$Ordered, [string[]]$CorrectionIds) {
     $ready = @($State.tasks.Keys | Where-Object { (Test-Snapshot $Repo $State.tasks[$_].proof) -and $State.tasks[$_].proof.resultado -ceq 'verde' })
     $valid = $null -ne $State.integracao -and $ready.Count -eq $Graph.Count -and (Test-Snapshot $Repo $State.integracao.proof)
     if ($valid) { foreach ($row in $State.tasks.Values) { foreach ($relative in $row.proof.inputs.Keys) { if ($relative -cnotin $State.integracao.proof.inputs.Keys) { $valid = $false } } } }
-    $committed = $valid -and $State.integracao.proof.resultado -ceq 'verde' -and $null -ne $State.commit -and (Test-CoordinateCommit $Repo $State.commit $Ordered $State.integracao)
+    $commitValid = if ($State.ContainsKey('correcao')) { $null -ne $State.correcao.commit -and (Test-CoordinateCorrection $Repo $State.correcao.commit $Ordered $State $CorrectionIds) } else { $null -ne $State.commit -and (Test-CoordinateCommit $Repo $State.commit $Ordered $State.integracao) }
+    $committed = $valid -and $State.integracao.proof.resultado -ceq 'verde' -and $commitValid
     return @{ ready = $ready; valid = $valid; committed = $committed }
 }
 
@@ -166,7 +193,9 @@ function Invoke-Coordinate([string]$Repo, [string]$Target, [string]$Text, $Fila,
     $path = Get-CoordinatePath $Repo "$Target/execution.json"
     $state = Read-CoordinateState $path $graph $Repo $Target
     $ordered = @($graph.Keys | Sort-Object { [int]$_.Substring(1) })
-    $validity = Get-CoordinateValidity $Repo $graph $state $ordered
+    $reviewPath = Get-CoordinatePath $Repo "$Target/review.md"
+    $correctionIds = @(if ($null -ne $Review -and $Review.legivel -and [IO.File]::Exists($reviewPath)) { [regex]::Matches([IO.File]::ReadAllText($reviewPath), '(?m)^\s*- \[[ x]\] (R[1-9]\d*): \*\*(?:Critical|Required)\*\*') | ForEach-Object { $_.Groups[1].Value } })
+    $validity = Get-CoordinateValidity $Repo $graph $state $ordered $correctionIds
     if ($Operation) {
         if ($Details -or $Text -cnotmatch '(?m)^# Status:\s*aprovado\s*$') { Stop-Coordinate 'mutação exige plan aprovado e sem details' }
         if (-not (Test-CoordinateActor $Actor)) { Stop-Coordinate 'executor inválido' }
@@ -183,19 +212,26 @@ function Invoke-Coordinate([string]$Repo, [string]$Target, [string]$Text, $Fila,
                 $proof = New-CoordinateProof $Repo $Target
                 foreach ($row in $state.tasks.Values) { foreach ($relative in $row.proof.inputs.Keys) { if ($relative -cnotin $proof.inputs.Keys) { Stop-Coordinate 'integração não cobre inputs locais' } } }
                 $origin = if ($state.integracao) { $state.integracao.origem } else { $proof.head }
+                $inputsChanged = $state.integracao -and ($proof.inputs.Count -ne $state.integracao.proof.inputs.Count -or @($proof.inputs.Keys | Where-Object { $_ -cnotin $state.integracao.proof.inputs.Keys -or $proof.inputs[$_] -cne $state.integracao.proof.inputs[$_] }).Count)
+                if (-not $state.ContainsKey('correcao') -and $state.commit -and $inputsChanged -and (Test-CoordinateCommit $Repo $state.commit $ordered $state.integracao)) {
+                    $state.correcao = @{ base = $state.integracao.proof; commit = $null }
+                }
                 $state.integracao = @{ actor = $Actor; proof = $proof; origem = $origin }
             }
             'commit' {
                 if (-not $validity.valid -or $state.integracao.proof.resultado -cne 'verde') { Stop-Coordinate 'commit exige integração verde atual' }
                 $found = $null
-                foreach ($sha in ((Invoke-CoordinateGit $Repo @('log','--format=%H')) -split "`n")) { if (Test-CoordinateCommit $Repo $sha $ordered $state.integracao) { $found = $sha; break } }
+                foreach ($sha in ((Invoke-CoordinateGit $Repo @('log','--format=%H')) -split "`n")) {
+                    $matches = if ($state.ContainsKey('correcao')) { Test-CoordinateCorrection $Repo $sha $ordered $state $correctionIds } else { Test-CoordinateCommit $Repo $sha $ordered $state.integracao }
+                    if ($matches) { $found = $sha; break }
+                }
                 if (-not $found) { Stop-Coordinate 'commit integrado não encontrado' }
-                $state.commit = $found
+                if ($state.ContainsKey('correcao')) { $state.correcao.commit = $found } else { $state.commit = $found }
             }
             default { Stop-Coordinate 'operação inválida' }
         }
         if ($Operation -cne 'init' -or -not [IO.File]::Exists($path)) { Save-CoordinateState $path $state }
-        $validity = Get-CoordinateValidity $Repo $graph $state $ordered
+        $validity = Get-CoordinateValidity $Repo $graph $state $ordered $correctionIds
     }
     $pending = @($ordered | Where-Object { $_ -cnotin $validity.ready })
     $eligible = @($pending | Where-Object { @($graph[$_] | Where-Object { $_ -cnotin $validity.ready }).Count -eq 0 })
@@ -205,7 +241,8 @@ function Invoke-Coordinate([string]$Repo, [string]$Target, [string]$Text, $Fila,
     $Fila.bloqueadas = @($pending | Where-Object { $_ -cnotin $eligible } | ForEach-Object { @{ id = $_; deps = @($graph[$_] | Where-Object { $_ -cnotin $validity.ready }) } })
     $stage = if ($pending.Count) { if ($eligible.Count) { 'implementar' } else { 'bloqueada' } } elseif (-not $validity.valid) { 'validar' } elseif ($state.integracao.proof.resultado -cne 'verde') { 'corrigir_validacao' } elseif (-not $validity.committed) { 'commitar_integracao' } else { Get-Etapa $Fila $Review }
     if ($null -ne $Review -and -not $Review.legivel) { $stage = $null } elseif ($null -ne $Review -and $Review.bloqueiosAbertos) { $stage = 'corrigir' }
-    $summary = @{ protocolo = $script:CoordinateProtocol; modo = 'A'; registro = "$Target/execution.json"; tasks = @($ordered | ForEach-Object { @{ id = $_; local_valida = $_ -cin $validity.ready } }); integracao = @{ prova_valida = $validity.valid; commit_encontrado = if ($validity.committed) { $state.commit } else { $null } }; avisos = @() }
+    $currentCommit = if ($state.ContainsKey('correcao')) { $state.correcao.commit } else { $state.commit }
+    $summary = @{ protocolo = $script:CoordinateProtocol; modo = 'A'; registro = "$Target/execution.json"; tasks = @($ordered | ForEach-Object { @{ id = $_; local_valida = $_ -cin $validity.ready } }); integracao = @{ prova_valida = $validity.valid; commit_encontrado = if ($validity.committed) { $currentCommit } else { $null } }; avisos = @() }
     if ($Details) { $summary.detalhes = $state }
     return @{ execucao = $summary; etapa = $stage }
 }

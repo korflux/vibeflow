@@ -129,6 +129,74 @@ class ExecutionContracts(unittest.TestCase):
         self.assertEqual(self.invoke()['etapa'], 'corrigir_validacao')
         self.invoke('commit', actor='finalizer', success=False)
 
+    def test_review_correction_commit_preserves_original_and_returns_to_review(self):
+        self.locals()
+        self.invoke('integracao', inputs=['core.py', 'consumer.py'], command='check', result='verde', actor='verifier')
+        baseline = json.loads(self.record.read_text(encoding='utf-8'))['integracao']
+        self.git('add', '--', '.vibeflow')
+        self.git('commit', '-qm', 'task(T1,T2): verified')
+        original = self.git('rev-parse', 'HEAD')
+        self.invoke('commit', actor='finalizer')
+        # Repeating a valid proof without changes never creates a correction gate.
+        self.invoke('integracao', inputs=['core.py', 'consumer.py'], command='check', result='verde', actor='verifier')
+        self.assertNotIn('correcao', json.loads(self.record.read_text(encoding='utf-8')))
+        self.assertEqual(self.invoke()['etapa'], 'revisar')
+        review = self.phase / 'review.md'
+        review.write_text('# Status: request-changes\n- [ ] R1: **Required** - fix core\n## Veredito vigente\n- [x] **Request changes**: R1\n', encoding='utf-8')
+        self.assertEqual(self.invoke()['etapa'], 'corrigir')
+        (self.repo / 'core.py').write_text('value = 2\n', encoding='utf-8')
+        self.invoke('local', 'T1', ['core.py'], 'check', 'verde', 'corrector')
+        self.invoke('integracao', inputs=['core.py', 'consumer.py'], command='check', result='verde', actor='verifier')
+        renewed = json.loads(self.record.read_text(encoding='utf-8'))
+        self.assertEqual(renewed['commit'], original)
+        self.assertEqual(renewed['integracao']['origem'], baseline['origem'])
+        self.assertEqual(renewed['correcao']['base']['inputs'], baseline['proof']['inputs'])
+        self.invoke('commit', actor='finalizer', success=False)  # Green uncommitted code is insufficient.
+        self.git('add', '--', 'core.py')
+        self.git('commit', '-qm', 'task(T1,T2): false reintegration')
+        self.invoke('commit', actor='finalizer', success=False)
+        self.git('commit', '--allow-empty', '-qm', 'task(R999): unknown finding')
+        self.invoke('commit', actor='finalizer', success=False)
+        (self.repo / 'core.py').write_text('value = 3\n', encoding='utf-8')
+        self.git('add', '--', 'core.py')
+        self.git('commit', '-qm', 'task(R1): wrong blobs')
+        (self.repo / 'core.py').write_text('value = 2\n', encoding='utf-8')
+        self.invoke('commit', actor='finalizer', success=False)
+        self.git('add', '--', 'core.py')
+        self.git('commit', '-qm', 'task(R1): corrected')
+        correction = self.git('rev-parse', 'HEAD')
+        committed = self.invoke('commit', actor='finalizer')
+        self.assertEqual(committed['etapa'], 'corrigir')  # Only review owns closing R1.
+        state = json.loads(self.record.read_text(encoding='utf-8'))
+        self.assertEqual(state['commit'], original)
+        self.assertEqual(state['correcao']['commit'], correction)
+        self.assertEqual(committed['execucao']['integracao']['commit_encontrado'], correction)
+        review.write_text(review.read_text(encoding='utf-8').replace('[ ] R1:', '[x] R1:'), encoding='utf-8')
+        self.assertEqual(self.invoke()['etapa'], 'revisar')
+        review.write_text('# Status: rascunho\n- [x] R1: **Required** - fixed\n## Veredito vigente\n- [x] **Approve**: verified\n', encoding='utf-8')
+        self.assertEqual(self.invoke()['etapa'], 'confirmar')
+        (self.repo / 'core.py').write_text('value = 4\n', encoding='utf-8')
+        self.assertEqual(self.invoke()['fila']['concluidas'], [])
+        self.invoke('commit', actor='finalizer', success=False)
+
+    def test_correction_schema_refuses_invalid_baseline_without_writing(self):
+        self.locals()
+        self.invoke('integracao', inputs=['core.py', 'consumer.py'], command='check', result='verde', actor='verifier')
+        self.git('add', '--', '.vibeflow')
+        self.git('commit', '-qm', 'task(T1,T2): verified')
+        self.invoke('commit', actor='finalizer')
+        original = json.loads(self.record.read_text(encoding='utf-8'))
+        proof = original['integracao']['proof']
+        invalid = [None, {}, {'base': proof, 'commit': True},
+                   {'base': dict(proof, resultado='falha'), 'commit': None},
+                   {'base': dict(proof, inputs={'../core.py': 'a' * 40}), 'commit': None}]
+        for correction in invalid:
+            with self.subTest(correction=correction):
+                content = json.dumps(dict(original, correcao=correction))
+                self.record.write_text(content, encoding='utf-8')
+                self.invoke(success=False)
+                self.assertEqual(self.record.read_text(encoding='utf-8'), content)
+
     def test_corruption_types_duplicates_limits_and_unknown_task(self):
         self.invoke('init', actor='finalizer')
         original = json.loads(self.record.read_text(encoding='utf-8'))
