@@ -1,6 +1,6 @@
 # Review: coordenação estratégica
 # Alvo: phase-17-coordenacao-estrategica
-# Status: request-changes
+# Status: aprovado
 
 ## Contexto
 
@@ -27,7 +27,7 @@
 | Subagentes que trabalham em conjunto; complemento humano, A2 | referências de delegação, skill e template do plan delimitam interlocução direta, preparação conjunta e ownership | Ensaio cobre investigação de contrato compartilhado, reutilização de implementador e independência do verificador/revisor | atendido |
 | Plan enxuto e retomada; proposta aprovada, A3 | template novo não contém snapshots; execution.json é mantido mecanicamente e detalhes são opt-in | Testes de ausência/init, retomada, corrupção, invalidação e leitura sem escrita; código inspecionado | atendido |
 | Paridade e preservação de histórico, A4/C1 | motores Python/PowerShell selecionam protocolo explícito; etapas-v1 e B mantêm leitores anteriores | Suítes válidas e leitura da própria phase17 etapas-v1; fixtures testam CLI/disco, não presença de prosa | atendido |
-| Validação independente, finalizador e fechamento completo após correções; proposta aprovada, A5/C2 | Papéis e confirmação estão definidos, mas o gate de commit do novo protocolo perde a conclusão após correção R* que modifica input | R1: commit original é comparado com blobs da prova renovada, enquanto commit R* não satisfaz o prefixo exigido | parcial |
+| Validação independente, finalizador e fechamento completo após correções; proposta aprovada, A5/C2 | Papéis e confirmação preservados; correção separa prova histórica T* e prova atual R*, mantendo gates de ancestralidade e blobs reais | R1 fechado na Etapa 2; jornada CLI/disco nos dois motores retorna a revisar/confirmar após commit R* e recusa código verde não commitado | atendido |
 
 ## Checklist de correções
 
@@ -43,21 +43,21 @@
 ## Notas
 
 - O ensaio comportamental anterior certificou as instruções e os cenários solicitados, não o ciclo mecânico pós-correção agora identificado.
-- Os testes existentes exercitam invalidação e preservação da origem, mas não completam a jornada integração → correção R* commitada → nova review.
+- Na Etapa 1 faltava a jornada integração → correção R* commitada → nova review; a Etapa 2 conferiu sua inclusão e a prova independente verde.
 - A frase final do plan sobre commit pendente é anterior à finalização; o motor e Git comprovaram o commit real. Não é bloqueio técnico.
 - Não há novos IDs de decisões vigentes propostos na spec; nenhuma publicação em AGENTS.md foi feita ou autorizada por esta review.
 
 ## Veredito vigente
 
-- [ ] **Approve**: pendente da correção de R1 e nova review.
-- [x] **Request changes**: R1 Required aberto; cobertura de A5/C2 parcial.
+- [x] **Approve**: origem suficiente, obrigações atendidas e R1 comprovadamente fechado na Etapa 2; nenhum Critical/Required aberto. Aprovação humana confirmada neste chat.
+- [ ] **Request changes**: nenhum bloqueio aberto.
 
 ## Handoff
 
-vibe-implement: corrigir R1, renovar somente provas afetadas, registrar a correção conforme etapas-v1 desta phase e solicitar nova review independente.
+Finalização Git da phase autorizada pelo humano; C2 comprovada. Auditoria das configurações locais e atualização das instalações VibeFlow também autorizadas no mesmo pedido.
 
-- [ ] Aprovação humana (leu o arquivo e confirmou)
-- Confirmação final, publicação de decisões e push continuam fechados. O revisor não opera índice, commits ou push e não altera spec/plan/AGENTS.
+- [x] Aprovação humana: confirmou review, commit de tudo e push neste chat.
+- Confirmação final e push autorizados; nenhuma decisão vigente nova a publicar. O revisor não opera Git; esta phase etapas-v1 mantém finalização pelo coordenador.
 
 ## Etapas
 
@@ -73,3 +73,19 @@ vibe-implement: corrigir R1, renovar somente provas afetadas, registrar a corre�
 - Critical encontrados: nenhum.
 - Decisões vigentes propostas: nenhuma.
 - Veredito desta etapa: Request changes.
+
+### Etapa 2 - re-review - correção R1, rodada 1
+
+- Tipo: final; delta `78c781567f01c2a82f51727766b5f14132717d1f..c4cd4a61af0dd8815832cd097c80af372d1bf3fc`, commit `task(R1): preserva integracao ao comprovar correcoes de review`.
+- Fila: T1/T2 concluídas; leitura do motor confirmou integração válida, etapa revisar, uma rodada e nenhum aviso antes desta atualização.
+- Inspeção: `correcao.base` preserva a prova histórica usada para validar o T* original; `correcao.commit` identifica o R* atual, sem substituir commit/origem originais. Os dois motores exigem ancestralidade, IDs R* conhecidos e ordenados e blobs iguais à prova renovada. O novo campo é opcional, preservando registros anteriores; validação estrita e limites continuam aplicados.
+- Provas reaproveitadas: verificador independente registrou `python docs/vibe-implement/tests/test-execution.py -v` com 22 casos OK e `python docs/vibe-implement/tests/test-implement.py -v` com 62 casos OK, incluindo os dois motores. Os 22 estão contidos na suíte de 62, não são somados novamente. Demais provas preservadas e cobertura final de 157 casos distintos conforme plan; Gitleaks dir, diff-check e limpeza de fixtures verdes.
+- Testes conferidos: jornada real CLI/disco inclui preservação da base/origem, revalidação sem alteração, correção com input alterado, recusa sem commit, recusa de título T* indevido/ID R* desconhecido/blobs errados, commit R* válido, retorno a revisar/confirmar e invalidação por nova edição; caso adicional recusa schema/base inválidos sem escrita.
+- Prova executada nesta etapa: leitura `pwsh -NoProfile -File vibe-implement/scripts/implement.ps1 -Dir phase-17-coordenacao-estrategica` para conferir inputs/estado; consulta somente leitura do commit real. Não foi repetida a matriz certificada.
+- Cobertura: matriz atualizada para A5/C2 atendidos; origem e julgamento dos recortes inalterados preservados. A marca administrativa C2 permanece com o coordenador.
+- Abriu: nenhum.
+- Fechou: R1, marcação prévia do coordenador aceita após conferência do delta e das provas.
+- Critical encontrados: nenhum.
+- Decisões vigentes propostas: nenhuma.
+- Veredito desta etapa: Approve final.
+- Aprovação humana e push: pendentes; status rascunho, sem operação Git de escrita pelo revisor.

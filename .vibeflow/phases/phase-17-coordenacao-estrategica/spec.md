@@ -35,7 +35,7 @@ Verificador comprova integração; finalizador registra conclusões e faz commit
 - [x] A4: motores Python/PowerShell suportam novo protocolo com paridade, validação segura e preservação dos protocolos históricos.
 - [x] A5: finalizador opera registros/Git com exclusividade e mantém gate humano de fechamento/push.
 - [x] C1: testes exercitam scripts e efeitos em fixtures isoladas, incluindo falhas e compatibilidade; nenhum teste de palavras em documentação.
-- [ ] C2: contrato, skills consumidoras, templates e distribuição coerentes e review independente concluída.
+- [x] C2: contrato, skills consumidoras, templates e distribuição coerentes e review independente concluída.
 
 ## Contratos e restrições necessárias
 Registro operacional versionado junto da fase para retomada em outro checkout; logs extensos não entram no plan. Uma fonte por fato: plan define trabalho, execution.json guarda execução, review guarda achados e Git guarda commits. Escrita atômica e rejeição de caminhos fora da raiz, links/reparse, schema desconhecido, tipos inválidos e tarefas inexistentes. Entradas locais são não confiáveis; allowlist de operações/campos/estados e limites de tamanho definidos no contrato do motor antes da implementação. Não executar comando fornecido no registro nem armazenar segredos. Auth, banco, CORS e CSP: N/A, CLI local sem serviço web.
