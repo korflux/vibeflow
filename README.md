@@ -219,7 +219,7 @@ vibe-<nome>/
 5. Não inventar path de artefato fora de `.vibeflow/phases/phase-N-slug/`; a única exceção é o baseline fixo `.vibeflow/mvp/`. Manter `AGENTS.md` como única fonte de regras do projeto.
 6. Inventários são JSON transitório no stdout. O init mantém relatório/pending ignorados para retomada; no novo Modo A, execution.json é estado operacional versionado junto dos artefatos vivos, sem snapshots no plan.
 
-Versão dos manifests: `6.0.0`. O Antigravity mantém o schema mínimo sem campo de versão.
+Versão dos manifests: `6.0.1`. O Antigravity mantém o schema mínimo sem campo de versão.
 
 PR contra `main`. Mudança de contrato (path, schema do relatório, flag pública) é Major; o resto segue o semver em `AGENTS.md`.
 

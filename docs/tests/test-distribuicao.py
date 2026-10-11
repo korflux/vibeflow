@@ -23,7 +23,7 @@ SKILLS = (
 )
 CANONICAL_SKILL_PATHS = [f"./{name}" for name in SKILLS]
 ANTIGRAVITY_SCHEMA = "https://antigravity.google/schemas/v1/plugin.json"
-CONTRACT_VERSION = "6.0.0"
+CONTRACT_VERSION = "6.0.1"
 # Skills que delegam e carregam a mesma cópia do contrato de delegação.
 DELEGATION_COPIES = ("vibe-plan/references/delegation.md", "vibe-implement/references/delegation.md")
 

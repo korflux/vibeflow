@@ -12,6 +12,8 @@ A raiz física identifica o pacote que já forneceu o motor executado. Resolver 
 
 O relatório separa instalação no disco de disponibilidade na sessão. A IA confere as ferramentas antes de delegar e orienta recarga quando o host não descobriu os novos papéis. Os perfis de projeto podem prevalecer sobre os pessoais. Os modelos e esforços de referência permanecem explícitos; indisponibilidade não autoriza substituição. Codex usa TOML e Claude usa frontmatter Markdown; ambos apontam para a skill descoberta pelo host, sem paths pessoais.
 
+Os perfis Claude de explorador e verificador permitem `SendMessage` para colaboração direta entre subagentes. O verificador assume a conferência de diff e aceite junto das provas, mantendo as restrições de escrita e Git. Essa comunicação não exige habilitar Agent Teams.
+
 `AGENTS.md` virou fonte única para evitar três arquivos com o mesmo conteúdo. A ponte Antigravity continua curta e referencia a fonte da raiz. `CLAUDE.md` e os antigos `REGRAS.md` não são criados; na migração, cópias idênticas saem após backup e fontes diferentes permanecem até o conteúdo ser consolidado.
 
 O AGENTS de referência enviado pelo usuário mostra uma estrutura útil: comandos reais de instalação e verificação, mapa de diretórios, invariantes dos fluxos e pontos de mudança frequentes. O template incorpora essas categorias como SLOTs. Stack, paths, comandos e regras do projeto de origem não entram no VibeFlow.

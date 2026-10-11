@@ -117,7 +117,7 @@ class InitContracts(unittest.TestCase):
                         self.assertTrue(set(metadata) <= {"name", "description", "model", "effort", "tools"})
                         model = "haiku" if role in ("explorador", "verificador") else "opus" if role == "revisor" else "sonnet"
                         self.assertEqual("medium" if role == "revisor" else "xhigh", metadata["effort"])
-                        if role == "explorador": self.assertEqual("Read, Grep, Glob", metadata["tools"])
+                        if role == "explorador": self.assertEqual("Read, Grep, Glob, SendMessage", metadata["tools"])
                     self.assertEqual(role, metadata["name"])
                     self.assertEqual(model, metadata["model"])
                     self.assertTrue(isinstance(metadata["description"], str))
