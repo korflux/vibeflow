@@ -28,7 +28,8 @@ $script:MaxSlug = 48
 $script:AvisoSemConcluida = 'sem linha concluída'
 # Marcas do review.md lidas só para derivar a etapa; o conteúdo semântico do arquivo não é interpretado.
 $script:ReviewStatusRe = [regex]::new('^# Status:\s*([^\s]+)\s*$', 'Multiline, IgnoreCase')
-$script:OpenBlockerRe = [regex]::new('^\s*- \[ \] R\d+: \*\*(?:Critical|Required)\*\*')
+# R* identifica uma correção; severidade somente informa impacto e prioridade.
+$script:OpenBlockerRe = [regex]::new('^\s*- \[ \] R[1-9]\d*:')
 $script:ApproveMarkRe = [regex]::new('^\s*- \[[xX]\] \*\*Approve(?: com defer)?\*\*')
 $script:VereditoVigenteRe = [regex]::new('^##\s+Veredito vigente\s*$')
 $script:EtapaHeadingRe = [regex]::new('^### Etapa\b')
@@ -451,7 +452,7 @@ function Get-ExecutionEtapa($Fila, $Review, $Execution) {
 }
 
 # Conta as correções já aplicadas. Cada etapa com veredito Request changes soma 1; a última não conta
-# enquanto houver Critical ou Required em [ ], porque a correção que ela pediu ainda está pendente.
+# enquanto houver R* em [ ], porque a correção que ela pediu ainda está pendente.
 function Get-CorrectionRounds([string[]]$Lines, [bool]$BlockersOpen) {
     $verdicts = New-Object System.Collections.Generic.List[string]
     $inEtapas = $false
@@ -530,8 +531,8 @@ function Get-Etapa($Fila, $Review) {
     }
     if ($null -ne $Review) {
         if (-not $Review.legivel) { return $null }
-        if ($Review.status -eq 'aprovado') { return 'concluida' }
         if ($Review.bloqueiosAbertos) { return 'corrigir' }
+        if ($Review.status -eq 'aprovado') { return 'concluida' }
     }
     if (@($Fila.abertas).Count -eq 0) {
         if ($null -ne $Review -and $Review.aprovacaoMarcada) { return 'confirmar' }

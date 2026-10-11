@@ -41,7 +41,8 @@ AVISO_SEM_CONCLUIDA = "sem linha concluída"
 
 # Marcas do review.md lidas só para derivar a etapa; o conteúdo semântico do arquivo não é interpretado.
 REVIEW_STATUS_RE = re.compile(r"^# Status:\s*([^\s]+)\s*$", re.MULTILINE | re.IGNORECASE)
-OPEN_BLOCKER_RE = re.compile(r"^\s*- \[ \] R\d+: \*\*(?:Critical|Required)\*\*")
+# R* identifica uma correção; severidade somente informa impacto e prioridade.
+OPEN_BLOCKER_RE = re.compile(r"^\s*- \[ \] R[1-9]\d*:")
 APPROVE_MARK_RE = re.compile(r"^\s*- \[[xX]\] \*\*Approve(?: com defer)?\*\*")
 VEREDITO_VIGENTE_RE = re.compile(r"^##\s+Veredito vigente\s*$")
 ETAPA_HEADING_RE = re.compile(r"^### Etapa\b")
@@ -493,7 +494,7 @@ def execution_etapa(fila: dict[str, Any], review: dict[str, Any] | None, executi
 
 
 # Conta as correções já aplicadas. Cada etapa com veredito Request changes soma 1; a última não conta
-# enquanto houver Critical ou Required em [ ], porque a correção que ela pediu ainda está pendente.
+# enquanto houver R* em [ ], porque a correção que ela pediu ainda está pendente.
 def count_correction_rounds(lines: list[str], blockers_open: bool) -> int:
     verdicts: list[str | None] = []
     in_etapas = False
@@ -563,10 +564,10 @@ def derive_etapa(fila: dict[str, Any] | None, review: dict[str, Any] | None) -> 
     if review is not None:
         if not review["legivel"]:
             return None
-        if review["status"] == "aprovado":
-            return "concluida"
         if review["bloqueios_abertos"]:
             return "corrigir"
+        if review["status"] == "aprovado":
+            return "concluida"
     if not fila["abertas"]:
         return "confirmar" if review is not None and review["aprovacao_marcada"] else "revisar"
     return "implementar" if fila["elegiveis"] else "bloqueada"

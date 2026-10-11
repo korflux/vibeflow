@@ -22,7 +22,7 @@ A IA começa recuperando a solicitação original e suas alterações humanas; d
 
 Um slug explícito expressa outro pedido e deve prevalecer sobre a sugestão automática do inventário. Preview e apply conservam essa seleção para evitar que um plan pendente de outra entrega absorva a review avulsa. Slug e dir juntos são ambíguos e recusados antes de escrita.
 
-O defer adia apenas melhorias não bloqueantes identificadas, com motivo e retomada registrados. Ele não substitui atendimento da solicitação, contexto suficiente ou correção de Critical/Required.
+Toda correção pertinente, inclusive nit, precisa ser resolvida antes de aprovar. A severidade conserva a informação de impacto e prioridade, mas deixa de autorizar dispensa. R* Optional/FYI históricos seguem obrigatórios quando abertos; novas informações sem remédio ficam em Notas, sem R*. Preserve o histórico sem oferecer defer em novas etapas. Preferência pessoal sem fundamento não entra como achado.
 
 ## Escrita direta e etapas
 
@@ -36,7 +36,7 @@ Re-review começa pelo remédio aplicado e seus consumidores/dependências. O ju
 
 Checkpoint só ocorre no marco declarado e justificado pelo `plan.md`, depois que as tasks desse marco estão concluídas. Ele verifica o contrato compartilhado ou risco antes das tasks seguintes. A fila ainda aberta fica explícita; o resultado limita-se ao marco, mantém a fase em andamento e não libera decisão, commit residual ou push.
 
-A review final aguarda todas as T* concluídas, julga os critérios de aceite sobre o código integrado e revisa os riscos tocados pelo diff. Provas verdes por task são reaproveitadas quando os inputs cobertos continuam iguais e o estado atual continua no escopo. Uma edição posterior em código/teste invalida somente a prova afetada; atualizar os artefatos de registro não a invalida. A review executa somente o que falta para provar a integração ou um risco alterado, evitando rodar a matriz completa de cada T* por padrão.
+A review final aguarda todas as T* concluídas, julga os critérios de aceite sobre o código integrado e revisa os riscos tocados pelo diff. Provas verdes por task são reaproveitadas quando os inputs cobertos continuam iguais e o estado atual continua no escopo. Uma edição posterior em código/teste invalida somente a prova afetada; atualizar os artefatos de registro não a invalida. A review executa somente o que falta para provar a integração ou um risco alterado, evitando rodar a matriz completa de cada T* por padrão. Implementador verifica localmente fluxo/consumidores; verificador certifica integração proporcional e revisor audita cobertura/validade. Integração não implica suíte completa, cuja necessidade vem de risco, consumidores afetados, lacuna concreta ou CI obrigatório e exige motivo registrado. Troca de etapa ou papel não justifica repetição. Simplificação, reutilização, remoção de redundância e otimização de desempenho fundamentada permanecem no recorte, com comportamento, segurança e cobertura preservados e sem abstração especulativa ou limpeza externa.
 
 ## Finalização Git
 

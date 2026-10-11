@@ -194,7 +194,8 @@ function Invoke-Coordinate([string]$Repo, [string]$Target, [string]$Text, $Fila,
     $state = Read-CoordinateState $path $graph $Repo $Target
     $ordered = @($graph.Keys | Sort-Object { [int]$_.Substring(1) })
     $reviewPath = Get-CoordinatePath $Repo "$Target/review.md"
-    $correctionIds = @(if ($null -ne $Review -and $Review.legivel -and [IO.File]::Exists($reviewPath)) { [regex]::Matches([IO.File]::ReadAllText($reviewPath), '(?m)^\s*- \[[ x]\] (R[1-9]\d*): \*\*(?:Critical|Required)\*\*') | ForEach-Object { $_.Groups[1].Value } })
+    # Reconhece os mesmos R* abertos/fechados da fila, inclusive classificações históricas.
+    $correctionIds = @(if ($null -ne $Review -and $Review.legivel -and [IO.File]::Exists($reviewPath)) { [regex]::Matches([IO.File]::ReadAllText($reviewPath), '(?m)^\s*- \[[ xX]\] (R[1-9]\d*):') | ForEach-Object { $_.Groups[1].Value } })
     $validity = Get-CoordinateValidity $Repo $graph $state $ordered $correctionIds
     if ($Operation) {
         if ($Details -or $Text -cnotmatch '(?m)^# Status:\s*aprovado\s*$') { Stop-Coordinate 'mutação exige plan aprovado e sem details' }

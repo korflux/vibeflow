@@ -42,4 +42,6 @@ Bloqueio imediato. Falhas exploráveis ou perda de dados/segredos:
 |---|---|---|
 | **Critical** | Falha de injeção, bypass de auth/IDOR, vazamento de segredo ou perda de dados. | Sim |
 | **Required** | Falta de limite de tamanho, ausência de validação de borda, CORS excessivo, log verboso de dados. | Sim |
-| **Nit / FYI** | Sugestão de defense-in-depth adicional, ajuste cosmético de mensagem sem risco direto. | Não |
+| **Nit** | Correção fundamentada de defesa adicional ou mensagem dentro da entrega. | Sim, enquanto R* estiver aberto |
+
+Informação sem remédio fica em Notas, sem R*. Optional/FYI legados com R* aberto também bloqueiam aprovação. Não transforme preferência ou endurecimento especulativo em correção.

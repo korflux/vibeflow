@@ -10,14 +10,15 @@ Abrir no fechamento da fatia, não no boot.
 - Roda em runtime, não só typecheck
 - Comportamento novo coberto por prova executável capaz de detectar sua ausência, reutilizada ou ampliada quando possível. Não rebaixe esta barra para leitura de arquivo
 - Comando da Verificação da T* verde. Passo só manual não conta
-- Prova final executada após as edições de código/teste; repita somente a prova afetada por falha ou mudança em seus inputs
-- Sem regressão na prova executável relevante; amplie a cobertura quando o risco ou a integração exigir
+- Prova suficiente do estado final de código/teste, executada ou reaproveitada com cobertura e inputs válidos; repita somente a prova afetada por falha ou mudança em seus inputs
+- Sem regressão na prova executável relevante. Implementador verifica o fluxo/consumidores tocados; verificador certifica integração proporcional e revisor audita evidências. Suíte completa exige risco, consumidores afetados, lacuna concreta ou CI obrigatório; nova etapa ou novo papel não exige repetição
 - Testes da jornada tocada exercitam o fluxo completo e seus resultados observáveis quando possível. Casos fragmentados e redundantes são consolidados sem perder cenários e afirmações relevantes; riscos independentes mantêm prova própria
 - Quando o aceite depende de aparência, layout, responsividade ou comportamento renderizado de UI web, prova focada no browser (ver `chrome-devtools.md`). Se não depender, o `plan.md` registra por que a prova automatizada é suficiente.
 
 ## Quality
 
 - Sem escopo extra (`NOTICED BUT NOT TOUCHING`)
+- Simplificação, reutilização e remoção de redundância no código tocado; otimização de desempenho fundamentada quando necessária, preservando controles, comportamento e cobertura, sem abstração especulativa
 - Comentário semântico no que não é óbvio (papel, porquê)
 - Lint/format do repo se existirem
 

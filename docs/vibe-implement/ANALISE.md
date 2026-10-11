@@ -24,7 +24,9 @@ plan aprovado + modo → finalizador obtém resumo do motor
   → finalizador fecha review/decisões autorizadas/Git/push
 ```
 
-Não existe passagem obrigatória de complementar testes. O implementador cobre seu resultado; verificador identifica lacunas concretas de integração. Não se elimina teste necessário nem se executa matriz completa por task. Seleção considera diff, consumidores, risco e aceite; provas verdes de inputs inalterados são reaproveitadas. UI exige inspeção renderizada quando o aceite depender dela.
+Não existe passagem obrigatória de complementar testes. O implementador cobre seu resultado; verificador identifica lacunas concretas de integração. Não se elimina teste necessário nem se executa matriz completa por task. Implementador comprova localmente o fluxo e consumidores afetados; verificador certifica integração proporcional, que não implica suíte completa. Revisor audita código/cobertura/validade e executa somente lacunas. Suíte completa exige risco, consumidores afetados, lacuna concreta ou CI obrigatório e motivo registrado. A troca de etapa ou papel não justifica repetição. Seleção considera diff, consumidores, risco e aceite; provas verdes de inputs inalterados são reaproveitadas. UI exige inspeção renderizada quando o aceite depender dela.
+
+Simplificação, reutilização e remoção de redundância continuam no recorte autorizado. Otimização de desempenho cabe quando a necessidade for demonstrável, preservando comportamento, segurança e cobertura, sem abstração especulativa ou limpeza externa.
 
 ## Colaboração e independência
 

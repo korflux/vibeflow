@@ -211,7 +211,8 @@ def coordinate(repo, target, text, args, fila, review, split, deps_parser, repar
     state = load(path, graph, repo, reparse, target)
     ordered = sorted(graph, key=lambda tid: int(tid[1:]))
     review_path = safe_path(repo, target + "/review.md", reparse)
-    correction_ids = set(re.findall(r"(?m)^\s*- \[[ x]\] (R[1-9]\d*): \*\*(?:Critical|Required)\*\*", review_path.read_text(encoding="utf-8-sig"))) if review is not None and review["legivel"] and review_path.is_file() else set()
+    # Reconhece os mesmos R* abertos/fechados da fila, inclusive classificações históricas.
+    correction_ids = set(re.findall(r"(?m)^\s*- \[[ xX]\] (R[1-9]\d*):", review_path.read_text(encoding="utf-8-sig"))) if review is not None and review["legivel"] and review_path.is_file() else set()
     # Invalidação é projetada, sem apagar a evidência ou modificar arquivo na leitura.
     def projection():
         ready = {tid for tid, row in state["tasks"].items() if snapshot_valid(repo, row["proof"]) and row["proof"]["resultado"] == "verde"}

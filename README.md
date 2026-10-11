@@ -219,7 +219,9 @@ vibe-<nome>/
 5. Não inventar path de artefato fora de `.vibeflow/phases/phase-N-slug/`; a única exceção é o baseline fixo `.vibeflow/mvp/`. Manter `AGENTS.md` como única fonte de regras do projeto.
 6. Inventários são JSON transitório no stdout. O init mantém relatório/pending ignorados para retomada; no novo Modo A, execution.json é estado operacional versionado junto dos artefatos vivos, sem snapshots no plan.
 
-Versão dos manifests: `6.0.1`. O Antigravity mantém o schema mínimo sem campo de versão.
+Versão dos manifests: `7.0.0`. O Antigravity mantém o schema mínimo sem campo de versão.
+
+Na implementação, código e testes recebem prova local do fluxo afetado; a verificação certifica integração proporcional e a review audita código, cobertura e evidências válidas, executando somente lacunas. Suíte completa exige risco, consumidores afetados, lacuna concreta ou CI obrigatório. Simplificação e otimização fundamentada permanecem no recorte. Toda correção R* aberta, inclusive nit e classificações legadas, bloqueia aprovação; novas reviews não oferecem defer.
 
 PR contra `main`. Mudança de contrato (path, schema do relatório, flag pública) é Major; o resto segue o semver em `AGENTS.md`.
 

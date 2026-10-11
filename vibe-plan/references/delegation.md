@@ -9,10 +9,10 @@ Use perfis realmente disponíveis, sem escolher modelo pelo nome. Host sem sele�
 | Papel | Entrega | Escrita autorizada |
 |---|---|---|
 | explorador | Fluxo, consumidores, paths e evidências para destravar decisão/implementação | Nenhuma |
-| implementador | Código e testes juntos, checagem local e inputs reais | Código/testes do recorte |
-| verificador | Conferência técnica de diff/ownership/aceite/cobertura e prova integrada independente | Somente saídas normais das provas |
+| implementador | Código e testes juntos, prova local do fluxo/consumidores afetados e inputs reais | Código/testes do recorte |
+| verificador | Conferência técnica de diff/ownership/aceite/cobertura e certificação integrada independente proporcional, reaproveitando provas suficientes válidas | Somente saídas normais das provas |
 | corretor | Correção pela causa raiz e checagens afetadas | Código/testes da correção |
-| revisor | Julgamento independente e cobertura da origem; analyze delegado usa este perfil | review.md ou analyze.md conforme skill |
+| revisor | Julgamento independente de código, cobertura da origem e validade de evidências; executa somente lacunas. Analyze delegado usa este perfil | review.md ou analyze.md conforme skill |
 | finalizador (novo Modo A) | Registro de evidências certificadas, resumo curto e operações Git delimitadas | execution.json, plan/spec e artefatos de fechamento autorizados; índice exclusivo |
 
 ## Delegar e colaborar
@@ -61,7 +61,7 @@ Todos os papéis proíbem:
 
 ## Conferência e registro
 
-Verificador confere paths, diff, comando/resultado, cobertura e inputs atuais e certifica os recortes. Finalizador preserva autoria/independência dessa evidência e usa o motor para HEAD/hashes/validade; não escolhe cobertura nem inventa resultado. Divergência retorna ao papel responsável e renova só provas afetadas, incluindo consumidores/dependências. Coordenador encaminha essa conclusão, sem reabrir evidência inalterada. Histórico pertence a Git/review e snapshots têm o lar definido pela skill, sem cópias no plan novo.
+Verificador confere paths, diff, comando/resultado, cobertura e inputs atuais e certifica os recortes. Finalizador preserva autoria/independência dessa evidência e usa o motor para HEAD/hashes/validade; não escolhe cobertura nem inventa resultado. Divergência retorna ao papel responsável e renova só provas afetadas, incluindo consumidores/dependências. Coordenador encaminha essa conclusão, sem reabrir evidência inalterada. Histórico pertence a Git/review e snapshots têm o lar definido pela skill, sem cópias no plan novo. Nenhum papel executa suíte completa por padrão nem repete prova só por assumir a etapa; ampliação exige risco, consumidores afetados, lacuna concreta ou CI obrigatório e motivo registrado. Integração continua obrigatória e depende de cobertura suficiente dos inputs finais. Mudança ou falha renova somente provas afetadas.
 
 ## Host limitado
 

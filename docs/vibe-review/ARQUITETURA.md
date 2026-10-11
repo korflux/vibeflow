@@ -72,7 +72,11 @@ Aplica os pilares de auditoria ao diff e às superfícies relevantes para o marc
 
 `icon-only` só é aceito para ação universalmente reconhecível, como lixeira para apagar, com nome acessível, foco visível, área de interação e tooltip quando aplicável. Ações ambíguas permanecem textuais.
 
-Approve com defer só permite R* Nit, Optional ou FYI. Cada item permanece aberto no checklist e a linha do veredito identifica R*, fonte/path, motivo e encaminhamento com a condição ou momento de retomada. Critical/Required aberto, obrigação aplicável parcial ou ausente e origem insuficiente bloqueiam qualquer Approve, inclusive com defer. A review final mantém a confirmação humana pendente; defer não retira obrigações da solicitação.
+A review audita código, cobertura e validade das provas locais/integradas já certificadas e executa somente lacunas ou provas invalidadas. Implementador verifica fluxo/consumidores alterados; verificador certifica integração proporcional. Integração não implica suíte completa; ampliação exige risco, consumidores afetados, lacuna concreta ou CI obrigatório e motivo registrado. Mudança ou falha renova somente provas afetadas; troca de etapa ou papel não exige repetição.
+
+Simplificação, reutilização e remoção de redundância permanecem no recorte. Otimização de desempenho fundamentada preserva comportamento, segurança e cobertura, sem abstração especulativa ou limpeza externa.
+
+Toda correção pertinente usa R*, inclusive nit, e bloqueia Approve enquanto aberta. Severidade informa impacto e prioridade, sem dispensar remédio/prova. Optional/FYI históricos com R* continuam sendo correções; notas informativas novas não usam R*. Preferência pessoal sem fundamento não é achado. Novas reviews oferecem somente Approve ou Request changes; defer legado e status aprovado não liberam R* pendente na retomada. Preserve histórico e IDs. Obrigação aplicável parcial/ausente e origem insuficiente também bloqueiam aprovação. A confirmação humana final continua necessária.
 
 ## 7. Chat, testes e handoff
 

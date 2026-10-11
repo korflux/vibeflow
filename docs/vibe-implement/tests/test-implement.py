@@ -154,13 +154,13 @@ ETAPA_CASES: list[dict] = [
         "etapa": "confirmar", "rodadas": 1, "avisos": 0,
     },
     {
-        "nome": "approve-com-defer-de-nit",
+        "nome": "approve-com-defer-nao-adia-nit",
         "plan": FILA_CONCLUIDA,
         "review": review_text(blockers=(NIT_ABERTO,), vigente="Approve com defer", etapas=("Approve com defer",)).replace(
             "**Approve com defer**: texto do template",
             "**Approve com defer**: R3; fonte: `c.py`; motivo: cosmético; retomar na revisão visual",
         ),
-        "etapa": "confirmar", "rodadas": 0, "avisos": 0,
+        "etapa": "corrigir", "rodadas": 0, "avisos": 0,
     },
     {
         # Mesmo marcado como defer, bloqueio Critical permanece na fila de correção.
@@ -228,10 +228,10 @@ ETAPA_CASES: list[dict] = [
         "etapa": "revisar", "rodadas": 0, "avisos": 0,
     },
     {
-        "nome": "nit-aberto-nao-bloqueia",
+        "nome": "nit-aberto-bloqueia",
         "plan": FILA_CONCLUIDA,
         "review": review_text(blockers=(NIT_ABERTO,), etapas=("Marco aprovado",)),
-        "etapa": "revisar", "rodadas": 0, "avisos": 0,
+        "etapa": "corrigir", "rodadas": 0, "avisos": 0,
     },
     {
         "nome": "approve-fora-do-veredito-vigente-nao-conta",
@@ -260,6 +260,29 @@ ETAPA_CASES: list[dict] = [
         "etapa": None, "rodadas": 0, "avisos": 0,
     },
 ]
+
+
+# Percorre classificações históricas no mesmo contrato de identidade R*, com aprovação contraditória.
+for severity in ("Critical", "Required", "Nit", "Optional", "FYI"):
+    correction = f"- [ ] R7: **{severity}** - `core.py` - corrigir"
+    ETAPA_CASES.extend([
+        {"nome": f"aprovado-com-{severity.lower()}-aberto", "plan": FILA_CONCLUIDA,
+         "review": review_text(status="aprovado", blockers=(correction,), vigente="Approve", etapas=("Request changes",)),
+         "etapa": "corrigir", "rodadas": 0, "avisos": 0},
+        {"nome": f"defer-com-{severity.lower()}-fechado", "plan": FILA_CONCLUIDA,
+         "review": review_text(blockers=(correction.replace("[ ]", "[X]"),), vigente="Approve com defer", etapas=("Request changes",)),
+         "etapa": "confirmar", "rodadas": 1, "avisos": 0},
+    ])
+
+# Retomada bloqueada independe do protocolo e não exige migrar ou inicializar o registro.
+for protocol, mode in (("coordenacao-v1", "A"), ("coordenacao-v1", "B"), ("etapas-v1", "A"), ("etapas-v1", "B")):
+    operational_plan = f"# Protocolo: {protocol}\n# Modo: {mode}\n" + FILA_ABERTA
+    if protocol == "etapas-v1" and mode == "A":
+        operational_plan = operational_plan.replace("### T1:", '- **Integração:** {"testes":"pendentes","prova":null,"commit":"pendente"}\n## Tasks\n### T1:')
+        operational_plan = operational_plan.replace('- **Deps:** nenhuma', '- **Deps:** nenhuma\n- **Execução:** {"estado":"pendente","local":null}').replace('- **Deps:** T1', '- **Deps:** T1\n- **Execução:** {"estado":"pendente","local":null}')
+    ETAPA_CASES.append({"nome": f"{protocol}-{mode}-correcao-aberta", "plan": operational_plan,
+                        "review": review_text(status="aprovado", blockers=(NIT_ABERTO,), vigente="Approve com defer"),
+                        "etapa": "corrigir", "rodadas": 0, "avisos": 0})
 
 
 # Cria a fixture de um caso de etapa na phase-1-a: spec sempre, plan e review só quando o caso os define.
@@ -582,6 +605,13 @@ class PythonContracts(unittest.TestCase):
         _, report = invoke(self.repo, "--mvp")
         self.assertEqual(REPORT_KEYS | {"analyze_gate"}, set(report))
         self.assertEqual("concluida", report["etapa"])
+        # Aprovação do baseline não prevalece sobre uma correção histórica ainda aberta.
+        review = mvp / "review.md"
+        review.write_text(review_text(status="aprovado", blockers=(NIT_ABERTO,), vigente="Approve com defer"), encoding="utf-8")
+        before = tree_snapshot(self.repo)
+        _, report = invoke(self.repo, "--mvp")
+        self.assertEqual("corrigir", report["etapa"])
+        self.assertEqual(before, tree_snapshot(self.repo))
 
     def test_etapa_e_rodadas_por_fixture(self) -> None:
         """Cada estado da phase vira a etapa esperada, e o motor não escreve nada para derivá-la."""

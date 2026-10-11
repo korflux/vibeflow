@@ -92,7 +92,7 @@ A review é um processo cético e investigativo. Não confie cegamente em checkb
 
 1. Em coordenacao-v1 A, use execution.json como registro e plan como definição/resumo; nos protocolos históricos, use o `plan.md` como registro das execuções: confira o status da T*, `Deps` e bloqueios, `Arquivos` e `Prova`/`Verificação`. Compare os inputs da prova com o estado integrado e reaproveite prova verde somente quando esses inputs permanecem iguais e a prova ainda cobre a integração. Mudança em plan, spec ou review não invalida prova de código; edição posterior em código/teste invalida somente a prova afetada. `implement.md` histórico não é necessário para a review. Confira a história Git e os paths reais, aceitando commits integrados de várias T* e commits legados sem exigir exclusivamente o prefixo `task(Tn)`. Em etapas-v1, confira origem preservada, snapshot integrado, hashes dos inputs e commit real; checagem local não substitui integração.
 2. Relacione diff, fluxo e consumidores, risco e aceite; execute somente a prova que falta para julgar o marco ou integração. Reexecute por falha, inputs/dependências relevantes alterados, lacuna de integração ou risco concreto. Em re-review, confira correções e impacto nos consumidores; preserve julgamento e provas válidas das partes inalteradas. Duração não dispensa segurança, paridade ou prova renderizada necessárias.
-3. Não rode automaticamente a matriz de comandos de cada T*. Na review final, prefira uma verificação agregada existente quando ela comprovar a integração; rode o Smoke Test somente quando a entrada real tiver mudado, sua prova estiver ausente/desatualizada ou for necessária para cobrir o fluxo integrado.
+3. Não rode automaticamente a matriz de comandos de cada T* nem a suíte completa. Audite código, cobertura e validade das provas locais/integradas já certificadas; mudar de etapa ou revisor não exige executá-las novamente. Suíte completa só entra por risco, consumidores afetados, lacuna concreta ou CI obrigatório, com motivo registrado. Na review final, use uma verificação agregada existente somente se houver lacuna e ela comprovar a integração; rode o Smoke Test somente quando a entrada real tiver mudado, sua prova estiver ausente/desatualizada ou for necessária para cobrir o fluxo integrado.
 4. Registre em cada etapa referências às provas reaproveitadas, comandos novos e motivo; não copie snapshots do lar operacional do protocolo nem reinvestigue inputs inalterados sem lacuna concreta. Se uma prova necessária falhar, abra `R*` `Required` com comando e remédio; não aprove silenciosamente.
 
 Inspecione o código integrado e aplique estes pilares ao escopo da etapa:
@@ -119,7 +119,7 @@ Inspecione o código integrado e aplique estes pilares ao escopo da etapa:
    - Para ações compactas, aceite `icon-only` somente quando a ação for universalmente reconhecível, como lixeira para apagar, com nome acessível, área de interação adequada, foco visível e tooltip quando aplicável. Ações ambíguas continuam com texto.
    - Se a prova renderizada for necessária e não houver capacidade ou evidência válida, aplique a regra de instalação: instale a ferramenta ausente necessária à prova pelo gerenciador do projeto ou por fonte oficial, quando o ambiente e as permissões permitirem, sem alterar manifesto nem lockfile do projeto e registrando a ferramenta na etapa. Instalação que exija credencial, criação de conta, pagamento, elevação administrativa ou configuração persistente de integração (por exemplo, registrar um MCP) é impedimento real e vai ao humano. Se a capacidade continuar ausente, abra `R*` `Required`; não aprove silenciosamente.
 5. **Simplificação e Qualidade de Código:**
-   - Inspecione se o código é o mínimo necessário (YAGNI, sem estruturas especulativas, sem duplicação de lógica ou componentes).
+   - Inspecione simplificação, reutilização e remoção de redundância no recorte (YAGNI, sem estruturas especulativas, sem duplicação de lógica ou componentes). Aceite otimização de desempenho fundamentada, preservando comportamento, segurança, cobertura e escopo.
    - Verifique se todas as funções criadas ou modificadas possuem comentários semânticos obrigatórios.
    - Decisões críticas: cruze interview, spec, plan e analyze. Decisão desrespeitada ou conflito aberto bloqueia Approve.
 6. **Auditoria de Banco de Dados, Migrations e Precisão Numérica:**
@@ -134,10 +134,10 @@ Finding: evidência (`path`) + severidade + remédio nomeado + prova. Sem evidê
 
 | Prefixo | Bloqueia Approve? |
 |---|---|
-| Critical / Required | Sim |
-| Nit / Optional / FYI | Não |
+| Critical / Required / Nit | Sim, enquanto R* estiver aberto |
+| Optional / FYI legado com R* | Sim, enquanto R* estiver aberto |
 
-Use Approve com defer somente para R* Nit/Optional/FYI. Mantenha os itens em `[ ]` e identifique na linha do veredito cada R*, fonte/path, motivo e encaminhamento com condição ou momento de retomada. Critical/Required aberto, obrigação parcial/ausente ou origem insuficiente bloqueiam qualquer Approve; defer não retira obrigações e mantém o gate de confirmação humana.
+Toda correção pertinente exige R*, remédio e prova, inclusive nit. Severidade indica impacto e prioridade; não permite dispensar a correção. Registre informação sem remédio em Notas, sem R*. Preferência pessoal sem fundamento não é achado. Preserve classificações e vereditos históricos; na retomada, qualquer R* aberto, inclusive Optional/FYI legado, bloqueia Approve mesmo com status aprovado ou defer marcado. Não ofereça Approve com defer em novas etapas. Obrigação parcial/ausente ou origem insuficiente também bloqueia aprovação.
 
 Remédio aponta `vibe-implement` + o que fazer. Esta skill **não** aplica código.
 
@@ -171,7 +171,7 @@ Responda, **só**:
 ```text
 Review gravada: <created.path>/review.md
 
-- Etapa: <N> · Tipo: checkpoint | final · Resultado: Marco aprovado | Request changes | Approve final | Approve com defer
+- Etapa: <N> · Tipo: checkpoint | final · Resultado: Marco aprovado | Request changes | Approve final
 - Fila: <T* restantes | concluída>
 - Abriu: <R* ou nenhum>
 - Fechou: <R* ou nenhum>
@@ -198,7 +198,7 @@ Após aprovação humana explícita da review final, com a fila concluída:
 
 ### Finalização Git da phase
 
-Esta seção só se aplica à review final, depois da aprovação humana explícita, com todas as T* concluídas e sem Critical ou Required em `[ ]`. Checkpoint nunca abre finalização Git.
+Esta seção só se aplica à review final, depois da aprovação humana explícita, com todas as T* concluídas e sem R* de correção em `[ ]`. Checkpoint nunca abre finalização Git.
 
 1. Execute a prova final necessária para a integração conforme §3, sem repetir automaticamente a matriz de cada T*. Execute `git diff --check` e gitleaks quando previsto pelo repositório.
 2. Compare o estado atual com o snapshot da review. Se houver path fora da phase, das decisões aprovadas ou da correção registrada, pare e peça isolamento; não misture trabalho pré-existente.
@@ -215,6 +215,6 @@ Vale quando o coordenador do `vibe-implement` (Modo A) delega esta skill e o ped
 - **Humano:** não pergunte ao humano nem espere resposta. Quando o veredito depender dele, devolva `estado: pergunta` com a recomendação; o coordenador pergunta. Não deixe Open Questions no arquivo.
 - **Re-review após correção:** acrescente nova etapa no mesmo arquivo e confira os R* marcados pelo responsável de registro do protocolo contra o diff e a prova antes de aceitá-los.
 - **Proibido:** finalização Git do §5, commit, push, edição de `AGENTS.md`, aprovação humana marcada no arquivo, correção de código e instalação fora da regra do §3.
-- **Resposta:** o relatório substitui a resposta de chat do §4. Além dos campos fixos, devolva `veredito` (`Approve final`, `Request changes` ou `Approve com defer`), `abertos` (R* Critical e Required em `[ ]`), `fechados` (R* fechados nesta etapa), `critical_encontrados` (R* Critical abertos nesta etapa) e `decisoes_vigencia` (IDs propostos na tabela, ou nenhuma).
+- **Resposta:** o relatório substitui a resposta de chat do §4. Além dos campos fixos, devolva `veredito` (`Approve final` ou `Request changes`), `abertos` (todos os R* de correção em `[ ]`), `fechados` (R* fechados nesta etapa), `critical_encontrados` (R* Critical abertos nesta etapa) e `decisoes_vigencia` (IDs propostos na tabela, ou nenhuma).
 
 Na review delegada, informe também a cobertura da solicitação e qualquer limitação de origem, referenciando a matriz gravada. Approve exige obrigações atendidas ou retiradas explicitamente pelo humano, origem suficiente e nenhum bloqueio aberto.
