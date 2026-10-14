@@ -6,7 +6,7 @@
 
 ## Objetivo
 
-<quem opera, o que esta entrega resolve, o que sucesso parece — 2–4 frases>
+<quem opera, o que esta entrega resolve, o que sucesso parece, em 2 a 4 frases>
 
 ## Cobertura da origem
 
@@ -18,7 +18,7 @@
 
 ## Suposições e decisões
 
-1. … — (produto / segurança / processo / escopo; já fechado)
+1. <decisão> (produto / segurança / processo / escopo; já fechado)
 
 ## Decisões críticas
 
@@ -51,7 +51,7 @@
 
 ### Fora
 
-- <recusa real e tentadora> — <motivo em 1 linha>
+- <recusa real e tentadora>: <motivo em 1 linha>
 
 ## Direção visual
 
@@ -61,7 +61,7 @@
 - Tom: …
 - Evitar: …
 - Copy de UI: … (N/A se não importar)
-- Prova: E2E + screenshot de …
+- Evidência renderizada: <telas e estados que precisam aparecer renderizados para o aceite; a ferramenta fica para o plan>
 
 ## Checklist de entrega
 
@@ -81,16 +81,17 @@
 - Integrações e interfaces: <entradas, saídas e falhas necessárias ou N/A>
 - Segurança e operação: <para entradas externas, campos e valores aceitos por allowlist e tamanho máximo; para acesso cross-origin, allowlist de origens CORS; outros controles aplicáveis ou N/A fundamentado>
 - Tecnologia imposta: <restrição existente e motivo ou N/A>
+- Consumidores: <F* que dependem do mesmo contrato compartilhado; omitir quando a mudança afeta um único fluxo>
 
 <!-- Para entradas externas, declarar allowlist de campos/valores e tamanho máximo por entrada. Com API, handle, segredo, dado pessoal ou rota autenticada, fechar os demais controles aplicáveis. Se houver acesso browser cross-origin, declarar a allowlist de origens CORS e nunca combinar * com credenciais; sem necessidade, justificar N/A. Fato novo em mock que é contrato exige nome, forma, janela e escopo ou delegação ao design com Ask first. -->
 
 ## Como provar
 
-<!-- Uma evidência observável por A*. O plan escolhe ferramentas, comandos e ordem de execução. -->
+<!-- Uma linha por A* ou grupo de A* com o mesmo F* e nível. Nível jornada: percorre o fluxo de ponta a ponta; nível local: observa a regra ou o módulo isolado. Sem comando, path de teste ou ferramenta; o plan os escolhe a partir do nível. -->
 
-| Aceite | Evidência esperada |
-|---|---|
-| A1 | <o que observar e onde> |
+| Aceite | F* ou jornada | Nível | Evidência esperada |
+|---|---|---|---|
+| A1 | <F* ou jornada> | <jornada ou local> | <o que observar e onde> |
 
 ## Boundaries
 

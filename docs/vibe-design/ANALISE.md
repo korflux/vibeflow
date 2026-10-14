@@ -20,7 +20,7 @@ O script continua determinístico. A decisão semântica de phase ou MVP, de mod
 
 ## Investigação e continuidade
 
-A IA começa pela pergunta de apresentação que a spec deixou aberta, localiza `spec.md`, `interview.md`, `REGRAS.md`, DS, DESIGN.md ou referência Figma com `rg --files`, confirma telas, componentes, tokens e comandos com `rg -n`, e abre somente as dependências do fluxo. O inventário não autoriza leitura integral da árvore.
+A IA começa pela pergunta de apresentação que a spec deixou aberta, localiza `spec.md`, `interview.md`, `AGENTS.md`, DS, DESIGN.md ou referência Figma com `rg --files`, confirma telas, componentes, tokens e comandos com `rg -n`, e abre somente as dependências do fluxo. O inventário não autoriza leitura integral da árvore.
 
 `interview → spec → design` pode seguir no mesmo chat. Recomende novo chat ao iniciar `plan`; a separação não é gate e o arquivo vivo permite continuar sem depender do histórico como autoridade.
 
@@ -43,8 +43,13 @@ Decisões de reuso não viram cópia da fonte. O vivo registra o que foi reusado
 | Sincronização automática com Figma | A entrada é leitura com decisão registrada, sem cópia silenciosa. |
 | Paleta fechada na spec | Token visual pertence à design, após o comportamento estar aprovado. |
 | Template MVP separado | Uma única forma reduz divergência entre rotas. |
-| Atualização automática de `REGRAS.md` | Vigência depende de review e confirmação humana. |
+| Atualização automática das decisões vigentes em `AGENTS.md` | Vigência depende de review e confirmação humana. |
+| Promessa de commit por task | O commit segue o protocolo do plan; no `coordenacao-v1` Modo A ele é integrado após a prova verde, não por task. |
+| Escolha da ferramenta de prova visual | O design descreve a evidência observável; o plan escolhe a ferramenta conforme a prontidão do host. |
+| Viewport estreita em toda tela | Prova sem regra responsiva a julgar gasta execução sem cobrir aceite; ela entra somente quando a tela tem regra responsiva. |
 
 ## Impacto
 
 Spec, design, plan, implement e review compartilham o mesmo alvo e arquivos vivos separados por tipo. Isso reduz a chance de uma tela nascer de texto preso no chat e permite que o próximo chat confira entrada, telas, tokens, responsivo, estados e handoff diretamente no disco.
+
+O desenho é escrito para o consumo do implement. A prova visual por tela vive numa única seção para que o plan a converta em `Visual:` e `Prova afetada:` da T* que toca a tela, sem reinterpretar o design. Superfícies compartilhadas expõe o raio de um componente ou token comum: o plan ordena o kit antes das telas consumidoras, e a review reconfere telas que nenhuma T* tocou diretamente mas que mudam junto.

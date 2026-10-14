@@ -174,9 +174,9 @@ Efeito prático: as regras do projeto ficam numa fonte (`AGENTS.md`), o pedido d
 | [`vibe-spec`](vibe-spec/SKILL.md) | `/vibe-spec` | Cobre a origem, fecha comportamento e aceite, e registra somente contratos necessários | `phase-N-slug/spec.md` ou `.vibeflow/mvp/spec.md` |
 | [`vibe-design`](vibe-design/SKILL.md) | `/vibe-design` | Desenha a apresentação com dois modos de entrada e três usos, sem código nem imagem final | `phase-N-slug/design.md` |
 | [`vibe-plan`](vibe-plan/SKILL.md) | `/vibe-plan` | Fatia a spec em T* verificáveis e reutiliza provas por capacidade quando cobrem a entrega | `phase-N-slug/plan.md` |
-| [`vibe-analyze`](vibe-analyze/SKILL.md) | `/vibe-analyze` | Cruza interview, spec e plan da mesma fase. Corrige lacunas óbvias em `spec.md` e `plan.md`; grava o certificado no vivo | `phase-N-slug/analyze.md` |
+| [`vibe-analyze`](vibe-analyze/SKILL.md) | `/vibe-analyze` | Cruza interview, spec, `design.md` quando houver UI visível e plan da mesma fase e, em `coordenacao-v1`, confere o contrato da implement. Corrige lacunas óbvias em `spec.md`, `design.md` e `plan.md`; grava o certificado no vivo | `phase-N-slug/analyze.md` |
 | [`vibe-implement`](vibe-implement/SKILL.md) | `/vibe-implement` | Novo Modo A: coordenação por resultados, colaboração dirigida, conferência/integração delegadas, finalizador exclusivo e review independente; plan enxuto e execução estruturada. B/etapas-v1/legado preservados | `phase-N-slug/plan.md` + `execution.json` no novo A |
-| [`vibe-review`](vibe-review/SKILL.md) | `/vibe-review` | Julga o patch, conduz correções e faz o commit/push final após aprovação | `phase-N-slug/review.md` |
+| [`vibe-review`](vibe-review/SKILL.md) | `/vibe-review` | Julga o patch, conduz correções e faz o commit/push final após aprovação. No Modo A, audita o executado pelo `execution.json` e pelo diff dentro dos `Arquivos:` | `phase-N-slug/review.md` |
 
 Arquitetura, análise e testes de contrato de cada skill ficam em `docs/vibe-<nome>/` e **não** entram no pacote instalável.
 
@@ -219,7 +219,15 @@ vibe-<nome>/
 5. Não inventar path de artefato fora de `.vibeflow/phases/phase-N-slug/`; a única exceção é o baseline fixo `.vibeflow/mvp/`. Manter `AGENTS.md` como única fonte de regras do projeto.
 6. Inventários são JSON transitório no stdout. O init mantém relatório/pending ignorados para retomada; no novo Modo A, execution.json é estado operacional versionado junto dos artefatos vivos, sem snapshots no plan.
 
-Versão dos manifests: `8.0.0`. O Antigravity mantém o schema mínimo sem campo de versão.
+Versão dos manifests: `9.0.0`. O Antigravity mantém o schema mínimo sem campo de versão.
+
+O que muda na cadeia com a 9.0.0:
+
+- O plan registra a prontidão técnica com local e destino por requisito, inclusive perfis do Modo A e privilégios do sistema, e a implement confere essa capacidade antes da primeira onda.
+- O analyze confere o contrato da implement em `coordenacao-v1`: `Arquivos:` comparáveis, `Prova afetada:` restrita ao recorte e `Regressão completa` única.
+- A review do Modo A audita o executado pelo `execution.json`, sem checkpoint de review, e cada R* indica `papel: corretor | redator`.
+- O init gera `AGENTS.md` com a regra de registrar erro fora do recorte em `.erros-encontrados/` sem corrigi-lo, e perfis alinhados ao protocolo.
+- Spec e design alimentam a `Prova afetada:`: cada aceite aponta a jornada e o nível de prova, e o design registra a prova visual por tela.
 
 Em `coordenacao-v1` Modo A, as provas têm dois níveis. Implementador e verificador executam somente a `Prova afetada:` de cada T*, e a integração executa a união delas, sem ampliar para suíte completa. A review final é a única dona da `Regressão completa` declarada no plan (suíte inteira e E2E), executada uma vez no estado final e repetida antes do Approve só quando código ou teste mudou desde a última execução completa verde. Nos protocolos históricos e no Modo B, código e testes recebem prova local do fluxo afetado; a verificação certifica integração proporcional e a review audita código, cobertura e evidências válidas, executando somente lacunas, e suíte completa exige risco, consumidores afetados, lacuna concreta ou CI obrigatório. Simplificação e otimização fundamentada permanecem no recorte. Toda correção R* aberta, inclusive nit e classificações legadas, bloqueia aprovação; novas reviews não oferecem defer.
 
@@ -241,4 +249,4 @@ PR contra `main`. Mudança de contrato (path, schema do relatório, flag públic
 
 [MIT](LICENSE). Pode usar, copiar, modificar e redistribuir, com o aviso de copyright. Sem garantia.
 
-O `vibe-init` distribui seis papéis, explorador, implementador, redator, verificador, corretor e revisor, em `.codex/agents/` e `.claude/agents/` do projeto, num total de doze perfis. O `redator` atende T* cujo resultado principal é prosa; no Claude usa Opus com esforço médio e no Codex usa o modelo do revisor com esforço medium. Preserva perfis personalizados como conflitos e orienta conferir a disponibilidade na sessão depois de recarregar o host. Não modifica perfis globais nem configurações gerais.
+O `vibe-init` distribui seis papéis, explorador, implementador, redator, verificador, corretor e revisor, em `.codex/agents/` e `.claude/agents/` do projeto, num total de doze perfis. O `redator` atende T* cujo resultado principal é prosa; no Claude usa Opus com esforço médio e no Codex usa o modelo do revisor com esforço medium. No re-init, substitui perfil VibeFlow desatualizado, com backup em `.vibeflow/old/` conferido por tamanho e hash, somente quando o diff com o template e o histórico Git do path confirmam que não há conteúdo do usuário; customização ou dúvida é preservada e reportada como conflito. Orienta conferir a disponibilidade na sessão depois de recarregar o host. Não modifica perfis globais nem configurações gerais.

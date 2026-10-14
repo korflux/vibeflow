@@ -11,6 +11,7 @@
 |---|---|
 | interview.md | presente | ausente |
 | spec.md | presente |
+| design.md | presente | N/A sem UI visível |
 | plan.md | presente |
 | AGENTS.md | lido |
 
@@ -27,13 +28,13 @@
 
 | ID | Categoria | Gravidade | Onde | Problema | Resolução Aplicada |
 |---|---|---|---|---|---|
-| F1 | cobertura | HIGH | plan.md | A3 sem T* correspondente | Patch aplicado em plan.md adicionando T3 |
+| F1 | <categoria> | <gravidade> | <arquivo> | <problema> | <resolução aplicada> |
 
 ### F1: <resumo curto>
 
 - **Gravidade:** CRITICAL | HIGH | MEDIUM | LOW
-- **Categoria:** duplicacao | ambiguidade | furo | constituicao | cobertura | inconsistencia | qualidade_teste | decisao
-- **Onde:** `spec.md` ou `plan.md`
+- **Categoria:** duplicacao | ambiguidade | furo | constituicao | cobertura | inconsistencia | qualidade_teste | decisao | contrato_implement
+- **Onde:** `spec.md`, `design.md` ou `plan.md`
 - **Evidência:** <trecho ou ID afetado>
 - **Resolução:** <ação corretiva aplicada diretamente no arquivo ou decisão do usuário>
 
@@ -62,7 +63,8 @@
 - A*/C* na spec:
 - T* no plan:
 - Cobertura (A*/C* com >= 1 T*):
-- Qualidade de Testes: provas executáveis e proporcionais; smoke na T* que entrega o ponto de entrada; ferramentas necessárias ou limitações registradas
+- Qualidade de Testes: <`Prova afetada:` restrita ao recorte por T*; `Regressão completa` única; smoke na T* que entrega o ponto de entrada; ferramentas necessárias ou limitações registradas>
+- Contrato da implement: <protocolo; `Arquivos:` válidos e comparáveis; sobreposição sem `Deps`; prontidão com local e destino; ou N/A em plan histórico>
 - Achados corrigidos / resolvidos:
 - Achados bloqueantes pendentes: 0
 

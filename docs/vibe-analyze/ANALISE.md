@@ -26,9 +26,13 @@ Correções óbvias em spec ou plan continuam permitidas porque são parte da co
 
 O cruzamento parte da Cobertura da origem da spec para detectar jornada, página ou módulo aplicável omitido. Na qualidade da prova, aceita reutilizar testes por capacidade em várias tasks e critérios; um comando por task não significa teste novo por task.
 
+## Por que conferir o contrato da implement
+
+Em `coordenacao-v1` Modo A, o coordenador despacha ondas calculadas pelo motor a partir de `Arquivos:` e prova cada T* só pela `Prova afetada:`, deixando a suíte inteira para a review final. Um plan que passa no cruzamento semântico pode ainda falhar nessa execução: `Arquivos:` quebrado em duas linhas perde paths, path incomparável serializa a T*, sobreposição sem `Deps` deixa a ordem de escrita ao acaso, suíte inteira numa T* repete a regressão em cada onda e perfil não verificado trava a primeira onda. O analyze é o último portão antes do código na rota max, então confere esses pontos com a mesma gravidade que dá a uma prova ausente. As gravidades seguem o custo: o que quebra a prova ou a ordem é HIGH; formato de `Arquivos:` que só tira paralelismo é MEDIUM, e vira HIGH quando esconde uma sobreposição cuja ordem importa. Planos históricos ficam fora para não migrar contrato implicitamente.
+
 ## MVP e decisões
 
-No MVP, a interview é obrigatória e IDs críticos precisam atravessar spec e plan com ação explícita. Mudança sem `substitui` é finding crítico. A tabela vigente de `REGRAS.md` permanece fora da análise até o ciclo implementação → review → confirmação humana.
+No MVP, a interview é obrigatória e IDs críticos precisam atravessar spec e plan com ação explícita. Mudança sem `substitui` é finding crítico. A tabela de decisões vigentes em `AGENTS.md` permanece fora da análise até o ciclo implementação → review → confirmação humana.
 
 ## Chat
 

@@ -13,9 +13,9 @@
 |---|---|
 | `SKILL.md` | Validar spec aprovada, escolher modo de entrada, aplicar os três usos, redigir telas, kit, tokens e handoff para plan. |
 | `scripts/design.py`, `design.ps1`, `design.sh` | Inventário, seleção do alvo, gates mecânicos, preparação do vivo e JSON operacional no stdout. |
-| `templates/design.md` | Forma de entrada, inventário de telas, kit, disposição por tela, tokens, responsivo, estados e prova. |
+| `templates/design.md` | Forma de entrada, inventário de telas, kit, superfícies compartilhadas, disposição por tela, tokens, responsivo, estados e prova. |
 | `references/modos-entrada.md` | Catálogo dos dois modos de entrada, consultado conforme a origem do desenho. |
-| `references/kit-e-tokens.md` | Catálogo de kit mínimo, tokens, iconografia, responsivo, estados e prova visual. |
+| `references/kit-e-tokens.md` | Catálogo de kit mínimo, superfícies compartilhadas, tokens, iconografia, responsivo, estados e prova visual. |
 | `references/motion.md` | Catálogo de frequência, propósito, easing, duração, física, acessibilidade e baseline mobile, consultado quando a tela tem motion ou alvo mobile. |
 | `stdout (JSON)` | Evidência operacional transitória, consumida na mesma execução. |
 | `design.md` | Restrição executável para plan, implement e review. Texto versionado, sem código e sem imagem final. |
@@ -63,9 +63,16 @@ O script não escolhe modo, não preenche markdown e não dispara plan. Ajuste o
 
 ## 6. Contrato do artefato
 
-Seções: Entrada, Inventário de telas, Kit mínimo quando greenfield, Disposição por tela, Tokens e iconografia, Responsivo e estados, Motion e baseline mobile quando houver motion ou alvo mobile, Prova visual esperada, Decisões e Handoff.
+Seções: Entrada, Inventário de telas, Kit mínimo quando greenfield, Superfícies compartilhadas, Disposição por tela, Tokens e iconografia, Responsivo e estados, Motion e baseline mobile quando houver motion ou alvo mobile, Prova visual esperada, Decisões e Handoff.
 
-Cada tela contém hierarquia de cima para baixo, layout e grid, ordem de leitura, componente por zona, tokens, regra de ícone com texto obrigatório em ação ambígua, responsivo com viewport estreita, overflow e truncamento, e estados por tela. Primitivo novo na página com DS existente é defeito. Design não cria comportamento novo.
+Cada tela contém hierarquia de cima para baixo, layout e grid, ordem de leitura, componente por zona, tokens, regra de ícone com texto obrigatório em ação ambígua, regra responsiva ou N/A com motivo, overflow e truncamento, e estados por tela. Primitivo novo na página com DS existente é defeito. Design não cria comportamento novo.
+
+Contrato com os consumidores:
+
+| Seção | Consumidor | Uso |
+|---|---|---|
+| Superfícies compartilhadas | plan e review | Kit, tokens e componentes comuns novos ou alterados precedem as telas que os consomem; o plan os entrega na primeira T* de tela consumidora. A review reconfere todas as telas afetadas. |
+| Prova visual esperada | plan, implement e review | Casa única da prova por tela: rota, viewport de julgamento do aceite, viewport estreita somente com regra responsiva, estado, ações e evidência observável. O plan a usa como insumo do `Visual:` e da `Prova afetada:` da T* que toca a tela e escolhe a ferramenta; o design não escolhe ferramenta. |
 
 ## 7. Erros e testes
 
@@ -82,4 +89,4 @@ O handoff normal é `vibe-plan`. Recomende novo chat para iniciar o plan, mas co
 - Design não inventa comportamento, rota, regra de negócio ou token fora do modo declarado.
 - O inventário não autoriza ler a árvore inteira. A IA localiza evidências com `rg --files` e `rg -n`.
 - O JSON operacional é transitório no stdout; `design.md` entra no Git.
-- Design não commita; o commit começa somente quando a implement fecha uma task verde. Não há disparo automático da próxima skill.
+- Design não commita; o commit acontece na implement, conforme o protocolo registrado no plan. Não há disparo automático da próxima skill.

@@ -10,15 +10,16 @@ Abrir **só** na varredura da `vibe-analyze`. Não copiar esta tabela para o cha
 | Spec A*/C* | Plan T* campo `Spec:` | A*/C* órfão; T* sem A*/C* (só ok se for infra justificada no Overview) |
 | Spec Fora | Plan T* / Escopo | Task que implementa o recusado |
 | Plan T* (o quê, arquivos) | Spec Escopo / Contratos e restrições necessárias | Comportamento ou módulo fora do escopo; path interno não precisa constar na spec |
-| Os três | `AGENTS.md` | Choque com Never, Git, semver, política do repo |
+| Design (com UI visível) | Spec F*/A* e Plan T* | Tela, estado ou prova visual sem T*; T* que contradiz o design |
+| Os artefatos | `AGENTS.md` | Choque com Never, Git, semver, política do repo |
 | Interview Decisões críticas | Spec Decisões críticas | Mesmo ID e opção, ou ação `substitui` explícita com motivo |
 | Spec Decisões críticas | Plan T* campo `Decisões:` | ID criado/substituído com task responsável; nenhuma task implementa opção divergente |
 
-Interview ausente: pule a primeira linha. Não invente Resultado.
+Interview ausente: pule a primeira linha. Sem UI visível: registre N/A na linha do design. Não invente Resultado.
 
 ## 2. Passes (spec-kit analyze, traduzido)
 
-Faça os seis. Ache **instância**, não padrão genérico.
+Faça todos os passes da tabela. `contrato_implement` vale só para plan `# Protocolo: coordenacao-v1` (seção 3). Ache **instância**, não padrão genérico.
 
 | Pass | Categoria do F* | Sinal |
 |---|---|---|
@@ -30,25 +31,59 @@ Faça os seis. Ache **instância**, não padrão genérico.
 | Inconsistência | `inconsistencia` | Nome diferente para a mesma coisa; entidade só num arquivo; ordem de T* que fura Deps; A* e T* se anulam |
 | Decisão crítica | `decisao` | ID órfão; opção muda sem `substitui`; task implementa decisão diferente. Sempre `CRITICAL` quando altera lógica, acesso, dados, infraestrutura, segurança ou operação |
 | Qualidade de Teste | `qualidade_teste` | Task sem comando executável ou só com verificação manual/passiva; ponto de entrada alterado sem smoke test; ferramenta exigida indisponível sem preparo ou bloqueio. Reutilizar o mesmo teste de capacidade em várias tasks ou critérios é válido |
+| Contrato da implement | `contrato_implement` | Plan que o motor e o coordenador do `vibe-implement` não conseguem despachar como está (seção 3) |
 
-## 3. Resolução de Achados e Clarificações
+## 3. Contrato da implement (`coordenacao-v1`)
 
-Erros óbvios e determinísticos (smoke ausente na task que entrega ponto de entrada executável, comandos de prova ausentes, IDs órfãos) são **corrigidos diretamente** pela IA em `spec.md` ou `plan.md`. Uma ausência local simples é tratada no preparo; não crie T* só para instalar ou conectar uma ferramenta.
+Aplique somente quando o plan declara `# Protocolo: coordenacao-v1`. Plan `etapas-v1` ou sem marcador, com ou sem T* concluída, é histórico: registre N/A desta dimensão, não grave marcador e conserve as conferências das seções 1 e 2. Migrar o protocolo é decisão humana separada.
+
+| Conferência | Sinal de achado | Gravidade |
+|---|---|---|
+| `Regressão completa` | Seção `### Regressão completa` ausente, ou com comando que o repo não tem | HIGH |
+| `Regressão completa` | Mais de uma seção `### Regressão completa` | MEDIUM |
+| `Prova afetada:` | Ausente, sem comando executável, ou que deixa A*/C* da T* sem prova | HIGH |
+| `Prova afetada:` | Suíte inteira do repo, E2E completo ou repetição da `Regressão completa` numa T* | HIGH |
+| `Arquivos:` | T* sem a linha `- **Arquivos:**` | MEDIUM |
+| `Arquivos:` | Campo em mais de uma linha física, path fora de crases ou path incomparável | MEDIUM |
+| Sobreposição | `Arquivos:` sobrepostos entre T* sem `Deps` entre si, quando a ordem de escrita importa | HIGH |
+| Prontidão técnica | Requisito das provas sem local (local, CI ou host) ou sem destino (`ok`, `ação em Tn`, `pergunta ao humano`, `bloqueio`) | HIGH |
+| Prontidão técnica | Plan que promete Modo A sem os perfis exigidos verificados | HIGH |
+
+Formato que o motor da implement lê em `Arquivos:`: a primeira linha `- **Arquivos:**` da seção da T*, numa única linha física, com cada path relativo ao repo entre crases. O motor ignora linhas seguintes do campo; confira a sobreposição pelos paths completos, porque path perdido pode esconder uma sobreposição HIGH. Path incomparável serializa a T* inteira: caractere fora do ASCII, path absoluto, `:` em qualquer posição, `<`, `>`, `"` ou `|`, e segmento terminado em ponto ou espaço, exceto os segmentos `.` e `..`, que a normalização resolve. Sobreposição: paths iguais ou um prefixo de diretório do outro; diretório e curinga valem como prefixo. `.`, `./`, path vazio após normalizar, curinga na raiz e `..` que escapa da raiz valem como a raiz inteira e sobrepõem todos os paths.
+
+Prova afetada restrita ao recorte: testes do módulo ou da skill tocada e dos consumidores diretos, E2E só do cenário cuja entrada mudou, evidência visual quando houver `Visual: necessária`. Comando compartilhado definido uma vez na prontidão e referenciado pelo nome é válido. Em T* só de prosa, vale a suíte do consumidor contratual ou uma checagem mecânica; teste de presença de palavras nunca vale.
+
+Destinos esperados na prontidão: instalável sem credencial nem elevação vira `ação em Tn` na primeira T* dependente; disponível só no CI vira prova no CI, com local CI e destino `ok`; perfil ausente ou não carregado, MCP persistente, privilégio do SO ou credencial vira `pergunta ao humano` com recomendação; sem equivalente vira `bloqueio`, nunca `ok`. Perfis exigidos no Modo A: explorador, implementador, verificador, corretor, revisor, finalizador genérico apto a Git e redator quando houver T* de prosa.
+
+Sobreposição sem ordem relevante não é achado obrigatório: o motor serializa as T* sozinho. Registre MEDIUM de paralelismo perdido somente quando a perda for relevante.
+
+## 4. Resolução de Achados e Clarificações
+
+Erros óbvios e determinísticos (smoke ausente na task que entrega ponto de entrada executável, comandos de prova ausentes, IDs órfãos, `Arquivos:` fora do formato em plan `coordenacao-v1`) são **corrigidos diretamente** pela IA em `spec.md`, `design.md` ou `plan.md`. Uma ausência local simples é tratada no preparo; não crie T* só para instalar ou conectar uma ferramenta.
+
+Correções de `contrato_implement`:
+
+- `Prova afetada:` com suíte inteira: troque pelo comando do recorte e deixe a suíte inteira só na `Regressão completa`. Nenhuma correção grava a suíte inteira como `Prova afetada:`.
+- Sobreposição cuja ordem importa: acrescente a `Deps` real ou concentre o arquivo compartilhado numa T* final com `Deps`.
+- Path incomparável: recomende renomear ou isolar a T*; renomear arquivo do projeto é decisão do humano.
+- Requisito sem destino: aplique o destino quando ele decorre da regra acima; perfil, MCP, privilégio do SO ou credencial viram pergunta ao humano.
 
 Pergunte ao usuário no chat (uma por vez com recomendação e impacto) quando:
 1. O achado apontar uma ambiguidade real de negócio, escopo ou arquitetura.
 2. A resposta definir uma decisão que não pode ser assumida com segurança pelo contexto.
-3. A dúvida não estiver respondida em interview/spec/plan.
+3. A dúvida não estiver respondida em interview/spec/design/plan.
 
 Não há limite arbitrário de perguntas; faça as necessárias para sanar as ambiguidades reais e aplique as respostas nos artefatos correspondentes.
 
-## 4. Gravidade e Certificação
+## 5. Gravidade e Certificação
+
+Achados `contrato_implement` usam a gravidade da seção 3. As demais categorias seguem esta tabela.
 
 | Nível | Quando | Ação Resolutiva |
 |---|---|---|
-| CRITICAL | Violação de REGRAS; divergência de decisão de MVP sem substitui; A* sem T* correspondente | Corrigir no artefato imediatamente ou alinhar com o usuário |
+| CRITICAL | Violação do `AGENTS.md`; divergência de decisão de MVP sem substitui; A* sem T* correspondente | Corrigir no artefato imediatamente ou alinhar com o usuário |
 | HIGH | Task sem comando executável; resultado que entrega ponto de entrada sem smoke test; prova bloqueada por ferramenta sem mitigação ou limitação registrada | Corrigir o `plan.md` ou registrar o bloqueio real; não criar task de setup local artificial |
 | MEDIUM | Drift de termo; inconsistência de nomes; entidade órfã | Normalizar termos no artefato afetado |
 | LOW | Redundância de redação | Ajustar redação para concisão |
 
-Veredito `limpo` é emitido quando todos os achados forem corrigidos e certificados, liberando a implementação.
+Veredito `limpo` é emitido quando todos os achados forem corrigidos e certificados, liberando a implementação. Achado CRITICAL ou HIGH pendente, sem correção nem bloqueio real registrado, mantém o veredito `bloqueado`.

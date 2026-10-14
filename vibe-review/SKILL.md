@@ -17,7 +17,7 @@ A investigação começa pela pergunta de auditoria e pelo T*/diff que precisa s
 
 ## 0. Entender e usar o script
 
-1. Resolva o diretório desta skill e leia o motor que vai executar. Entenda alvo, cadeia exigida, recusas, preparação do destino e preservação do arquivo vivo. Confirme que ele não escreve `AGENTS.md`; corrija e prove qualquer defeito antes de seguir.
+1. Resolva o diretório desta skill e leia o motor que vai executar. Entenda alvo, cadeia exigida, recusas, preparação do destino e preservação do arquivo vivo. Confirme que ele não escreve `AGENTS.md`. Defeito no motor: fora do modo subagente, corrija e prove antes de seguir; como revisor delegado (§6), devolva `estado: bloqueado` ou abra R*, sem corrigir.
 2. No cwd do repo:
    - Windows: `pwsh "<skill>/scripts/review.ps1"`
    - Unix: `bash "<skill>/scripts/review.sh"` (Python 3, senão pwsh 7)
@@ -47,7 +47,9 @@ Já existe `review.md` = próxima etapa no **mesmo** arquivo.
 
 ### Fonte da execução por protocolo
 
-Em `coordenacao-v1` A, obtenha a fila e validade pelo motor da vibe-implement em leitura no alvo; consulte execution.json/--details para conferir inputs, integração, origem e commit real. Checkboxes do plan são resumo, sem autoridade de conclusão. Execution ausente/ilegível/inválido ou integração/commit sem comprovação bloqueia review final. Em B, etapas-v1 e legado, mantenha fonte/checkpoints anteriores. Resíduo previsto de execution.json pós-registro de commit é operacional, desde que nenhum input provado tenha mudado; cobre-o na finalização autorizada, sem novo ciclo para registrar hash.
+Em `coordenacao-v1` A, leia o motor da vibe-implement (§0 vale para ele) e execute-o em leitura, sem `--operation`, no alvo da review: `pwsh "<vibe-implement>/scripts/implement.ps1" -Dir <phase-N-slug> -Details` ou `bash "<vibe-implement>/scripts/implement.sh" --dir <phase-N-slug> --details` (`-Mvp`/`--mvp` no MVP). Em `execucao`, o resumo traz `tasks[].local_valida`, `integracao.prova_valida` e `integracao.commit_encontrado`; `detalhes` traz `tasks`, `integracao` (com `origem`), `commit` e `correcao` do execution.json. Checkboxes do plan são resumo, sem autoridade de conclusão. Execution ausente, ilegível ou inválido, `prova_valida` falsa ou `commit_encontrado` nulo bloqueia a review final. Resíduo previsto de execution.json pós-registro de commit é operacional, desde que nenhum input provado tenha mudado; cobre-o na finalização autorizada, sem novo ciclo para registrar hash.
+
+Em B, etapas-v1 e legado, a fonte é o `plan.md`, com os checkpoints que ele declarar, sem mudança.
 
 ## 2. Gate
 
@@ -56,9 +58,9 @@ Em `coordenacao-v1` A, obtenha a fila e validade pelo motor da vibe-implement em
 | Sem alvo e sem diff | **Para.** Peça path, branch, PR ou `--dir` |
 | Alvo do inventário difere da phase do diff/pedido | Não use o alvo automático. Identifique a phase existente do diff e rode com `--dir`; se ela não puder ser determinada, pare e peça o path |
 | T* obrigatórias abertas na fonte do protocolo e o humano pediu “pronto da feature” | Recuse Approve de feature. Pode revisar o diff e listar o que falta no plan |
-| Plan declara checkpoint e todas as T* do marco estão concluídas | Faça checkpoint somente do marco, das provas relevantes e do contrato ou risco declarado; registre as T* restantes |
-| Plan declara checkpoint, mas alguma T* do marco está aberta | **Para.** Informe a dependência aberta e faça handoff para `vibe-implement` |
-| Há T* abertas e não existe checkpoint aplicável no plan | Não faça review final nem invente checkpoint; informe a fila e faça handoff para `vibe-implement` |
+| Plan histórico (`etapas-v1`, B, legado) declara checkpoint e todas as T* do marco estão concluídas | Faça checkpoint somente do marco, das provas relevantes e do contrato ou risco declarado; registre as T* restantes |
+| Plan histórico declara checkpoint, mas alguma T* do marco está aberta | **Para.** Informe a dependência aberta e faça handoff para `vibe-implement` |
+| Há T* abertas sem checkpoint aplicável, inclusive em `coordenacao-v1` A, que não tem checkpoint | Não faça review final nem invente checkpoint; informe a fila e faça handoff para `vibe-implement` |
 | Todas as T* estão comprovadamente concluídas na fonte do protocolo | Faça review final da integração e dos riscos alterados |
 | Intenção/sucesso/fora frouxos | Devolve interview/spec. Finding de código não reabre plan |
 | Etapa 2+ | Mesmo `review.md`. Edite o vivo diretamente e acrescente a etapa sem substituir o histórico |
@@ -79,7 +81,7 @@ A review é um processo cético e investigativo. Não confie cegamente em checkb
 
 | Tipo | Escopo | Veredito e efeitos |
 |---|---|---|
-| Checkpoint | Somente as T* concluídas do marco declarado, suas provas, o contrato compartilhado ou risco que justifica a revisão. Registre as T* que continuam abertas. | A etapa pode concluir “Marco aprovado” ou “Request changes”. Nunca declare a feature concluída, marque Approve final, sincronize decisões, crie commit residual ou publique a phase. Com fila aberta e sem bloqueios, mantenha `# Status: rascunho` e faça handoff para `vibe-implement`. |
+| Checkpoint | Somente em `etapas-v1`, B e legado; `coordenacao-v1` A não tem checkpoint, porque a review final cobre a phase inteira. Somente as T* concluídas do marco declarado, suas provas, o contrato compartilhado ou risco que justifica a revisão. Registre as T* que continuam abertas. | A etapa pode concluir “Marco aprovado” ou “Request changes”. Nunca declare a feature concluída, marque Approve final, sincronize decisões, crie commit residual ou publique a phase. Com fila aberta e sem bloqueios, mantenha `# Status: rascunho` e faça handoff para `vibe-implement`. |
 | Final | Fila do plan concluída; julgue critérios de aceite, código integrado e riscos que o diff alterou. | Approve só depois de comprovar a integração e fechar bloqueios. A finalização Git continua sujeita à confirmação humana explícita. |
 
 ### Conferir a solicitação original
@@ -88,19 +90,29 @@ A review é um processo cético e investigativo. Não confie cegamente em checkb
 2. Preencha a matriz de Cobertura da solicitação no `review.md`: item e fonte, implementação, evidência e situação `atendido`, `parcial`, `ausente` ou `retirado explicitamente pelo humano`. Relacione A*/C* quando existirem. Para retirada, cite a decisão humana e o item exato; não deduza autorização.
 3. Abra R* Required ou Critical conforme o impacto para obrigação parcial ou ausente e bloqueie Approve. Se faltar origem ou contexto essencial, declare a limitação de cobertura e devolva a necessidade de contexto ao coordenador; não certifique completude. No checkpoint, limite a matriz julgada ao marco e indique obrigações restantes.
 
+### Auditar o executado (`coordenacao-v1` A)
+
+Na review final e na re-review, com o estado lido no §1. Um path está dentro de um `Arquivos:` quando, depois da normalização léxica do motor da implement (`docs/vibe-implement/ARQUITETURA.md`, seção Onda paralela), é igual a um path declarado ou fica sob um diretório declarado; não recrie essa normalização.
+
+1. **Inputs por T*:** cada path de `tasks.Tn.proof.inputs` está dentro do `Arquivos:` da Tn. Input fora do recorte que o diff da phase altera abre R* Required; input fora do recorte e inalterado na phase é consumidor lido pela prova e vai para Notas.
+2. **Diff na união:** o diff da phase é `git diff --name-only <integracao.origem> HEAD`. Todo path alterado fora de `.vibeflow/` está na união dos `Arquivos:` das T* ou é um path que o remédio de um R* desta review manda alterar; path fora abre R* Required com o path e o remédio de declará-lo ou desfazê-lo.
+3. **Consumidor compartilhado:** o `execution.json` não registra a onda real; para cada par de T* sem `Deps` entre si, direta ou transitiva, confira que cada consumidor de contrato, componente ou texto que elas compartilham continua coerente com as mudanças de todas; incoerência abre R* com o path do consumidor.
+4. **Cobertura por prova:** na matriz de Cobertura, a evidência de cada A*/C* cita a `Prova afetada:` registrada da T* que o declara (`tasks.Tn.proof.comando`) ou a regressão completa; A* sem nenhuma das duas é `parcial`. `integracao.prova_valida` verdadeiro atesta que todas as T* têm prova local verde com snapshot válido, que o snapshot da integração é válido e que a integração contém os inputs locais.
+
 ### Selecionar e executar provas
 
 1. Em coordenacao-v1 A, use execution.json como registro e plan como definição/resumo; nos protocolos históricos, use o `plan.md` como registro das execuções: confira o status da T*, `Deps` e bloqueios, `Arquivos` e `Prova`/`Verificação`. Compare os inputs da prova com o estado integrado e reaproveite prova verde somente quando esses inputs permanecem iguais e a prova ainda cobre a integração. Mudança em plan, spec ou review não invalida prova de código; edição posterior em código/teste invalida somente a prova afetada. `implement.md` histórico não é necessário para a review. Confira a história Git e os paths reais, aceitando commits integrados de várias T* e commits legados sem exigir exclusivamente o prefixo `task(Tn)`. Em etapas-v1, confira origem preservada, snapshot integrado, hashes dos inputs e commit real; checagem local não substitui integração.
-2. Relacione diff, fluxo e consumidores, risco e aceite. Em coordenacao-v1 A, o julgamento de código fica limitado ao diff da phase e aos consumidores afetados; a matriz de Cobertura da solicitação continua obrigatória em todos os protocolos. Fora da regressão completa (checkpoint e protocolos históricos), execute somente a prova que falta para julgar o marco ou integração; reexecute por falha, inputs/dependências relevantes alterados, lacuna de integração ou risco concreto. Em re-review, confira correções e impacto nos consumidores; preserve julgamento e provas válidas das partes inalteradas. Duração não dispensa segurança, paridade ou prova renderizada necessárias.
+2. Relacione diff, fluxo e consumidores, risco e aceite. Em coordenacao-v1 A, o julgamento de código fica limitado ao diff da phase e aos consumidores afetados; a matriz de Cobertura da solicitação continua obrigatória em todos os protocolos. Fora da regressão completa (protocolos históricos), execute somente a prova que falta para julgar o marco ou integração; reexecute por falha, inputs/dependências relevantes alterados, lacuna de integração ou risco concreto. Em re-review, confira correções e impacto nos consumidores; preserve julgamento e provas válidas das partes inalteradas. Duração não dispensa segurança, paridade ou prova renderizada necessárias.
 3. A prova da review depende do protocolo (fonte da execução, §1):
    - **coordenacao-v1 A, review final e re-review:** a review é a única dona da regressão completa; implementador e verificador provaram somente o afetado.
-     - Execute sempre a seção `Regressão completa` do plan, que declara a suíte inteira e o E2E do repo, uma vez, no estado integrado final. E2E que o plan exclui com motivo (por exemplo, não determinístico e fora do CI) não roda; registre a exclusão e o motivo. Registre na etapa, em "Provas executadas", comando, resultado, HEAD e se os paths de código e teste estavam sem modificações não commitadas.
+     - Execute sempre a seção `Regressão completa` do plan, que declara a suíte inteira e o E2E do repo, uma vez, no estado integrado final. E2E que o plan exclui com motivo (por exemplo, não determinístico e fora do CI) não roda; registre a exclusão e o motivo. Registre na etapa, em "Provas executadas", comando, resultado e HEAD.
+     - Árvore suja: com modificação não commitada em path de código e teste, não execute a regressão. Peça o isolamento ao coordenador (no modo subagente, `estado: bloqueado` com o pedido) ou ao humano.
      - Ela cobre as provas executáveis de segurança, paridade e CI obrigatório; a auditoria de código dos pilares abaixo continua no diff. O reaproveitamento do item 1 vale para as provas afetadas das T* e nunca substitui a regressão completa.
-     - Paths de código e teste: todo path do repo fora de `.vibeflow/`, inclusive código, testes, docs, skills e config. Somente artefatos da cadeia em `.vibeflow/`, como plan, spec, review e execution.json, ficam fora.
-     - Re-review: prove o afetado pela correção. Repita a regressão completa antes do Approve somente se algum path de código e teste mudou desde a última execução completa verde. Compare esses paths entre o HEAD registrado na etapa e a árvore de trabalho atual: commit ou modificação não commitada neles conta, assim como árvore que já estava suja no registro. HEAD diferente apenas por mudança dentro de `.vibeflow/` não exige repetição, mesmo commitada. A finalização Git usa a mesma comparação.
+     - Paths de código e teste: todo path do repo fora de `.vibeflow/`, inclusive código, testes, docs, skills e config. Somente artefatos da cadeia em `.vibeflow/`, como plan, spec, review e execution.json, ficam fora. `AGENTS.md` também fica fora quando todos os hunks do seu diff caem dentro da seção `## Decisões vigentes` (sincronização da finalização); qualquer hunk fora dela conta.
+     - Re-review: confira primeiro a correção registrada. `correcao.commit` não é nulo e é igual a `commit_encontrado`, que o motor só projeta quando o commit descende do commit da integração e tem os blobs da prova atual; os IDs do título `task(Rn,...)` são exatamente os R* marcados `[x]` desde a etapa anterior. Divergência bloqueia Approve e volta ao coordenador. Reaproveite a prova afetada da correção certificada pelo verificador; execute-a só se faltar ou se seus inputs mudaram.
+     - Repita a regressão completa antes do Approve somente se algum path de código e teste mudou desde a última execução completa verde. Compare esses paths entre o HEAD registrado na etapa e a árvore de trabalho atual: commit ou modificação não commitada neles conta. HEAD diferente apenas por mudança fora dos paths de código e teste não exige repetição, mesmo commitada. A finalização Git usa a mesma comparação.
      - Falha: abra `R*` `Required` com o comando que falhou e o remédio. Approve exige regressão completa verde sobre o código final.
      - Plan sem seção `Regressão completa` (anterior ao formato que a introduziu): use a verificação agregada do repo (CI ou comandos documentados no `AGENTS.md`) como regressão completa e registre a origem na etapa. Sem nenhuma das duas fontes, devolva a necessidade ao coordenador com recomendação; não aprove sem regressão completa.
-   - **coordenacao-v1 A, checkpoint:** não rode a regressão completa; execute somente a prova que falta para julgar o marco (item 2).
    - **etapas-v1, Modo B e legado:** mantêm a regra histórica. Não rode automaticamente a matriz de comandos de cada T* nem a suíte completa. Audite código, cobertura e validade das provas locais/integradas já certificadas; mudar de etapa ou revisor não exige executá-las novamente. Suíte completa só entra por risco, consumidores afetados, lacuna concreta ou CI obrigatório, com motivo registrado. Na review final, use uma verificação agregada existente somente se houver lacuna e ela comprovar a integração; rode o Smoke Test somente quando a entrada real tiver mudado, sua prova estiver ausente/desatualizada ou for necessária para cobrir o fluxo integrado.
 4. Registre em cada etapa referências às provas reaproveitadas, comandos novos e motivo; não copie snapshots do lar operacional do protocolo nem reinvestigue inputs inalterados sem lacuna concreta. Se uma prova necessária falhar, abra `R*` `Required` com comando e remédio; não aprove silenciosamente.
 
@@ -125,6 +137,7 @@ Inspecione o código integrado e aplique estes pilares ao escopo da etapa:
    - Inspecione no navegador quando `Visual: necessária` estiver no plan ou quando o diff revelar uma saída renderizada relevante não prevista. Tocar arquivo de UI, HTML ou DOM não basta. Se `Visual: dispensada` estiver justificada por prova executável e o diff confirmar que não há resultado renderizado a julgar, não abra o navegador.
    - Reaproveite a evidência visual registrada pela implement quando seus inputs continuam válidos e ela cobre a integração. Só execute ou repita navegador se a prova estiver ausente/desatualizada, faltar cobertura da integração, ou o risco/diff exigir outro estado ou viewport. Quando necessário, selecione nesta ordem conforme `references/ui-visual-quality.md`: navegador integrado (`@Browser` ou equivalente), MCP Server `chrome-devtools`, ou Playwright somente se já existir no repositório ou for solicitado para fluxos repetíveis e assertions.
    - Comece pela rota/tela, estado e viewport afetados pelo diff; amplie quando layout, responsividade, interação, componente compartilhado ou risco exigirem. Registre rota, viewport, estado, ações e evidência observada. Aplique a checklist da referência ao recorte afetado, incluindo acessibilidade e erros relevantes de runtime.
+   - Com `design.md`, diff que altera componente ou token listado em `Superfícies compartilhadas` reconfere todas as telas listadas ali para ele, inclusive fora do inventário da phase, pela `Prova visual esperada` de cada tela.
    - Para ações compactas, aceite `icon-only` somente quando a ação for universalmente reconhecível, como lixeira para apagar, com nome acessível, área de interação adequada, foco visível e tooltip quando aplicável. Ações ambíguas continuam com texto.
    - Se a prova renderizada for necessária e não houver capacidade ou evidência válida, aplique a regra de instalação: instale a ferramenta ausente necessária à prova pelo gerenciador do projeto ou por fonte oficial, quando o ambiente e as permissões permitirem, sem alterar manifesto nem lockfile do projeto e registrando a ferramenta na etapa. Instalação que exija credencial, criação de conta, pagamento, elevação administrativa ou configuração persistente de integração (por exemplo, registrar um MCP) é impedimento real e vai ao humano. Se a capacidade continuar ausente, abra `R*` `Required`; não aprove silenciosamente.
 5. **Simplificação e Qualidade de Código:**
@@ -139,7 +152,7 @@ Inspecione o código integrado e aplique estes pilares ao escopo da etapa:
      - Há colunas de Foreign Key sem índice explícito ou queries N+1 em loops? Vira `R*` `Required`.
      - Há `SELECT *` desnecessário em código de produção ou paginação por `OFFSET` massivo? Vira `R*` `Required`.
 
-Finding: evidência (`path`) + severidade + remédio nomeado + prova. Sem evidência concreta não entra. Achado novo = próximo `R*` livre. Não renumerar fechados.
+Finding: evidência (`path`) + severidade + remédio nomeado + prova. Sem evidência concreta não entra. Achado novo = próximo `R*` livre. Não renumerar fechados. Em `coordenacao-v1` A, todo R* novo cujo remédio altera paths de `Arquivos:` da phase traz `papel: redator` quando o remédio é só prosa desses paths (SKILL, referências, templates, docs, README) e `papel: corretor` nos demais casos; a implement roteia a correção por esse campo. Remédio em `plan.md`, `spec.md` ou `AGENTS.md` não leva `papel` e indica no remédio o finalizador; remédio em `review.md` é do revisor, sem `papel`. R* históricos não são migrados.
 
 | Prefixo | Bloqueia Approve? |
 |---|---|
@@ -156,9 +169,10 @@ Molde: `templates/review.md`. Uma casa por fato. Omita seção que esta etapa n�
 
 | Campo | Abre | Fecha / some |
 |---|---|---|
-| Tipo de review | Toda etapa | Registre checkpoint ou final e, no checkpoint, a referência exata do marco no plan |
+| Tipo de review | Toda etapa | Registre checkpoint (somente protocolos históricos) ou final e, no checkpoint, a referência exata do marco no plan |
+| Execução | Etapa em `coordenacao-v1` A | Registre o resultado da auditoria do executado (§3); omitir nos protocolos históricos |
 | Cobertura | Há `spec.md` | Sem spec: omitir |
-| R* | Achado com path + evidência | `[x]` quando implement provou. Lista vazia some. Sem bloqueio: “nenhum bloqueio” |
+| R* | Achado com path + evidência; `papel` em `coordenacao-v1` A | `[x]` quando implement provou. Lista vazia some. Sem bloqueio: “nenhum bloqueio” |
 | Provas | Toda etapa | Liste provas reaproveitadas, executadas e o motivo; N/A só quando não há prova aplicável |
 | Visual | O aceite depende da UI renderizada ou a T* marcou `Visual: necessária` | Se não há resultado renderizado a julgar e a dispensa está provada, omitir |
 | Segurança | Diff toca superfície listada no §3 | Sem isso: omitir |
@@ -223,7 +237,7 @@ Vale quando o coordenador do `vibe-implement` (Modo A) delega esta skill e o ped
 - **Veredito vigente:** marque a proposta (`Approve` ou `Request changes`) no `review.md`. O status continua `rascunho` ou `request-changes` conforme o §4; `aprovado` só vem depois da confirmação humana.
 - **Humano:** não pergunte ao humano nem espere resposta. Quando o veredito depender dele, devolva `estado: pergunta` com a recomendação; o coordenador pergunta. Não deixe Open Questions no arquivo.
 - **Re-review após correção:** acrescente nova etapa no mesmo arquivo e confira os R* marcados pelo responsável de registro do protocolo contra o diff e a prova antes de aceitá-los.
-- **Proibido:** finalização Git do §5, commit, push, edição de `AGENTS.md`, aprovação humana marcada no arquivo, correção de código e instalação fora da regra do §3.
+- **Proibido:** finalização Git do §5, commit, push, edição de `AGENTS.md`, aprovação humana marcada no arquivo, correção de código ou de motor (inclusive defeito achado no §0) e instalação fora da regra do §3.
 - **Resposta:** o relatório substitui a resposta de chat do §4. Além dos campos fixos, devolva `veredito` (`Approve final` ou `Request changes`), `abertos` (todos os R* de correção em `[ ]`), `fechados` (R* fechados nesta etapa), `critical_encontrados` (R* Critical abertos nesta etapa) e `decisoes_vigencia` (IDs propostos na tabela, ou nenhuma).
 
 Na review delegada, informe também a cobertura da solicitação e qualquer limitação de origem, referenciando a matriz gravada. Approve exige obrigações atendidas ou retiradas explicitamente pelo humano, origem suficiente e nenhum bloqueio aberto.

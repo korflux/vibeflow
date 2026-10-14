@@ -29,6 +29,14 @@
 - Espaçamento e raio: <escala e regra de uso>
 - Componentes base: <botão, input, modal, toast, tabela e empty state>
 
+## Superfícies compartilhadas
+
+<!-- Uma linha por componente ou token comum novo ou alterado. Sem item comum, registre N/A com motivo. Ordem para o plan e reconferência na review em references/kit-e-tokens.md. -->
+
+| Componente ou token | Novo ou alterado | Telas afetadas |
+|---|---|---|
+| <nome> | <novo, alterado ou reusado sem mudança> | <telas que consomem o item, dentro ou fora do inventário> |
+
 ## Tela: <nome>
 
 <!-- Repita este bloco por tela do inventário. -->
@@ -39,9 +47,8 @@
 - Tokens: <cor, tipo, espaço e raio aplicados>
 - Iconografia: <ícone por ação, texto obrigatório em ação ambígua>
 - Motion: <frequência, propósito, easing, duração ou N/A com motivo, ver references/motion.md>
-- Responsivo: <viewport estreita, overflow, truncamento e quebra de texto>
+- Responsivo: <regra responsiva da tela ou N/A com motivo; overflow, truncamento e quebra de texto>
 - Estados: <vazio, loading, erro, sucesso e sem permissão>
-- Prova visual esperada: <rota, viewport, estado, ações e evidência para a review>
 
 ## Tokens e iconografia
 
@@ -50,7 +57,7 @@
 
 ## Responsivo e estados
 
-- Viewport estreita: <o que muda>
+- Viewport estreita: <o que muda, somente quando houver regra responsiva>
 - Overflow e truncamento: <regra por zona>
 - Estados globais: <loading, empty, error, success e sem permissão>
 
@@ -65,9 +72,12 @@
 
 ## Prova visual esperada
 
-<!-- A review confere no navegador. Screenshot isolado não substitui a interação relevante. -->
+<!-- Uma linha por tela do inventário. Papel desta seção e consumo pelo plan em references/kit-e-tokens.md. Screenshot isolado não substitui a interação relevante. -->
 
-- Rota, viewport, estado, ações e evidência por tela: <lista curta>
+| Tela | Rota | Viewport de julgamento | Viewport estreita | Estado e ações | Evidência observável |
+|---|---|---|---|---|---|
+| <nome> | <rota> | <largura em que o aceite é julgado> | <largura, somente com regra responsiva; senão N/A> | <estado exercitado e ações> | <o que deve aparecer renderizado> |
+
 - Console, rede e assets sem erro: <como conferir>
 
 ## Decisões

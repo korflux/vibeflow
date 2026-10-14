@@ -49,7 +49,7 @@ O JSON transitório mantém `vibeflow`, `phases`, `next_n`, `existing`, `intervi
 5. A IA escreve ou atualiza diretamente o `spec.md`, mantendo `# Status: rascunho` durante a elaboração.
 6. A aprovação é um patch no vivo; um novo apply não é necessário para mudar o status.
 
-O script não escolhe comportamento, não pergunta, não preenche markdown e não altera `REGRAS.md`. Em falhas de seleção, o arquivo anterior permanece intacto.
+O script não escolhe comportamento, não pergunta, não preenche markdown e não altera `AGENTS.md`. Em falhas de seleção, o arquivo anterior permanece intacto.
 
 ## 5. Artefato e decisões
 
@@ -57,7 +57,7 @@ Seções: Objetivo, Cobertura da origem, Suposições e decisões, Escopo e comp
 
 Quando a entrega tem fluxo ou UX, o Escopo usa o molde `F*` com Jornada, Rota, Gatilho, Pré-condição, Superfície por passo, Passos numerados com ação e resposta, Validações, Erros com código e mensagem segura, Estados com vazio, loading, erro, sucesso e sem permissão, e Aceite `A*`. Página informativa simples aceita `F*` curto e N/A fundamentado para regras inexistentes. Passo sem superfície é defeito. Handoff é `vibe-design` com UI visível, senão `vibe-plan`. `plan.md` existente bloqueia nova escrita, pedido novo exige outra phase.
 
-A spec fecha contratos que afetam o resultado e indica a evidência observável de cada `A*`. Arquivos, comandos, ordem de execução, testes e escolhas internas reversíveis ficam no plan.
+A spec fecha contratos que afetam o resultado. Quando um contrato compartilhado é consumido por mais de um fluxo, Contratos e restrições necessárias registra os `F*` consumidores. Como provar liga cada `A*` ao `F*` ou jornada que o exerce, ao nível (`jornada` percorre o fluxo de ponta a ponta; `local` observa a regra ou o módulo isolado) e à evidência observável; com UI, a evidência é o que a tela renderizada mostra. Arquivos, comandos, paths de teste, ferramentas, ordem de execução e escolhas internas reversíveis ficam no plan, que deriva a `Prova afetada:` de cada T* a partir do nível.
 `A*` e `C*` descrevem resultados, não unidades de teste. Uma prova por capacidade pode cobrir vários critérios sem fragmentá-los artificialmente.
 
 Para entradas externas, a spec fecha a allowlist de campos e valores aceitos e o tamanho máximo por entrada. Para acesso de navegador entre origens, declara a allowlist de origens CORS e nunca combina origem `*` com credenciais; quando CORS não se aplica, registra N/A com motivo. A skill registra esses limites junto dos demais controles de segurança exigidos pelo fluxo.

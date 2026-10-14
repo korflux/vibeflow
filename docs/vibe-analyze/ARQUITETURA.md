@@ -13,7 +13,7 @@
 |---|---|
 | `SKILL.md` | Cruzar fontes, resolver achados, perguntar ambiguidades reais, definir o veredito e operar como subagente quando o chat do plan delega. |
 | `scripts/analyze.py`, `analyze.ps1`, `analyze.sh` | Inventário, validação de predecessores, preparação do vivo e JSON operacional no stdout. |
-| `references/coverage.md` | Taxonomia de passes e severidades, consultada sob demanda. |
+| `references/coverage.md` | Taxonomia de passes, conferência do contrato da implement e severidades, consultada sob demanda. |
 | `stdout (JSON)` | Evidência operacional transitória, consumida na mesma execução. |
 | `analyze.md` | Certificação viva e commitável. |
 
@@ -44,9 +44,13 @@ O motor não corrige as fontes, não escreve prosa e não publica decisões vige
 
 ## 5. Conteúdo e veredito
 
-Seções: Fontes, Cobertura, Achados, Clarificações, Constituição, Métricas, Veredito e Handoff. Finding precisa de path e evidência. Veredito `limpo` encaminha para `vibe-implement`; `bloqueado` volta para a skill dona.
+Seções: Fontes (interview, spec, design quando há UI visível, plan e `AGENTS.md`), Cobertura, Achados, Clarificações, Constituição, Métricas, Veredito e Handoff. Finding precisa de path e evidência. Veredito `limpo` encaminha para `vibe-implement`; `bloqueado` volta para a skill dona. Achado CRITICAL ou HIGH sem correção nem bloqueio real registrado mantém `bloqueado`.
 
-Em MVP, conflito crítico sem `substitui` explícito bloqueia. `analyze.md` não altera a tabela de decisões vigentes em `REGRAS.md`.
+Em MVP, conflito crítico sem `substitui` explícito bloqueia. `analyze.md` não altera a tabela de decisões vigentes em `AGENTS.md`.
+
+### Contrato da implement
+
+Em plan `# Protocolo: coordenacao-v1`, a IA confere o que o motor e o coordenador do `vibe-implement` precisam para despachar ondas: `Arquivos:` no formato lido pelo motor (primeira linha `- **Arquivos:**` da T*, numa linha física, paths entre crases e comparáveis, conforme a seção Onda paralela de `docs/vibe-implement/ARQUITETURA.md`), sobreposição de `Arquivos:` entre T* sem `Deps`, `Prova afetada:` executável e restrita ao recorte, uma única `Regressão completa` com comandos reais e prontidão técnica com local e destino por requisito, inclusive perfis quando o plan promete Modo A. A categoria é `contrato_implement`; as gravidades moram na seção 3 de `references/coverage.md` e as correções, na seção 4. Correção direta nunca grava a suíte inteira como `Prova afetada:`. Plan `etapas-v1` ou sem marcador, com ou sem T* concluída, conserva o contrato histórico e recebe N/A nessa dimensão; o analyze não grava marcador, e migrar o protocolo é decisão humana separada. O motor do analyze não lê `Arquivos:` nem calcula ondas: a conferência é semântica da IA.
 
 ## 6. Investigação, chat e testes
 
@@ -63,6 +67,6 @@ Suítes: `docs/vibe-analyze/tests/test-analyze.py` e `docs/vibe-analyze/tests/te
 ## 7. Limites
 
 - Não cria phase, `n`, slug ou arquivo auxiliar.
-- Não edita interview, não publica `REGRAS.md` e não substitui a review. Como subagente, também não implementa, não commita e não marca a aprovação humana.
+- Não edita interview, não publica decisões vigentes em `AGENTS.md` e não substitui a review. Como subagente, também não implementa, não commita e não marca a aprovação humana.
 - O script não interpreta Status, aceite ou veredito.
 - O arquivo vivo entra no Git; o JSON operacional é transitório no stdout; não há commit automático.

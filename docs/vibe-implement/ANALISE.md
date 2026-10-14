@@ -12,6 +12,7 @@ Coordenador escolhe resultado, dependências, responsáveis e colaboração; rec
 
 ```text
 plan aprovado + modo → finalizador obtém resumo do motor
+  → coordenador confere a capacidade de delegação (prontidão do plan ou host); perfil ausente → pergunta ao humano
   → coordenador seleciona entrega e colaboração útil
   → implementadores entregam código + testes + checagem local, por onda
   → verificador certifica a prova afetada de cada T*; finalizador registra o local da onda num único handoff; dependentes podem avançar
@@ -19,7 +20,7 @@ plan aprovado + modo → finalizador obtém resumo do motor
   → falha concreta → corretor → verificador renova provas afetadas
   → finalizador registra integração e commit real
   → revisor independente julga origem, código e riscos
-  → correção bloqueante → corretor/verificador/finalizador → nova review
+  → correção bloqueante → corretor ou redator pelo `papel` do R* → verificador/finalizador → nova review
   → coordenador apresenta resultado e pede confirmação humana única
   → finalizador fecha review/decisões autorizadas/Git/push
 ```
@@ -62,16 +63,22 @@ Decisões e porquês:
 
 Fora desta mudança: worktree por T*, fan-out da review por dimensão e ajuste de esforço dos perfis. Modo B, `etapas-v1` e plans sem marcador conservam o fluxo e a regra de prova atuais; T* sem `Prova afetada:` (Express ou plan anterior) usa o recorte derivado de diff e consumidores diretos.
 
+## Capacidade antes da onda e roteamento por papel
+
+Vale somente em `coordenacao-v1` Modo A; Modo B, `etapas-v1` e plans sem marcador não mudam. A phase 20 alinha a cadeia ao coordenador. Sem conferir os perfis antes da primeira onda, uma onda podia sair sem verificador, redator ou finalizador apto e travar no meio. O plan agora registra a capacidade na prontidão; o coordenador a confere, ou a verifica no host quando o plan não a registra, e perfil ausente vira pergunta ao humano antes de qualquer despacho, porque instalar ou recarregar perfil depende do host e não é decisão da IA. Trocar o papel faltante por outro perfil quebraria as proibições de cada um, por isso não é fallback.
+
+A review passa a marcar cada R* com `papel: corretor | redator`. Achado de prosa ia ao corretor, cujo perfil é código e testes; o campo deixa o roteamento explícito sem o coordenador reinterpretar o achado. R* sem o campo segue o remédio: plan, spec ou `AGENTS.md` são do finalizador, `review.md` é do revisor, e R* de reviews anteriores vai ao corretor, preservando o comportamento histórico. A conferência e o roteamento são passos da IA; o motor e o `execution.json` não mudam.
+
 ## Estado e retomada
 
 Plan define trabalho e mostra resumo curto. execution.json versionado ao lado guarda somente estado atual por task, integração, origem e commit; Git/review guardam histórico. O motor captura hashes/HEAD, valida formato/paths/ancestralidade e troca arquivo atomicamente sem executar comandos informados como evidência. stdout é compacto; detalhes são consultados por quem precisa diagnosticar.
 
-Isso evita JSON e logs em Markdown e duas fontes concorrentes de conclusão. Checkbox resume estado comprovado pelo motor. Ausência do sidecar significa pendente; corrupção bloqueia. Inputs alterados invalidam somente evidência afetada, sem refazer código válido. Cobertura semântica ainda pertence ao verificador, pois integridade do hash não prova completude do teste.
+Isso evita JSON e logs em Markdown e duas fontes concorrentes de conclusão. Checkbox resume estado comprovado pelo motor. Ausência do `execution.json` significa pendente; corrupção bloqueia. Inputs alterados invalidam somente evidência afetada, sem refazer código válido. Cobertura semântica ainda pertence ao verificador, pois integridade do hash não prova completude do teste.
 
 Registro do hash depois do commit pode deixar residual operacional; ele entra no fechamento final autorizado. Não se cria ciclo de commits para guardar o próprio hash.
 
 ## Compatibilidade e limites
 
-Etapas-v1 conserva etapas de código/testes/validação e snapshots no plan. Legado conserva commit por task. B conserva ciclo individual, inclusive com marcador novo, sem sidecar. Runs existentes não migram implicitamente. O manual histórico é carregado somente quando o marcador/modo exigir; o fluxo principal permanece curto.
+Etapas-v1 conserva etapas de código/testes/validação e snapshots no plan. Legado conserva commit por task. B conserva ciclo individual, inclusive com marcador novo, sem `execution.json`. Runs existentes não migram implicitamente. O manual histórico é carregado somente quando o marcador/modo exigir; o fluxo principal permanece curto.
 
 Express/texto avulso conserva a entrada proporcional e não cria phase/init para ajuste localizado. Falhas de prova exigem correção pela causa, enquanto decisões materiais e impedimentos reais chegam ao humano. Review tem no máximo duas rodadas de correção; aprovação/push continuam dependentes da confirmação final. O motor não interpreta intenção, certifica cobertura semântica nem opera Git de escrita.

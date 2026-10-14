@@ -12,11 +12,13 @@
 
 ## Tipo de review
 
+<!-- Checkpoint só em etapas-v1, Modo B e legado; coordenacao-v1 Modo A tem somente review final. -->
+
 - Tipo: <checkpoint | final>
 - Marco e justificativa: <referência exata ao plan.md | integração final>
 - T* abertas fora do marco: <IDs ou nenhuma>
 - Provas reaproveitadas: <T* e resultado | nenhuma>
-- Provas executadas: <comando, motivo e resultado; na regressão completa, também HEAD e paths de código e teste sem modificações não commitadas (sim/não) | nenhuma>
+- Provas executadas: <comando, motivo e resultado; na regressão completa, também HEAD | nenhuma>
 
 ## Cobertura da solicitação
 
@@ -31,22 +33,23 @@
 ## Checklist de correções
 
 <!-- Todo R* aberto bloqueia, inclusive nit e classificações legadas. O responsável pelo registro do protocolo marca [x] somente após prova certificada. -->
+<!-- coordenacao-v1 Modo A: R* cujo remédio altera Arquivos: da phase termina com papel: redator (só prosa desses paths) ou papel: corretor; remédio em plan, spec ou AGENTS.md cita o finalizador e não leva papel; protocolos históricos omitem o campo. -->
 <!-- Sem bloqueio: uma linha "nenhum bloqueio" e omitir as listas vazias. -->
 <!-- Achado novo em etapa posterior: próximo número livre. Não renumerar fechados. -->
 
 ### Critical
 
-- [ ] R1: **Critical** - `path` - <o que está errado> - remédio: <movimento> - prova: <comando> - source: <solicitação|decisão humana|A*|C*|diff|plan.md> - gap: <missing|partial|contradicts|nenhum>
+- [ ] R1: **Critical** - `path` - <o que está errado> - remédio: <movimento> - prova: <comando> - source: <solicitação|decisão humana|A*|C*|diff|plan.md> - gap: <missing|partial|contradicts|nenhum> - papel: <corretor|redator; históricos: omitir>
 
 ### Required
 
-- [ ] R2: **Required** - `path` - <...> - remédio: ... - prova: ...
+- [ ] R2: **Required** - `path` - <...> - remédio: ... - prova: ... - papel: <corretor|redator; históricos: omitir>
 
 ### Nit
 
 <!-- omitir se vazio -->
 
-- [ ] R3: **Nit** - `path` - <problema fundamentado> - remédio: <movimento> - prova: <checagem>
+- [ ] R3: **Nit** - `path` - <problema fundamentado> - remédio: <movimento> - prova: <checagem> - papel: <corretor|redator; históricos: omitir>
 
 ## Visual
 
@@ -75,7 +78,7 @@
 ## Veredito vigente
 
 <!-- Todo R* aberto, obrigação parcial/ausente ou origem insuficiente bloqueia Approve. Preserve o histórico; defer legado não libera pendências. -->
-<!-- Preencher somente na review final. Checkpoint registra o resultado do marco em Etapas e nunca aprova nem conclui a phase. -->
+<!-- Preencher somente na review final. Checkpoint (protocolos históricos) registra o resultado do marco em Etapas e nunca aprova nem conclui a phase. -->
 
 - [ ] **Approve**: origem suficiente, obrigações atendidas ou retiradas explicitamente pelo humano e nenhum R* de correção em `[ ]`
 - [ ] **Request changes**: há R* de correção em `[ ]`
@@ -97,7 +100,7 @@ vibe-implement | finalização Git da phase
 <!-- Aprovação humana só se aplica à review final, depois do Approve e da fila concluída. -->
 - [ ] Aprovação humana (leu o arquivo e confirmou)
 
-- Chat: recomende iniciar esta review em chat novo, separado da implementação; no Modo A do `vibe-implement`, ela roda em subagente de contexto limpo, a pedido do coordenador. Para correções `vibe-implement`, recomende outro chat ou, no Modo A, um subagente corretor; se o humano preferir continuar aqui, siga sem bloquear. Após Approve e confirmação humana, o handoff é a finalização Git da phase. O `review.md` vivo e o diff são a ponte.
+- Chat: recomende iniciar esta review em chat novo, separado da implementação; no Modo A do `vibe-implement`, ela roda em subagente de contexto limpo, a pedido do coordenador. Para correções `vibe-implement`, recomende outro chat ou, no Modo A, um subagente corretor ou redator conforme o `papel` de cada R*; se o humano preferir continuar aqui, siga sem bloquear. Após Approve e confirmação humana, o handoff é a finalização Git da phase. O `review.md` vivo e o diff são a ponte.
 
 ## Finalização Git da phase
 
@@ -115,7 +118,8 @@ vibe-implement | finalização Git da phase
 - Marco e justificativa: <referência ao plan.md | integração final>
 - T* abertas fora do marco: <IDs ou nenhuma>
 - Provas reaproveitadas: <IDs e resultado | nenhuma>
-- Provas executadas: <comando, motivo e resultado; na regressão completa, também HEAD e paths de código e teste sem modificações não commitadas (sim/não) | nenhuma>
+- Provas executadas: <comando, motivo e resultado; na regressão completa, também HEAD | nenhuma>
+- Execução: <coordenacao-v1 A: inputs por T*, diff na união dos Arquivos:, consumidores da mesma onda e, na re-review, correcao.commit e IDs | omitir em protocolo histórico>
 - Leu: <solicitação original, alterações humanas e artefatos consultados>
 - Cobertura: <mudanças na matriz e limite do marco | conferida sem mudança>
 - Abriu: R1, R2 (ou nenhum)

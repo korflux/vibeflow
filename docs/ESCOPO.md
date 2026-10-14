@@ -10,12 +10,13 @@ Convenção: `[x]` já existe no repositório hoje. `[ ]` entra, ainda não cons
 - [x] `vibe-interview` — fecha intenção ambígua.
 - [x] `vibe-spec` — grava o decidido.
 - [x] `vibe-plan` — fatia a spec em T*.
-- [x] `vibe-analyze` — cruza interview, spec e plan.
+- [x] `vibe-analyze`, cruza interview, spec, `design.md` quando houver UI visível e plan; em `coordenacao-v1`, confere o contrato da implement.
 - [x] `vibe-implement`, executa a fatia com prova. Modo A: piloto da phase com subagentes. Modo B: uma T* por run.
-- [x] `vibe-review` — julga o patch e grava o veredito.
+- [x] `vibe-review`, julga o patch e grava o veredito. No Modo A, audita o executado pelo `execution.json` e pelo diff dentro dos `Arquivos:`.
 - [x] `vibe-design`, grava `design.md` entre spec e plan somente com UI visível, com N/A explícito sem tela. Pacote com motores, SKILL, template, references e distribuição em oito skills.
 - [ ] **Rota MVP.** Projeto novo usa baseline único em `.vibeflow/mvp/` e percorre interview, spec, plan, analyze, implement e review. Pivôs posteriores voltam às phases.
 - [x] **Paralelismo por ondas no Modo A.** Em `coordenacao-v1` Modo A, o plan exige `Arquivos:` e `Prova afetada:` por T* e `Regressão completa` uma vez. O motor da implement (`implement.py`/`implement.ps1`) calcula a disjunção e relata `fila.onda` e `fila.sem_arquivos`; o coordenador despacha a onda numa rodada. Provas em dois níveis: implementador e verificador provam o afetado, e a review final executa a regressão completa. Papel `redator` para T* de prosa.
+- [x] **Cadeia alinhada ao implement (9.0.0).** O plan registra a prontidão com local e destino por requisito, e a implement confere a capacidade de delegação antes da primeira onda; o analyze confere o contrato da implement; a review do Modo A audita o executado, sem checkpoint, e cada R* indica `papel: corretor | redator`; o init gera a regra de erro fora do recorte e perfis por protocolo; spec e design alimentam a `Prova afetada:`. Nenhum motor mudou nesta phase.
 - [ ] **Worktree por T*.** Isolamento por worktree, com pacote de contexto por T*. Hoje o isolamento é a disjunção de `Arquivos:`.
 - [ ] **Fan-out da review por dimensão.** Review dividida em revisores paralelos por dimensão.
 - [ ] **E2E do piloto na regressão completa.** `docs/vibe-implement/tests/piloto-modo-a.py` fica fora da regressão completa e do CI por não ser determinístico e consumir tokens da conta.
@@ -116,7 +117,7 @@ Contrato: `docs/vibe-review/ARQUITETURA.md` e `templates/review.md` antes de mud
 
 ### 3.7 Piloto automático de implementação com subagentes
 
-- [x] `vibe-implement` Modo A: coordenador delega cada T* a um subagente, confere, registra e commita; a review final roda em subagente, as correções vão a um corretor (até 2 rodadas) e o piloto termina com uma única confirmação (aprovar a review, publicar decisões vigentes e fazer push).
+- [x] `vibe-implement` Modo A em `etapas-v1` (protocolo histórico): coordenador delega cada T* a um subagente, confere, registra e commita. Em `coordenacao-v1` Modo A, o finalizador opera registros e Git, e o coordenador não executa essas operações. Nos dois protocolos, a review final roda em subagente, as correções vão a um corretor (até 2 rodadas) e o piloto termina com uma única confirmação (aprovar a review, publicar decisões vigentes e fazer push).
 - [x] `vibe-implement` Modo B: uma T* por run, por pedido, T* nomeada, rota `low` ou `medium` ou falta de subagentes. O modo de plano inteiro inline deixou de existir.
 - [x] Motor do implement informa `etapa` e `rodadas_correcao` lidos de `plan.md` e `review.md`, para retomar e coordenar pelo disco.
 - [x] `references/delegation.md` idêntico em `vibe-plan` e `vibe-implement` (papéis por perfil, relatório fixo, escritor único, fallback), comparado por bytes em `docs/tests/test-distribuicao.py`.
@@ -135,7 +136,7 @@ Contrato: `docs/vibe-implement/ARQUITETURA.md`, `docs/vibe-review/ARQUITETURA.md
 
 - [x] `vibe-plan` agrupa cada resultado coeso em uma T* e só divide por entrega separada, dependência de execução, isolamento de risco ou prova inviável como uma unidade.
 - [x] Preparo local de ferramentas é checklist; task de setup só existe quando a mudança persistente faz parte da entrega do projeto.
-- [x] Paralelização e checkpoints de review aparecem somente quando mudam execução ou review; checkpoint de retomada fica temporariamente sob T* incompleta e guarda o snapshot Git da prova. O parser continua lendo somente `T*`, conclusão e `Deps`.
+- [x] Paralelização e, nos protocolos históricos, checkpoints de review aparecem somente quando mudam execução ou review; em `coordenacao-v1` Modo A o plan não promete checkpoint de review; checkpoint de retomada fica temporariamente sob T* incompleta e guarda o snapshot Git da prova. O parser continua lendo somente `T*`, conclusão e `Deps`.
 
 ## 4. Limites de contrato
 
@@ -148,8 +149,8 @@ Não são backlog. Mudá-los quebra o disco.
 | Segunda fonte de regras fora de `AGENTS.md` | Mesma razão. A ponte Antigravity é apenas `@../../AGENTS.md`, não uma cópia. |
 | A IA não escolhe `n`, slug nem path | Disco decide, script calcula. |
 | A IA não escolhe homolog ou produção | Só o humano sabe, e a resposta muda o bloco de migrations. |
-| Commit por task e push final | Implement commita cada task verde com staging explícito; a finalização da phase faz push somente após aprovação humana, executada pela review ou, no Modo A, pelo coordenador do implement depois da confirmação única. |
-| Escritor único dos artefatos vivos e do Git | Só o coordenador altera `plan.md`, `spec.md`, `review.md` e `AGENTS.md`, opera o índice Git e cria commits. Subagentes devolvem relatório; as exceções são o revisor (`review.md`) e o subagente de analyze (`analyze.md`). |
+| Commit por task e push final | Em `coordenacao-v1` Modo A, a implement cria um commit de integração depois da prova verde; no Modo B, em `etapas-v1` e no legado, commita cada task verde. Sempre com staging explícito. A finalização da phase faz push somente após aprovação humana, executada pela review ou, no Modo A, pelo finalizador depois da confirmação única transmitida pelo coordenador. |
+| Escritor único dos artefatos vivos e do Git | Em `coordenacao-v1` Modo A, o finalizador genérico apto opera registros, índice Git e commits com ownership temporário exclusivo, e o coordenador não executa essas operações. Nos protocolos históricos e no Modo B, só o coordenador altera `plan.md`, `spec.md`, `review.md` e `AGENTS.md`, opera o índice Git e cria commits. Subagentes devolvem relatório; as exceções são o revisor (`review.md`) e o subagente de analyze (`analyze.md`). |
 | Motor único ("só Python" ou "só PowerShell") | Os dois motores implementam o mesmo contrato; o launcher `.sh` escolhe, sem versão degradada. |
 | Escrita semântica no script ou em arquivo temporário de promoção | O script prepara o vivo e a IA grava a prosa, preservando o histórico já existente. |
 

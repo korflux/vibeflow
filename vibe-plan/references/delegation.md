@@ -4,15 +4,15 @@ Leia antes da primeira delegação e ao escolher colaboração. As cópias em vi
 
 ## Papéis e responsabilidade técnica
 
-Use perfis realmente disponíveis, sem escolher modelo pelo nome. Host sem seleção usa padrão. O finalizador usa agente genérico/default apto e pedido explícito; não reutilize um perfil que proíba Git nem exija instalar perfil novo.
+Use perfis realmente disponíveis, sem escolher modelo pelo nome. No `coordenacao-v1` A, a skill chamadora confere a capacidade antes da primeira onda; perfil exigido ausente ou não carregado nunca é substituído por outro papel. Host sem seleção usa padrão. O finalizador usa agente genérico/default apto e pedido explícito; não reutilize um perfil que proíba Git nem exija instalar perfil novo.
 
 | Papel | Entrega | Escrita autorizada |
 |---|---|---|
 | explorador | Fluxo, consumidores, paths e evidências para destravar decisão/implementação | Nenhuma |
 | implementador | Código e testes juntos, `Prova afetada:` da T* e inputs reais | Código/testes dos `Arquivos:` da T* |
-| redator | Prosa de SKILL, referências, docs e artefatos do recorte, `Prova afetada:` da T* e inputs reais | Os `Arquivos:` de prosa da T*; nunca código de motor nem testes |
+| redator | Prosa de SKILL, referências, docs e artefatos do recorte, correção de R* roteado a ele pela skill chamadora, `Prova afetada:` da T* ou da correção e inputs reais | Os `Arquivos:` de prosa da T* ou os paths de prosa do R*; nunca código de motor, testes, plan, spec, review nem AGENTS |
 | verificador | Conferência técnica de diff/ownership/aceite/cobertura e certificação independente da `Prova afetada:` por T* e da união das provas afetadas na integração, reaproveitando prova verde de inputs inalterados | Somente saídas normais das provas |
-| corretor | Correção pela causa raiz e `Prova afetada:` da correção | Código/testes da correção |
+| corretor | Correção pela causa raiz de falha pré-review ou de R* roteado a ele pela skill chamadora, e `Prova afetada:` da correção | Código/testes da correção |
 | revisor | Julgamento independente de código, cobertura da origem e validade de evidências; na review final do novo Modo A executa a `Regressão completa` do plan. Analyze delegado usa este perfil | review.md ou analyze.md conforme skill |
 | finalizador (novo Modo A) | Registro de evidências certificadas, em lote por onda, resumo curto e operações Git delimitadas | execution.json, plan/spec e artefatos de fechamento autorizados; índice exclusivo |
 

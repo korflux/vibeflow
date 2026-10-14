@@ -21,7 +21,7 @@ A investigação começa pela pergunta de consistência que precisa ser respondi
    - Windows: `pwsh "<skill>/scripts/analyze.ps1"`.
    - Unix: `bash "<skill>/scripts/analyze.sh"`.
    - Alvo MVP: acrescente `-Mvp` ou `--mvp`.
-3. Leia o JSON operacional emitido no stdout pelo comando acima. Use `rg --files` e `rg -n` para localizar `spec.md` e `plan.md` (obrigatórios), `interview.md` se houver, `analyze.md`, `AGENTS.md` e os paths de código necessários. Abra somente os arquivos que sustentam o cruzamento, não a árvore inteira.
+3. Leia o JSON operacional emitido no stdout pelo comando acima. Use `rg --files` e `rg -n` para localizar `spec.md` e `plan.md` (obrigatórios), `interview.md` e `design.md` se houver, `analyze.md`, `AGENTS.md` e os paths de código necessários. Abra somente os arquivos que sustentam o cruzamento, não a árvore inteira.
 
 Erros determinísticos previstos: `INIT_AUSENTE` exige `/vibe-init`. `ANALYZE_SEM_PLAN` exige plan. `ANALYZE_SEM_SPEC`, `ANALYZE_SEM_INTERVIEW`, `MVP_INESPERADO`, `MODO_INVALIDO` e `FASE_AUSENTE` exigem diagnosticar a causa e não devem ser contornados.
 
@@ -66,12 +66,13 @@ Audite, cruze e resolva:
 3. **Plan → spec:** Nenhuma T* inventa comportamento, caminhos ou módulos fora do escopo aprovado.
 4. **Design condicional (com UI visível):** Cruza `design.md` além de interview, spec e plan. Com UI visível, design ausente ou não aprovado bloqueia o veredito limpo. Sem UI visível, registra N/A explícito em vez de bloqueio.
 5. **Qualidade dos Testes e Executabilidade:**
-   - Cada T* tem comando executável de prova? O mesmo teste de capacidade pode servir a várias T* e a vários A*/C*; não exija um teste novo por task ou critério. Se a task criar ou alterar um ponto de entrada executável, a prova dessa mesma T* inclui o smoke test real. Não exija uma T1 de baseline para entregas sem ponto de entrada.
+   - Cada T* tem `Prova afetada:` com comando executável? O mesmo teste de capacidade pode servir a várias T* e a vários A*/C*; não exija um teste novo por task ou critério. Se a task criar ou alterar um ponto de entrada executável, a prova dessa mesma T* inclui o smoke test real. Não exija uma T1 de baseline para entregas sem ponto de entrada.
    - As tasks possuem comandos reais de teste no repositório? Se houver verificação puramente manual sem comando, converta para comando executável real no `plan.md`.
    - Confira apenas ferramentas exigidas pelas provas escolhidas, como `gitleaks` ou MCP `chrome-devtools`. Aplique a regra de instalação para ferramenta ausente: instale pelo gerenciador do projeto ou por fonte oficial, quando o ambiente e as permissões permitirem, e planeje a instalação sob a T* que depende dela; credencial, criação de conta, pagamento, elevação administrativa ou configuração persistente de integração (por exemplo, registrar um MCP) são impedimento real e vão ao humano. Só proponha T* para setup persistente que faça parte da entrega do projeto. Registre bloqueio externo sem criar task artificial de instalação.
-6. **Decisões Críticas (MVP):** Cruze cada ID entre interview, spec e plan. Se houver divergência sem declaração de `substitui` ou ID órfão, ajuste a consistência nos artefatos ou pergunte ao usuário se for mudança intencional.
-7. **Conformidade com AGENTS.md:** Violação de regras mandatórias (segurança, auth, dados, segredos, CSP) = aplicar patch corretivo imediato nos artefatos.
-8. **Passes de Consistência:** Duplicação, ambiguidade de adjetivos, furos de aceite e inconsistências de termos = aplicar correção direta.
+6. **Contrato da implement (`coordenacao-v1`):** Somente em plan com `# Protocolo: coordenacao-v1`, confira `Arquivos:` válido em toda T* (uma linha física, paths entre crases, comparáveis), sobreposição de `Arquivos:` entre T* sem `Deps`, `Prova afetada:` executável, restrita ao recorte e cobrindo os A*/C* da T*, uma única `Regressão completa` com comandos reais e a prontidão técnica com local e destino por requisito, incluindo os perfis quando o plan promete Modo A. Formato, gravidades e destinos estão na seção 3 de `references/coverage.md`; as correções, na seção 4. Nenhuma correção grava a suíte inteira como `Prova afetada:`. Plan `etapas-v1` ou sem marcador, com ou sem T* concluída, recebe N/A nesta dimensão, sem gravar marcador; migrar o protocolo é decisão humana separada.
+7. **Decisões Críticas (MVP):** Cruze cada ID entre interview, spec e plan. Se houver divergência sem declaração de `substitui` ou ID órfão, ajuste a consistência nos artefatos ou pergunte ao usuário se for mudança intencional.
+8. **Conformidade com AGENTS.md:** Violação de regras mandatórias (segurança, auth, dados, segredos, CSP) = aplicar patch corretivo imediato nos artefatos.
+9. **Passes de Consistência:** Duplicação, ambiguidade de adjetivos, furos de aceite e inconsistências de termos = aplicar correção direta.
 
 Para cada ajuste aplicado diretamente em `spec.md`, `design.md` ou `plan.md`, registre a entrada na seção **Achados e Resoluções** do `analyze.md`.
 Gravidade: `CRITICAL` · `HIGH` · `MEDIUM` · `LOW`. IDs: `F1`, `F2`... na ordem da tabela.
@@ -91,7 +92,7 @@ Não pergunte se pode salvar e não cole o corpo do documento no chat.
 
 1. Execute o apply. Ele prepara o arquivo vivo somente quando ausente e preserva bytes quando ele já existe.
 2. Escreva ou atualize diretamente o arquivo vivo, certificando a cobertura, os achados corrigidos e a consistência final.
-   Veredito: `limpo` quando todas as correções forem aplicadas e o plano estiver validado para execução; `bloqueado` apenas se restar conflito crítico não resolvido.
+   Veredito: `limpo` quando todas as correções forem aplicadas e o plano estiver validado para execução; `bloqueado` se restar achado CRITICAL ou HIGH sem correção nem bloqueio real registrado.
 3. Execute ou registre a prova final conforme os comandos do repositório:
    - Modo phase:
      `pwsh "<skill>/scripts/analyze.ps1" -Apply`
@@ -106,7 +107,8 @@ Analyze gravado: <created.path>/analyze.md
 
 - Veredito: limpo | bloqueado
 - Cobertura: <A*/C* com T* / total>
-- Qualidade de testes: <provas executáveis proporcionais; smoke do ponto de entrada na T* que o entrega; ferramentas ou limitações registradas>
+- Qualidade de testes: <`Prova afetada:` restrita ao recorte por T*; `Regressão completa` única; smoke do ponto de entrada na T* que o entrega; ferramentas ou limitações registradas>
+- Contrato da implement: <protocolo, `Arquivos:`, sobreposição e prontidão conferidos, ou N/A em plan histórico>
 - Correções aplicadas: <F1... no spec.md / design.md / plan.md ou nenhuma necessária>
 - Handoff: vibe-implement
 - Chat: recomende com ênfase um chat novo com `/vibe-implement`, que rodará em Modo A (host com subagentes: fila inteira da phase e uma pergunta final); se o humano preferir, continuar aqui é válido.

@@ -68,7 +68,7 @@ Sem referência, não improvise DS externo. Com referência, primitivo novo na p
 
 ## 4. Usos
 
-Leia `references/kit-e-tokens.md` quando faltar forma de kit, token, ícone, responsivo, estado ou prova. Leia `references/motion.md` quando a tela tiver motion ou alvo mobile. Os três usos gravam no mesmo vivo, sem código.
+Leia `references/kit-e-tokens.md` quando faltar forma de kit, superfície compartilhada, token, ícone, responsivo, estado ou prova. Leia `references/motion.md` quando a tela tiver motion ou alvo mobile. Os três usos gravam no mesmo vivo, sem código.
 
 | Uso | Entrada | Saída no vivo |
 |---|---|---|
@@ -93,7 +93,7 @@ Não pergunte se pode salvar e não cole o corpo do documento no chat.
    - Modo MVP:
      `pwsh "<skill>/scripts/design.ps1" -Apply -Mvp`
      `bash "<skill>/scripts/design.sh" --apply --mvp`
-2. Escreva ou atualize diretamente o arquivo vivo. Cada tela traz hierarquia de cima para baixo, layout e grid, ordem de leitura, componente por zona, tokens, iconografia, responsivo com viewport estreita, overflow e truncamento, e estados. Registre a prova visual esperada por tela para a review conferir.
+2. Escreva ou atualize diretamente o arquivo vivo. Cada tela traz hierarquia de cima para baixo, layout e grid, ordem de leitura, componente por zona, tokens, iconografia, regra responsiva ou N/A com motivo, overflow e truncamento, e estados. Preencha Superfícies compartilhadas e Prova visual esperada conforme `references/kit-e-tokens.md`; não repita a prova no bloco da tela.
 3. Responda no chat apenas:
 
 ```text
@@ -122,6 +122,6 @@ Rascunho sem "aprovado" e sem pedido da próxima porta não autoriza iniciar o p
 
 ## 7. Fechar
 
-Não commite no git nesta porta. O commit começa na `vibe-implement`, depois da prova verde de cada task. Não dispare a próxima skill a menos que o usuário tenha pedido explicitamente para avançar (§6).
+Não commite no git nesta porta. O commit acontece na `vibe-implement`, conforme o protocolo registrado no plan. Não dispare a próxima skill a menos que o usuário tenha pedido explicitamente para avançar (§6).
 `interview`, `spec` e `design` podem continuar no mesmo chat. Recomende novo chat para `vibe-plan`; se o humano preferir, continuar no chat atual não bloqueia. O `design.md` vivo e o handoff são a ponte.
 Handoff normal: `vibe-plan`. Sem UI visível, o handoff da spec segue direto para `vibe-plan` com N/A explícito. `plan.md` existente bloqueia nova escrita, pedido novo exige outra phase.

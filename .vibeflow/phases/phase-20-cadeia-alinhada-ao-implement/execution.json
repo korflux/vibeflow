@@ -1,0 +1,214 @@
+{
+  "schema": 1,
+  "protocolo": "coordenacao-v1",
+  "tasks": {
+    "T1": {
+      "actor": "redator-t1",
+      "proof": {
+        "head": "7cdc1b5c157a7d1fad4ab8256e65e51293abf184",
+        "inputs": {
+          "vibe-init/SKILL.md": "ea14e422f23d3b247cf12f10fc2c64be40e2fe23",
+          "vibe-init/templates/AGENTS.md": "343527e3a673e0d6ade4d2a090dc3ce0d2028015",
+          "vibe-init/templates/agents/claude/corretor.md": "4085d7dc201fc08dcbde298a3a52db3448d8c550",
+          "vibe-init/templates/agents/claude/explorador.md": "56a379527b1a5b62e5b8a6bbec992b8a8d39b769",
+          "vibe-init/templates/agents/claude/implementador.md": "ee681a9d6d3004e5b0d7fbc512226415e2f286e3",
+          "vibe-init/templates/agents/claude/redator.md": "f5b3b64d4e02304f6c203e52f59c9430756aa4cb",
+          "vibe-init/templates/agents/claude/revisor.md": "774ff29c476516982f831079724dbfecfb5dfb8d",
+          "vibe-init/templates/agents/claude/verificador.md": "aabd29ef03ede9bd396319f1c7ddcec60194b45f",
+          "vibe-init/templates/agents/codex/corretor.toml": "73e7782339a678d752576d7f86c163c326d69eac",
+          "vibe-init/templates/agents/codex/explorador.toml": "80bd7b2012af57c030826217c1a9e136b58382b1",
+          "vibe-init/templates/agents/codex/implementador.toml": "92850bd6ea247531437b66a0d188a35aa924fe05",
+          "vibe-init/templates/agents/codex/redator.toml": "c4bcc7393b07a5782c04d903723701c27ac40a60",
+          "vibe-init/templates/agents/codex/revisor.toml": "c0eac44a105eb534387e272041f21f2802916e0e",
+          "vibe-init/templates/agents/codex/verificador.toml": "92f07a6dea029fd465741eb754d1f12252e1b159",
+          "docs/vibe-init/ARQUITETURA.md": "22d585557947bfcf2ac2d87f614baee5140e1cb4",
+          "docs/vibe-init/ANALISE.md": "3f68b89f9d60cd77cd6bcb16186caa6a7c8153f7"
+        },
+        "comando": "py -3 docs/vibe-init/tests/test-init.py -v (12; exceção: 22 WinError 1314); pwsh -NoProfile -File docs/vibe-init/tests/test-init.ps1 (exceção: ponte-legada)",
+        "resultado": "verde"
+      }
+    },
+    "T2": {
+      "actor": "redator-t2",
+      "proof": {
+        "head": "7cdc1b5c157a7d1fad4ab8256e65e51293abf184",
+        "inputs": {
+          "vibe-spec/SKILL.md": "51f622d5501c5c1456dbe185c1c4af09b76747cd",
+          "vibe-spec/templates/spec.md": "ea93549fb5a5f65fdc7c0d12d95c07e24b597ac6",
+          "vibe-spec/references/ui-visual-direction.md": "c539b9c6ce2076243c6a5a6f1fd08ac75786d048",
+          "docs/vibe-spec/ARQUITETURA.md": "c142a64c689663548788017074a6ded8594a109c",
+          "docs/vibe-spec/ANALISE.md": "69824efa089acb4032b2fea9ae5eb5791d00785c"
+        },
+        "comando": "py -3 docs/vibe-spec/tests/test-spec.py -v (19 OK)",
+        "resultado": "verde"
+      }
+    },
+    "T3": {
+      "actor": "redator-t3",
+      "proof": {
+        "head": "7cdc1b5c157a7d1fad4ab8256e65e51293abf184",
+        "inputs": {
+          "vibe-design/SKILL.md": "7eefe383e97a3270e40db9a572c0882a6ed8b20d",
+          "vibe-design/templates/design.md": "8ec1ad9b951f104baec8cee20ec4653f6c56f7c1",
+          "vibe-design/references/kit-e-tokens.md": "64dd9f865bd2ff6f2cfbbe26a7404dc4503efe13",
+          "docs/vibe-design/ARQUITETURA.md": "17bdfef3c69b81c54e20ffcaeffa7c0d1f11e356",
+          "docs/vibe-design/ANALISE.md": "5d265b7b59be6ead363af1309fa5bad4917a2c9e"
+        },
+        "comando": "py -3 docs/vibe-design/tests/test-design.py -v (19 OK)",
+        "resultado": "verde"
+      }
+    },
+    "T4": {
+      "actor": "redator-t4",
+      "proof": {
+        "head": "7cdc1b5c157a7d1fad4ab8256e65e51293abf184",
+        "inputs": {
+          "vibe-plan/SKILL.md": "116c044772b5bb3df970b442eec96925b2367f03",
+          "vibe-plan/templates/plan.md": "d906782b7ebdd1561afe1029d38732ce1a1f2337",
+          "docs/vibe-plan/ARQUITETURA.md": "1602d13ce5aef1b37708abd5f922979c0dae0629",
+          "docs/vibe-plan/ANALISE.md": "cf81f2477c216467a74d6a533ae4145b3db6a2d6"
+        },
+        "comando": "py -3 docs/vibe-plan/tests/test-plan.py -v (16 OK); checagem do placeholder: ok",
+        "resultado": "verde"
+      }
+    },
+    "T5": {
+      "actor": "redator-t5",
+      "proof": {
+        "head": "7cdc1b5c157a7d1fad4ab8256e65e51293abf184",
+        "inputs": {
+          "vibe-analyze/SKILL.md": "d8cf5935a978c566bb35788db85a4aa9e0c3746e",
+          "vibe-analyze/templates/analyze.md": "4602387c6a5c758749d4ddac08b0c789a620a656",
+          "vibe-analyze/references/coverage.md": "f613382030a824f0e08ee8cf34ffbee9df18957f",
+          "docs/vibe-analyze/ARQUITETURA.md": "dfdd36901b13cb7330b4c3f8e6a5884664ae4f7a",
+          "docs/vibe-analyze/ANALISE.md": "6f23677dd8387466a758b6b29ec14cec65f082a7"
+        },
+        "comando": "py -3 docs/vibe-analyze/tests/test-analyze.py -v (16 OK)",
+        "resultado": "verde"
+      }
+    },
+    "T6": {
+      "actor": "redator-t6",
+      "proof": {
+        "head": "7cdc1b5c157a7d1fad4ab8256e65e51293abf184",
+        "inputs": {
+          "vibe-implement/SKILL.md": "bfe36464e3e51588428ee156004ab65b7c5b6a25",
+          "vibe-implement/references/delegation.md": "f4ff53acf58f283b0c032a99b65ada2443672a36",
+          "vibe-plan/references/delegation.md": "f4ff53acf58f283b0c032a99b65ada2443672a36",
+          "docs/vibe-implement/ARQUITETURA.md": "8a8d9658dece7831cbaa84fa5b4f2ac65a19a7b4",
+          "docs/vibe-implement/ANALISE.md": "de5256ab74e2ebaae28cbe8f5bd8ec6e08ead627"
+        },
+        "comando": "cmp delegation.md; py -3 docs/tests/test-distribuicao.py -v (7 ok; exceção de symlink); py -3 docs/vibe-implement/tests/test-implement.py -v (69; 66 ok; exceção WinError 1314 e 2 skips)",
+        "resultado": "verde"
+      }
+    },
+    "T7": {
+      "actor": "redator-t7",
+      "proof": {
+        "head": "7cdc1b5c157a7d1fad4ab8256e65e51293abf184",
+        "inputs": {
+          "vibe-review/SKILL.md": "28f06c8a48c148b3dfa6f2af4afd66bb4cb485be",
+          "vibe-review/templates/review.md": "15586c174f036630ed8dc59d833d391844524aa1",
+          "docs/vibe-review/ARQUITETURA.md": "d1d6a44aee2d96938e18db78fbd0a5b34eb6bcac",
+          "docs/vibe-review/ANALISE.md": "0ea9c0cefda002cedbefa2105ac929b0f3957393"
+        },
+        "comando": "py -3 docs/vibe-review/tests/test-review.py -v (25 OK)",
+        "resultado": "verde"
+      }
+    },
+    "T8": {
+      "actor": "implementador-t8",
+      "proof": {
+        "head": "7cdc1b5c157a7d1fad4ab8256e65e51293abf184",
+        "inputs": {
+          ".claude-plugin/plugin.json": "eb953ef93381c5c9892cb49112ca6708fd6d2305",
+          ".claude-plugin/marketplace.json": "adf6f1a20c291796598de630c81e596b7bbc38d2",
+          ".codex-plugin/plugin.json": "3c22b40f8ee1421d98c49357a186f855832a9180",
+          ".agents/plugins/marketplace.json": "0fa2961103cc1056edd548423e839c20cae5899e",
+          ".grok-plugin/marketplace.json": "0b6acea8ebd55df3ea3b4078a1411106421bc72b",
+          "docs/tests/test-distribuicao.py": "6898f78882fcee315ff0902df39af56921dfe596"
+        },
+        "comando": "py -3 docs/tests/test-distribuicao.py -v (7 ok; exceção de symlink)",
+        "resultado": "verde"
+      }
+    },
+    "T9": {
+      "actor": "redator-t9",
+      "proof": {
+        "head": "7cdc1b5c157a7d1fad4ab8256e65e51293abf184",
+        "inputs": {
+          "AGENTS.md": "fe970bf67cbe136780b9ca30daebe2355c425926",
+          "README.md": "f7e84edb3416117ae30dc97051435013b199340b",
+          "docs/ESCOPO.md": "0c1d8c07ab692c6f89e30cbacd784bba13915439"
+        },
+        "comando": "py -3 docs/tests/test-distribuicao.py -v (7 ok; exceção de symlink); checagem mecânica de AGENTS.md e README.md: ok",
+        "resultado": "verde"
+      }
+    }
+  },
+  "integracao": {
+    "actor": "verificador-integracao",
+    "proof": {
+      "head": "7cdc1b5c157a7d1fad4ab8256e65e51293abf184",
+      "inputs": {
+        ".agents/plugins/marketplace.json": "0fa2961103cc1056edd548423e839c20cae5899e",
+        ".claude-plugin/marketplace.json": "adf6f1a20c291796598de630c81e596b7bbc38d2",
+        ".claude-plugin/plugin.json": "eb953ef93381c5c9892cb49112ca6708fd6d2305",
+        ".codex-plugin/plugin.json": "3c22b40f8ee1421d98c49357a186f855832a9180",
+        ".grok-plugin/marketplace.json": "0b6acea8ebd55df3ea3b4078a1411106421bc72b",
+        "AGENTS.md": "fe970bf67cbe136780b9ca30daebe2355c425926",
+        "README.md": "f7e84edb3416117ae30dc97051435013b199340b",
+        "docs/ESCOPO.md": "0c1d8c07ab692c6f89e30cbacd784bba13915439",
+        "docs/tests/test-distribuicao.py": "6898f78882fcee315ff0902df39af56921dfe596",
+        "docs/vibe-analyze/ANALISE.md": "6f23677dd8387466a758b6b29ec14cec65f082a7",
+        "docs/vibe-analyze/ARQUITETURA.md": "dfdd36901b13cb7330b4c3f8e6a5884664ae4f7a",
+        "docs/vibe-design/ANALISE.md": "5d265b7b59be6ead363af1309fa5bad4917a2c9e",
+        "docs/vibe-design/ARQUITETURA.md": "17bdfef3c69b81c54e20ffcaeffa7c0d1f11e356",
+        "docs/vibe-implement/ANALISE.md": "de5256ab74e2ebaae28cbe8f5bd8ec6e08ead627",
+        "docs/vibe-implement/ARQUITETURA.md": "8a8d9658dece7831cbaa84fa5b4f2ac65a19a7b4",
+        "docs/vibe-init/ANALISE.md": "3f68b89f9d60cd77cd6bcb16186caa6a7c8153f7",
+        "docs/vibe-init/ARQUITETURA.md": "22d585557947bfcf2ac2d87f614baee5140e1cb4",
+        "docs/vibe-plan/ANALISE.md": "cf81f2477c216467a74d6a533ae4145b3db6a2d6",
+        "docs/vibe-plan/ARQUITETURA.md": "1602d13ce5aef1b37708abd5f922979c0dae0629",
+        "docs/vibe-review/ANALISE.md": "0ea9c0cefda002cedbefa2105ac929b0f3957393",
+        "docs/vibe-review/ARQUITETURA.md": "d1d6a44aee2d96938e18db78fbd0a5b34eb6bcac",
+        "docs/vibe-spec/ANALISE.md": "69824efa089acb4032b2fea9ae5eb5791d00785c",
+        "docs/vibe-spec/ARQUITETURA.md": "c142a64c689663548788017074a6ded8594a109c",
+        "vibe-analyze/SKILL.md": "d8cf5935a978c566bb35788db85a4aa9e0c3746e",
+        "vibe-analyze/references/coverage.md": "f613382030a824f0e08ee8cf34ffbee9df18957f",
+        "vibe-analyze/templates/analyze.md": "4602387c6a5c758749d4ddac08b0c789a620a656",
+        "vibe-design/SKILL.md": "7eefe383e97a3270e40db9a572c0882a6ed8b20d",
+        "vibe-design/references/kit-e-tokens.md": "64dd9f865bd2ff6f2cfbbe26a7404dc4503efe13",
+        "vibe-design/templates/design.md": "8ec1ad9b951f104baec8cee20ec4653f6c56f7c1",
+        "vibe-implement/SKILL.md": "bfe36464e3e51588428ee156004ab65b7c5b6a25",
+        "vibe-implement/references/delegation.md": "f4ff53acf58f283b0c032a99b65ada2443672a36",
+        "vibe-init/SKILL.md": "ea14e422f23d3b247cf12f10fc2c64be40e2fe23",
+        "vibe-init/templates/AGENTS.md": "343527e3a673e0d6ade4d2a090dc3ce0d2028015",
+        "vibe-init/templates/agents/claude/corretor.md": "4085d7dc201fc08dcbde298a3a52db3448d8c550",
+        "vibe-init/templates/agents/claude/explorador.md": "56a379527b1a5b62e5b8a6bbec992b8a8d39b769",
+        "vibe-init/templates/agents/claude/implementador.md": "ee681a9d6d3004e5b0d7fbc512226415e2f286e3",
+        "vibe-init/templates/agents/claude/redator.md": "f5b3b64d4e02304f6c203e52f59c9430756aa4cb",
+        "vibe-init/templates/agents/claude/revisor.md": "774ff29c476516982f831079724dbfecfb5dfb8d",
+        "vibe-init/templates/agents/claude/verificador.md": "aabd29ef03ede9bd396319f1c7ddcec60194b45f",
+        "vibe-init/templates/agents/codex/corretor.toml": "73e7782339a678d752576d7f86c163c326d69eac",
+        "vibe-init/templates/agents/codex/explorador.toml": "80bd7b2012af57c030826217c1a9e136b58382b1",
+        "vibe-init/templates/agents/codex/implementador.toml": "92850bd6ea247531437b66a0d188a35aa924fe05",
+        "vibe-init/templates/agents/codex/redator.toml": "c4bcc7393b07a5782c04d903723701c27ac40a60",
+        "vibe-init/templates/agents/codex/revisor.toml": "c0eac44a105eb534387e272041f21f2802916e0e",
+        "vibe-init/templates/agents/codex/verificador.toml": "92f07a6dea029fd465741eb754d1f12252e1b159",
+        "vibe-plan/SKILL.md": "116c044772b5bb3df970b442eec96925b2367f03",
+        "vibe-plan/references/delegation.md": "f4ff53acf58f283b0c032a99b65ada2443672a36",
+        "vibe-plan/templates/plan.md": "d906782b7ebdd1561afe1029d38732ce1a1f2337",
+        "vibe-review/SKILL.md": "28f06c8a48c148b3dfa6f2af4afd66bb4cb485be",
+        "vibe-review/templates/review.md": "15586c174f036630ed8dc59d833d391844524aa1",
+        "vibe-spec/SKILL.md": "51f622d5501c5c1456dbe185c1c4af09b76747cd",
+        "vibe-spec/references/ui-visual-direction.md": "c539b9c6ce2076243c6a5a6f1fd08ac75786d048",
+        "vibe-spec/templates/spec.md": "ea93549fb5a5f65fdc7c0d12d95c07e24b597ac6"
+      },
+      "comando": "união das Prova afetada: test-init.py (exceção 22 WinError 1314), test-init.ps1 (exceção ponte-legada), test-spec 19 OK, test-design 19 OK, test-plan 16 OK + placeholder, test-analyze 16 OK, test-implement 69 (66 ok; exceção WinError 1314 e 2 skips), test-review 25 OK, test-distribuicao 7 ok (exceção symlink), cmp delegation, checagem T9",
+      "resultado": "verde"
+    },
+    "origem": "7cdc1b5c157a7d1fad4ab8256e65e51293abf184"
+  },
+  "commit": null
+}

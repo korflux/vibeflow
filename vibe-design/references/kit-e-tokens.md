@@ -1,6 +1,6 @@
 # Kit, tokens e prova (design)
 
-Leia este catálogo quando faltar forma de kit, token, ícone, responsivo, estado ou prova. A skill aponta para cá, não resume a tabela no SKILL.
+Leia este catálogo quando faltar forma de kit, superfície compartilhada, token, ícone, responsivo, estado ou prova. A skill aponta para cá, não resume a tabela no SKILL.
 
 ## Kit mínimo greenfield
 
@@ -13,6 +13,10 @@ Leia este catálogo quando faltar forma de kit, token, ícone, responsivo, estad
 
 Com DS existente, omita o kit e reuse os tokens do DS.
 
+## Superfícies compartilhadas
+
+Liste cada componente ou token comum que a entrega cria ou altera e todas as telas que o consomem, inclusive telas fora do inventário desta phase. Kit, tokens e componentes comuns precedem as telas que os consomem: o plan os entrega na primeira T* de tela consumidora, e as demais T* dessas telas dependem dela. A review reconfere cada tela afetada.
+
 ## Tokens por tela
 
 Cada tela declara cor, tipo, espaço e raio aplicados por zona. Token novo só em greenfield ou com motivo registrado em Decisões. A spec não fecha token.
@@ -23,8 +27,8 @@ Use icon-only somente em ação universalmente reconhecível, como lixeira para 
 
 ## Responsivo e estados
 
-Em viewport estreita, declare o que muda por zona, com regra de overflow, truncamento e quebra de texto. Cubra vazio, loading, erro, sucesso e sem permissão por tela. Overflow não intencional, clipping e texto ilegível são defeito.
+Quando a tela tiver regra responsiva, declare o que muda por zona em viewport estreita, com regra de overflow, truncamento e quebra de texto. Sem regra responsiva, registre N/A com motivo. Cubra vazio, loading, erro, sucesso e sem permissão por tela. Overflow não intencional, clipping e texto ilegível são defeito.
 
 ## Prova visual esperada
 
-Registre por tela rota, viewport normal e estreita, estado, ações e evidência observada. Inclua console, rede e assets sem erro. A review confere no navegador com a seleção da implement e aplica a própria regra de instalação de ferramentas quando faltar capacidade.
+A seção `Prova visual esperada` do `design.md` é a casa única da prova visual. Registre uma linha por tela com rota, viewport de julgamento do aceite, estado, ações e evidência observável. Inclua viewport estreita somente quando a tela tiver regra responsiva. Inclua console, rede e assets sem erro. O plan usa cada linha como insumo do `Visual:` e da `Prova afetada:` da T* que toca a tela e escolhe a ferramenta; a implement executa essa prova, e a review reconfere as telas tocadas e as Superfícies compartilhadas.

@@ -23,7 +23,16 @@ Se faltar runtime, tente o outro motor. Se ambos falharem por limitação de amb
 
 ## 1. Investigar e consolidar
 
-Confira `agent_profiles` no relatório: os seis papéis são distribuídos em `.codex/agents/*.toml` e `.claude/agents/*.md`. O motor pré-valida fontes de até 1 MiB e todos os destinos antes de mutações, recusa links/reparse points e tipos não regulares, instala ausentes e preserva bytes dos idênticos ou conflitantes. Relate conflitos por host, papel e path; não substitua personalizações sem decisão humana. Não altere configurações globais, permissões gerais nem modelos pessoais.
+Confira `agent_profiles` no relatório: os seis papéis são distribuídos em `.codex/agents/*.toml` e `.claude/agents/*.md`. O motor pré-valida fontes de até 1 MiB e todos os destinos antes de mutações, recusa links/reparse points e tipos não regulares, instala ausentes e preserva bytes dos idênticos ou conflitantes. Não altere configurações globais, permissões gerais nem modelos pessoais.
+
+Trate cada perfil com status `conflito`:
+
+1. Compare por diff com a fonte `templates/agents/<host>/<papel>` da skill e leia o histórico Git do path no projeto (`git log --follow -p -- <path>`).
+2. Classifique como VibeFlow desatualizado somente quando as duas evidências confirmarem que o arquivo não tem conteúdo do usuário: o diff mostra só texto de versões anteriores do VibeFlow, e o histórico Git do path no projeto mostra apenas commits do init, sem edição local pendente. Qualquer outro caso, inclusive histórico ausente ou dúvida, é customização.
+3. Desatualizado: copie para `.vibeflow/old/`, com sufixo UTC em colisão, confira tamanho e SHA-256 da cópia e só então substitua pelos bytes da fonte. Falha na conferência mantém o perfil intacto.
+4. Customização: preserve os bytes e relate host, papel e path. Substituição exige decisão humana.
+
+Em re-init de `AGENTS.md` existente, compare as seções Git e Padrões de Código e Engenharia com o template e proponha ao humano o patch delas, incluindo a retirada de regra de testes de skills herdada de template anterior. Aplique somente o que o humano aprovar.
 
 Distinga disco de sessão: `agent_session.status: nao_verificada` não certifica carregamento. Perfis de projeto podem prevalecer sobre perfis pessoais. Antes da primeira delegação, confira explorador, implementador, verificador, corretor, revisor e redator nas ferramentas disponíveis do host. Se faltarem, oriente recarregar/reabrir o host e conferir novamente; relate host indisponível sem afirmar ativação. Não substitua um modelo indisponível silenciosamente.
 
@@ -33,4 +42,4 @@ Preencha os SLOTs do template somente com evidência do projeto. Em arquivos de 
 
 ## 2. Fechar
 
-Confira que `AGENTS.md` é arquivo regular na raiz, o bloco da cadeia está atualizado, a ponte Antigravity aponta para ele, e nenhuma regra legada se perdeu. Confira os doze perfis e seus estados no relatório. Não crie `CLAUDE.md`, `.vibeflow/REGRAS.md` nem `GEMINI.md`. Faça staging explícito dos paths produzidos e backups necessários, incluindo somente perfis com status `instalado`; exclua perfis conflitantes, trabalho alheio e relatório transitório. Confira o diff e crie commit local sem push. Informe o hash, paths, conflitos, fontes legadas que ainda exigem consolidação e disponibilidade efetivamente verificada em cada host. Handoff: `vibe-interview` quando houver ambiguidade de software; para documento avulso, só a entrevista é aplicável e as demais skills VibeFlow não entram.
+Confira que `AGENTS.md` é arquivo regular na raiz, o bloco da cadeia está atualizado, a ponte Antigravity aponta para ele, e nenhuma regra legada se perdeu. Confira os doze perfis e seus estados no relatório. Não crie `CLAUDE.md`, `.vibeflow/REGRAS.md` nem `GEMINI.md`. Faça staging explícito dos paths produzidos e backups necessários, incluindo somente perfis com status `instalado` e perfis desatualizados substituídos com seus backups; exclua customizações preservadas, trabalho alheio e relatório transitório. Confira o diff e crie commit local sem push. Informe o hash, paths, perfis substituídos, customizações preservadas, patch proposto do `AGENTS.md`, fontes legadas que ainda exigem consolidação e disponibilidade efetivamente verificada em cada host. Handoff: `vibe-interview` quando houver ambiguidade de software; para documento avulso, só a entrevista é aplicável e as demais skills VibeFlow não entram.

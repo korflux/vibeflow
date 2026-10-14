@@ -8,7 +8,7 @@ Fechar o que plan/implement **não** inventam. Não é CSS. Sem UI user-visible:
 | Tom | 1 palavra + 1 frase (sóbrio, denso, ousado, minimal) | Q+RECOMENDO |
 | Anti-slop | O que evitar (template genérico, hierarquia frouxa) | Default se UI nova |
 | Copy | empty/erro, vocabulário do usuário | Só se a fatia expõe |
-| Prova | E2E + screenshot do alvo | Sempre se UI web |
+| Evidência renderizada | Telas e estados que precisam aparecer renderizados para o aceite, ligados aos `A*` em Como provar | Sempre se UI web; ferramenta e comando ficam para o plan |
 
 Não fechar na spec: paleta hex, type pairing, “signature” artística. Token visual pertence à design.
 
