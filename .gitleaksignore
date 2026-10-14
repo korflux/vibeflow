@@ -1,0 +1,10 @@
+# Fingerprints dispensados na varredura local de segredos (`gitleaks detect --source .`).
+# Formato: <commit>:<arquivo>:<regra>:<linha>. Cada linha vale para um único achado.
+#
+# Falso positivo: `execution.json` guarda o hash de blob Git (SHA-1, 40 hex) de
+# `vibe-design/references/kit-e-tokens.md`; o nome do path contém "token" e a regra
+# `generic-api-key` trata o hash como credencial. O commit já está no histórico e não
+# pode ser reescrito. Não há allowlist por path no gitleaks.toml porque `condition = "AND"`
+# não restringiu o valor na verificação independente, e um path liberado esconderia segredo real.
+8d1e6e5b9dff2d64375ad3c0ab13f1f8d8e78cd5:.vibeflow/phases/phase-20-cadeia-alinhada-ao-implement/execution.json:generic-api-key:53
+8d1e6e5b9dff2d64375ad3c0ab13f1f8d8e78cd5:.vibeflow/phases/phase-20-cadeia-alinhada-ao-implement/execution.json:generic-api-key:181

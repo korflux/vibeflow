@@ -19,13 +19,13 @@ Convenção: `[x]` já existe no repositório hoje. `[ ]` entra, ainda não cons
 - [x] **Cadeia alinhada ao implement (9.0.0).** O plan registra a prontidão com local e destino por requisito, e a implement confere a capacidade de delegação antes da primeira onda; o analyze confere o contrato da implement; a review do Modo A audita o executado, sem checkpoint, e cada R* indica `papel: corretor | redator`; o init gera a regra de erro fora do recorte e perfis por protocolo; spec e design alimentam a `Prova afetada:`. Nenhum motor mudou nesta phase.
 - [ ] **Worktree por T*.** Isolamento por worktree, com pacote de contexto por T*. Hoje o isolamento é a disjunção de `Arquivos:`.
 - [ ] **Fan-out da review por dimensão.** Review dividida em revisores paralelos por dimensão.
-- [ ] **E2E do piloto na regressão completa.** `docs/vibe-implement/tests/piloto-modo-a.py` fica fora da regressão completa e do CI por não ser determinístico e consumir tokens da conta.
+- [ ] **E2E do piloto na regressão completa.** `docs/vibe-implement/tests/piloto-modo-a.py` fica fora da regressão completa local por não ser determinístico e consumir tokens da conta.
 
 Nenhuma skill dispara a seguinte. O handoff é uma linha no artefato.
 
 ## 2. Infra feita
 
-- [x] **CI.** `.github/workflows/contrato.yml` roda as suítes `docs/vibe-*/tests/` (Python + `test-init.ps1` + `test-*.sh`), `docs/tests/test-distribuicao.py` e o gitleaks em todo push e PR. Sem lockfile neste repo, não há job de CVE/SCA até existir dependência pinada.
+- [x] **Validação local, sem CI no GitHub.** Por decisão de custo, o repositório não usa CI no GitHub, e o workflow que existiu foi removido. A validação é local, antes do push, e o `AGENTS.md` (Comandos do projeto) é a casa dos comandos. Sem lockfile neste repo, não há varredura de CVE/SCA até existir dependência pinada.
 - [x] **Teste do launcher `.sh`.** `docs/vibe-*/tests/test-<nome>.sh` + harness em `docs/tests/launcher-harness.sh`.
 
 ## 3. Entrou nesta rodada

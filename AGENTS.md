@@ -50,6 +50,10 @@ Cadeia de skills para inicializar e conduzir o trabalho de agentes num repo. Est
 - Suíte Python de uma skill: `python docs/vibe-<nome>/tests/test-<nome>.py`.
 - Contratos de distribuição: `python docs/tests/test-distribuicao.py`.
 - Motor Windows: `pwsh vibe-<nome>/scripts/<nome>.ps1 -Root <repo>`; motor Unix: `bash vibe-<nome>/scripts/<nome>.sh --root <repo>`.
+- Este repositório não usa CI no GitHub, por decisão de custo. Não envie branch só para disparar CI. A regressão completa e a varredura de segredos rodam localmente antes do push.
+- Regressão completa local: todas as suítes `docs/vibe-*/tests/test-<nome>.py`, os scripts `docs/tests/*.py`, `docs/vibe-init/tests/test-init.ps1` e os launchers `docs/vibe-*/tests/test-<nome>.sh`.
+- Varredura de segredos local: `gitleaks detect --source . --redact --no-banner`.
+- Limitação registrada: os testes que exigem symlink não rodam neste host Windows sem o Modo de Desenvolvedor. A falha deles nesse host não indica regressão e não substitui a execução em um host com symlink.
 
 ## Fluxos e invariantes
 

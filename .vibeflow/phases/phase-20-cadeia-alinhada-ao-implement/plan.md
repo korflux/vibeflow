@@ -13,13 +13,12 @@ Entrega a spec da mesma pasta: init, spec, design, plan e analyze passam a prepa
 
 ## Prontidão das provas
 
-- Python 3.12 (`py -3`): local e CI · ok. Localmente `python3` é o alias da Microsoft Store e não executa; todo comando local usa `py -3`. No CI, `python` 3.12 do `contrato.yml`.
-- PowerShell 7.6 (`pwsh`): local e CI · ok.
-- `gitleaks` 8.30.1: local e CI · ok.
-- `bash` 5.3 (Git Bash): local e CI · ok. Os launchers `.sh` procuram `python3`, que localmente é o alias da Store; a prova dos launchers vale no CI Linux.
-- Privilégio de symlink no Windows: CI · ok. Ausente no host local (WinError 1314, `core.symlinks=false`, `skills/vibe-*` em checkout como texto). Falhas locais esperadas: `test_skills_pointers` e `test_unique_names_under_skills` em `docs/tests/test-distribuicao.py` e os casos de alias por symlink das suítes que os têm (registro em `.erros-encontrados/2026-10-13-test-implement-symlink-sem-privilegio-windows.md`). O CI Linux do push da branch de trabalho certifica esses casos; qualquer outra falha local é falha real.
+- Python 3.12 (`py -3`): local · ok. Localmente `python3` é o alias da Microsoft Store e não executa; todo comando local usa `py -3`.
+- PowerShell 7.6 (`pwsh`): local · ok.
+- `gitleaks` 8.30.1: local · ok.
+- `bash` 5.3 (Git Bash): local · ok. Os launchers `.sh` procuram `python3`, que localmente é o alias da Store; falha de launcher causada por esse alias fica como limitação registrada deste host, sem certificação (decisão 18).
+- Privilégio de symlink no Windows: host · pergunta ao humano. Ausente no host local (WinError 1314, `core.symlinks=false`, `skills/vibe-*` em checkout como texto). Recomendação: habilitar o Modo de Desenvolvedor do Windows. Até lá, falhas locais esperadas: `test_skills_pointers` e `test_unique_names_under_skills` em `docs/tests/test-distribuicao.py` e os casos de alias por symlink das suítes que os têm (registro em `.erros-encontrados/2026-10-13-test-implement-symlink-sem-privilegio-windows.md`). Sem CI no GitHub (decisão 18), esses casos ficam como limitação registrada, sem certificação; qualquer outra falha local é falha real.
 - MCP `chrome-devtools` ou Playwright: host · ok (N/A, nenhuma T* altera UI nem exige `Visual: necessária`).
-- `gh` autenticado como `korflux`: host · ok, para o push e a leitura do resultado do CI após a confirmação humana final.
 - Perfis de subagente do Modo A: host · ok. Explorador, implementador, redator, verificador, corretor e revisor existem nos perfis pessoais do Claude (`~/.claude/agents/`) e estão carregados nesta sessão. Redator é exigido porque T1 a T7 e T9 são de prosa.
 - Finalizador: host · ok, agente genérico (`general-purpose`) apto a Git.
 - `docs/tests/test-visual-contract.py`, citado em `AGENTS.md` e no C1 da spec, não existe no disco (removido em `59db016` como teste textual); C1 é atendido pelas suítes existentes e T9 corrige a citação em `AGENTS.md`.
@@ -28,16 +27,16 @@ Comando compartilhado `distribuicao`: `py -3 docs/tests/test-distribuicao.py -v`
 
 ### Regressão completa
 
-Executada somente pela review final, uma vez, no estado integrado. Espelha `.github/workflows/contrato.yml`:
+Executada somente pela review final, uma vez, no estado integrado. É local, sem CI no GitHub (decisão 18):
 
 - `py -3 docs/vibe-<skill>/tests/test-<skill>.py -v` para init, interview, spec, design, plan, analyze, implement e review.
-- `py -3 docs/vibe-implement/tests/test-execution.py -v` (suíte do registro de execução, fora do laço do CI).
+- `py -3 docs/vibe-implement/tests/test-execution.py -v` (suíte do registro de execução).
 - `py -3 docs/tests/test-distribuicao.py -v`, `py -3 docs/tests/test-mvp-flow.py -v`, `py -3 docs/tests/test-reparse-safety.py -v`, `py -3 docs/tests/test-runtime-discovery.py -v` e `py -3 docs/tests/test-stream-encoding.py -v`.
 - `pwsh -NoProfile -File docs/vibe-init/tests/test-init.ps1` (paridade essencial do init).
-- `bash docs/vibe-<skill>/tests/test-<skill>.sh` para as oito skills (launchers; certificados no CI Linux).
+- `bash docs/vibe-<skill>/tests/test-<skill>.sh` para as oito skills (launchers; falha causada pelo alias `python3` da Store é limitação registrada da prontidão).
 - `gitleaks detect --source . --redact --no-banner`.
-- CI obrigatório: workflow `contrato` verde no push; as falhas locais de symlink listadas na prontidão são aceitas somente com esse CI verde.
-- Excluído: `docs/vibe-implement/tests/piloto-modo-a.py`, porque não é determinístico, consome tokens da conta e está fora do CI.
+- Casos de symlink: as falhas locais listadas na prontidão ficam como limitação registrada deste host até o Modo de Desenvolvedor ser habilitado; não há certificação externa.
+- Excluído: `docs/vibe-implement/tests/piloto-modo-a.py`, porque não é determinístico e consome tokens da conta.
 
 ## Tasks
 
@@ -116,16 +115,16 @@ Executada somente pela review final, uma vez, no estado integrado. Espelha `.git
 
 ### T9: Fontes transversais refletem a 9.0.0
 - [ ] T9 concluída
-- **Spec:** C1, C2, C4
+- **Spec:** C1, C2, C4, C5
 - **Deps:** T1, T2, T3, T4, T5, T6, T7
-- **O quê:** Resultado principal: prosa (redator). `README.md` registra a versão `9.0.0` e o que muda na cadeia; `docs/ESCOPO.md` marca o que esta phase entregou; `AGENTS.md` do repo alinha o texto que já descreve as regras alteradas (erro fora do recorte, Modo A sem checkpoint de review, prontidão com destino) e deixa de citar `docs/tests/test-visual-contract.py`, que não existe. Protocolos históricos e Modo B descritos sem migração.
+- **O quê:** Resultado principal: prosa (redator). `README.md` registra a versão `9.0.0` e o que muda na cadeia; `docs/ESCOPO.md` marca o que esta phase entregou; `AGENTS.md` do repo alinha o texto que já descreve as regras alteradas (erro fora do recorte, Modo A sem checkpoint de review, prontidão com destino) e deixa de citar `docs/tests/test-visual-contract.py`, que não existe. Protocolos históricos e Modo B descritos sem migração. Remove o workflow do GitHub Actions (`.github/workflows/contrato.yml`); `AGENTS.md` registra que o repo não usa CI no GitHub, com regressão completa e gitleaks locais e a limitação dos testes de symlink neste host (decisão 18).
 - **Aceite:** README, ESCOPO e `AGENTS.md` coerentes com o contrato entregue por T1 a T7 e com a versão de T8; `AGENTS.md` não cita suíte inexistente.
-- **Arquivos:** `AGENTS.md`, `README.md`, `docs/ESCOPO.md`
-- **Prova afetada:** `distribuicao` (definido na prontidão)
+- **Arquivos:** `AGENTS.md`, `README.md`, `docs/ESCOPO.md`, `.github/workflows/contrato.yml`
+- **Prova afetada:** `distribuicao` (definido na prontidão); checagem: `.github/workflows/contrato.yml` inexistente
 
 ## Colaboração
 
-- Ondas: onda 1 com T1, T2, T3, T4, T5, T6, T7 e T8 (`Arquivos:` disjuntos, sem `Deps`); onda 2 com T9. O motor da implement recalcula.
+- Ondas: onda 1 com T1, T2, T3, T4, T5, T6, T7 e T8 (`Arquivos:` disjuntos, sem `Deps`); onda 2 com T9, que incorporou a remoção do CI do GitHub (decisão 18). O motor da implement recalcula.
 - Benefício: oito resultados independentes em paralelo; o texto transversal só é escrito depois que o contrato de cada skill existe.
 - Ownership: a fonte comum do vocabulário novo (formato de `Arquivos:`, linha de prontidão, destinos, `papel` no R*, ausência de checkpoint no Modo A) é a spec, decisões 5 a 10; cada redator a lê e não edita arquivo de outra T*. O relatório fixo de oito campos de `delegation.md` não muda nesta phase, e T1 alinha os perfis a ele. Em `.erros-encontrados/`, cada agente só cria arquivo novo por erro, sem editar os existentes. T6 roda `distribuicao` enquanto T8 troca a versão; divergência transitória de versão nessa janela não é falha de T6, e a integração reroda a prova.
 

@@ -10,7 +10,7 @@ Use perfis realmente disponíveis, sem escolher modelo pelo nome. No `coordenaca
 |---|---|---|
 | explorador | Fluxo, consumidores, paths e evidências para destravar decisão/implementação | Nenhuma |
 | implementador | Código e testes juntos, `Prova afetada:` da T* e inputs reais | Código/testes dos `Arquivos:` da T* |
-| redator | Prosa de SKILL, referências, docs e artefatos do recorte, correção de R* roteado a ele pela skill chamadora, `Prova afetada:` da T* ou da correção e inputs reais | Os `Arquivos:` de prosa da T* ou os paths de prosa do R*; nunca código de motor, testes, plan, spec, review nem AGENTS |
+| redator | Prosa de SKILL, referências, docs e artefatos do recorte, correção de R* roteado a ele pela skill chamadora, `Prova afetada:` da T* ou da correção e inputs reais | Os `Arquivos:` de prosa da T* ou os paths de prosa do R*; nunca código de motor, testes, plan.md, spec.md nem review.md; `AGENTS.md` somente quando declarado nos `Arquivos:` de uma T* aprovada, nunca a seção `## Decisões vigentes`, que fica com o finalizador na finalização confirmada |
 | verificador | Conferência técnica de diff/ownership/aceite/cobertura e certificação independente da `Prova afetada:` por T* e da união das provas afetadas na integração, reaproveitando prova verde de inputs inalterados | Somente saídas normais das provas |
 | corretor | Correção pela causa raiz de falha pré-review ou de R* roteado a ele pela skill chamadora, e `Prova afetada:` da correção | Código/testes da correção |
 | revisor | Julgamento independente de código, cobertura da origem e validade de evidências; na review final do novo Modo A executa a `Regressão completa` do plan. Analyze delegado usa este perfil | review.md ou analyze.md conforme skill |

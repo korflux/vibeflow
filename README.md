@@ -27,7 +27,7 @@ AGENTS.md                                  fonte única de regras do projeto
 
 O `--apply` das skills de artefato executa os gates mecânicos e prepara o arquivo vivo somente quando ele ainda não existe. No protocolo coordenacao-v1, a implement mantém plan enxuto e execução em execution.json versionado ao lado. B/etapas-v1/legado conservam seus registros; não há migração implícita nem novo implement.md. A IA escreve e atualiza a prosa diretamente em `interview.md`, `spec.md`, `plan.md`, `analyze.md` e `review.md`.
 
-Escopo do produto: [`docs/ESCOPO.md`](docs/ESCOPO.md). Contrato de cada skill: `docs/vibe-<nome>/ARQUITETURA.md`. CI: [`.github/workflows/contrato.yml`](.github/workflows/contrato.yml).
+Escopo do produto: [`docs/ESCOPO.md`](docs/ESCOPO.md). Contrato de cada skill: `docs/vibe-<nome>/ARQUITETURA.md`. Validação: o repositório não usa CI no GitHub, por decisão de custo; a validação é local, antes do push, e os comandos estão no `AGENTS.md`.
 
 ## Como instalar as skills
 

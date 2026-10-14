@@ -24,6 +24,7 @@ As skills da cadeia passam a girar em torno do contrato do `vibe-implement` em `
 | Notas de docs: `REGRAS.md` residual, diagrama sem ramo design, tabela Fontes sem `design.md`, contagem de passes | F2, F3, F5, C3 | N/A |
 | Worktree por T*, fan-out da review, troca de modelo ou esforço, `strip()` vs `Trim()` | Fora | Decisão do humano ou já registrado |
 | Push ao final | decisão 13 | Autorizado na confirmação humana final |
+| Sem CI no GitHub (custo) | decisão 18, C5 | N/A |
 
 ## Suposições e decisões
 
@@ -35,7 +36,7 @@ As skills da cadeia passam a girar em torno do contrato do `vibe-implement` em `
 6. O patch de `## Decisões vigentes` em `AGENTS.md`, aplicado na finalização após Approve e confirmação humana, não invalida a regressão completa verde: a comparação da finalização desconsidera essa alteração quando o diff de `AGENTS.md` se limita a essa seção. Qualquer outra mudança em `AGENTS.md` continua contando. (processo)
 7. Prontidão técnica tem forma verificável: uma linha por requisito com onde ele está (local, CI ou host) e destino `ok`, `ação em T*`, `pergunta ao humano` ou `bloqueio`. Requisitos cobertos: ferramentas e runtimes, perfis de subagente exigidos pelo Modo A, privilégios e capacidades do SO (por exemplo symlink no Windows, portas, serviços, rede) e ferramentas da prova visual quando houver `Visual: necessária`. (processo)
 8. Destinos da prontidão: instalável sem credencial nem elevação vira ação na primeira T* dependente; existente só no CI vira prova no CI; perfil ausente ou não carregado, MCP persistente, privilégio do SO ou credencial vira pergunta ao humano com recomendação (perfil: rodar `/vibe-init` e recarregar o host; host sem subagentes: handoff anuncia Modo B); sem equivalente vira bloqueio, nunca verde. Perfis exigidos no Modo A: explorador, implementador, verificador, corretor, revisor, finalizador genérico apto a Git, e redator somente quando houver T* de prosa. (processo)
-9. Achado de review ganha campo `papel: corretor | redator`; a implement roteia R* de prosa ao redator e o restante ao corretor. Decidido na implementação: `papel: redator` vai ao redator e `papel: corretor` ao corretor; R* sem `papel` com remédio em plan, spec ou `AGENTS.md` vai ao finalizador, e com remédio em `review.md` ao revisor; R* histórico sem `papel` vai ao corretor. O redator edita só a prosa dos `Arquivos:` delegados, nunca plan, spec, review ou `AGENTS.md`. (produto)
+9. Achado de review ganha campo `papel: corretor | redator`; a implement roteia R* de prosa ao redator e o restante ao corretor. Decidido na implementação: `papel: redator` vai ao redator e `papel: corretor` ao corretor; R* sem `papel` com remédio em plan, spec ou `AGENTS.md` vai ao finalizador, e com remédio em `review.md` ao revisor; R* histórico sem `papel` vai ao corretor. O redator edita só a prosa dos `Arquivos:` delegados, nunca plan, spec ou review; edita `AGENTS.md` somente quando ele está declarado nos `Arquivos:` de uma T* aprovada, nunca a seção `## Decisões vigentes`, que é do finalizador na finalização confirmada. Ajustado pelo coordenador no R2 da review. (produto)
 10. No Modo A não existe checkpoint de review: o plan não o promete e a review não o executa, porque a review final cobre a phase inteira. Protocolos históricos mantêm checkpoint. (processo)
 11. Os esforços diferentes entre hosts nos perfis distribuídos permanecem; a phase apenas registra a justificativa onde o contrato do init a documenta. (escopo, decisão do humano)
 12. Versão major 9.0.0: campos novos na prontidão do plan e no R* da review, mudança do papel da finalização e do checkpoint e a regra de erros fora do recorte alteram contrato que o humano e outras skills usam. (processo)
@@ -43,6 +44,8 @@ As skills da cadeia passam a girar em torno do contrato do `vibe-implement` em `
 14. Spec aprovada pela autorização do humano em 2026-10-14 ("pode abrir a fase 20"), dada em resposta à proposta de abrir esta phase e seguir até a review sem novas paradas, exceto a confirmação final para push. (processo, decisão do humano)
 15. No Modo B de `coordenacao-v1`, o plan ainda pode declarar checkpoint de review; somente o Modo A não tem checkpoint. Decidido pelo coordenador na implementação, como recorte da decisão 10. (processo)
 16. `Prova afetada:` é derivada de `Como provar` da spec: nível `jornada` gera o E2E do cenário, e nível `local` gera os testes do módulo e dos consumidores diretos. O plan lê `Superfícies compartilhadas` e `Prova visual esperada` do design. Decidido pelo coordenador na implementação. (processo)
+17. O falso positivo do gitleaks em `execution.json` é tratado por `.gitleaksignore` com fingerprints específicos, nunca por allowlist de path, para que segredo real gravado depois no mesmo arquivo continue detectado. Decidido pelo coordenador por segurança na correção da review. (processo)
+18. Este repositório não usa CI no GitHub, por custo. O workflow `.github/workflows/contrato.yml` é removido; a regressão completa e a varredura de segredos (gitleaks) rodam localmente. Os testes que exigem symlink não rodam neste host Windows sem o Modo de Desenvolvedor e ficam como limitação registrada, sem certificação até o humano habilitar symlinks. Nenhuma branch de trabalho é enviada só para CI. Decisão do humano em 2026-10-14: "não quero CI mais no GitHub, para de gastar meu dinheiro", com registro em `AGENTS.md`. (processo, decisão do humano)
 
 ## Escopo e comportamento
 
@@ -58,7 +61,7 @@ Todos os fluxos abaixo são de agente sobre artefatos em disco; UI N/A. A superf
 - Passos:
   1. Init gera a regra de erros fora do escopo -> registrar em `.erros-encontrados/` e reportar, sem corrigir fora do recorte [superfície: inline].
   2. Init gera o SLOT de comandos -> pede, quando existirem, comando por recorte (arquivo, módulo ou filtro), suíte completa, E2E, varredura de segredos, CI obrigatório e onde cada um roda [superfície: inline].
-  3. Init distribui perfis alinhados ao implement -> implementador entrega código e testes juntos, escreve só em `Arquivos:` e prova só a `Prova afetada:`; verificador prova só a afetada por T*, integração é a união e não amplia; revisor executa a `Regressão completa` na review final; redator não edita plan, spec, review nem `AGENTS.md`; o parágrafo comum lista os oito campos do relatório fixo [superfície: inline].
+  3. Init distribui perfis alinhados ao implement -> implementador entrega código e testes juntos, escreve só em `Arquivos:` e prova só a `Prova afetada:`; verificador prova só a afetada por T*, integração é a união e não amplia; revisor executa a `Regressão completa` na review final; redator não edita plan, spec nem review, e edita `AGENTS.md` somente quando declarado nos `Arquivos:` de uma T* aprovada, nunca `## Decisões vigentes`; o parágrafo comum lista os oito campos do relatório fixo [superfície: inline].
   4. Em re-init de projeto existente -> init propõe patch da seção Git do `AGENTS.md` e distingue perfil VibeFlow desatualizado (substituído com backup) de customização do usuário (preservada e reportada) [superfície: chat].
 - Validações: regra de testes própria do repositório VibeFlow não entra no `AGENTS.md` de outros projetos; regras Git geradas em frases curtas.
 - Erros: recusas atuais do init permanecem.
@@ -216,6 +219,7 @@ Todos os fluxos abaixo são de agente sobre artefatos em disco; UI N/A. A superf
 - [ ] C2: Versão 9.0.0 nos manifestos versionáveis.
 - [ ] C3: Docs de spec, design e analyze sem `REGRAS.md` como fonte viva, diagrama da ANALISE da spec com o ramo design.
 - [ ] C4: Modo B, `etapas-v1` e plans sem marcador mantêm o comportamento atual.
+- [ ] C5: Workflow do GitHub Actions removido e `AGENTS.md` registra que o repo não usa CI no GitHub; regressão completa local.
 
 ## Contratos e restrições necessárias
 
