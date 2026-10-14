@@ -24,7 +24,8 @@ Finalização operacional do novo A pertence a finalizador genérico/default apt
 | `references/security-and-hardening.md` | Catálogo sob demanda para superfícies sensíveis. |
 | `stdout (JSON)` | Evidência operacional transitória, consumida na mesma execução. |
 | `review.md` | Tipo e escopo de cada etapa, provas, histórico, veredito final e itens R*. |
-| `plan.md` | Status, dependências/bloqueios, paths e provas registrados sob cada T*; em plan novo de coordenacao-v1, a seção `Regressão completa`. |
+| `plan.md` | Status, dependências/bloqueios e paths de cada T*. Em `coordenacao-v1`, `Arquivos:`, `Prova afetada:`, a seção `Regressão completa` e o resumo de Estado; nos protocolos históricos, provas registradas sob cada T*. |
+| `execution.json` | Em `coordenacao-v1` Modo A, registro operacional de provas locais, integração e commit, lido pela review. |
 
 O motor não julga o diff, não edita source, não escreve a prosa e não sincroniza `AGENTS.md`.
 

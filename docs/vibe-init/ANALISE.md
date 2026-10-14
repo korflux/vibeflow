@@ -6,7 +6,7 @@ O agente lê o motor e executa o init na raiz. O motor cria `AGENTS.md` a partir
 
 ## Decisões
 
-Na mesma execução, o motor pré-valida os dez perfis distribuídos e seus destinos antes de escrever qualquer arquivo. A instalação usa bytes do pacote, sem depender da máquina de autoria. Igualdade preserva o arquivo e conflito preserva a personalização; a IA recebe os paths e pede decisão somente se for necessário substituir uma customização.
+Na mesma execução, o motor pré-valida os doze perfis distribuídos (seis papéis, inclusive o redator, em dois hosts) e seus destinos antes de escrever qualquer arquivo. A instalação usa bytes do pacote, sem depender da máquina de autoria. Igualdade preserva o arquivo e conflito preserva a personalização; a IA recebe os paths e pede decisão somente se for necessário substituir uma customização.
 
 A raiz física identifica o pacote que já forneceu o motor executado. Resolver somente essa raiz permite a descoberta por alias e a instalação padrão por symlink sem ocultar links inesperados dentro dos recursos. A inspeção dos perfis e dos destinos mantém as barreiras existentes, inclusive quando o alias de instalação passa por um ancestral linkado.
 

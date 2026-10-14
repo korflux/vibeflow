@@ -14,12 +14,12 @@ test ! -e "$repo/CLAUDE.md"
 test ! -e "$repo/.vibeflow/REGRAS.md"
 test "$(cat "$repo/.agents/rules/vibeflow.md")" = '@../../AGENTS.md'
 
-# Confere os dez perfis contra o pacote físico e preserva seus bytes na repetição.
+# Confere os doze perfis (seis papéis em dois hosts) contra o pacote físico e preserva seus bytes na repetição.
 mkdir "$repo/snapshots"
 for host in codex claude; do
   extension=toml
   [[ "$host" == claude ]] && extension=md
-  for role in explorador implementador verificador corretor revisor; do
+  for role in explorador implementador verificador corretor revisor redator; do
     profile="$repo/.$host/agents/$role.$extension"
     cmp "$here/../../../vibe-init/templates/agents/$host/$role.$extension" "$profile"
     cp "$profile" "$repo/snapshots/$host-$role"
@@ -31,8 +31,8 @@ cmp "$repo/AGENTS.md" "$repo/snapshots/AGENTS.md"
 for host in codex claude; do
   extension=toml
   [[ "$host" == claude ]] && extension=md
-  for role in explorador implementador verificador corretor revisor; do
+  for role in explorador implementador verificador corretor revisor redator; do
     cmp "$repo/.$host/agents/$role.$extension" "$repo/snapshots/$host-$role"
   done
 done
-echo 'PASS launcher-alias: dez perfis e repetição sem alteração'
+echo 'PASS launcher-alias: doze perfis e repetição sem alteração'
