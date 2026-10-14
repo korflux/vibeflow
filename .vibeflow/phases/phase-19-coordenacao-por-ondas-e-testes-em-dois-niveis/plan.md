@@ -97,9 +97,7 @@ Executada pela review final, uma vez, no estado integrado. Espelha o CI `contrat
 - Ownership: cada implementador escreve somente os `Arquivos:` da sua T*.
 
 ## Retomada
-- Integração da união das provas afetadas registrada verde em `execution.json` (verificador-integracao), cobrindo os inputs locais das seis T*.
-- Commit integrado `task(T1,T2,T3,T4,T5,T6)` criado na `main` local e registrado no motor; branch remota `phase-19` enviada para o CI Linux (`contrato.yml`) executar a regressão completa com symlinks.
-- Próximo passo: review final independente com a regressão completa no estado integrado, usando o resultado do CI `phase-19` para as exceções de symlink deste host Windows.
+- Phase concluída: review aprovada em 2026-10-14, commits 7685093 (T1-T6) e 8c6008f (R1-R3) e commit residual de fechamento, publicada na main.
 
 ## Handoff
 

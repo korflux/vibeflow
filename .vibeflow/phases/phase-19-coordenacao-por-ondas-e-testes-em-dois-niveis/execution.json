@@ -196,6 +196,6 @@
       "comando": "py -3 docs/vibe-implement/tests/test-implement.py -v (69; 66 ok; exceção de ambiente: test_integration_snapshot_types_and_old_commit WinError 1314, 2 skips de symlink); py -3 docs/vibe-review/tests/test-review.py -v (25 OK); test-plan (16 OK), test-distribuicao (7 ok; exceção: test_skills_pointers, test_unique_names_under_skills por core.symlinks=false), test-init.py e test-init.ps1 (exceções WinError 1314 e ponte-legada) reaproveitadas com inputs idênticos",
       "resultado": "verde"
     },
-    "commit": null
+    "commit": "8c6008f3f21dd151b7e518ac25b196eccaea733c"
   }
 }
