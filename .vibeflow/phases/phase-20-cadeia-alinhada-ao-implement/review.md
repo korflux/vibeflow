@@ -105,3 +105,11 @@ vibe-implement
 - Abriu: R1, R2, R3, R4
 - Fechou: nenhum
 - Veredito desta etapa: Request changes
+
+## Publicação autorizada pelo humano
+
+- Data: 2026-10-14.
+- Autorização (texto do humano): "já não ta tudo certo, acho que pode fazer commit/push, preciso dar andamento, atualiza minhas skills locais e afins, depois reviso"; confirmação direta: "confirmo as 5 ações".
+- Commits publicados: 8d1e6e5 (T1 a T9), b1d8067 (R1 a R4 e remoção do CI do GitHub, decisão 18), a042604 (dispensa de falso positivo do gitleaks) e o commit residual desta seção.
+- Re-review pendente: R1 a R4 estão marcados como corrigidos pelo finalizador, mas não foram confirmados por nova review. O humano revisará depois. Esta review não está aprovada.
+- Registro de integração: ficou desatualizado apenas pelo `.gitleaksignore` (fingerprints de falso positivo commitados em a042604, depois do commit R*); nenhum código ou teste mudou. Revalidar na re-review.

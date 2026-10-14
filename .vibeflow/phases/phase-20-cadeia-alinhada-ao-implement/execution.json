@@ -273,6 +273,6 @@
       "comando": "união das Prova afetada: test-init.py (exceção 22 WinError 1314), test-init.ps1 (exceção ponte-legada), test-spec 19 OK, test-design 19 OK, test-plan 16 OK + placeholder, test-analyze 16 OK, test-implement 69 (66 ok; exceção WinError 1314 e 2 skips), test-review 25 OK, test-distribuicao 7 ok (exceção symlink), cmp delegation, checagem T9",
       "resultado": "verde"
     },
-    "commit": null
+    "commit": "b1d80672073869e397167c0b0568c80d08f690a1"
   }
 }
