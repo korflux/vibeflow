@@ -13,8 +13,8 @@ Coordenador escolhe resultado, dependências, responsáveis e colaboração; rec
 ```text
 plan aprovado + modo → finalizador obtém resumo do motor
   → coordenador seleciona entrega e colaboração útil
-  → implementador entrega código + testes + checagem local
-  → finalizador registra local; dependentes podem avançar
+  → implementadores entregam código + testes + checagem local, por onda
+  → verificador certifica a prova afetada de cada T*; finalizador registra o local da onda num único handoff; dependentes podem avançar
   → verificador confere entrega/aceite/cobertura e prova integração
   → falha concreta → corretor → verificador renova provas afetadas
   → finalizador registra integração e commit real
@@ -24,7 +24,7 @@ plan aprovado + modo → finalizador obtém resumo do motor
   → finalizador fecha review/decisões autorizadas/Git/push
 ```
 
-Não existe passagem obrigatória de complementar testes. O implementador cobre seu resultado; verificador identifica lacunas concretas de integração. Não se elimina teste necessário nem se executa matriz completa por task. Implementador comprova localmente o fluxo e consumidores afetados; verificador certifica integração proporcional, que não implica suíte completa. Revisor audita código/cobertura/validade e executa somente lacunas. Suíte completa exige risco, consumidores afetados, lacuna concreta ou CI obrigatório e motivo registrado. A troca de etapa ou papel não justifica repetição. Seleção considera diff, consumidores, risco e aceite; provas verdes de inputs inalterados são reaproveitadas. UI exige inspeção renderizada quando o aceite depender dela.
+Não existe passagem obrigatória de complementar testes. O implementador cobre seu resultado; verificador identifica lacunas concretas de integração. Não se elimina teste necessário. As provas têm dois níveis, descritos em "Ondas e provas em dois níveis". A troca de etapa ou papel não justifica repetição; provas verdes de inputs inalterados são reaproveitadas. UI exige inspeção renderizada quando o aceite depender dela.
 
 Simplificação, reutilização e remoção de redundância continuam no recorte autorizado. Otimização de desempenho cabe quando a necessidade for demonstrável, preservando comportamento, segurança e cobertura, sem abstração especulativa ou limpeza externa.
 
@@ -32,7 +32,35 @@ Simplificação, reutilização e remoção de redundância continuam no recorte
 
 Colaboração depende de uma incerteza ou dependência que possa ser destravada. Exploração e preparação de recortes independentes podem ocorrer juntas, com interlocutores e comunicação técnica direta. Coordenador escolhe o arranjo e evita intermediar cada detalhe. Contexto relacionado é reutilizado; certificação/review continuam independentes dos escritores.
 
-Um recurso compartilhado tem um dono por vez, inclusive arquivos operacionais e índice. Código paralelo conserva autorização aplicável e isolamento; a mudança não cria escritores concorrentes nem framework de orquestração. Grupo registrado ajuda a decisão e não autoriza sozinho paralelizar.
+Um recurso compartilhado tem um dono por vez, inclusive arquivos operacionais e índice. Código paralelo ocorre somente em onda (próxima seção); fora dela segue um escritor por vez. A mudança não cria escritores concorrentes sobre o mesmo arquivo nem framework de orquestração.
+
+## Ondas e provas em dois níveis
+
+Em `coordenacao-v1` Modo A o coordenador avançava uma T* por vez mesmo quando o plan trazia T* independentes, e cada T* repetia verificação ampla e registro próprio. A phase 19 troca isso por ondas, com provas em dois níveis.
+
+```text
+motor: fila.onda (elegíveis de Arquivos: disjuntos) + fila.sem_arquivos
+  → coordenador despacha a onda inteira numa rodada (implementadores em paralelo)
+  → explorador prepara em leitura as T* que a onda libera
+  → cada T* verde → verificador (Prova afetada:) sem esperar a onda; falha → corretor
+  → finalizador registra as provas locais da onda num único handoff
+  → coordenador consulta o motor uma vez → próxima onda
+  → sem pendentes: verificador prova a união das provas afetadas → commit integrado → review
+  → review final executa a Regressão completa, dona exclusiva da suíte inteira e do E2E completo
+```
+
+Decisões e porquês:
+
+| Decisão | Porquê |
+|---|---|
+| Isolamento por disjunção de `Arquivos:`, sem worktree | O plan já declara os paths; o motor calcula a onda de forma determinística, e o coordenador não reconstrói a disjunção nem opera worktrees. |
+| T* sem `Arquivos:` ou com sobreposição roda sozinha; expansão de path volta ao coordenador | Sem recorte conhecido não há dono exclusivo; serializar só a T* afetada preserva o paralelismo das demais. |
+| O pedido de `/vibe-implement` com plan aprovado autoriza o paralelismo | A disjunção calculada pelo motor é o isolamento; não há decisão material pendente para o humano. |
+| Registro em lote por onda | `execution.json` tem um escritor por vez; um handoff por onda evita uma rodada de finalizador por T*. |
+| Implementador e verificador executam só a `Prova afetada:`, sem válvulas de ampliação | As válvulas por risco, consumidor, lacuna ou CI levavam a suíte ampla a cada T*, repetida a cada papel. Substitui a decisão 4 da phase 18 neste protocolo. |
+| Regressão completa só na review final, repetida na re-review apenas se código ou teste mudou | A review é a única etapa sobre o estado integrado final; segurança, paridade e CI obrigatório ficam cobertos ali, uma vez. |
+
+Fora desta mudança: worktree por T*, fan-out da review por dimensão e ajuste de esforço dos perfis. Modo B, `etapas-v1` e plans sem marcador conservam o fluxo e a regra de prova atuais; T* sem `Prova afetada:` (Express ou plan anterior) usa o recorte derivado de diff e consumidores diretos.
 
 ## Estado e retomada
 

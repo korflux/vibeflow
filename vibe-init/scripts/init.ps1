@@ -8,7 +8,7 @@ $ErrorActionPreference = 'Stop'
 $Utf8 = [Text.UTF8Encoding]::new($false)
 $Start = '<!-- VIBEFLOW:CADEIA start -->'
 $End = '<!-- VIBEFLOW:CADEIA end -->'
-$Roles = @('explorador', 'implementador', 'verificador', 'corretor', 'revisor')
+$Roles = @('explorador', 'implementador', 'verificador', 'corretor', 'revisor', 'redator')
 
 # Localiza o projeto por argumento, Git ou diretório atual.
 function Get-ProjectRoot {

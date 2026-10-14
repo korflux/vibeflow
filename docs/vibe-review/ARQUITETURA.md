@@ -24,7 +24,7 @@ Finalização operacional do novo A pertence a finalizador genérico/default apt
 | `references/security-and-hardening.md` | Catálogo sob demanda para superfícies sensíveis. |
 | `stdout (JSON)` | Evidência operacional transitória, consumida na mesma execução. |
 | `review.md` | Tipo e escopo de cada etapa, provas, histórico, veredito final e itens R*. |
-| `plan.md` | Status, dependências/bloqueios, paths e provas registrados sob cada T*. |
+| `plan.md` | Status, dependências/bloqueios, paths e provas registrados sob cada T*; em plan novo de coordenacao-v1, a seção `Regressão completa`. |
 
 O motor não julga o diff, não edita source, não escreve a prosa e não sincroniza `AGENTS.md`.
 
@@ -58,7 +58,23 @@ A auditoria relaciona o diff ao fluxo e seus consumidores, risco e aceite antes 
 
 Checkpoint só é permitido quando `plan.md` declarar o marco e sua justificativa e todas as T* desse marco estiverem concluídas. A etapa julga apenas o marco, suas provas e o contrato ou risco compartilhado indicado. Registra T* ainda abertas, não declara a feature concluída, não marca Approve final e não autoriza sincronização de decisões, commit residual ou push.
 
-Review final exige a fila do plan concluída e julga critérios de aceite, código integrado e riscos alterados. Para cada T*, confere status, `Deps`, bloqueios, `Arquivos` e `Prova`/`Verificação` no `plan.md`; compara os inputs cobertos com o estado integrado e reaproveita evidência verde quando esses paths continuam iguais e a prova ainda cobre a integração. Edição posterior em código/teste invalida somente a prova afetada; atualização de plan, spec ou review não invalida a prova. Executa apenas a verificação necessária que falta para integração ou risco. Não repete automaticamente cada comando da matriz de T*. Toda prova executada ou reaproveitada fica registrada no `review.md` com seu motivo.
+Review final exige a fila do plan concluída e julga critérios de aceite, código integrado e riscos alterados. Para cada T*, confere status, `Deps`, bloqueios, `Arquivos` e `Prova`/`Verificação` no `plan.md`; compara os inputs cobertos com o estado integrado e reaproveita evidência verde quando esses paths continuam iguais e a prova ainda cobre a integração. Edição posterior em código/teste invalida somente a prova afetada; atualização de plan, spec ou review não invalida a prova. Nos protocolos históricos, executa apenas a verificação necessária que falta para integração ou risco e não repete automaticamente cada comando da matriz de T*. Em coordenacao-v1 A, a prova da review final é a regressão completa da subseção seguinte, sem repetir a `Prova afetada:` de cada T*. Toda prova executada ou reaproveitada fica registrada no `review.md` com seu motivo.
+
+### Regressão completa em coordenacao-v1 A
+
+Em coordenacao-v1 Modo A, a review é a única dona da regressão completa; implementador e verificador provam somente o afetado (`Prova afetada:` de cada T*).
+
+| Etapa | Prova da review |
+|---|---|
+| Review final | Executa sempre a seção `Regressão completa` do plan, que declara a suíte inteira e o E2E do repo, uma vez, no estado integrado final. E2E que o plan exclui com motivo (por exemplo, não determinístico e fora do CI) não roda e a exclusão é registrada. Registra comando, resultado, HEAD e se os paths de código e teste estavam sem modificações não commitadas em "Provas executadas" da etapa. Cobre as provas executáveis de segurança, paridade e CI obrigatório. |
+| Re-review | Prova o afetado pela correção. Repete a regressão completa antes do Approve somente se path de código e teste mudou desde a última execução completa verde, pela definição desses paths e pelo critério de comparação em `vibe-review/SKILL.md` §3. A finalização Git usa a mesma comparação. |
+| Checkpoint | Não roda a regressão completa; executa somente a prova que falta para julgar o marco. |
+
+- Approve exige regressão completa verde sobre o código final. Falha abre `R*` `Required` com o comando que falhou e o remédio.
+- O reaproveitamento de prova verde por inputs iguais vale para as provas afetadas das T* e não substitui a regressão completa.
+- Plan sem a seção (anterior ao formato que a introduziu) usa a verificação agregada do repo (CI ou comandos documentados no `AGENTS.md`) como regressão completa e registra a origem na etapa. Sem nenhuma das fontes, a necessidade volta ao coordenador e não há Approve.
+- Em coordenacao-v1 A, o julgamento de código continua limitado ao diff da phase e aos consumidores afetados; a matriz de Cobertura da solicitação continua obrigatória em todos os protocolos (§6).
+- Etapas-v1, Modo B e legado conservam a regra histórica: sem execução automática da suíte completa, que só entra por risco, consumidores afetados, lacuna concreta ou CI obrigatório.
 
 ## 6. Auditoria e prova visual
 
@@ -72,7 +88,7 @@ Aplica os pilares de auditoria ao diff e às superfícies relevantes para o marc
 
 `icon-only` só é aceito para ação universalmente reconhecível, como lixeira para apagar, com nome acessível, foco visível, área de interação e tooltip quando aplicável. Ações ambíguas permanecem textuais.
 
-A review audita código, cobertura e validade das provas locais/integradas já certificadas e executa somente lacunas ou provas invalidadas. Implementador verifica fluxo/consumidores alterados; verificador certifica integração proporcional. Integração não implica suíte completa; ampliação exige risco, consumidores afetados, lacuna concreta ou CI obrigatório e motivo registrado. Mudança ou falha renova somente provas afetadas; troca de etapa ou papel não exige repetição.
+A review audita código, cobertura e validade das provas locais/integradas já certificadas e executa somente lacunas ou provas invalidadas. Implementador verifica fluxo/consumidores alterados; verificador certifica integração proporcional. Nos protocolos históricos, integração não implica suíte completa; ampliação exige risco, consumidores afetados, lacuna concreta ou CI obrigatório e motivo registrado. Em coordenacao-v1 A, a suíte completa é a regressão completa da review final (§5). Mudança ou falha renova somente provas afetadas; troca de etapa ou papel não exige repetição.
 
 Simplificação, reutilização e remoção de redundância permanecem no recorte. Otimização de desempenho fundamentada preserva comportamento, segurança e cobertura, sem abstração especulativa ou limpeza externa.
 
@@ -98,4 +114,4 @@ O relatório segue o formato fixo de `references/delegation.md` do implement e a
 - Checkpoint depende de marco explícito no plan; somente a review final pode concluir fase e abrir a finalização Git.
 - Review não edita source, testes, lockfile ou artefatos anteriores. O revisor delegado também não toca Git, `AGENTS.md` nem a aprovação humana.
 - O motor não interpreta Status, veredito ou diff.
-- O arquivo vivo entra no Git; o JSON operacional é transitório no stdout. Review não corrige source. Após Approve final confirmado, fila concluída e sem R* bloqueante, a review executa a prova necessária da integração, cria o commit residual quando houver e executa `git push` do upstream atual sem force.
+- O arquivo vivo entra no Git; o JSON operacional é transitório no stdout. Review não corrige source. Após Approve final confirmado, fila concluída e sem R* bloqueante, a review confirma a prova necessária da integração (em coordenacao-v1 A, a regressão completa verde já registrada, pela mesma comparação da re-review), cria o commit residual quando houver e executa `git push` do upstream atual sem force.

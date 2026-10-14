@@ -8,6 +8,7 @@ import json
 import re
 import shutil
 import stat
+import string
 import subprocess
 import sys
 import unicodedata
@@ -35,6 +36,19 @@ TASK_HEADING_RE = re.compile(r"^### T(\d+):")
 DONE_LINE_RE = re.compile(r"^- \[([ xX])\] T(\d+) concluída\s*$")
 DEPS_LINE_RE = re.compile(r"^- \*\*Deps:\*\*\s*(.*)$")
 DEP_ID_RE = re.compile(r"T(\d+)")
+# Linha `Arquivos:` da T*, lida só para calcular a onda paralela; o motor trata os paths como texto e nunca os abre.
+ARQUIVOS_LINE_RE = re.compile(r"^- \*\*Arquivos:\*\*[ \t]*(.*)$")
+# Início da seção `## Tasks` (somente no começo de linha): o que vem antes é o cabeçalho do plan com o registro de Integração.
+TASKS_HEADING_RE = re.compile(r"^## Tasks", re.MULTILINE)
+ARQUIVOS_TOKEN_RE = re.compile(r"`([^`]*)`")
+WILDCARD_RE = re.compile(r"[*?\[]")
+# Baixa somente A-Z: a comparação de paths é ASCII e igual nos dois motores.
+ASCII_LOWER = str.maketrans(string.ascii_uppercase, string.ascii_lowercase)
+# Espaços aparados dos paths: conjunto ASCII fixo, porque `str.strip()` e `String.Trim()` divergem em outros caracteres.
+WAVE_WHITESPACE = " \t\n\v\f\r"
+# Caracteres que um path comparável não pode ter: `:` cobre unidade (`C:`, `d:x`) e stream alternativo (`a.py:s`);
+# `<`, `>`, `"` e `|` não existem em nome de arquivo do Windows. `safe_path` já recusa `:` e segmento terminado em `.` ou espaço.
+INCOMPARABLE_CHAR_RE = re.compile(r'[:<>"|]')
 
 # Prefixo do aviso emitido para T* sem linha concluída. A derivação da etapa o reconhece, pois a T* some da fila.
 AVISO_SEM_CONCLUIDA = "sem linha concluída"
@@ -209,12 +223,19 @@ def resolve_alvo(existing: list[dict[str, Any]]) -> dict[str, Any] | None:
     return find_alvo_com_plan(existing)
 
 
+# Separa o texto em linhas somente por \n. O fim de linha já foi normalizado na leitura (`read_text` em modo texto converte
+# \r\n e \r em \n; o motor PowerShell faz o mesmo em ConvertTo-LfText). Não usar `str.splitlines()`: ele também quebra em
+# U+2028, U+2029, \x0b, \x0c, \x1c-\x1e e \x85, e os motores leriam `Arquivos:` de forma diferente.
+def split_lines(text: str) -> list[str]:
+    return text.split("\n")
+
+
 # Quebra o plan em seções T* só pelos headings ### T{n}:; o resto da prosa não inicia tarefa.
 def split_task_sections(text: str) -> list[tuple[str, list[str]]]:
     sections: list[tuple[str, list[str]]] = []
     current_id: str | None = None
     current_lines: list[str] = []
-    for line in text.splitlines():
+    for line in split_lines(text):
         heading = TASK_HEADING_RE.match(line)
         if heading:
             if current_id is not None:
@@ -324,6 +345,85 @@ def fila_from_alvo(repo: Path, alvo: dict[str, Any] | None) -> dict[str, Any] | 
     if body is None:
         return None
     return parse_plan_fila(body)
+
+
+# Normaliza um path de `Arquivos:` para comparação, de forma léxica (sem tocar o disco): `\` vira `/`, `//` colapsa,
+# segmentos `.` somem e `..` é resolvido (`a/../src/a.py` == `src/a.py`). Curinga reduz o path ao diretório anterior ao
+# primeiro curinga. Raiz (`.`, `./`, vazio após normalizar, curinga na raiz) e `..` que escapa da raiz viram "", o
+# prefixo vazio que sobrepõe tudo (conservador: na dúvida, serializa). Só letras ASCII A-Z são baixadas, igual ao
+# motor PowerShell. Paths não ASCII ou absolutos nunca chegam aqui: `wave_path_incomparable` os recusa antes.
+def normalize_wave_path(raw: str) -> str:
+    path = raw.strip(WAVE_WHITESPACE).replace("\\", "/")
+    wildcard = WILDCARD_RE.search(path)
+    if wildcard:
+        prefix = path[: wildcard.start()]
+        path = prefix[: prefix.rfind("/")] if "/" in prefix else ""
+    segments: list[str] = []
+    for segment in path.split("/"):
+        if segment in ("", "."):
+            continue
+        if segment == "..":
+            if not segments:
+                return ""
+            segments.pop()
+            continue
+        segments.append(segment)
+    return "/".join(segments).translate(ASCII_LOWER)
+
+
+# Path que o motor não sabe comparar com segurança, pois o mesmo arquivo pode ter outra grafia: qualquer caractere fora
+# do ASCII (caixa Unicode, NFC/NFD e afins), path absoluto (`/x`, `\\srv\x`), `:` em qualquer posição (unidade, stream
+# alternativo), `<`, `>`, `"` ou `|`, e segmento terminado em `.` ou espaço (o Windows os descarta), exceto `.` e `..`,
+# que a normalização resolve. A T* que declara um deles roda sozinha.
+# ponytail: nomes 8.3 (PROGRA~1) e dispositivos reservados (NUL, CON) não são detectáveis lexicamente, tratar se aparecerem em plans
+def wave_path_incomparable(token: str) -> bool:
+    path = token.strip(WAVE_WHITESPACE).replace("\\", "/")
+    if not token.isascii() or path.startswith("/") or INCOMPARABLE_CHAR_RE.search(path):
+        return True
+    return any(segment not in (".", "..") and segment.endswith((".", " ")) for segment in path.split("/"))
+
+
+# Extrai os paths do valor de `Arquivos:`: tokens entre crases ou, sem crases, separados por vírgula. Token em branco é
+# descartado. Um único path incomparável torna a T* inteira sem arquivos comparáveis: devolve lista vazia.
+def parse_arquivos_value(raw: str) -> list[str]:
+    tokens = ARQUIVOS_TOKEN_RE.findall(raw) if "`" in raw else raw.split(",")
+    tokens = [token for token in tokens if token.strip(WAVE_WHITESPACE)]
+    if any(wave_path_incomparable(token) for token in tokens):
+        return []
+    return [normalize_wave_path(token) for token in tokens]
+
+
+# Dois paths normalizados se sobrepõem quando são iguais ou um é diretório-prefixo do outro; "" é a raiz.
+def wave_paths_overlap(a: str, b: str) -> bool:
+    return a == b or not a or not b or b.startswith(a + "/") or a.startswith(b + "/")
+
+
+# Monta a onda paralela a partir das T* elegíveis: gulosa em ordem numérica, só com T* de `Arquivos:` disjuntos.
+# T* sem `Arquivos:` comparáveis (ausente, vazio, não ASCII ou absoluto) só forma onda sozinha (a ocupa quando é a
+# primeira elegível) e nunca divide onda com outra. Devolve também essas elegíveis, que vão para `sem_arquivos`.
+# O motor só lê texto: a semântica de cada T* continua do coordenador.
+def plan_wave(text: str, elegiveis: list[str]) -> tuple[list[str], list[str]]:
+    declared: dict[str, list[str]] = {}
+    for tid, lines in split_task_sections(text):
+        if tid in declared:
+            continue
+        values = [match.group(1) for line in lines if (match := ARQUIVOS_LINE_RE.match(line.strip(WAVE_WHITESPACE)))]
+        declared[tid] = parse_arquivos_value(values[0]) if values else []
+    ordered = sorted(elegiveis, key=task_n)
+    sem_arquivos = [tid for tid in ordered if not declared.get(tid)]
+    onda: list[str] = []
+    taken: list[str] = []
+    for tid in ordered:
+        paths = declared.get(tid)
+        if not paths:
+            if not onda:
+                return [tid], sem_arquivos
+            continue
+        if any(wave_paths_overlap(a, b) for a in paths for b in taken):
+            continue
+        onda.append(tid)
+        taken.extend(paths)
+    return onda, sem_arquivos
 
 
 # Confere snapshots sem executar a prosa do comando; Git e arquivos locais são a evidência mecânica.
@@ -448,7 +548,7 @@ def execution_from_plan(repo: Path, alvo: dict[str, Any] | None, fila: dict[str,
             visited.add(tid)
         for tid in tasks:
             visit(tid)
-        prefix = text.split("## Tasks", 1)[0].splitlines()
+        prefix = split_lines(TASKS_HEADING_RE.split(text, maxsplit=1)[0])
         integration = execution_field(prefix, "Integração")
         if not isinstance(integration, dict) or not {"testes", "prova", "commit"} <= set(integration) <= {"testes", "prova", "commit", "origem"} or integration["testes"] not in ("pendentes", "prontos") or integration["commit"] not in ("pendente", "registrado"):
             raise ValueError("registro de integração inválido")
@@ -540,7 +640,7 @@ def read_review(repo: Path, alvo: dict[str, Any] | None, warnings: list[str]) ->
     except (OSError, UnicodeDecodeError):
         warnings.append("review.md ilegível: etapa não derivada")
         return {"legivel": False, "status": None, "bloqueios_abertos": False, "aprovacao_marcada": False, "rodadas": 0}
-    lines = text.splitlines()
+    lines = split_lines(text)
     status_match = REVIEW_STATUS_RE.search(text)
     if status_match is None:
         warnings.append("review.md sem '# Status:': etapa não derivada")
@@ -676,6 +776,8 @@ def run(args: argparse.Namespace) -> None:
             execution, stage = coordinate(repo, alvo["path"], plan_text, args, fila, review,
                                           split_task_sections, parse_deps_value, is_reparse_point,
                                           snapshot_valid, derive_etapa)
+            # Onda paralela só no coordenacao-v1 Modo A; Modo B, etapas-v1 e legado mantêm a fila sem esses campos.
+            fila["onda"], fila["sem_arquivos"] = plan_wave(plan_text, fila["elegiveis"])
     else:
         if args.operation or args.details:
             raise ValueError("EXECUTION_INVALIDO: operação exige coordenacao-v1 Modo A")

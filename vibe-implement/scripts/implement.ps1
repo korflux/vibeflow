@@ -24,6 +24,10 @@ $script:SlugWasBound = $PSBoundParameters.ContainsKey('Slug')
 $script:DirWasBound = $PSBoundParameters.ContainsKey('Dir')
 $script:ChainFiles = @('interview.md', 'spec.md', 'plan.md', 'analyze.md', 'review.md')
 $script:MaxSlug = 48
+# Linha `Arquivos:` da T*, lida só para calcular a onda paralela; o motor trata os paths como texto e nunca os abre.
+$script:ArquivosLineRe = [regex]::new('^- \*\*Arquivos:\*\*[ \t]*(.*)$')
+# Espaços aparados dos paths: conjunto ASCII fixo (espaço, tab, LF, VT, FF, CR), porque Trim() e str.strip() divergem em outros caracteres.
+$script:WaveWhitespace = [char[]]@(32, 9, 10, 11, 12, 13)
 # Prefixo do aviso emitido para T* sem linha concluída. A derivação da etapa o reconhece, pois a T* some da fila.
 $script:AvisoSemConcluida = 'sem linha concluída'
 # Marcas do review.md lidas só para derivar a etapa; o conteúdo semântico do arquivo não é interpretado.
@@ -136,7 +140,7 @@ function Get-AnalyzeGate([string]$Path) {
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
         return [pscustomobject]@{ status = 'ausente'; veredito = 'ausente'; pronto = $false }
     }
-    $text = [System.IO.File]::ReadAllText($Path)
+    $text = ConvertTo-LfText ([System.IO.File]::ReadAllText($Path))
     $statusMatch = [regex]::Match($text, '(?im)^# Status:\s*([^\s]+)\s*$')
     $verdictMatch = [regex]::Match($text, '(?im)^## Veredito\s*\r?\n+\s*(limpo|bloqueado)\s*$')
     $status = if ($statusMatch.Success) { $statusMatch.Groups[1].Value.ToLowerInvariant() } else { 'ausente' }
@@ -197,16 +201,15 @@ function ConvertFrom-DepsValue([string]$Raw) {
     return $found
 }
 
-# Lê só concluída + Deps. Não interpreta Status, aceite ou texto livre.
-function ConvertFrom-PlanFila([string]$Text) {
-    $avisos = New-Object System.Collections.Generic.List[string]
+# Quebra o plan em seções T* só pelos headings ### T{n}:; o resto da prosa não inicia tarefa (espelha split_task_sections).
+# Também usada por Get-CoordinateGraph em execution.ps1: ambos os arquivos vivem no mesmo escopo de script.
+# O chamador envolve a chamada em @() para receber sempre um array, mesmo com zero ou uma seção.
+function Get-TaskSections([string]$Text) {
     $headingRe = [regex]'^### T(\d+):'
-    $doneRe = [regex]'^- \[([ xX])\] T(\d+) concluída\s*$'
-    $depsRe = [regex]'^- \*\*Deps:\*\*\s*(.*)$'
     $sections = New-Object System.Collections.Generic.List[object]
     $currentId = $null
     $currentLines = New-Object System.Collections.Generic.List[string]
-    foreach ($line in ($Text -split '\r?\n')) {
+    foreach ($line in ($Text -split '\n')) {
         $head = $headingRe.Match($line)
         if ($head.Success) {
             if ($null -ne $currentId) {
@@ -221,6 +224,15 @@ function ConvertFrom-PlanFila([string]$Text) {
     if ($null -ne $currentId) {
         $sections.Add([pscustomobject]@{ id = $currentId; lines = @($currentLines) })
     }
+    return $sections
+}
+
+# Lê só concluída + Deps. Não interpreta Status, aceite ou texto livre.
+function ConvertFrom-PlanFila([string]$Text) {
+    $avisos = New-Object System.Collections.Generic.List[string]
+    $doneRe = [regex]'^- \[([ xX])\] T(\d+) concluída\s*$'
+    $depsRe = [regex]'^- \*\*Deps:\*\*\s*(.*)$'
+    $sections = @(Get-TaskSections $Text)
     if ($sections.Count -eq 0) {
         return [pscustomobject]@{
             parse      = 'ausente'
@@ -312,8 +324,114 @@ function Get-FilaFromAlvo([string]$Repo, $Alvo) {
     if ($null -eq $Alvo) { return $null }
     $path = Join-Path (Join-Path $Repo ([string]$Alvo.path)) 'plan.md'
     if (-not (Test-Path -LiteralPath $path)) { return $null }
-    $text = [System.IO.File]::ReadAllText($path)
+    $text = ConvertTo-LfText ([System.IO.File]::ReadAllText($path))
     return ConvertFrom-PlanFila $text
+}
+
+# Normaliza um path de `Arquivos:` para comparação, de forma léxica (sem tocar o disco): `\` vira `/`, `//` colapsa,
+# segmentos `.` somem e `..` é resolvido (`a/../src/a.py` == `src/a.py`). Curinga reduz o path ao diretório anterior ao
+# primeiro curinga. Raiz (`.`, `./`, vazio após normalizar, curinga na raiz) e `..` que escapa da raiz viram '', o
+# prefixo vazio que sobrepõe tudo (conservador: na dúvida, serializa). Só letras ASCII A-Z são baixadas, igual ao
+# motor Python. Paths não ASCII ou absolutos nunca chegam aqui: Test-WavePathIncomparable os recusa antes.
+function ConvertTo-WavePath([string]$Raw) {
+    $path = $Raw.Trim($script:WaveWhitespace).Replace('\', '/')
+    $wildcard = [regex]::Match($path, '[*?\[]')
+    if ($wildcard.Success) {
+        $prefix = $path.Substring(0, $wildcard.Index)
+        $cut = $prefix.LastIndexOf('/')
+        $path = if ($cut -ge 0) { $prefix.Substring(0, $cut) } else { '' }
+    }
+    $segments = New-Object System.Collections.Generic.List[string]
+    foreach ($segment in $path.Split('/')) {
+        if ($segment.Length -eq 0 -or $segment.Equals('.', [StringComparison]::Ordinal)) { continue }
+        if ($segment.Equals('..', [StringComparison]::Ordinal)) {
+            if ($segments.Count -eq 0) { return '' }
+            $segments.RemoveAt($segments.Count - 1)
+            continue
+        }
+        [void]$segments.Add($segment)
+    }
+    $chars = ([string]::Join('/', $segments)).ToCharArray()
+    for ($i = 0; $i -lt $chars.Length; $i++) {
+        $code = [int]$chars[$i]
+        if ($code -ge 65 -and $code -le 90) { $chars[$i] = [char]($code + 32) }
+    }
+    return -join $chars
+}
+
+# Path que o motor não sabe comparar com segurança, pois o mesmo arquivo pode ter outra grafia: qualquer caractere fora
+# do ASCII (caixa Unicode, NFC/NFD e afins), path absoluto (`/x`, `\\srv\x`), `:` em qualquer posição (unidade, stream
+# alternativo), `<`, `>`, `"` ou `|`, e segmento terminado em `.` ou espaço (o Windows os descarta), exceto `.` e `..`,
+# que a normalização resolve. A T* que declara um deles roda sozinha. O safe_path já recusa `:` e segmento terminado em `.` ou espaço.
+# ponytail: nomes 8.3 (PROGRA~1) e dispositivos reservados (NUL, CON) não são detectáveis lexicamente, tratar se aparecerem em plans
+function Test-WavePathIncomparable([string]$Token) {
+    $path = $Token.Trim($script:WaveWhitespace).Replace('\', '/')
+    if ([regex]::IsMatch($Token, '[^\x00-\x7F]') -or $path.StartsWith('/', [StringComparison]::Ordinal) -or [regex]::IsMatch($path, '[:<>"|]')) { return $true }
+    foreach ($segment in $path.Split('/')) {
+        if ($segment.Equals('.', [StringComparison]::Ordinal) -or $segment.Equals('..', [StringComparison]::Ordinal)) { continue }
+        if ($segment.EndsWith('.', [StringComparison]::Ordinal) -or $segment.EndsWith(' ', [StringComparison]::Ordinal)) { return $true }
+    }
+    return $false
+}
+
+# Extrai os paths do valor de `Arquivos:`: tokens entre crases ou, sem crases, separados por vírgula. Token em branco é
+# descartado. Um único path incomparável torna a T* inteira sem arquivos comparáveis: não emite nenhum path.
+function ConvertFrom-ArquivosValue([string]$Raw) {
+    $tokens = if ($Raw.Contains('`')) { @([regex]::Matches($Raw, '`([^`]*)`') | ForEach-Object { $_.Groups[1].Value }) } else { @($Raw -split ',') }
+    $kept = @($tokens | Where-Object { $_.Trim($script:WaveWhitespace).Length -gt 0 })
+    foreach ($token in $kept) {
+        if (Test-WavePathIncomparable $token) { return }
+    }
+    foreach ($token in $kept) { ConvertTo-WavePath $token }
+}
+
+# Dois paths normalizados se sobrepõem quando são iguais ou um é diretório-prefixo do outro; '' é a raiz.
+# Comparação ordinal de propósito: -eq/-ceq do PowerShell comparam com cultura e tratariam NFC e NFD como iguais, divergindo do Python.
+function Test-WavePathsOverlap([string]$A, [string]$B) {
+    return $A.Equals($B, [StringComparison]::Ordinal) -or ($A.Length -eq 0) -or ($B.Length -eq 0) -or $B.StartsWith($A + '/', [StringComparison]::Ordinal) -or $A.StartsWith($B + '/', [StringComparison]::Ordinal)
+}
+
+# Monta a onda paralela a partir das T* elegíveis: gulosa em ordem numérica, só com T* de `Arquivos:` disjuntos.
+# T* sem `Arquivos:` comparáveis (ausente, vazio, não ASCII ou absoluto) só forma onda sozinha (a ocupa quando é a
+# primeira elegível) e nunca divide onda com outra. Devolve também essas elegíveis, que vão para `sem_arquivos`.
+# O motor só lê texto: a semântica de cada T* continua do coordenador.
+function Get-PlanWave([string]$Text, $Elegiveis) {
+    $declared = @{}
+    foreach ($section in @(Get-TaskSections $Text)) {
+        if ($declared.ContainsKey($section.id)) { continue }
+        $paths = New-Object System.Collections.Generic.List[string]
+        foreach ($line in $section.lines) {
+            $match = $script:ArquivosLineRe.Match($line.Trim($script:WaveWhitespace))
+            if ($match.Success) {
+                foreach ($path in (ConvertFrom-ArquivosValue $match.Groups[1].Value)) { [void]$paths.Add($path) }
+                break
+            }
+        }
+        $declared[$section.id] = $paths
+    }
+    $ordered = @($Elegiveis | Sort-Object { [int]$_.Substring(1) })
+    $onda = New-Object System.Collections.Generic.List[string]
+    $semArquivos = New-Object System.Collections.Generic.List[string]
+    $taken = New-Object System.Collections.Generic.List[string]
+    foreach ($tid in $ordered) {
+        if ($declared[$tid].Count -eq 0) { [void]$semArquivos.Add($tid) }
+    }
+    foreach ($tid in $ordered) {
+        $paths = $declared[$tid]
+        if ($paths.Count -eq 0) {
+            if ($onda.Count -eq 0) { [void]$onda.Add($tid); break }
+            continue
+        }
+        $clash = $false
+        foreach ($a in $paths) {
+            foreach ($b in $taken) { if (Test-WavePathsOverlap $a $b) { $clash = $true; break } }
+            if ($clash) { break }
+        }
+        if ($clash) { continue }
+        [void]$onda.Add($tid)
+        foreach ($a in $paths) { [void]$taken.Add($a) }
+    }
+    return @{ onda = $onda.ToArray(); sem_arquivos = $semArquivos.ToArray() }
 }
 
 # Conta as correções já aplicadas. Cada etapa com veredito Request changes soma 1; a última não conta
@@ -386,7 +504,7 @@ function Test-ExecutionDependency([string]$Id, $Tasks, $Active, $Visited) {
 # Projeta somente o protocolo explícito e preserva leitura histórica e Modo B.
 function Get-ExecutionFromPlan([string]$Repo, $Alvo, $Fila) {
     if ($null -eq $Alvo -or $null -eq $Fila) { return $null }
-    $text = [IO.File]::ReadAllText((Join-Path $Repo ($Alvo.path + '/plan.md')))
+    $text = ConvertTo-LfText ([IO.File]::ReadAllText((Join-Path $Repo ($Alvo.path + '/plan.md'))))
     $protocols = @([regex]::Matches($text, '(?m)^# Protocolo:\s*(.*?)\s*$') | ForEach-Object { $_.Groups[1].Value })
     if ($protocols.Count -eq 0) { return $null }
     $modes = @([regex]::Matches($text, '(?m)^# Modo:\s*(.*?)\s*$') | ForEach-Object { $_.Groups[1].Value })
@@ -402,7 +520,7 @@ function Get-ExecutionFromPlan([string]$Repo, $Alvo, $Fila) {
         foreach ($section in $sections) {
             $tid = $section.Groups[1].Value
             if ($tasks.Contains($tid)) { throw 'T* duplicada' }
-            $lines = $section.Groups[2].Value -split '\r?\n'
+            $lines = $section.Groups[2].Value -split '\n'
             $deps = @($lines | ForEach-Object { if ($_.Trim() -cmatch '^- \*\*Deps:\*\*\s*(.*)$') { $Matches[1] } })
             $done = @($lines | ForEach-Object { if ($_.Trim() -cmatch "^- \[([ xX])\] $tid concluída\s*$") { $Matches[1] } })
             if ($deps.Count -ne 1 -or $done.Count -ne 1 -or $deps[0] -cnotmatch '^(?:nenhuma|T[1-9]\d*(?:[ ,]+T[1-9]\d*)*)$') { throw "conclusão ou Deps inválida: $tid" }
@@ -415,7 +533,7 @@ function Get-ExecutionFromPlan([string]$Repo, $Alvo, $Fila) {
         $active = [Collections.Generic.HashSet[string]]::new()
         $visited = [Collections.Generic.HashSet[string]]::new()
         foreach ($tid in $tasks.Keys) { Test-ExecutionDependency $tid $tasks $active $visited }
-        $prefix = ($text -split '(?m)^## Tasks', 2)[0] -split '\r?\n'
+        $prefix = ($text -split '(?m)^## Tasks', 2)[0] -split '\n'
         $integration = Get-ExecutionField $prefix 'Integração'
         if ($integration -isnot [Collections.IDictionary] -or $integration.Count -notin @(3,4) -or @('testes','prova','commit' | Where-Object { -not $integration.Contains($_) }).Count -or @($integration.Keys | Where-Object { $_ -cnotin @('testes','prova','commit','origem') }).Count -or $integration.testes -cnotin @('pendentes','prontos') -or $integration.commit -cnotin @('pendente','registrado')) { throw 'registro de integração inválido' }
         if ($null -ne $integration.origem -and ($integration.origem -isnot [string] -or $integration.origem -cnotmatch '^(?:[a-f0-9]{40}|[a-f0-9]{64})$')) { throw 'origem da integração inválida' }
@@ -499,12 +617,12 @@ function Read-ReviewMarks([string]$Repo, $Alvo, $Warnings) {
     $path = Join-Path (Join-Path $Repo ([string]$Alvo.path)) 'review.md'
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return $null }
     try {
-        $text = [System.IO.File]::ReadAllText($path, [System.Text.UTF8Encoding]::new($false, $true))
+        $text = ConvertTo-LfText ([System.IO.File]::ReadAllText($path, [System.Text.UTF8Encoding]::new($false, $true)))
     } catch {
         $Warnings.Add('review.md ilegível: etapa não derivada')
         return [pscustomobject]@{ legivel = $false; status = $null; bloqueiosAbertos = $false; aprovacaoMarcada = $false; rodadas = 0 }
     }
-    $lines = [string[]]($text -split '\r?\n')
+    $lines = [string[]]($text -split '\n')
     $statusMatch = $script:ReviewStatusRe.Match($text)
     if (-not $statusMatch.Success) {
         $Warnings.Add("review.md sem '# Status:': etapa não derivada")
@@ -636,7 +754,7 @@ function Invoke-Implement {
     if ($alvoItem) { foreach ($filename in @('plan.md','review.md')) { $null = Get-CoordinatePath $repo ($alvoItem.path + '/' + $filename) } }
     $fila = Get-FilaFromAlvo $repo $alvoItem
     $review = Read-ReviewMarks $repo $alvoItem $warnings
-    $planText = if ($alvoItem -and $fila) { [IO.File]::ReadAllText((Join-Path (Join-Path $repo $alvoItem.path) 'plan.md')) } else { '' }
+    $planText = if ($alvoItem -and $fila) { ConvertTo-LfText ([IO.File]::ReadAllText((Join-Path (Join-Path $repo $alvoItem.path) 'plan.md'))) } else { '' }
     $protocols = @([regex]::Matches($planText, '(?m)^# Protocolo:\s*([^\r\n]*)') | ForEach-Object { $_.Groups[1].Value.Trim() })
     $modes = @([regex]::Matches($planText, '(?m)^# Modo:\s*([^\r\n]*)') | ForEach-Object { $_.Groups[1].Value.Trim() })
     # Protocolo explícito escolhe leitor; operação nunca migra artefatos históricos.
@@ -649,6 +767,11 @@ function Invoke-Implement {
             $coordinate = Invoke-Coordinate $repo $alvoItem.path $planText $fila $review
             $execution = $coordinate.execucao
             $stage = $coordinate.etapa
+            # Onda paralela só no coordenacao-v1 Modo A; Modo B, etapas-v1 e legado mantêm a fila sem esses campos.
+            # [string[]] explícito preserva array vazio e de um elemento no ConvertTo-Json, como o motor Python.
+            $wave = Get-PlanWave $planText $fila.elegiveis
+            $fila | Add-Member -NotePropertyName onda -NotePropertyValue ([string[]]$wave.onda) -Force
+            $fila | Add-Member -NotePropertyName sem_arquivos -NotePropertyValue ([string[]]$wave.sem_arquivos) -Force
         }
     } else {
         if ($Operation -or $Details) { Stop-Coordinate 'operação exige coordenacao-v1 Modo A' }

@@ -15,7 +15,10 @@ Convenção: `[x]` já existe no repositório hoje. `[ ]` entra, ainda não cons
 - [x] `vibe-review` — julga o patch e grava o veredito.
 - [x] `vibe-design`, grava `design.md` entre spec e plan somente com UI visível, com N/A explícito sem tela. Pacote com motores, SKILL, template, references e distribuição em oito skills.
 - [ ] **Rota MVP.** Projeto novo usa baseline único em `.vibeflow/mvp/` e percorre interview, spec, plan, analyze, implement e review. Pivôs posteriores voltam às phases.
-- [ ] **Paralelismo no Modo A.** Contrato `Arquivos:` obrigatório, checagem de disjunção no `plan.py`, worktree por T* e pacote de contexto por T*. Phase seguinte, depois que o piloto sequencial estiver estável. Fica de fora também o fan-out da review por dimensão.
+- [x] **Paralelismo por ondas no Modo A.** Em `coordenacao-v1` Modo A, o plan exige `Arquivos:` e `Prova afetada:` por T* e `Regressão completa` uma vez. O motor da implement (`implement.py`/`implement.ps1`) calcula a disjunção e relata `fila.onda` e `fila.sem_arquivos`; o coordenador despacha a onda numa rodada. Provas em dois níveis: implementador e verificador provam o afetado, e a review final executa a regressão completa. Papel `redator` para T* de prosa.
+- [ ] **Worktree por T*.** Isolamento por worktree, com pacote de contexto por T*. Hoje o isolamento é a disjunção de `Arquivos:`.
+- [ ] **Fan-out da review por dimensão.** Review dividida em revisores paralelos por dimensão.
+- [ ] **E2E do piloto na regressão completa.** `docs/vibe-implement/tests/piloto-modo-a.py` fica fora da regressão completa e do CI por não ser determinístico e consumir tokens da conta.
 
 Nenhuma skill dispara a seguinte. O handoff é uma linha no artefato.
 

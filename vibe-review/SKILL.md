@@ -73,7 +73,7 @@ RECOMENDO: <opção>, <1 linha>
 
 Barra de Approve: saúde do código + convenção do repo. Não bloquear gosto. No Express, julgue rastreabilidade e inspecione o resultado renderizado somente quando ele fizer parte do aceite; cubra a acessibilidade afetada pela mudança. Segurança e banco só abrem se o diff tocar essas superfícies.
 
-## 3. Checkpoint, review final e prova proporcional
+## 3. Checkpoint, review final e provas
 
 A review é um processo cético e investigativo. Não confie cegamente em checkboxes nem em logs passados. Escolha o tipo pela fila e pelo checkpoint explícito do `plan.md`; não transforme uma revisão parcial em veredito de fase.
 
@@ -91,8 +91,17 @@ A review é um processo cético e investigativo. Não confie cegamente em checkb
 ### Selecionar e executar provas
 
 1. Em coordenacao-v1 A, use execution.json como registro e plan como definição/resumo; nos protocolos históricos, use o `plan.md` como registro das execuções: confira o status da T*, `Deps` e bloqueios, `Arquivos` e `Prova`/`Verificação`. Compare os inputs da prova com o estado integrado e reaproveite prova verde somente quando esses inputs permanecem iguais e a prova ainda cobre a integração. Mudança em plan, spec ou review não invalida prova de código; edição posterior em código/teste invalida somente a prova afetada. `implement.md` histórico não é necessário para a review. Confira a história Git e os paths reais, aceitando commits integrados de várias T* e commits legados sem exigir exclusivamente o prefixo `task(Tn)`. Em etapas-v1, confira origem preservada, snapshot integrado, hashes dos inputs e commit real; checagem local não substitui integração.
-2. Relacione diff, fluxo e consumidores, risco e aceite; execute somente a prova que falta para julgar o marco ou integração. Reexecute por falha, inputs/dependências relevantes alterados, lacuna de integração ou risco concreto. Em re-review, confira correções e impacto nos consumidores; preserve julgamento e provas válidas das partes inalteradas. Duração não dispensa segurança, paridade ou prova renderizada necessárias.
-3. Não rode automaticamente a matriz de comandos de cada T* nem a suíte completa. Audite código, cobertura e validade das provas locais/integradas já certificadas; mudar de etapa ou revisor não exige executá-las novamente. Suíte completa só entra por risco, consumidores afetados, lacuna concreta ou CI obrigatório, com motivo registrado. Na review final, use uma verificação agregada existente somente se houver lacuna e ela comprovar a integração; rode o Smoke Test somente quando a entrada real tiver mudado, sua prova estiver ausente/desatualizada ou for necessária para cobrir o fluxo integrado.
+2. Relacione diff, fluxo e consumidores, risco e aceite. Em coordenacao-v1 A, o julgamento de código fica limitado ao diff da phase e aos consumidores afetados; a matriz de Cobertura da solicitação continua obrigatória em todos os protocolos. Fora da regressão completa (checkpoint e protocolos históricos), execute somente a prova que falta para julgar o marco ou integração; reexecute por falha, inputs/dependências relevantes alterados, lacuna de integração ou risco concreto. Em re-review, confira correções e impacto nos consumidores; preserve julgamento e provas válidas das partes inalteradas. Duração não dispensa segurança, paridade ou prova renderizada necessárias.
+3. A prova da review depende do protocolo (fonte da execução, §1):
+   - **coordenacao-v1 A, review final e re-review:** a review é a única dona da regressão completa; implementador e verificador provaram somente o afetado.
+     - Execute sempre a seção `Regressão completa` do plan, que declara a suíte inteira e o E2E do repo, uma vez, no estado integrado final. E2E que o plan exclui com motivo (por exemplo, não determinístico e fora do CI) não roda; registre a exclusão e o motivo. Registre na etapa, em "Provas executadas", comando, resultado, HEAD e se os paths de código e teste estavam sem modificações não commitadas.
+     - Ela cobre as provas executáveis de segurança, paridade e CI obrigatório; a auditoria de código dos pilares abaixo continua no diff. O reaproveitamento do item 1 vale para as provas afetadas das T* e nunca substitui a regressão completa.
+     - Paths de código e teste: todo path do repo fora de `.vibeflow/`, inclusive código, testes, docs, skills e config. Somente artefatos da cadeia em `.vibeflow/`, como plan, spec, review e execution.json, ficam fora.
+     - Re-review: prove o afetado pela correção. Repita a regressão completa antes do Approve somente se algum path de código e teste mudou desde a última execução completa verde. Compare esses paths entre o HEAD registrado na etapa e a árvore de trabalho atual: commit ou modificação não commitada neles conta, assim como árvore que já estava suja no registro. HEAD diferente apenas por mudança dentro de `.vibeflow/` não exige repetição, mesmo commitada. A finalização Git usa a mesma comparação.
+     - Falha: abra `R*` `Required` com o comando que falhou e o remédio. Approve exige regressão completa verde sobre o código final.
+     - Plan sem seção `Regressão completa` (anterior ao formato que a introduziu): use a verificação agregada do repo (CI ou comandos documentados no `AGENTS.md`) como regressão completa e registre a origem na etapa. Sem nenhuma das duas fontes, devolva a necessidade ao coordenador com recomendação; não aprove sem regressão completa.
+   - **coordenacao-v1 A, checkpoint:** não rode a regressão completa; execute somente a prova que falta para julgar o marco (item 2).
+   - **etapas-v1, Modo B e legado:** mantêm a regra histórica. Não rode automaticamente a matriz de comandos de cada T* nem a suíte completa. Audite código, cobertura e validade das provas locais/integradas já certificadas; mudar de etapa ou revisor não exige executá-las novamente. Suíte completa só entra por risco, consumidores afetados, lacuna concreta ou CI obrigatório, com motivo registrado. Na review final, use uma verificação agregada existente somente se houver lacuna e ela comprovar a integração; rode o Smoke Test somente quando a entrada real tiver mudado, sua prova estiver ausente/desatualizada ou for necessária para cobrir o fluxo integrado.
 4. Registre em cada etapa referências às provas reaproveitadas, comandos novos e motivo; não copie snapshots do lar operacional do protocolo nem reinvestigue inputs inalterados sem lacuna concreta. Se uma prova necessária falhar, abra `R*` `Required` com comando e remédio; não aprove silenciosamente.
 
 Inspecione o código integrado e aplique estes pilares ao escopo da etapa:
@@ -103,7 +112,7 @@ Inspecione o código integrado e aplique estes pilares ao escopo da etapa:
 2. **Provas e Integridade dos Testes:**
    - Cace falsos positivos: testes sem asserções reais, testes que dão `assert True`, testes que apenas testam mocks sem exercitar a implementação real.
    - Se a task consolidou testes da capacidade alterada, confira se os cenários e afirmações removidos continuam cobertos por provas executáveis. Duplicação remanescente só vira achado quando causa custo material ou mascara uma lacuna; não peça limpeza ampla fora da entrega.
-   - Verifique casos de borda e caminhos de erro relevantes às superfícies alteradas. Use a seleção de provas acima; não repita suites de T* sem lacuna ou risco que o justifique.
+   - Verifique casos de borda e caminhos de erro relevantes às superfícies alteradas. Use a seleção de provas acima; fora da regressão completa, não repita suites de T* sem lacuna ou risco que o justifique.
    - Se uma prova necessária falhar ou for falso positivo: registre `R*` `Required`.
 3. **Auditoria Implacável de Segurança e Hardening:**
    - Nas superfícies tocadas pelo diff, inspecione entradas externas, formulários, parâmetros de URL e bodies de request (`references/security-and-hardening.md`):
@@ -200,7 +209,7 @@ Após aprovação humana explícita da review final, com a fila concluída:
 
 Esta seção só se aplica à review final, depois da aprovação humana explícita, com todas as T* concluídas e sem R* de correção em `[ ]`. Checkpoint nunca abre finalização Git.
 
-1. Execute a prova final necessária para a integração conforme §3, sem repetir automaticamente a matriz de cada T*. Execute `git diff --check` e gitleaks quando previsto pelo repositório.
+1. Confirme a prova final conforme §3: em coordenacao-v1 A, a regressão completa verde registrada cobre a integração enquanto nenhum path de código ou teste mudou desde ela, pela mesma comparação da re-review no §3; nos protocolos históricos, execute a prova final necessária para a integração, sem repetir automaticamente a matriz de cada T*. Execute `git diff --check` e gitleaks quando previsto pelo repositório.
 2. Compare o estado atual com o snapshot da review. Se houver path fora da phase, das decisões aprovadas ou da correção registrada, pare e peça isolamento; não misture trabalho pré-existente.
 3. Adicione somente os paths residuais autorizados, com `git add -- path/da/phase AGENTS.md` quando a sincronização foi aprovada. Nunca use `git add -A` ou `git add .`.
 4. Valide `git diff --cached --check` e a lista de paths. Crie `chore(phase-N): finalize review` sem `Co-Authored-By` quando houver mudanças residuais. Não crie commit vazio; se não houver residual, o último commit integrado ou da task é o HEAD da phase.

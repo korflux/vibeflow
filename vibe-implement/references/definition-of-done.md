@@ -9,9 +9,9 @@ Abrir no fechamento da fatia, não no boot.
 - Aceite da T* (ou do R*) ok
 - Roda em runtime, não só typecheck
 - Comportamento novo coberto por prova executável capaz de detectar sua ausência, reutilizada ou ampliada quando possível. Não rebaixe esta barra para leitura de arquivo
-- Comando da Verificação da T* verde. Passo só manual não conta
-- Prova suficiente do estado final de código/teste, executada ou reaproveitada com cobertura e inputs válidos; repita somente a prova afetada por falha ou mudança em seus inputs
-- Sem regressão na prova executável relevante. Implementador verifica o fluxo/consumidores tocados; verificador certifica integração proporcional e revisor audita evidências. Suíte completa exige risco, consumidores afetados, lacuna concreta ou CI obrigatório; nova etapa ou novo papel não exige repetição
+- Comando da `Prova afetada:` da T* verde (em plan anterior, o comando da Verificação). Passo só manual não conta
+- Prova afetada suficiente do estado final de código/teste, executada ou reaproveitada com cobertura e inputs válidos; repita somente a prova afetada por falha ou mudança em seus inputs
+- Sem regressão, em dois níveis. Implementador e verificador provam somente o afetado: módulo tocado, consumidores diretos e E2E do cenário cuja entrada mudou; a integração prova a união das provas afetadas da phase. Suíte inteira e E2E completo pertencem exclusivamente à `Regressão completa` da review final; nenhuma outra etapa ou papel as exige nem repete prova por trocar de papel. Protocolos históricos seguem `vibe-implement/references/protocolos-historicos.md`
 - Testes da jornada tocada exercitam o fluxo completo e seus resultados observáveis quando possível. Casos fragmentados e redundantes são consolidados sem perder cenários e afirmações relevantes; riscos independentes mantêm prova própria
 - Quando o aceite depende de aparência, layout, responsividade ou comportamento renderizado de UI web, prova focada no browser (ver `chrome-devtools.md`). Se não depender, o `plan.md` registra por que a prova automatizada é suficiente.
 

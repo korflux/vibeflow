@@ -16,7 +16,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 PYTHON = ROOT / "vibe-init" / "scripts" / "init.py"
 POWERSHELL = ROOT / "vibe-init" / "scripts" / "init.ps1"
-ROLES = ("explorador", "implementador", "verificador", "corretor", "revisor")
+ROLES = ("explorador", "implementador", "verificador", "corretor", "revisor", "redator")
+HOSTS = ("codex", "claude")
+# Seis papéis nos dois hosts: cada execução precisa instalar exatamente este total de perfis.
+PROFILE_COUNT = len(ROLES) * len(HOSTS)
 ENGINES = (False, True) if shutil.which("pwsh") else (False,)
 
 
@@ -59,7 +62,7 @@ class InitContracts(unittest.TestCase):
                     repo.mkdir()
                     process, report = invoke(repo, powershell, entry)
                     self.assertEqual(0, process.returncode, process.stderr)
-                    self.assertEqual(10, len(report["agent_profiles"]))
+                    self.assertEqual(PROFILE_COUNT, len(report["agent_profiles"]))
                     self.assertEqual({"instalado"}, {item["status"] for item in report["agent_profiles"]})
                     snapshots = {}
                     for item in report["agent_profiles"]:
@@ -70,7 +73,7 @@ class InitContracts(unittest.TestCase):
                     before = (repo / "AGENTS.md").read_bytes()
                     process, report = invoke(repo, powershell, entry)
                     self.assertEqual(0, process.returncode, process.stderr)
-                    self.assertEqual(10, len(report["agent_profiles"]))
+                    self.assertEqual(PROFILE_COUNT, len(report["agent_profiles"]))
                     self.assertEqual({"ja_instalado"}, {item["status"] for item in report["agent_profiles"]})
                     self.assertEqual([], report["actions"])
                     self.assertEqual(before, (repo / "AGENTS.md").read_bytes())
@@ -86,7 +89,9 @@ class InitContracts(unittest.TestCase):
                 repo.mkdir()
                 process, report = invoke(repo, powershell)
                 self.assertEqual(0, process.returncode, process.stderr)
-                self.assertEqual(10, len(report["agent_profiles"]))
+                self.assertEqual(PROFILE_COUNT, len(report["agent_profiles"]))
+                # Cada papel da allowlist, inclusive o redator, chega aos dois hosts sem omissão nem duplicidade.
+                self.assertEqual({(host, role) for host in HOSTS for role in ROLES}, {(entry["host"], entry["role"]) for entry in report["agent_profiles"]})
                 self.assertEqual({"instalado"}, {entry["status"] for entry in report["agent_profiles"]})
                 self.assertEqual({"status": "nao_verificada", "reload_required": True}, report["agent_session"])
                 snapshots = {}
@@ -104,10 +109,13 @@ class InitContracts(unittest.TestCase):
                         metadata = tomllib.loads(profile.read_text(encoding="utf-8"))
                         self.assertTrue(set(metadata) <= {"name", "description", "model", "model_reasoning_effort", "developer_instructions", "sandbox_mode"})
                         self.assertTrue(isinstance(metadata["developer_instructions"], str))
-                        model = "gpt-6-luna" if role in ("explorador", "verificador") else "gpt-6-astra" if role == "revisor" else "gpt-6.1-sol"
+                        # Revisor e redator usam o modelo de maior raciocínio; o redator com esforço médio.
+                        model = "gpt-6-luna" if role in ("explorador", "verificador") else "gpt-6-astra" if role in ("revisor", "redator") else "gpt-6.1-sol"
                         effort = "max" if role in ("explorador", "verificador") else "low" if role == "revisor" else "medium"
                         self.assertEqual(effort, metadata["model_reasoning_effort"])
                         if role == "explorador": self.assertEqual("read-only", metadata["sandbox_mode"])
+                        # O redator escreve prosa nos Arquivos: delegados e herda o sandbox padrão do implementador.
+                        if role in ("implementador", "redator"): self.assertNotIn("sandbox_mode", metadata)
                     else:
                         # Os recursos usam frontmatter escalar simples, sem depender de parser YAML externo.
                         lines = profile.read_text(encoding="utf-8").splitlines()
@@ -115,8 +123,8 @@ class InitContracts(unittest.TestCase):
                         end = lines.index("---", 1)
                         metadata = dict(line.split(": ", 1) for line in lines[1:end])
                         self.assertTrue(set(metadata) <= {"name", "description", "model", "effort", "tools"})
-                        model = "haiku" if role in ("explorador", "verificador") else "opus" if role == "revisor" else "sonnet"
-                        self.assertEqual("medium" if role == "revisor" else "xhigh", metadata["effort"])
+                        model = "haiku" if role in ("explorador", "verificador") else "opus" if role in ("revisor", "redator") else "sonnet"
+                        self.assertEqual("medium" if role in ("revisor", "redator") else "xhigh", metadata["effort"])
                         if role == "explorador": self.assertEqual("Read, Grep, Glob, SendMessage", metadata["tools"])
                     self.assertEqual(role, metadata["name"])
                     self.assertEqual(model, metadata["model"])

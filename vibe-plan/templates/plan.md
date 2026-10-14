@@ -13,7 +13,12 @@
 ## Prontidão das provas
 
 <requisitos reais e onde estão disponíveis; ausências entram na primeira task dependente>
-<!-- Defina comando/cobertura integrada compartilhada uma vez e referencie nas T*. -->
+<!-- Defina comando compartilhado uma vez e referencie em Prova afetada das T*. -->
+
+### Regressão completa
+
+<comandos exatos da suíte inteira e do E2E completo do repo, incluindo segurança, paridade entre motores e CI obrigatório>
+<!-- Seção única do plan. Somente a review final a executa; nenhuma T* a repete. -->
 
 ## Tasks
 
@@ -23,17 +28,18 @@
 - **Deps:** nenhuma
 - **O quê:** <resultado observável>
 - **Aceite:** <condição testável>
-- **Verificação:** <checagem local; prova integrada ou referência à prontidão>
+- **Arquivos:** `<path>`, `<diretório/>`, `<diretório/*.ext>`
+- **Prova afetada:** `<comando do repo que prova somente o recorte da T*>`
 - **Visual:** <necessária ou dispensada + motivo; somente quando alterar UI>
-<!-- Arquivos, decisões críticas e risco são opcionais quando orientam execução/ownership/prova. -->
+<!-- Arquivos: paths relativos ao repo que a T* pode escrever, testes incluídos; diretório ou curinga vale como prefixo; sem Arquivos a T* roda sozinha. Prova afetada: testes do módulo tocado e consumidores diretos; E2E só do cenário cuja entrada mudou. Decisões críticas e risco são opcionais quando orientam execução/prova. -->
 <!-- Durante execução, mantenha só resumo curto de entrega/bloqueio e próximo responsável. No novo A, execution.json é autoridade de execução; não copie snapshots, hashes, logs ou --details. -->
 
 ## Colaboração (opcional, omitir sem benefício concreto)
 
-- Grupo: <IDs/recortes e interlocutores>
+- Ondas: <IDs por onda prevista, derivadas de Deps e Arquivos; no B, o grupo oferecido ao humano>
 - Benefício: <incerteza ou dependência destravada>
-- Ownership: <paths/contrato; um escritor por recurso compartilhado>
-<!-- Leitura/preparação conjunta pode ajudar no A. Código paralelo exige autorização aplicável e isolamento. B oferece grupo ao humano; histórico conserva sequência. -->
+- Ownership: <recurso compartilhado fora de Arquivos e seu escritor único>
+<!-- No A, o motor da implement calcula as ondas e o coordenador as despacha em paralelo; T* sem Arquivos ou sobreposta roda sozinha. B oferece grupo ao humano; histórico conserva sequência. -->
 
 ## Checkpoint de review (opcional, somente risco/contrato real)
 

@@ -5,6 +5,10 @@ $script:CoordinateHash = '^(?:[a-f0-9]{40}|[a-f0-9]{64})$'
 # Código estável distingue corrupção da invalidação normal de uma prova.
 function Stop-Coordinate([string]$Message) { throw "EXECUTION_INVALIDO: $Message" }
 
+# Fim de linha canônico do plan e do review: \r\n e \r viram \n uma única vez, na leitura, como o read_text em modo texto do Python.
+# Todas as regex e splits dos dois motores passam a ver só \n; é a única regra de fim de linha (os leitores de implement.ps1 também a usam).
+function ConvertTo-LfText([string]$Text) { return [regex]::Replace($Text, '\r\n|\r', "`n") }
+
 # Cada componente é validado antes de ler ou substituir, inclusive links quebrados.
 function Get-CoordinatePath([string]$Repo, $Relative) {
     if ($Relative -isnot [string] -or $Relative.Length -eq 0 -or $Relative.Length -gt 512 -or $Relative.Contains('\') -or $Relative.Contains(':') -or $Relative.StartsWith('/') -or $Relative.StartsWith('-') -or @($Relative.Split('/') | Where-Object { $_ -in @('', '.', '..', '.git') }).Count) { Stop-Coordinate 'path inválido' }
@@ -61,13 +65,14 @@ function Assert-CoordinateJson($Element) {
 # O grafo define trabalho; checkboxes do plan são somente resumo neste protocolo.
 function Get-CoordinateGraph([string]$Text) {
     $graph = @{}
-    $sections = @([regex]::Matches($Text, '(?ms)^### (T\d+):[^\r\n]*\r?\n(.*?)(?=^### T\d+:|\z)'))
+    # Seções e linha Deps lidas como no Python (split_task_sections e line.strip()): Deps pode vir indentada.
+    $sections = @(Get-TaskSections $Text)
     if ($sections.Count -lt 1 -or $sections.Count -gt 500) { Stop-Coordinate 'quantidade de tasks inválida' }
     foreach ($section in $sections) {
-        $tid = $section.Groups[1].Value
-        $deps = @([regex]::Matches($section.Groups[2].Value, '(?m)^- \*\*Deps:\*\*\s*([^\r\n]*)'))
-        if ($graph.ContainsKey($tid) -or $tid -cnotmatch '^T[1-9]\d*$' -or $deps.Count -ne 1 -or $deps[0].Groups[1].Value -cnotmatch '^(?:nenhuma|T[1-9]\d*(?:[ ,]+T[1-9]\d*)*)$') { Stop-Coordinate 'task/Deps inválida' }
-        $graph[$tid] = @([regex]::Matches($deps[0].Groups[1].Value, 'T\d+') | ForEach-Object { $_.Value } | Select-Object -Unique)
+        $tid = $section.id
+        $deps = @($section.lines | ForEach-Object { if ($_.Trim() -cmatch '^- \*\*Deps:\*\*\s*(.*)$') { $Matches[1] } })
+        if ($graph.ContainsKey($tid) -or $tid -cnotmatch '^T[1-9]\d*$' -or $deps.Count -ne 1 -or $deps[0] -cnotmatch '^(?:nenhuma|T[1-9]\d*(?:[ ,]+T[1-9]\d*)*)$') { Stop-Coordinate 'task/Deps inválida' }
+        $graph[$tid] = @([regex]::Matches($deps[0], 'T\d+') | ForEach-Object { $_.Value } | Select-Object -Unique)
     }
     $visited = [Collections.Generic.HashSet[string]]::new()
     $active = [Collections.Generic.HashSet[string]]::new()
@@ -189,13 +194,14 @@ function Get-CoordinateValidity([string]$Repo, $Graph, $State, [string[]]$Ordere
 
 # Opera somente recorte autorizado; stdout compacta o estado para roteamento estratégico.
 function Invoke-Coordinate([string]$Repo, [string]$Target, [string]$Text, $Fila, $Review) {
+    $Text = ConvertTo-LfText $Text
     $graph = Get-CoordinateGraph $Text
     $path = Get-CoordinatePath $Repo "$Target/execution.json"
     $state = Read-CoordinateState $path $graph $Repo $Target
     $ordered = @($graph.Keys | Sort-Object { [int]$_.Substring(1) })
     $reviewPath = Get-CoordinatePath $Repo "$Target/review.md"
     # Reconhece os mesmos R* abertos/fechados da fila, inclusive classificações históricas.
-    $correctionIds = @(if ($null -ne $Review -and $Review.legivel -and [IO.File]::Exists($reviewPath)) { [regex]::Matches([IO.File]::ReadAllText($reviewPath), '(?m)^\s*- \[[ xX]\] (R[1-9]\d*):') | ForEach-Object { $_.Groups[1].Value } })
+    $correctionIds = @(if ($null -ne $Review -and $Review.legivel -and [IO.File]::Exists($reviewPath)) { [regex]::Matches((ConvertTo-LfText ([IO.File]::ReadAllText($reviewPath))), '(?m)^\s*- \[[ xX]\] (R[1-9]\d*):') | ForEach-Object { $_.Groups[1].Value } })
     $validity = Get-CoordinateValidity $Repo $graph $state $ordered $correctionIds
     if ($Operation) {
         if ($Details -or $Text -cnotmatch '(?m)^# Status:\s*aprovado\s*$') { Stop-Coordinate 'mutação exige plan aprovado e sem details' }

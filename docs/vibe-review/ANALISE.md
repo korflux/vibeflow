@@ -9,7 +9,7 @@ Review precisa julgar o diff e a cobertura sem virar uma segunda implementação
 ```text
 diff + artefatos da cadeia
   → seleção de checkpoint declarado ou review final
-  → auditoria dirigida e prova proporcional
+  → auditoria dirigida e provas por protocolo (regressão completa em coordenacao-v1 A)
   → first-pass prepara review.md
   → IA grava escopo, provas, etapa, R* e veredito diretamente
   → checkpoint: marco julgado, fase continua aberta
@@ -36,7 +36,17 @@ Re-review começa pelo remédio aplicado e seus consumidores/dependências. O ju
 
 Checkpoint só ocorre no marco declarado e justificado pelo `plan.md`, depois que as tasks desse marco estão concluídas. Ele verifica o contrato compartilhado ou risco antes das tasks seguintes. A fila ainda aberta fica explícita; o resultado limita-se ao marco, mantém a fase em andamento e não libera decisão, commit residual ou push.
 
-A review final aguarda todas as T* concluídas, julga os critérios de aceite sobre o código integrado e revisa os riscos tocados pelo diff. Provas verdes por task são reaproveitadas quando os inputs cobertos continuam iguais e o estado atual continua no escopo. Uma edição posterior em código/teste invalida somente a prova afetada; atualizar os artefatos de registro não a invalida. A review executa somente o que falta para provar a integração ou um risco alterado, evitando rodar a matriz completa de cada T* por padrão. Implementador verifica localmente fluxo/consumidores; verificador certifica integração proporcional e revisor audita cobertura/validade. Integração não implica suíte completa, cuja necessidade vem de risco, consumidores afetados, lacuna concreta ou CI obrigatório e exige motivo registrado. Troca de etapa ou papel não justifica repetição. Simplificação, reutilização, remoção de redundância e otimização de desempenho fundamentada permanecem no recorte, com comportamento, segurança e cobertura preservados e sem abstração especulativa ou limpeza externa.
+A review final aguarda todas as T* concluídas, julga os critérios de aceite sobre o código integrado e revisa os riscos tocados pelo diff. Provas verdes por task são reaproveitadas quando os inputs cobertos continuam iguais e o estado atual continua no escopo. Uma edição posterior em código/teste invalida somente a prova afetada; atualizar os artefatos de registro não a invalida. Fora da regressão completa, a review executa somente o que falta para provar a integração ou um risco alterado, evitando rodar a matriz completa de cada T* por padrão. Implementador verifica localmente fluxo/consumidores; verificador certifica integração proporcional e revisor audita cobertura/validade. Nos protocolos históricos, integração não implica suíte completa, cuja necessidade vem de risco, consumidores afetados, lacuna concreta ou CI obrigatório e exige motivo registrado; em coordenacao-v1 A, vale a regressão completa descrita abaixo. Troca de etapa ou papel não justifica repetição. Simplificação, reutilização, remoção de redundância e otimização de desempenho fundamentada permanecem no recorte, com comportamento, segurança e cobertura preservados e sem abstração especulativa ou limpeza externa.
+
+## Regressão completa na review (coordenacao-v1 A)
+
+Com coordenação por ondas, várias T* terminam em paralelo e cada uma toca poucos arquivos. Rodar a suíte inteira por T* ou na verificação multiplicaria o custo e a mediria sobre um estado ainda parcial. A regressão completa passa a ter uma única dona: a review final, que é o único ponto com o código integrado, commitado e julgado por quem não o escreveu. Implementador e verificador provam o recorte afetado; a review prova que o recorte não quebrou o resto.
+
+Por isso a review executa sempre a `Regressão completa` declarada no plan, uma vez, e registra comando, resultado, HEAD e se código e teste estavam sem modificações não commitadas. Segurança, paridade e CI obrigatório deixam de ser válvulas a decidir caso a caso, porque a regressão já os executa. O custo aceito é descobrir uma regressão no fim, o que vira um `R*` `Required` e uma rodada de correção.
+
+A re-review volta a provar só o afetado pela correção. Repetir a regressão completa só faz sentido quando código ou teste mudou, commitado ou não, depois da última execução verde, pois sem mudança o resultado verde continua descrevendo o mesmo código. Mudança só em artefatos da cadeia dentro de `.vibeflow/` não altera o que a suíte exercita, mesmo quando já foi commitada; por isso a comparação olha os paths fora de `.vibeflow/`, não a igualdade do HEAD. O corte é conservador: docs, skills e config também forçam a repetição, para não depender de julgar caso a caso o que a suíte exercita, e a definição operacional mora em `vibe-review/SKILL.md` §3. A finalização Git aplica a mesma regra, para que atualizar o review.md não force uma nova regressão.
+
+O checkpoint de marco não roda a regressão completa: ele julga um recorte com a fila ainda aberta, e a regressão pertence ao estado final. O julgamento de código segue limitado ao diff e aos consumidores afetados, e a matriz de cobertura da origem segue obrigatória; a regressão não substitui nenhum dos dois. Plans anteriores a esta regra não têm a seção `Regressão completa`; para eles, a verificação agregada do repo faz esse papel e a origem fica registrada na etapa. Etapas-v1, Modo B e legado conservam a regra histórica, sem migração.
 
 ## Finalização Git
 
@@ -64,7 +74,9 @@ O contexto limpo que o chat novo dava à review vem de graça num subagente, e o
 | Correção de código pela review | Finding deve apontar o remédio para implement. |
 | Segundo `review.md` por rodada | Etapas no mesmo arquivo preservam o veredito vigente. |
 | Checkpoint automático por contagem de tasks | O plan só pede marco intermediário quando existe risco ou contrato que precise de julgamento antecipado. |
-| Repetir toda a matriz de testes por T* na review final | Evidências válidas são reaproveitadas; a review fecha apenas lacunas de integração e riscos alterados. |
+| Repetir toda a matriz de testes por T* na review final | Evidências válidas são reaproveitadas; além da regressão completa em coordenacao-v1 A, a review fecha apenas lacunas de integração e riscos alterados. |
+| Regressão completa por T* ou na verificação (coordenacao-v1 A) | Custo multiplicado por onda e medição sobre estado parcial; a review final roda uma vez, no estado integrado. |
+| Regressão completa repetida a cada re-review | Só se repete quando código ou teste mudou desde a última execução verde. |
 | Navegador em toda alteração de UI | A prova visual só abre quando o aceite depende do resultado renderizado; a review reutiliza evidência válida. |
 | Publicação automática de decisões | Exige Approve sem bloqueios e confirmação humana. |
 | Push antes da aprovação | O remoto só recebe a phase depois do fechamento da review. |
@@ -73,7 +85,7 @@ O contexto limpo que o chat novo dava à review vem de graça num subagente, e o
 
 ## Impacto
 
-O `plan.md` mantém a trilha executável das T*, enquanto `review.md` mantém os R*, etapas e vereditos. Implement prova os remédios no plan e a review confere os paths no diff antes de fechar o item. Checkpoints preservam o marco sem simular conclusão de feature; a etapa final valida a integração com provas proporcionais. A troca de chat não perde o julgamento porque os registros vivos permanecem no disco.
+O `plan.md` mantém a trilha executável das T*, enquanto `review.md` mantém os R*, etapas e vereditos. Implement prova os remédios no plan e a review confere os paths no diff antes de fechar o item. Checkpoints preservam o marco sem simular conclusão de feature; a etapa final valida a integração com provas proporcionais, ou com a regressão completa em coordenacao-v1 A. A troca de chat não perde o julgamento porque os registros vivos permanecem no disco.
 
 ## Completude pela origem
 

@@ -13,7 +13,7 @@ spec.md aprovado
   → preparo curto das ferramentas exigidas pelas provas
   → fatiamento por resultados e dependências reais
   → apply prepara plan.md
-  → IA escreve tasks diretamente, cada uma com sua prova
+  → IA escreve tasks diretamente, cada uma com Arquivos e prova afetada, e a regressão completa uma única vez
   → humano aprova o arquivo
   → rota max: analyze delegado a subagente, perguntas e aprovação no chat do plan
   → handoff vibe-implement (chat novo, Modo A) ou vibe-analyze sem subagentes
@@ -25,7 +25,7 @@ O pedido explícito de plan também fecha a aprovação pendente do `design.md` 
 
 ## Investigação e ferramentas
 
-O custo de fechamento depende tanto dos comandos quanto da coordenação. Planejar checagem local e integração separadamente permite liberar código dependente sem repetir uma suíte compartilhada em cada task. A escolha parte do aceite, do fluxo/consumidores e do risco; os comandos compartilhados têm uma única definição na prontidão das provas, e cada task os referencia. Essa economia preserva a cobertura necessária e o CI completo.
+O custo de fechamento depende tanto dos comandos quanto da coordenação. Com T* executadas em ondas paralelas, repetir a suíte inteira em cada T* multiplicaria o custo e a contenção sobre os mesmos recursos, e a validade de cada execução dependeria do que as T* vizinhas estão escrevendo. Por isso as provas ficam em dois níveis: cada T* declara a `Prova afetada:` (módulo tocado, consumidores diretos e, no E2E, só o cenário cuja entrada mudou), e a suíte inteira com o E2E completo é declarada uma única vez como `Regressão completa`, executada pela review final no estado integrado. As válvulas de ampliação por risco ou lacuna saíram dos papéis de implementação e verificação porque a regressão completa é o lugar único dessa cobertura; segurança, paridade e CI obrigatório entram nela. Os comandos compartilhados têm uma única definição na prontidão das provas, e cada task os referencia.
 
 A investigação começa pela pergunta de fatiamento e pela dependência que precisa ser provada. A IA usa `rg --files` para localizar spec, regras, entradas e testes, e `rg -n` para localizar A*/C*, decisões, símbolos e comandos. Só abre as entradas e dependências do fluxo. Para cada verificação, confirma a disponibilidade dos runtimes, comandos, serviços e capacidades necessários com manifests, workflows de CI e ferramentas disponíveis.
 
@@ -33,17 +33,17 @@ Uma T* com UI declara se precisa de inspeção renderizada e por quê. O gatilho
 
 ## Resultados, dependências e fila
 
-O marcador `coordenacao-v1` separa trabalho planejado de execução. Plan contém objetivo, resultado/aceite/Deps, prova planejada e resumo curto; execution.json mantém estado atual mecanicamente validado. Isso reduz contexto e evita status concorrentes. Implementador entrega código/testes juntos; verificador certifica integração; finalizador registra e opera Git. Dependentes podem avançar com prova local válida e conclusão espera integração/commit reais. Etapas-v1/legado e B seguem contratos anteriores, sem migração.
+O marcador `coordenacao-v1` separa trabalho planejado de execução. Plan contém objetivo, resultado/aceite/Deps, `Arquivos:` e `Prova afetada:` por T*, a `Regressão completa` e resumo curto; execution.json mantém estado atual mecanicamente validado. Isso reduz contexto e evita status concorrentes. Implementador entrega código/testes juntos; verificador certifica integração; finalizador registra e opera Git. Dependentes podem avançar com prova local válida e conclusão espera integração/commit reais. Etapas-v1/legado e B seguem contratos anteriores, sem migração.
 
-Cada T* reúne um resultado coeso verificável. Uma nova T* só aparece para um resultado separado, uma dependência real de execução, isolamento de risco ou impossibilidade de verificar a fatia como unidade. Número de arquivos, sessões, critérios de aceite, uma pontuação ou a conjunção no título não acionam quebras automáticas. Arquivos e risco são registrados quando ajudam a executar, isolar ou revisar.
+Cada T* reúne um resultado coeso verificável. Uma nova T* só aparece para um resultado separado, uma dependência real de execução, isolamento de risco ou impossibilidade de verificar a fatia como unidade. Número de arquivos, sessões, critérios de aceite, uma pontuação ou a conjunção no título não acionam quebras automáticas. `Arquivos:` é obrigatório porque é o mecanismo de isolamento do paralelismo: sem worktree, a disjunção dos paths que cada T* pode escrever garante um dono por arquivo, e o motor calcula as ondas de forma determinística a partir dela e de `Deps`. T* sem `Arquivos:` não bloqueia a fase, apenas roda sozinha. Risco é registrado quando ajuda a isolar ou revisar.
 
 O plan registra os requisitos exigidos pelas provas, onde estão disponíveis (local ou CI) e como cada ausência no ambiente de execução escolhido será resolvida. Uma dependência compartilhada ausente nesse ambiente entra na T1; se só for necessária depois, entra na primeira T* que a usa. Ausência local não exige setup quando a prova roda no CI e os requisitos estão atendidos lá. Não fica como checklist opcional e não vira uma T* isolada, salvo quando setup persistente for resultado do projeto. Ferramenta ausente é instalada pela regra única (gerenciador do projeto ou fonte oficial, sem credencial, conta, pagamento, elevação ou integração persistente), com a instalação planejada na T* que depende dela; bloqueios sem equivalente são registrados sem fingir prova verde. `Deps` contém apenas dependências de execução e define a fila. Paralelização e checkpoint de review são omitidos quando não alteram execução ou review. No novo A, andamento é resumo curto e evidência fica em execution.json; checkpoint extenso permanece somente nos protocolos históricos. Se uma T* criar ou alterar um ponto de entrada executável, o smoke test fica na prova dessa mesma T*.
 
-A prova planejada roda depois da última edição de código/teste e é reaproveitada se os inputs permanecerem iguais. Falha ou alteração em um input invalida somente as verificações afetadas. A review consome evidência renderizada válida no registro do protocolo em vez de abrir o navegador de novo. Uma tarefa sem T* de review final encerra no handoff da implementação para `vibe-review`.
+A prova afetada roda depois da última edição de código/teste e é reaproveitada se os inputs permanecerem iguais. Falha ou alteração em um input invalida somente as verificações afetadas. A review consome evidência renderizada válida no registro do protocolo em vez de abrir o navegador de novo. Uma tarefa sem T* de review final encerra no handoff da implementação para `vibe-review`.
 
 ## Chat e continuidade
 
-Plan recomenda um novo chat quando começa após spec/design, e a spec não vai para subagente. Na rota max, o plan delega o analyze a um subagente de contexto limpo e conduz as perguntas e a aprovação no próprio chat, porque só ele pode conversar com o humano; o subagente só grava e devolve o relatório. Como o handoff era `vibe-analyze` apenas no MVP e o implement redirecionava depois, o handoff passou a apontar o analyze também em phase max, que é onde a delegação precisa saber disso. O fechamento recomenda com ênfase um chat novo com `/vibe-implement`, que rodará em Modo A, porque o ganho do piloto está no implement. Quando identifica tasks paralelizáveis, lista os IDs e o motivo; novo A admite colaboração de leitura/preparação escolhida pelo benefício; código paralelo exige autorização aplicável e isolamento. B oferece grupo ao humano antes de paralelizar. Separar chats não é gate. O `plan.md` vivo, o status e a linha de handoff são a ponte; o histórico da conversa não é prova.
+Plan recomenda um novo chat quando começa após spec/design, e a spec não vai para subagente. Na rota max, o plan delega o analyze a um subagente de contexto limpo e conduz as perguntas e a aprovação no próprio chat, porque só ele pode conversar com o humano; o subagente só grava e devolve o relatório. Como o handoff era `vibe-analyze` apenas no MVP e o implement redirecionava depois, o handoff passou a apontar o analyze também em phase max, que é onde a delegação precisa saber disso. O fechamento recomenda com ênfase um chat novo com `/vibe-implement`, que rodará em Modo A, porque o ganho do piloto está no implement. Quando identifica tasks paralelizáveis, lista as ondas previstas e o motivo; no novo A o coordenador despacha cada onda calculada pelo motor, com isolamento por `Arquivos:` disjuntos, e a colaboração de leitura/preparação é escolhida pelo benefício. B oferece grupo ao humano antes de paralelizar. Separar chats não é gate. O `plan.md` vivo, o status e a linha de handoff são a ponte; o histórico da conversa não é prova.
 
 ## Cortes
 
@@ -52,6 +52,8 @@ Plan recomenda um novo chat quando começa após spec/design, e a spec não vai 
 | `todo.md` ou `tasks.md` | Uma casa por fato: índice e corpo ficam no plan. |
 | Escrita do plan pelo script | Mantém o motor mecânico e a prosa sob responsabilidade da IA. |
 | Verificação somente manual | A implement precisa de comando executável. |
+| Suíte completa por T* ou válvula de ampliação nos papéis de implementação e verificação | Em ondas paralelas multiplica custo e contenção; a regressão completa é única e pertence à review final. |
+| Worktree por T* | A disjunção de `Arquivos:` basta para isolar a escrita; worktree fica como evolução futura. |
 | Instalação fora da regra única | Instalar é permitido quando o gerenciador do projeto ou uma fonte oficial resolve e o ambiente permite; credencial, conta, pagamento, elevação e registro de integração persistente, como um MCP, vão ao humano. |
 | Spec e design em subagente | A spec e o design dependem de conversa com o humano; só o analyze, que grava e devolve perguntas, foi delegado. |
 | Checklist opcional ou T* de preparo isolada | As ausências necessárias são resolvidas dentro da T1 ou da primeira T* que as usa; setup persistente só é resultado quando faz parte do projeto. |
@@ -60,4 +62,4 @@ Plan recomenda um novo chat quando começa após spec/design, e a spec não vai 
 
 ## Impacto
 
-O implement consegue projetar a fila de T* a partir do vivo, sem depender de uma pasta auxiliar. O contrato de distribuição, os templates e os motores ficam alinhados: uma fonte por fato, estado operacional separado da definição de trabalho e provas executáveis.
+O implement consegue projetar a fila e as ondas de T* a partir do vivo, sem depender de uma pasta auxiliar. O contrato de distribuição, os templates e os motores ficam alinhados: uma fonte por fato, estado operacional separado da definição de trabalho e provas executáveis.

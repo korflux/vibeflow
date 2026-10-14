@@ -18,7 +18,7 @@ from pathlib import Path
 START = "<!-- VIBEFLOW:CADEIA start -->"
 END = "<!-- VIBEFLOW:CADEIA end -->"
 BRIDGE = "@../../AGENTS.md\n"
-ROLES = ("explorador", "implementador", "verificador", "corretor", "revisor")
+ROLES = ("explorador", "implementador", "verificador", "corretor", "revisor", "redator")
 HOSTS = (("codex", ".codex", ".toml"), ("claude", ".claude", ".md"))
 
 

@@ -16,7 +16,7 @@
 - Marco e justificativa: <referência exata ao plan.md | integração final>
 - T* abertas fora do marco: <IDs ou nenhuma>
 - Provas reaproveitadas: <T* e resultado | nenhuma>
-- Provas executadas: <comando, motivo e resultado | nenhuma>
+- Provas executadas: <comando, motivo e resultado; na regressão completa, também HEAD e paths de código e teste sem modificações não commitadas (sim/não) | nenhuma>
 
 ## Cobertura da solicitação
 
@@ -115,7 +115,7 @@ vibe-implement | finalização Git da phase
 - Marco e justificativa: <referência ao plan.md | integração final>
 - T* abertas fora do marco: <IDs ou nenhuma>
 - Provas reaproveitadas: <IDs e resultado | nenhuma>
-- Provas executadas: <comando, motivo e resultado | nenhuma>
+- Provas executadas: <comando, motivo e resultado; na regressão completa, também HEAD e paths de código e teste sem modificações não commitadas (sim/não) | nenhuma>
 - Leu: <solicitação original, alterações humanas e artefatos consultados>
 - Cobertura: <mudanças na matriz e limite do marco | conferida sem mudança>
 - Abriu: R1, R2 (ou nenhum)

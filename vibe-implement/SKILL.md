@@ -25,17 +25,28 @@ Em high+ sem plan, encaminhe para vibe-plan. Max e MVP exigem analyze aprovado e
 
 ## 2. Coordenar por resultado (`coordenacao-v1`, A)
 
-Leia `references/delegation.md` antes da primeira delegação. Confira ferramentas/papéis realmente disponíveis. O coordenador seleciona resultado, responsáveis, dependências, colaboração e decisões; recebe cobertura, pendências e próximo responsável. Confie na certificação do papel responsável e não repita diff, comandos, hashes ou investigação. Contradição, prova inválida ou lacuna volta ao responsável; contexto técnico adicional só entra quando necessário para decisão estratégica.
+Leia `references/delegation.md` antes da primeira delegação. Confira ferramentas/papéis realmente disponíveis. O coordenador do Modo A é o líder estratégico: reconhece o terreno, planeja as ondas, seleciona resultado, responsáveis, dependências, colaboração e decisões, e delega toda execução (código, testes, provas, registros e Git). Recebe cobertura, pendências e próximo responsável e valida a consistência desses dados (relatórios fixos, saída do motor, `git status`), sem executar o trabalho dos papéis. Faz diretamente, no máximo, pequenos ajustes finais, como um typo ou uma linha de fechamento, sem invadir ownership alheio. Confie na certificação do papel responsável e não repita diff, comandos, hashes ou investigação. Contradição, prova inválida ou lacuna volta ao responsável; contexto técnico adicional só entra quando necessário para decisão estratégica.
 
-Escolha colaboração quando exploração/preparação independentes reduzirem uma incerteza ou destravarem uma entrega. Informe interlocutores, contrato compartilhado e ownership; permita comunicação técnica direta e reutilize agentes relacionados. Leitura/preparação podem ocorrer juntas. Mantenha um dono por arquivo compartilhado e um escritor do registro/índice por vez. Código paralelo exige autorização aplicável e isolamento comprovado; sem isso, execute código em sequência. Verificador e revisor não certificam código próprio.
+Escolha colaboração quando exploração/preparação independentes reduzirem uma incerteza ou destravarem uma entrega. Informe interlocutores, contrato compartilhado e ownership; permita comunicação técnica direta e reutilize agentes relacionados. Leitura/preparação podem ocorrer juntas. Mantenha um dono por arquivo compartilhado e um escritor do registro/índice por vez. Código paralelo só ocorre em onda: o pedido de `/vibe-implement` com plan aprovado autoriza, e o isolamento são os `Arquivos:` disjuntos calculados pelo motor. Fora de `fila.onda`, execute código em sequência. Verificador e revisor não certificam código próprio.
+
+Na etapa `implementar`, conduza a fila por ondas. Leia `fila.onda` (T* elegíveis de `Arquivos:` disjuntos, em ordem numérica) e `fila.sem_arquivos` no resumo do motor; não reconstrua a disjunção.
+
+| Passo da onda | Regra |
+|---|---|
+| Despachar | Delegue todas as T* de `fila.onda` numa única rodada, em chamadas paralelas. Cada responsável recebe ownership exclusivo dos `Arquivos:` da sua T*. |
+| Serializar | T* de `fila.sem_arquivos` roda sozinha, nunca em paralelo. T* que precise de path fora dos seus `Arquivos:` (reportado antes de editar, §3.1) volta ao coordenador, que a serializa; as demais seguem. |
+| Preparar | Enquanto a onda implementa, o explorador prepara em leitura o contexto das T* que a onda libera. |
+| Verificar | Cada T* que volta verde vai ao verificador com sua `Prova afetada:`, sem esperar a onda. Falha vai ao corretor, sem bloquear as demais. |
+| Registrar | Com todas as T* da onda verificadas, o finalizador registra num único handoff as provas locais delas, uma operação `local` por T* (`references/execution.md`). |
+| Avançar | O coordenador consulta o motor uma vez e despacha a próxima onda. Sem T* pendente, segue a etapa `validar`. |
 
 | Etapa do motor | Encaminhamento |
 |---|---|
-| implementar | Implementador investiga fluxo/consumidores, entrega código e testes juntos e faz checagem local. Finalizador registra prova local fornecida, com inputs atuais, e resumo curto na task. Dependentes usam validade local; conclusão permanece aberta. |
-| validar | Verificador confere diff, ownership, aceite e cobertura e executa prova integrada necessária. Reutiliza evidência suficiente válida; não cria nova execução só para formalizar etapa. Finalizador registra integração certificada. |
-| corrigir_validacao | Corretor resolve falhas concretas pela causa raiz, sem R* artificial. Verificador renova somente provas afetadas, incluindo consumidores/dependências. Não conta rodada de review. |
+| implementar | Onda, conforme a tabela acima. Implementador investiga fluxo/consumidores, entrega código e testes juntos e executa a `Prova afetada:`. T* cujo resultado principal é prosa (SKILL, referências, docs, artefatos vivos) vai ao redator, que investiga o fluxo e os consumidores do texto, escreve a prosa e executa a `Prova afetada:`, sem código de motor nem testes; T* mista divide os `Arquivos:` entre os dois ou fica com o implementador. Finalizador registra as provas locais fornecidas, com inputs atuais, e resumo curto nas tasks. Dependentes usam validade local; conclusão permanece aberta. |
+| validar | Verificador confere diff, ownership, aceite e cobertura e executa a união das `Prova afetada:` das T* da phase no estado integrado, sem ampliar para suíte completa. Reutiliza prova verde de inputs inalterados; não cria nova execução só para formalizar etapa. Finalizador registra integração certificada. |
+| corrigir_validacao | Corretor resolve falhas concretas pela causa raiz, sem R* artificial. Verificador renova somente a prova afetada, incluindo consumidores/dependências. Não conta rodada de review. |
 | commitar_integracao | Finalizador registra critérios comprovados e faz staging explícito dos paths certificados, valida índice e cria `task(T1,T2,...): <resultado>`, com IDs ordenados. Registra commit real pelo motor e atualiza resumo do plan. Falha mantém finalização pendente. |
-| revisar | Revisor independente executa vibe-review no alvo, grava review.md e devolve veredito/cobertura/R*/decisões. |
+| revisar | Revisor independente executa vibe-review no alvo, incluindo a `Regressão completa` do plan, grava review.md e devolve veredito/cobertura/R*/decisões. |
 | corrigir | Corretor atende todos os R* abertos; verificador certifica correção e provas afetadas; finalizador marca somente R* comprovados e commita correção `task(Rn,...): <resultado>`; revisor faz nova review. Até duas rodadas de correção de review. |
 | confirmar | Apresente resultado, commits, correções, Critical encontrados e decisões propostas; peça uma confirmação para aprovar review, publicar essas decisões e fazer push. |
 | bloqueada ou nula | Delegue diagnóstico de registro/fila/inputs; escale somente impedimento real ou decisão humana. |
@@ -45,11 +56,19 @@ Finalizador é subfunção operacional temporária de agente genérico/default a
 
 ## 3. Implementar e provar o recorte delegado
 
-1. **Reconhecer:** trace entrada, chamadas, consumidores, padrões compartilhados e prova da jornada antes de editar. Use `rg --files` e `rg -n`, sem varredura cega. UI segue design/tokens/motion aprovados quando aplicáveis.
+1. **Reconhecer:** trace entrada, chamadas, consumidores, padrões compartilhados e prova da jornada antes de editar. Use `rg --files` e `rg -n`, sem varredura cega. Edite somente os `Arquivos:` da T*; path fora do recorte é reportado ao coordenador antes de editar. UI segue design/tokens/motion aprovados quando aplicáveis.
 2. **Codar e simplificar:** reutilize responsabilidades, standard library, plataforma e dependências existentes. Código e testes acompanham a entrega; complemente somente lacunas concretas de comportamento/erro/risco. Remova duplicação e redundância no recorte; otimize desempenho quando houver necessidade demonstrável, preservando comportamento, segurança e cobertura, sem limpeza externa ou abstração especulativa. Prefira jornada completa com resultados observáveis; não crie um teste por função, campo ou T*. Documente semanticamente decisões e responsabilidades.
-3. **Provar:** selecione comandos por diff, fluxo/consumidores, risco e aceite. Implementador executa prova local direcionada ao fluxo e consumidores afetados; ela libera implementação. Verificador independente certifica integração proporcional ao impacto e reaproveita evidência suficiente válida, com comandos compartilhados uma vez por inputs finais. Integração não implica suíte completa. Amplie somente por risco, consumidores afetados, lacuna concreta ou CI obrigatório; registre o motivo. Review audita código, cobertura e validade e executa somente provas ausentes ou invalidadas. Nenhuma etapa exige nova execução só por trocar de papel. Alteração posterior renova apenas provas afetadas; lentidão não dispensa segurança, paridade ou CI necessário. Smoke acompanha entrada real alterada.
+3. **Provar em dois níveis:** em `coordenacao-v1` Modo A, a prova afetada é a `Prova afetada:` da T*. Sem ela declarada (Express ou plan anterior), derive o recorte: testes do módulo tocado e dos consumidores diretos; E2E somente do cenário da jornada cuja entrada mudou, incluindo o smoke da entrada real alterada. `etapas-v1`, B e legado seguem a prova de `references/protocolos-historicos.md`.
+
+   | Nível | Responsável | Executa |
+   |---|---|---|
+   | Afetado | Implementador, redator e corretor (liberam a T*); verificador independente, no estado integrado da T* | Somente a `Prova afetada:` da T*; registre comando e resultado no relatório |
+   | Integração | Verificador, depois da última T* | A união das `Prova afetada:` das T* da phase, cada comando uma vez por inputs finais; reaproveita prova verde de inputs inalterados |
+   | Regressão completa | Revisor, na review final | Suíte inteira e E2E completo do plan; exclusiva da review |
+
+   Em `coordenacao-v1` Modo A, nenhum papel de implementação ou verificação amplia a prova para a suíte completa, por risco, consumidor, lacuna ou CI; essa cobertura pertence à `Regressão completa`. Nenhuma etapa repete prova só por trocar de papel. Alteração posterior em código ou teste renova somente a prova afetada. Prova vermelha segue o §4.
 4. **Visual:** inspecione quando o aceite depender da UI renderizada ou surgir impacto visual relevante. Leia `references/chrome-devtools.md`; use navegador integrado, depois MCP chrome-devtools; Playwright somente se instalado ou solicitado. Registre rota, viewport, estado, ações e evidência. Limitação visual necessária impede certificação.
-5. **Entregar:** relatório fixo da delegação, paths/inputs reais, prova e pendências. Implementador/corretor não editam artefatos vivos nem Git. Leia `references/definition-of-done.md` quando aplicável; banco/dinheiro exige `references/database-and-migrations.md`.
+5. **Entregar:** relatório fixo da delegação, paths/inputs reais, prova (comando e resultado) e pendências. Implementador/corretor não editam artefatos vivos nem Git. Leia `references/definition-of-done.md` quando aplicável; banco/dinheiro exige `references/database-and-migrations.md`.
 
 ## 4. Falhas e retomada
 

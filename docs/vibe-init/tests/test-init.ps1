@@ -79,8 +79,22 @@ Check-Scenario 'perfis-instalacao-e-conflito' {
     & $engine -Root $repo | Out-Null
     $reportPath = Join-Path $repo '.vibeflow/init-report.json'
     $first = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
-    if ($first.agent_profiles.Count -ne 10 -or @($first.agent_profiles | Where-Object status -ne 'instalado').Count) { throw 'perfis não instalados' }
+    # Seis papéis em dois hosts: doze perfis instalados na primeira execução.
+    if ($first.agent_profiles.Count -ne 12 -or @($first.agent_profiles | Where-Object status -ne 'instalado').Count) { throw 'perfis não instalados' }
     if ($first.agent_session.status -ne 'nao_verificada' -or -not $first.agent_session.reload_required) { throw 'sessão certificada indevidamente' }
+    # O redator chega aos dois hosts com o modelo e o esforço decididos para o papel.
+    $redator = @{
+        claude = @('(?m)^model: opus\r?$', '(?m)^effort: medium\r?$')
+        codex = @('(?m)^model = "gpt-6-astra"\r?$', '(?m)^model_reasoning_effort = "medium"\r?$')
+    }
+    foreach ($hostName in $redator.Keys) {
+        $entry = @($first.agent_profiles | Where-Object { $_.host -eq $hostName -and $_.role -eq 'redator' })
+        if ($entry.Count -ne 1) { throw "redator ausente no host $hostName" }
+        $profileText = [IO.File]::ReadAllText((Join-Path $repo $entry[0].path))
+        foreach ($pattern in $redator[$hostName]) {
+            if ($profileText -notmatch $pattern) { throw "redator no host $hostName sem $pattern" }
+        }
+    }
     $snapshots = @{}
     foreach ($profile in $first.agent_profiles) {
         $path = Join-Path $repo $profile.path

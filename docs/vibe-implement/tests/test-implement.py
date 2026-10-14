@@ -285,6 +285,221 @@ for protocol, mode in (("coordenacao-v1", "A"), ("coordenacao-v1", "B"), ("etapa
                         "etapa": "corrigir", "rodadas": 0, "avisos": 0})
 
 
+# Plan aprovado de coordenacao-v1 com `Arquivos:` cru por T*, na forma `(id, deps, arquivos)`. `arquivos=None` omite a
+# linha, para exercitar a T* sem arquivos declarados. Protocolo e modo variam para provar que só o Modo A emite onda.
+def wave_plan(*tasks: tuple[str, str, str | None], protocol: str = "coordenacao-v1", mode: str | None = "A") -> str:
+    header = ["# Plan: onda", "# Status: aprovado"]
+    if protocol:
+        header.append(f"# Protocolo: {protocol}")
+    if mode:
+        header.append(f"# Modo: {mode}")
+    chunks = ["\n".join(header) + "\n\n## Tasks\n"]
+    for tid, deps, arquivos in tasks:
+        lines = [f"### {tid}: fixture {tid}", "", f"- [ ] {tid} concluída", f"- **Deps:** {deps}"]
+        if arquivos is not None:
+            lines.append(f"- **Arquivos:** {arquivos}")
+        chunks.append("\n".join(lines) + "\n")
+    return "\n".join(chunks)
+
+
+# Plan etapas-v1 Modo A válido (Execução e Integração pendentes) com `Arquivos:` disjuntos: se o motor aplicasse a
+# regra da onda fora do coordenacao-v1, `fila.onda` apareceria com T1 e T2.
+def etapas_modo_a_plan() -> str:
+    body = "# Plan: etapas\n# Status: aprovado\n# Protocolo: etapas-v1\n# Modo: A\n"
+    body += '- **Integração:** {"testes":"pendentes","prova":null,"commit":"pendente"}\n\n## Tasks\n'
+    for tid in ("T1", "T2"):
+        body += (f"### {tid}: capacidade\n- [ ] {tid} concluída\n- **Deps:** nenhuma\n"
+                 f'- **Execução:** {{"estado":"pendente","local":null}}\n- **Arquivos:** `{tid.lower()}.py`\n')
+    return body
+
+
+T_DISJUNTAS = (("T1", "nenhuma", "`src/a.py`"), ("T2", "nenhuma", "`lib/b.py`"))
+
+# Planos que NÃO são coordenacao-v1 Modo A e portanto mantêm a fila sem `onda` e `sem_arquivos`, mesmo com `Arquivos:` disjuntos.
+SEM_ONDA_PLANS: dict[str, str] = {
+    "coordenacao-v1-modo-b": wave_plan(*T_DISJUNTAS, mode="B"),
+    "etapas-v1-modo-a": etapas_modo_a_plan(),
+    "etapas-v1-modo-b": wave_plan(*T_DISJUNTAS, protocol="etapas-v1", mode="B"),
+    "sem-marcador": wave_plan(*T_DISJUNTAS, protocol="", mode=None),
+}
+
+# Casos da onda paralela em coordenacao-v1 Modo A. `onda` e `sem_arquivos` são o resultado esperado do motor.
+WAVE_CASES: list[dict] = [
+    {"nome": "disjuntas-na-mesma-onda",
+     "plan": wave_plan(("T1", "nenhuma", "`src/a.py`"), ("T2", "nenhuma", "`src/b.py`"), ("T3", "nenhuma", "`docs/x.md`")),
+     "onda": ["T1", "T2", "T3"], "sem_arquivos": []},
+    {"nome": "path-igual-fica-fora",
+     "plan": wave_plan(("T1", "nenhuma", "`src/a.py`"), ("T2", "nenhuma", "`src/a.py`"), ("T3", "nenhuma", "`lib/c.py`")),
+     "onda": ["T1", "T3"], "sem_arquivos": []},
+    {"nome": "igualdade-ignora-caixa-barra-invertida-e-ponto-barra",
+     "plan": wave_plan(("T1", "nenhuma", "`src/a.py`"), ("T2", "nenhuma", "`.\\SRC\\A.py`")),
+     "onda": ["T1"], "sem_arquivos": []},
+    {"nome": "prefixo-de-diretorio",
+     "plan": wave_plan(("T1", "nenhuma", "`src/core/a.py`"), ("T2", "nenhuma", "`src/core`"),
+                       ("T3", "nenhuma", "`src/core-extra/x.py`"), ("T4", "nenhuma", "`src/core/`")),
+     "onda": ["T1", "T3"], "sem_arquivos": []},
+    {"nome": "curinga-vale-como-diretorio-prefixo",
+     "plan": wave_plan(("T1", "nenhuma", "`docs/x/*.md`"), ("T2", "nenhuma", "`docs/x/sub/t.py`"), ("T3", "nenhuma", "`docs/y/a.md`")),
+     "onda": ["T1", "T3"], "sem_arquivos": []},
+    {"nome": "curinga-no-nome-corta-no-diretorio",
+     "plan": wave_plan(("T1", "nenhuma", "`src/foo*.py`"), ("T2", "nenhuma", "`src/bar.py`"), ("T3", "nenhuma", "`lib/a.py`")),
+     "onda": ["T1", "T3"], "sem_arquivos": []},
+    {"nome": "curinga-interrogacao-e-colchete",
+     "plan": wave_plan(("T1", "nenhuma", "`src/a?.py`"), ("T2", "nenhuma", "`src/[bc].py`"), ("T3", "nenhuma", "`lib/x.py`")),
+     "onda": ["T1", "T3"], "sem_arquivos": []},
+    {"nome": "curinga-na-raiz-sobrepoe-tudo",
+     "plan": wave_plan(("T1", "nenhuma", "`*.md`"), ("T2", "nenhuma", "`b.py`"), ("T3", "nenhuma", "`docs/c.md`")),
+     "onda": ["T1"], "sem_arquivos": []},
+    {"nome": "sem-arquivos-primeira-forma-onda-sozinha",
+     "plan": wave_plan(("T1", "nenhuma", None), ("T2", "nenhuma", "`a.py`"), ("T3", "nenhuma", "`b.py`")),
+     "onda": ["T1"], "sem_arquivos": ["T1"]},
+    {"nome": "sem-arquivos-no-meio-nao-divide-onda",
+     "plan": wave_plan(("T1", "nenhuma", "`a.py`"), ("T2", "nenhuma", None), ("T3", "nenhuma", "`b.py`")),
+     "onda": ["T1", "T3"], "sem_arquivos": ["T2"]},
+    {"nome": "lista-vazia-equivale-a-ausente",
+     "plan": wave_plan(("T1", "nenhuma", ""), ("T2", "nenhuma", "``"), ("T3", "nenhuma", "`a.py`")),
+     "onda": ["T1"], "sem_arquivos": ["T1", "T2"]},
+    {"nome": "sem-crases-separa-por-virgula",
+     "plan": wave_plan(("T1", "nenhuma", "src/a.py, src/b.py"), ("T2", "nenhuma", "src/b.py"), ("T3", "nenhuma", "lib/z.py")),
+     "onda": ["T1", "T3"], "sem_arquivos": []},
+    {"nome": "crases-ignoram-prosa-ao-redor",
+     "plan": wave_plan(("T1", "nenhuma", "`src/a.py` e `src/b.py` (mais testes)"), ("T2", "nenhuma", "`src/b.py`"), ("T3", "nenhuma", "`lib/z.py`")),
+     "onda": ["T1", "T3"], "sem_arquivos": []},
+    {"nome": "dependencia-nao-elegivel-fica-fora",
+     "plan": wave_plan(("T1", "nenhuma", "`a.py`"), ("T2", "T1", "`b.py`"), ("T3", "nenhuma", "`c.py`")),
+     "onda": ["T1", "T3"], "sem_arquivos": []},
+    {"nome": "ordem-numerica-guloso",
+     "plan": wave_plan(("T10", "nenhuma", "`a.py`"), ("T2", "nenhuma", "`a.py`"), ("T3", "nenhuma", "`b.py`")),
+     "onda": ["T2", "T3"], "sem_arquivos": []},
+    # Normalização léxica: toda forma de escrever o mesmo arquivo ou a raiz tem de serializar as T* envolvidas.
+    {"nome": "ponto-vale-como-raiz",
+     "plan": wave_plan(("T1", "nenhuma", "`.`"), ("T2", "nenhuma", "`b.py`")),
+     "onda": ["T1"], "sem_arquivos": []},
+    {"nome": "ponto-barra-vale-como-raiz",
+     "plan": wave_plan(("T1", "nenhuma", "`./`"), ("T2", "nenhuma", "`b.py`")),
+     "onda": ["T1"], "sem_arquivos": []},
+    {"nome": "raiz-depois-de-outra-fica-fora",
+     "plan": wave_plan(("T1", "nenhuma", "`a.py`"), ("T2", "nenhuma", "`./.`"), ("T3", "nenhuma", "`lib/c.py`")),
+     "onda": ["T1", "T3"], "sem_arquivos": []},
+    {"nome": "barra-dupla-colapsa",
+     "plan": wave_plan(("T1", "nenhuma", "`src/a.py`"), ("T2", "nenhuma", "`src//a.py`"), ("T3", "nenhuma", "`lib//c.py`")),
+     "onda": ["T1", "T3"], "sem_arquivos": []},
+    {"nome": "segmento-ponto-interno-some",
+     "plan": wave_plan(("T1", "nenhuma", "`src/a.py`"), ("T2", "nenhuma", "`src/./a.py`"), ("T3", "nenhuma", "`lib/./c.py`")),
+     "onda": ["T1", "T3"], "sem_arquivos": []},
+    {"nome": "ponto-ponto-interno-e-resolvido",
+     "plan": wave_plan(("T1", "nenhuma", "`src/a.py`"), ("T2", "nenhuma", "`a/../src/a.py`"),
+                       ("T3", "nenhuma", "`lib/x/../c.py`"), ("T4", "nenhuma", "`lib/c.py`")),
+     "onda": ["T1", "T3"], "sem_arquivos": []},
+    {"nome": "ponto-ponto-que-escapa-da-raiz-sobrepoe-tudo",
+     "plan": wave_plan(("T1", "nenhuma", "`../fora.py`"), ("T2", "nenhuma", "`b.py`")),
+     "onda": ["T1"], "sem_arquivos": []},
+    {"nome": "ponto-ponto-que-escapa-depois-de-outra-fica-fora",
+     "plan": wave_plan(("T1", "nenhuma", "`src/a.py`"), ("T2", "nenhuma", "`a/../../y.py`"), ("T3", "nenhuma", "`lib/c.py`")),
+     "onda": ["T1", "T3"], "sem_arquivos": []},
+    {"nome": "curinga-depois-de-ponto-ponto",
+     "plan": wave_plan(("T1", "nenhuma", "`x/../src/*.py`"), ("T2", "nenhuma", "`src/b.py`"), ("T3", "nenhuma", "`lib/c.py`")),
+     "onda": ["T1", "T3"], "sem_arquivos": []},
+    {"nome": "caixa-ascii-no-arquivo-e-no-diretorio",
+     "plan": wave_plan(("T1", "nenhuma", "`Src/A.PY`"), ("T2", "nenhuma", "`src/a.py`"),
+                       ("T3", "nenhuma", "`DOCS`"), ("T4", "nenhuma", "`docs/x.md`")),
+     "onda": ["T1", "T3"], "sem_arquivos": []},
+    # Path com qualquer caractere não ASCII não é comparável (ß/SS, É/é, NFC/NFD podem ser o mesmo arquivo): a T* roda
+    # sozinha e vai para `sem_arquivos`, em vez de dividir onda com outra T* que poderia escrever o mesmo arquivo.
+    {"nome": "nao-ascii-primeira-forma-onda-sozinha",
+     "plan": wave_plan(("T1", "nenhuma", "`docs/Stra\u00dfe.md`"), ("T2", "nenhuma", "`docs/STRASSE.md`")),
+     "onda": ["T1"], "sem_arquivos": ["T1"]},
+    {"nome": "nao-ascii-no-meio-fica-de-fora-e-vai-para-sem-arquivos",
+     "plan": wave_plan(("T1", "nenhuma", "`a.py`"), ("T2", "nenhuma", "`docs/caf\u00e9.md`"),
+                       ("T3", "nenhuma", "`docs/cafe\u0301.md`"), ("T4", "nenhuma", "`docs/\u00c9.md`"),
+                       ("T5", "nenhuma", "`docs/\u00e9.md`"), ("T6", "nenhuma", "`b.py`")),
+     "onda": ["T1", "T6"], "sem_arquivos": ["T2", "T3", "T4", "T5"]},
+    {"nome": "um-path-nao-ascii-contamina-a-T-inteira",
+     "plan": wave_plan(("T1", "nenhuma", "`a.py`"), ("T2", "nenhuma", "`lib/x.py`, `lib/\u00e9.md`"), ("T3", "nenhuma", "`c.py`")),
+     "onda": ["T1", "T3"], "sem_arquivos": ["T2"]},
+    {"nome": "nao-ascii-sem-crases-e-espaco-nao-ascii-na-ponta",
+     "plan": wave_plan(("T1", "nenhuma", "a.py"), ("T2", "nenhuma", "a.py\u00a0, d.py"), ("T3", "nenhuma", "docs/\u00e9.md, b.py"),
+                       ("T4", "nenhuma", "c.py")),
+     "onda": ["T1", "T4"], "sem_arquivos": ["T2", "T3"]},
+    # Path absoluto ou com unidade (`/x`, `C:/x`, `C:\x`, `\\srv\x`, `d:x`) também não é comparável com `Arquivos:` relativos.
+    {"nome": "absoluto-ou-com-unidade-fica-de-fora-e-vai-para-sem-arquivos",
+     "plan": wave_plan(("T1", "nenhuma", "`a.py`"), ("T2", "nenhuma", "`C:/x/a.py`"), ("T3", "nenhuma", "`c:\\x\\a.py`"),
+                       ("T4", "nenhuma", "`\\\\srv\\share\\a.py`"), ("T5", "nenhuma", "`D:rel.py`"),
+                       ("T6", "nenhuma", "`/etc/a.py`"), ("T7", "nenhuma", "`b.py`")),
+     "onda": ["T1", "T7"], "sem_arquivos": ["T2", "T3", "T4", "T5", "T6"]},
+    {"nome": "absoluto-primeiro-forma-onda-sozinho",
+     "plan": wave_plan(("T1", "nenhuma", "`/x/a.py`"), ("T2", "nenhuma", "`b.py`")),
+     "onda": ["T1"], "sem_arquivos": ["T1"]},
+    {"nome": "um-path-absoluto-contamina-a-T-inteira",
+     "plan": wave_plan(("T1", "nenhuma", "`a.py`"), ("T2", "nenhuma", "`lib/x.py`, `C:\\y.py`"), ("T3", "nenhuma", "`c.py`")),
+     "onda": ["T1", "T3"], "sem_arquivos": ["T2"]},
+    # Grafias que o Windows resolve para outro arquivo: `:` em qualquer posição (stream alternativo, unidade), segmento
+    # terminado em `.` ou espaço e caracteres que não existem em nome de arquivo. A T* roda sozinha e vai para `sem_arquivos`.
+    {"nome": "dois-pontos-em-qualquer-posicao-serializa",
+     "plan": wave_plan(("T1", "nenhuma", "`a.py`"), ("T2", "nenhuma", "`a.py:stream`"), ("T3", "nenhuma", "`src/b:c.py`"),
+                       ("T4", "nenhuma", "`b.py`")),
+     "onda": ["T1", "T4"], "sem_arquivos": ["T2", "T3"]},
+    {"nome": "segmento-terminado-em-ponto-ou-espaco-serializa",
+     "plan": wave_plan(("T1", "nenhuma", "`a.py`"), ("T2", "nenhuma", "`src./a.py`"), ("T3", "nenhuma", "`src /a.py`"),
+                       ("T4", "nenhuma", "`lib/c.py.`"), ("T5", "nenhuma", "`.../x.py`"), ("T6", "nenhuma", "`b.py`")),
+     "onda": ["T1", "T6"], "sem_arquivos": ["T2", "T3", "T4", "T5"]},
+    {"nome": "caracteres-invalidos-no-windows-serializam",
+     "plan": wave_plan(("T1", "nenhuma", "`a.py`"), ("T2", "nenhuma", "`src/<a>.py`"), ("T3", "nenhuma", "`src/a\"b.py`"),
+                       ("T4", "nenhuma", "`src/a|b.py`"), ("T5", "nenhuma", "`src/a>.py`"), ("T6", "nenhuma", "`b.py`")),
+     "onda": ["T1", "T6"], "sem_arquivos": ["T2", "T3", "T4", "T5"]},
+    # Quebra de linha só em \r\n, \r e \n nos dois motores. Separador Unicode e controles (U+2028, U+2029, \x0b, \x85,
+    # \x1c) ficam dentro da linha: o segundo path continua declarado pela T* e a serializa com quem escreve o mesmo arquivo.
+    {"nome": "separador-unicode-entre-paths-nao-quebra-a-linha",
+     "plan": wave_plan(("T1", "nenhuma", "`src/a.py` `src/b.py`"), ("T2", "nenhuma", "`src/b.py`"),
+                       ("T3", "nenhuma", "`lib/c.py`")),
+     "onda": ["T1", "T3"], "sem_arquivos": []},
+    {"nome": "separador-unicode-sem-crases-torna-o-path-nao-ascii",
+     "plan": wave_plan(("T1", "nenhuma", "`lib/c.py`"), ("T2", "nenhuma", "src/a.py src/b.py"),
+                       ("T3", "nenhuma", "`src/b.py`")),
+     "onda": ["T1", "T3"], "sem_arquivos": ["T2"]},
+    {"nome": "outros-separadores-e-controles-nao-quebram-a-linha",
+     "plan": wave_plan(("T1", "nenhuma", "`a.py` `b.py`"), ("T2", "nenhuma", "`b.py`"),
+                       ("T3", "nenhuma", "`c.py`\x0b`d.py`"), ("T4", "nenhuma", "`d.py`"),
+                       ("T5", "nenhuma", "`e.py`\u0085`f.py`"), ("T6", "nenhuma", "`f.py`"),
+                       ("T7", "nenhuma", "`g.py`\x1c`h.py`"), ("T8", "nenhuma", "`h.py`")),
+     "onda": ["T1", "T3", "T5", "T7"], "sem_arquivos": []},
+    # `\r` isolado é quebra de linha: o texto depois dele deixa de ser a linha `Arquivos:` (regra documentada, igual nos dois motores).
+    {"nome": "cr-isolado-quebra-a-linha",
+     "plan": wave_plan(("T1", "nenhuma", "`src/a.py`\r`src/b.py`"), ("T2", "nenhuma", "`src/b.py`")),
+     "onda": ["T1", "T2"], "sem_arquivos": []},
+    {"nome": "ponto-e-ponto-ponto-continuam-comparaveis",
+     "plan": wave_plan(("T1", "nenhuma", "`a.py`"), ("T2", "nenhuma", "`./src/../a.py`"), ("T3", "nenhuma", "`lib/./c.py`")),
+     "onda": ["T1", "T3"], "sem_arquivos": []},
+]
+
+
+# Plan coordenacao-v1 Modo A com a linha Deps indentada (dois espaços em T1 e T4, tab em T2): o Python aparta a linha
+# com `strip()`, então o motor PowerShell precisa aceitar a mesma indentação. T2 depende de T1; T3 repete `a.py` de T1.
+def indented_deps_plan() -> str:
+    indents = {"T1": "  ", "T2": "\t", "T3": "", "T4": "  "}
+    plan = wave_plan(("T1", "nenhuma", "`a.py`"), ("T2", "T1", "`b.py`"), ("T3", "nenhuma", "`a.py`"), ("T4", "nenhuma", "`c.py`"))
+    current, lines = "", []
+    for line in plan.split("\n"):
+        if line.startswith("### T"):
+            current = line[4:].split(":", 1)[0]
+        lines.append(indents[current] + line if line.startswith("- **Deps:**") else line)
+    return "\n".join(lines)
+
+
+# Variantes do mesmo plan com outros terminadores de linha: `\r` isolado (Mac antigo), `\r\n` e mistura dos três.
+# O fim de linha é normalizado na leitura, então a fila, a onda e a etapa não podem depender dele.
+def line_ending_variants(plan: str) -> dict[str, str]:
+    lines = plan.split("\n")
+    mixed = "".join(line + ("\r", "\r\n", "\n")[index % 3] for index, line in enumerate(lines[:-1])) + lines[-1]
+    return {"lf": plan, "cr-isolado": "\r".join(lines), "crlf": "\r\n".join(lines), "misto": mixed}
+
+
+# Grava o plan byte a byte, sem a tradução de `\n` do modo texto, para os terminadores da fixture chegarem ao motor intactos.
+def seed_plan_bytes(repo: Path, plan: str) -> None:
+    phase = seed_phase(seed_vibeflow(repo), "phase-1-a", "plan.md")
+    (phase / "plan.md").write_bytes(plan.encode("utf-8"))
+
+
 # Cria a fixture de um caso de etapa na phase-1-a: spec sempre, plan e review só quando o caso os define.
 def seed_etapa_case(repo: Path, case: dict) -> None:
     vf = seed_vibeflow(repo)
@@ -747,6 +962,24 @@ def powershell7() -> str | None:
     return executable if probe.stdout.strip().isdigit() and int(probe.stdout.strip()) >= 7 else None
 
 
+# Executa o motor PowerShell no repositório da fixture e decodifica o JSON; falha do motor vira erro do teste com o stderr.
+def invoke_powershell(repo: Path, *arguments: str) -> dict:
+    process = subprocess.run(
+        [powershell7(), "-NoProfile", "-File", str(POWERSHELL_SCRIPT), "-Root", str(repo), *arguments],
+        capture_output=True,
+        text=True, encoding="utf-8",
+        check=False,
+    )
+    if process.returncode != 0:
+        raise AssertionError(f"implement.ps1 falhou ({process.returncode}): {process.stderr}")
+    return json.loads(process.stdout)
+
+
+# Grava uma phase-1-a só com o plan da fixture, sem Git: basta para a leitura da fila e da onda.
+def seed_plan_fixture(repo: Path, plan: str) -> None:
+    write_plan(seed_phase(seed_vibeflow(repo), "phase-1-a", "plan.md"), plan)
+
+
 @unittest.skipUnless(powershell7(), "PowerShell 7 indisponível")
 class PowershellParity(unittest.TestCase):
     """Confere paridade do alvo, da fila e da preservação entre os motores."""
@@ -870,6 +1103,164 @@ class PowershellParity(unittest.TestCase):
                 self.assertEqual(case["avisos"], len(ps_report["avisos"]))
                 self.assertEqual(py_report["avisos"], ps_report["avisos"])
                 self.assertEqual(before, tree_snapshot(repo))
+
+    # A onda e as T* sem arquivos saem idênticas nos dois motores, inclusive array de um elemento e normalização de paths.
+    def test_onda_parity_por_fixture(self) -> None:
+        """Python e PowerShell emitem a mesma fila, com o mesmo resultado esperado para cada caso."""
+        for case in WAVE_CASES:
+            with self.subTest(case["nome"]):
+                repo = self.repo / case["nome"]
+                repo.mkdir()
+                seed_plan_fixture(repo, case["plan"])
+                before = tree_snapshot(repo)
+                _, py_report = invoke(repo, "--dir", "phase-1-a")
+                ps_report = invoke_powershell(repo, "-Dir", "phase-1-a")
+                self.assertEqual(case["onda"], ps_report["fila"]["onda"])
+                self.assertEqual(case["sem_arquivos"], ps_report["fila"]["sem_arquivos"])
+                self.assertEqual(py_report, ps_report)
+                self.assertEqual(before, tree_snapshot(repo))
+
+    # Fora do coordenacao-v1 Modo A o PowerShell também mantém a fila anterior, sem `onda` nem `sem_arquivos`.
+    def test_sem_onda_parity_fora_do_modo_a_coordenado(self) -> None:
+        """Modo B, etapas-v1 e plan sem marcador têm o mesmo relatório nos dois motores, sem campos de onda."""
+        for nome, plan in SEM_ONDA_PLANS.items():
+            with self.subTest(nome):
+                repo = self.repo / nome
+                repo.mkdir()
+                seed_plan_fixture(repo, plan)
+                _, py_report = invoke(repo, "--dir", "phase-1-a")
+                ps_report = invoke_powershell(repo, "-Dir", "phase-1-a")
+                self.assertEqual({"parse", "concluidas", "abertas", "elegiveis", "bloqueadas", "avisos"}, set(ps_report["fila"]))
+                self.assertEqual(py_report, ps_report)
+
+    # Plan inteiro com `\r` isolado, `\r\n` ou mistura como terminador e Deps indentada: os motores dão o mesmo relatório.
+    def test_fim_de_linha_e_deps_indentada_parity(self) -> None:
+        """Fila, onda e etapa idênticas nos dois motores, para qualquer terminador de linha do plan."""
+        for nome, plan in line_ending_variants(indented_deps_plan()).items():
+            with self.subTest(nome):
+                repo = self.repo / nome
+                repo.mkdir()
+                seed_plan_bytes(repo, plan)
+                _, py_report = invoke(repo, "--dir", "phase-1-a")
+                ps_report = invoke_powershell(repo, "-Dir", "phase-1-a")
+                self.assertEqual(["T1", "T4"], ps_report["fila"]["onda"])
+                self.assertEqual("implementar", ps_report["etapa"])
+                self.assertEqual(py_report, ps_report)
+
+
+# Exercita a onda paralela do coordenacao-v1 Modo A pelo motor real: relatório e efeitos de provas locais no disco.
+class WaveContracts(unittest.TestCase):
+    # Isola fixtures por teste; o tearDown remove a árvore inteira, inclusive objetos Git read-only do Windows.
+    def setUp(self) -> None:
+        self.repo = Path.cwd() / f".vibe-onda-{uuid.uuid4().hex}"
+        self.repo.mkdir()
+
+    def tearDown(self) -> None:
+        remove_fixture_tree(self.repo)
+
+    # Opera apenas o Git da fixture descartável, sem shell nem o índice do repositório real.
+    def git(self, *arguments: str) -> str:
+        result = subprocess.run(["git", *arguments], cwd=self.repo, capture_output=True, text=True, encoding="utf-8", check=False)
+        self.assertEqual(0, result.returncode, result.stderr)
+        return result.stdout.strip()
+
+    # Cada caso da tabela vira a onda e as T* sem arquivos esperadas; a onda é subconjunto ordenado das elegíveis.
+    def test_onda_por_fixture(self) -> None:
+        """Disjuntas dividem a onda; path igual, prefixo de diretório e curinga serializam; T* sem arquivos fica sozinha."""
+        for case in WAVE_CASES:
+            with self.subTest(case["nome"]):
+                repo = self.repo / case["nome"]
+                repo.mkdir()
+                seed_plan_fixture(repo, case["plan"])
+                before = tree_snapshot(repo)
+                _, report = invoke(repo, "--dir", "phase-1-a")
+                fila = report["fila"]
+                self.assertEqual(case["onda"], fila["onda"])
+                self.assertEqual(case["sem_arquivos"], fila["sem_arquivos"])
+                self.assertEqual([tid for tid in fila["elegiveis"] if tid in fila["onda"]], fila["onda"])
+                self.assertEqual("implementar", report["etapa"])
+                self.assertEqual(before, tree_snapshot(repo))
+
+    # Modo B, etapas-v1 e plans sem marcador mantêm o relatório anterior: nenhuma chave nova na fila.
+    def test_sem_onda_fora_do_modo_a_coordenado(self) -> None:
+        """Os planos têm `Arquivos:` disjuntos e duas T* elegíveis, mas a fila só traz os campos históricos."""
+        for nome, plan in SEM_ONDA_PLANS.items():
+            with self.subTest(nome):
+                repo = self.repo / nome
+                repo.mkdir()
+                seed_plan_fixture(repo, plan)
+                _, report = invoke(repo, "--dir", "phase-1-a")
+                self.assertEqual({"parse", "concluidas", "abertas", "elegiveis", "bloqueadas", "avisos"}, set(report["fila"]))
+                self.assertEqual(["T1", "T2"], report["fila"]["elegiveis"])
+
+    # O terminador de linha e a indentação da Deps não mudam a fila: todas as variantes dão o relatório do plan com `\n`.
+    def test_fim_de_linha_e_deps_indentada(self) -> None:
+        """Deps indentada vale; T2 segue bloqueada por T1 e T3 fica fora da onda por repetir o arquivo de T1."""
+        reports = {}
+        for nome, plan in line_ending_variants(indented_deps_plan()).items():
+            with self.subTest(nome):
+                repo = self.repo / nome
+                repo.mkdir()
+                seed_plan_bytes(repo, plan)
+                _, reports[nome] = invoke(repo, "--dir", "phase-1-a")
+                fila = reports[nome]["fila"]
+                self.assertEqual(["T1", "T3", "T4"], fila["elegiveis"])
+                self.assertEqual([{"id": "T2", "deps": ["T1"]}], fila["bloqueadas"])
+                self.assertEqual(["T1", "T4"], fila["onda"])
+                self.assertEqual("implementar", reports[nome]["etapa"])
+                self.assertEqual(reports["lf"], reports[nome])
+
+    # Percorre a fase onda a onda com provas locais reais: cada rodada libera dependências e reabre T* antes sobrepostas.
+    def test_jornada_de_ondas_por_prova_local(self) -> None:
+        """Sobreposição por path igual, prefixo e curinga adia a T*; a onda esvazia quando todas têm prova local."""
+        phase = seed_phase(seed_vibeflow(self.repo), "phase-1-a", "plan.md")
+        write_plan(phase, wave_plan(
+            ("T1", "nenhuma", "`src/core.py`, `tests/test_core.py`"),
+            ("T2", "nenhuma", "`docs/guia.md`"),
+            ("T3", "nenhuma", "`./SRC/Core.py`"),
+            ("T4", "nenhuma", "`src/*`"),
+            ("T5", "nenhuma", "`docs`"),
+            ("T6", "nenhuma", None),
+            ("T7", "T1", "`lib/x.py`"),
+        ))
+        self.git("init", "-q", "-b", "main")
+        self.git("config", "user.name", "Fixture")
+        self.git("config", "user.email", "fixture@example.invalid")
+        self.git("add", "--", ".vibeflow")
+        self.git("commit", "-q", "-m", "fixture: baseline")
+        invoke(self.repo, "--operation", "init", "--actor", "finalizer")
+
+        # Compara o relatório dos dois motores sobre o mesmo disco e prova que a leitura não escreve nada.
+        def check(elegiveis: list[str], onda: list[str], sem_arquivos: list[str], etapa: str) -> None:
+            before = tree_snapshot(self.repo)
+            _, report = invoke(self.repo)
+            self.assertEqual(elegiveis, report["fila"]["elegiveis"])
+            self.assertEqual(onda, report["fila"]["onda"])
+            self.assertEqual(sem_arquivos, report["fila"]["sem_arquivos"])
+            self.assertEqual(etapa, report["etapa"])
+            if powershell7():
+                self.assertEqual(report, invoke_powershell(self.repo))
+            self.assertEqual(before, tree_snapshot(self.repo))
+
+        # Registra a prova local de cada T* da onda pelo motor, sobre um arquivo real da fixture.
+        def register(*tasks: str) -> None:
+            for tid in tasks:
+                proof = self.repo / "proof" / f"{tid.lower()}.txt"
+                proof.parent.mkdir(exist_ok=True)
+                proof.write_text(f"prova de {tid}\n", encoding="utf-8")
+                invoke(self.repo, "--operation", "local", "--task", tid, "--input", f"proof/{tid.lower()}.txt",
+                       "--command", "check", "--result", "verde", "--actor", "writer")
+
+        # T3 repete o path de T1 (caixa, `./`), T4 cobre `src` por curinga e T5 cobre `docs` por prefixo; T7 depende de T1.
+        check(["T1", "T2", "T3", "T4", "T5", "T6"], ["T1", "T2"], ["T6"], "implementar")
+        register("T1", "T2")
+        check(["T3", "T4", "T5", "T6", "T7"], ["T3", "T5", "T7"], ["T6"], "implementar")
+        register("T3", "T5", "T7")
+        check(["T4", "T6"], ["T4"], ["T6"], "implementar")
+        register("T4")
+        check(["T6"], ["T6"], ["T6"], "implementar")
+        register("T6")
+        check([], [], [], "validar")
 
 
 # Exercita o protocolo novo por efeitos no disco e Git real, mantendo fixtures históricas acima intactas.
