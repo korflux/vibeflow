@@ -19,7 +19,7 @@ skills/vibeflow/
 - `skills/vibeflow/` é pasta real, sem symlink, e é o único pacote instalável.
 - O pacote não contém scripts, código executável nem testes, e não depende de interpretador.
 - Etapas da allowlist: `init`, `interview`, `spec`, `design`, `plan`, `analyze`, `implement`, `review`.
-- Entrada: `/vibeflow` sem argumento ou auto-invoke pela `description` do `SKILL.md`; `/vibeflow <etapa>` vai direto a uma etapa da allowlist. Argumento fora dela é recusado com a allowlist nomeada.
+- Entrada: `/vibeflow` sem argumento ou auto-invoke pela `description` do `SKILL.md`; `/vibeflow <argumento>`: quando a primeira palavra está na allowlist, ela escolhe a etapa e o resto é texto do pedido; senão, o argumento inteiro é pedido e segue para a classificação da rota.
 - `docs/` não é instalado.
 
 ## 2. Disco
@@ -50,7 +50,7 @@ Artefatos de uma phase ou do MVP: `interview.md`, `spec.md`, `design.md`, `plan.
 
 Casa das regras mecânicas (cálculo de `n`, sanitização do slug, cabeçalhos, backup e colisão em `.vibeflow/old/`): `skills/vibeflow/references/disco.md`. A forma de cada artefato: `skills/vibeflow/templates/`.
 
-Sem `.vibeflow/`, numa rota que exige cadeia, a primeira etapa é `init`. Pedido Express ou low sem phase ativa não cria `.vibeflow/`, phase nem artefato.
+Numa rota com phase (medium ou acima, e MVP), a falta de `.vibeflow/`, de `AGENTS.md` ou do bloco de cadeia leva ao `init` antes de qualquer etapa. Perfil ausente não força o init: o líder opera em Modo B e sugere o init. Express é a rota low sem phase ativa: não força o init e não cria `.vibeflow/`, phase nem artefato.
 
 Commitável: `AGENTS.md`, ponte, perfis instalados, `.vibeflow/phases/`, `.vibeflow/mvp/` e `.vibeflow/old/`. A V2 não grava relatório operacional nem registro estruturado de execução; o estado vive nos artefatos e no Git.
 
@@ -60,26 +60,26 @@ Commitável: `AGENTS.md`, ponte, perfis instalados, `.vibeflow/phases/`, `.vibef
 |---|---|---|
 | Líder | Conversa com o humano: briefing, perguntas, restate, aprovações e confirmação final. No máximo pequenos ajustes finais. | Código, artefato, Git, `analyze.md`, `review.md` em host com subagentes |
 | Explorador | Nada; devolve leitura ampla e evidências | Escrita |
-| Redator | Prosa de `interview.md`, `spec.md`, `design.md`, `plan.md` e T* cujo resultado principal é prosa | Código e Git |
+| Redator | Prosa de `interview.md`, `spec.md`, `design.md`, `plan.md` e T* cujo resultado principal é prosa; remédios de prosa em `plan.md`, `spec.md` e `AGENTS.md`, inclusive T* nova | Código e Git |
 | Implementador | Código e testes da T* delegada | Artefato de planejamento e Git |
 | Verificador | Nada; certifica a integração e executa provas | Corrigir código ou teste |
 | Corretor | Correção de falha pré-review ou de R* com `papel: corretor` | Certificar a própria correção |
 | Revisor | `analyze.md` e `review.md`, com contexto limpo | Certificar código próprio, Git |
-| Finalizador | Estado no `plan.md`, marcas de status aprovadas pelo humano, índice Git, commits e push confirmado | Decidir aprovação |
+| Finalizador | Marcas: status aprovado pelo humano, caixas de T*, `[x]` de R* e resumo curto de estado no `plan.md`; índice Git, commits e push confirmado | Escrever prosa de artefato, decidir aprovação |
 
 Instalação de ferramenta necessária à prova segue `skills/vibeflow/references/delegation.md`. Cada recurso compartilhado tem um único dono por vez; durante uma onda, cada T* tem ownership exclusivo dos seus `Arquivos:`. Na etapa init os perfis podem ainda não existir, e ela é executada por agente genérico apto a Git. Casa: `skills/vibeflow/references/delegation.md` para papéis e relatório fixo; `skills/vibeflow/references/init.md` para a etapa 0.
 
-Host sem subagentes opera em Modo B: o líder executa inline uma etapa ou uma T* por run, e analyze e review rodam em chat novo, que atua como visão de fora. O Modo B também vale quando o humano pede uma T* por run.
+Host sem subagentes, ou sem os perfis exigidos carregados, opera em Modo B com aviso de uma linha: o líder executa inline uma etapa ou uma T* por run, e analyze e review rodam em chat novo, que atua como visão de fora. O Modo B também vale quando o humano pede uma T* por run.
 
 ## 4. Rotas e gates
 
-A rota vem da tabela de esforço do `AGENTS.md`, única fonte; o valor gravado em `# Rota:` é `medium`, `high`, `xhigh`, `max` ou `mvp`. Express e low nunca abrem phase. Design entra entre spec e plan somente com UI visível; sem UI visível, a etapa fecha com `Design: N/A` e motivo registrados, sem `design.md`.
+A rota vem da tabela de esforço do `AGENTS.md`, única fonte; o valor gravado em `# Rota:` é `medium`, `high`, `xhigh`, `max` ou `mvp`. Low (inclusive Express) nunca abre phase. Design entra entre spec e plan somente com UI visível; sem UI visível, a etapa fecha com `Design: N/A` e motivo registrados, sem `design.md`.
 
 Antes de cada etapa, o líder confere o pré-requisito pela `# Rota:` gravada e pelas linhas `# Status:`. Etapa sem pré-requisito é recusada com o pré-requisito e o path nomeados. Invariantes de contrato:
 
 - Plan exige spec aprovada.
 - Implement em `high` ou acima exige plan aprovado; em `max` e MVP, também analyze aprovado com veredito `limpo`.
-- Review exige as T* concluídas com commit ou, em `medium`, o diff entregue.
+- Review exige as T* concluídas com commit ou, em `medium`, a entrega commitada como `task(medium): <resultado>`.
 - Phase fechada: `review.md` aprovado e nenhum R* aberto.
 
 Casa da tabela completa de pré-requisitos: `skills/vibeflow/SKILL.md`, seção 3. Casa do estado de etapa e de T* concluída: `skills/vibeflow/references/disco.md`.
@@ -90,7 +90,9 @@ Casa da tabela completa de pré-requisitos: `skills/vibeflow/SKILL.md`, seção 
 - Onda: T* abertas com todas as `Deps:` concluídas e `Arquivos:` disjuntos, despachadas juntas. T* sem `Arquivos:` ou sobreposta roda sozinha. O líder calcula a onda lendo o plan; as regras de `Arquivos:` moram em `skills/vibeflow/references/plan.md`.
 - Implementador e verificador provam somente a `Prova afetada:` de cada T*. A review final é a única dona da `Regressão completa`.
 - Depois da prova integrada verde, o finalizador marca as caixas das T* comprovadas, atualiza o resumo do `plan.md` (pronto, em andamento, pendente) e cria o commit `task(T1,T2,...): <resultado>` com staging explícito.
-- O diff julgado pela review vai do commit anterior ao primeiro `task(...)` da phase até `HEAD`.
+- Rota medium, sem plan: o finalizador commita a entrega com a prova verde antes da review, com a mensagem `task(medium): <resultado>`.
+- O diff julgado pela review vai do commit anterior ao primeiro `task(...)` da phase, inclusive `task(medium)`, até `HEAD`.
+- Na interrupção, o finalizador grava o estado no `plan.md`; commit só com a integração verde.
 - R* volta ao corretor ou ao redator pelo campo `papel:`, com até duas rodadas antes de parar e relatar; correção comprovada recebe commit `task(Rn,...): <resultado>`.
 - Aprovação da review, publicação de decisões vigentes e push exigem uma confirmação humana explícita, que o líder transmite ao finalizador.
 - Não existe registro estruturado de execução: o estado é o `plan.md`, e o histórico e a evidência de commit são o Git.
@@ -99,7 +101,7 @@ Casa: `skills/vibeflow/references/implement.md` e `skills/vibeflow/references/re
 
 ## 6. Phases v1
 
-Phases criadas pela v1 (plans com `# Protocolo: etapas-v1`, `# Protocolo: coordenacao-v1` ou sem marcador) são lidas como estão, sem migração nem reescrita. O estado vem das linhas de status, das caixas de conclusão do `plan.md` e do Git. O registro JSON de execução que a v1 gravava na pasta da phase é preservado e não é interpretado. Phase sem `# Rota:` é phase v1: não ganha rota retroativa, e seus gates seguem os artefatos presentes. Casa: `skills/vibeflow/references/disco.md` (seção Phases da v1) e `skills/vibeflow/SKILL.md` (seção 3).
+Phases criadas pela v1 (plans com `# Protocolo: etapas-v1`, `# Protocolo: coordenacao-v1` ou sem marcador) são lidas como estão, sem migração nem reescrita. O estado vem das linhas de status, das caixas de conclusão do `plan.md` e do Git. Plans `coordenacao-v1` não marcavam caixas: nelas, T* concluída é reconhecida pelo commit `task(...)` com o ID, mesmo com a caixa vazia. O registro JSON de execução que a v1 gravava na pasta da phase é preservado e não é interpretado. Phase sem `# Rota:` é phase v1: não ganha rota retroativa, e seus gates seguem os artefatos presentes. Casa: `skills/vibeflow/references/disco.md` (seção Phases da v1) e `skills/vibeflow/SKILL.md` (seção 3).
 
 ## 7. Distribuição
 

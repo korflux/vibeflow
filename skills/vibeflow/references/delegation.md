@@ -4,17 +4,17 @@ Leia antes da primeira delegação da run e ao escolher colaboração. O `SKILL.
 
 ## Papéis
 
-Use perfis realmente disponíveis, sem escolher modelo pelo nome. Antes da primeira delegação, o líder confere os perfis carregados no host; perfil exigido ausente ou não carregado nunca é substituído por outro papel. O finalizador é um agente genérico/default apto a Git com pedido explícito; não reutilize um perfil que proíba Git.
+Use perfis realmente disponíveis, sem escolher modelo pelo nome. Antes da primeira delegação, o líder confere os perfis carregados no host; os perfis exigidos por situação estão no `SKILL.md`, seção 5. Perfil exigido ausente ou não carregado nunca é substituído por outro papel: a etapa segue no Modo B, com aviso de uma linha. O finalizador é um agente genérico/default apto a Git com pedido explícito; não reutilize um perfil que proíba Git.
 
 | Papel | Entrega | Escrita autorizada |
 |---|---|---|
 | explorador | Fluxo, consumidores, paths e evidências para destravar decisão ou implementação | Nenhuma |
-| implementador | Código e testes juntos, `Prova afetada:` da T* e inputs reais; em Express, low ou medium sem plan, a mudança do brief com prova proporcional | Código e testes dos `Arquivos:` da T* ou do recorte do brief |
-| redator | Prosa de `interview.md`, `spec.md`, `design.md` e `plan.md` a partir das decisões que o líder conduziu com o humano; texto avulso; prosa dos `Arquivos:` de uma T* de prosa; correção de R* roteado a ele | No planejamento, o artefato da etapa delegada, criado conforme `references/disco.md`; em texto avulso, os paths do brief; na implementação, os `Arquivos:` de prosa da T* ou os paths de prosa do R*. Nunca código, testes, `analyze.md` nem `review.md`; durante a implementação, `plan.md` e `spec.md` ficam com o finalizador; `AGENTS.md` só quando declarado nos `Arquivos:` de uma T* aprovada, nunca a seção `## Decisões vigentes` |
+| implementador | Código e testes juntos, `Prova afetada:` da T* e inputs reais; em low (inclusive Express) ou medium sem plan, a mudança do brief com prova proporcional | Código e testes dos `Arquivos:` da T* ou do recorte do brief |
+| redator | Prosa de `interview.md`, `spec.md`, `design.md` e `plan.md` a partir das decisões que o líder conduziu com o humano; texto avulso; prosa dos `Arquivos:` de uma T* de prosa; correção de R* roteado a ele | No planejamento, o artefato da etapa delegada, criado conforme `references/disco.md`; em texto avulso, os paths do brief; na implementação, os `Arquivos:` de prosa da T*, os paths de prosa do R* e a prosa de `plan.md`, `spec.md` e `AGENTS.md` quando um R* com `papel: redator` ou o líder (T* nova ou ajustada) a pede. Nunca código, testes, `analyze.md`, `review.md` nem as marcações do finalizador; `AGENTS.md` só nesses casos ou quando declarado nos `Arquivos:` de uma T* aprovada, nunca a seção `## Decisões vigentes` |
 | verificador | Conferência de diff, ownership, aceite e cobertura; certificação independente da `Prova afetada:` por T* e da união das provas afetadas na integração, reaproveitando prova verde de inputs inalterados | Somente saídas normais das provas |
 | corretor | Correção pela causa raiz de falha pré-review ou de R* roteado a ele, com a `Prova afetada:` da correção | Código e testes da correção |
 | revisor | Julgamento independente, com contexto limpo, de código, cobertura da origem e validade das evidências; executa o analyze e a review, incluindo a `Regressão completa` do plan | `analyze.md` e `review.md`, exclusivos deste papel na prosa e nos achados. No analyze, também as correções diretas em `spec.md`, `design.md` e `plan.md` previstas em `references/analyze.md` |
-| finalizador | Marcação de aprovação, estado do `plan.md` ao fim de cada onda e na interrupção, operações Git delimitadas e finalização confirmada | Em qualquer artefato, somente a linha `# Status:` e a marcação de aprovação humana; em `review.md`, também o `[x]` de R* comprovados, nunca prosa nem achados; no `plan.md`, caixas de T* comprovadas e resumo curto; no `spec.md`, critérios provados; `AGENTS.md` só na finalização confirmada; índice Git exclusivo |
+| finalizador | Marcação de aprovação, estado do `plan.md` ao fim de cada onda e na interrupção, operações Git delimitadas e finalização confirmada | Em qualquer artefato, somente a linha `# Status:` e a marcação de aprovação humana; em `review.md`, também o `[x]` de R* comprovados, nunca prosa nem achados; no `plan.md`, caixas de T* comprovadas e o resumo curto de estado; no `spec.md`, a marcação dos critérios provados; nunca prosa de definição desses artefatos; `AGENTS.md` só na finalização confirmada; índice Git exclusivo |
 
 ## Delegar e colaborar
 
@@ -72,4 +72,4 @@ Todos os papéis proíbem:
 
 ## Host limitado
 
-Sem subagentes, siga o Modo B do `SKILL.md`. Subagente incapaz de abrir outro pode cumprir investigação ou checagem local inline dentro do seu recorte; isso não o torna certificador independente da integração. Sem agente genérico apto a finalizar, relate a limitação e peça rota explícita ao humano, sem assumir Git pelo líder.
+Sem subagentes ou sem perfil exigido carregado, siga o Modo B do `SKILL.md`. Subagente incapaz de abrir outro pode cumprir investigação ou checagem local inline dentro do seu recorte; isso não o torna certificador independente da integração. Sem agente genérico apto a finalizar, a run segue no Modo B: o líder opera inline o Git e as marcações daquela run, com aviso de uma linha.

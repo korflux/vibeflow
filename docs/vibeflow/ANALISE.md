@@ -26,8 +26,8 @@ O que compensa:
 
 ## Run do líder de ponta a ponta
 
-1. **Entrada.** `/vibeflow` (ou o auto-invoke pela description) começa pela leitura do disco: `AGENTS.md`, `.vibeflow/`, a phase aberta de maior `n`, as linhas `# Status:` e `# Rota:` e as caixas do `plan.md`. Com phase aberta do mesmo assunto, o líder anuncia em uma linha a etapa e o próximo responsável e retoma. Sem phase aberta, classifica o pedido pela tabela de esforço e anuncia a rota e as etapas que ela inclui. `/vibeflow <etapa>` leva direto a uma etapa da allowlist, desde que o pré-requisito esteja satisfeito.
-2. **Etapa 0.** Sem `.vibeflow/`, com instalação legada ou com `AGENTS.md` ausente, uma rota com cadeia passa pelo init. Um agente genérico apto a Git executa as instruções, preserva fontes legadas e cria o commit de governança. Quando algum perfil foi criado ou substituído, o líder para e pede a recarga do host antes da primeira delegação, porque perfil presente só no disco não conta como carregado.
+1. **Entrada.** `/vibeflow` (ou o auto-invoke pela description) começa pela leitura do disco: `AGENTS.md`, `.vibeflow/`, a phase aberta de maior `n`, as linhas `# Status:` e `# Rota:` e as caixas do `plan.md`. Com phase aberta do mesmo assunto, o líder anuncia em uma linha a etapa e o próximo responsável e retoma. Sem phase aberta, classifica o pedido pela tabela de esforço e anuncia a rota e as etapas que ela inclui. `/vibeflow <etapa>` leva direto a uma etapa da allowlist, desde que o pré-requisito esteja satisfeito; `/vibeflow <pedido>`, com texto livre que não começa por uma etapa, é classificado como pedido novo.
+2. **Etapa 0.** Numa rota com phase (medium ou acima, e MVP), a falta de `.vibeflow/`, de `AGENTS.md` ou do bloco de cadeia, ou uma instalação legada, leva ao init antes de qualquer etapa. Perfil ausente não força o init: o líder segue em Modo B e sugere o init. Um agente genérico apto a Git executa as instruções, preserva fontes legadas e cria o commit de governança. Quando algum perfil foi criado ou substituído, o líder para e pede a recarga do host antes da primeira delegação, porque perfil presente só no disco não conta como carregado.
 3. **Abertura.** Na rota com phase, o líder fixa `n` e slug pelas regras escritas e os passa no brief; quem grava o primeiro artefato cria a pasta, com `# Rota:` no cabeçalho (`interview.md` em xhigh, max e MVP; `spec.md` em high; `review.md` em medium). Plans novos não levam marcador de protocolo nem de modo; o modo depende de o host ter subagentes e é decidido na run.
 4. **Planejamento.** O líder conduz as perguntas da interview uma por vez, fecha os seams da spec e do design e define resultados, responsáveis, dependências e ondas do plan. O redator grava os artefatos; o humano aprova; o finalizador marca o status. Design sem UI visível fecha com N/A explícito, em vez de bloquear.
 5. **Analyze, na rota max e no MVP.** O revisor de contexto limpo grava o `analyze.md` e devolve veredito, cobertura e perguntas. O líder leva as perguntas materiais ao humano e encaminha as correções aos donos dos artefatos.
@@ -37,11 +37,11 @@ O que compensa:
 
 ## Rota proporcional
 
-A tabela de esforço do `AGENTS.md` continua sendo a única fonte da rota. Pedido pequeno (Express e low) não passa por spec, plan, analyze nem review e não cria `.vibeflow/`, phase ou artefato quando não há phase ativa. Com phase ativa, o pedido pequeno reaproveita a T* aberta ou acrescenta uma T* curta no plan existente. A cadeia completa só aparece quando o tamanho do pedido justifica. A rota fica gravada em `# Rota:` porque a retomada em chat novo precisa saber quais etapas a phase exige sem reclassificar o pedido.
+A tabela de esforço do `AGENTS.md` continua sendo a única fonte da rota. Express é a rota low sem phase ativa: não passa por spec, plan, analyze nem review, não força o init e não cria `.vibeflow/`, phase ou artefato. Low com phase ativa reaproveita a T* aberta ou recebe do redator uma T* curta no plan existente. Medium é implement seguido de review: o finalizador commita a entrega como `task(medium)` com a prova verde, e a review abre a phase. A cadeia completa só aparece quando o tamanho do pedido justifica. A rota fica gravada em `# Rota:` porque a retomada em chat novo precisa saber quais etapas a phase exige sem reclassificar o pedido.
 
 ## Delegação sempre
 
-O líder delega inclusive em Express e low: entrega um brief curto, recebe a prova e fecha. A delegação curta custa pouco e mantém o contexto do líder livre para as decisões, que é onde a v1 perdia eficiência em runs longas. Ele faz no máximo pequenos ajustes finais, como um typo ou uma linha de fechamento. Em host sem subagentes, a degradação é explícita: aviso de uma linha, Modo B com uma etapa ou T* por run executada inline e, para analyze e review, instrução de chat novo, que faz o papel de visão de fora.
+O líder delega também em low (inclusive Express): entrega um brief curto, recebe a prova e fecha. A delegação curta custa pouco e mantém o contexto do líder livre para as decisões, que é onde a v1 perdia eficiência em runs longas. Ele faz no máximo pequenos ajustes finais, como um typo ou uma linha de fechamento. Em host sem subagentes, ou sem os perfis exigidos carregados, a degradação é explícita: aviso de uma linha, Modo B com uma etapa ou T* por run executada inline e, para analyze e review, instrução de chat novo, que faz o papel de visão de fora.
 
 ## Crítica e reconhecimento
 
@@ -51,15 +51,15 @@ Os dois desvios que o líder evita são simétricos. Microgerência refaz confer
 
 ## Analyze e review de fora
 
-O líder nunca escreve `analyze.md` nem `review.md`, em nenhum host. Ele entrega o alvo e os artefatos ao revisor, recebe veredito, cobertura e R* e encaminha as correções. Sem perfil revisor carregado, nada é despachado: o líder pergunta ao humano com a recomendação de rodar `/vibeflow init` e recarregar o host.
+O líder nunca escreve `analyze.md` nem `review.md`, em nenhum host. Ele entrega o alvo e os artefatos ao revisor, recebe veredito, cobertura e R* e encaminha as correções. Sem perfil revisor carregado, o líder opera em Modo B com aviso de uma linha, e analyze e review rodam em chat novo, que faz o papel de visão de fora.
 
 ## Interrupção e retomada
 
-A retomada parte do disco, nunca do histórico do chat. Ao pedido de parar, o líder delega ao finalizador a atualização do `plan.md` (pronto, em andamento, pendente) e só então confirma a parada. Em chat novo, `/vibeflow` lê as linhas de status, a rota, as caixas do plan e o `git log`, e o líder continua sem refazer trabalho com evidência válida. Com o contexto pesado, o líder grava checkpoint e recomenda chat novo. Em host de contexto curto, avisa no início que um chat para todo o planejamento e outro para a implementação resolvem boa parte dos problemas.
+A retomada parte do disco, nunca do histórico do chat. Ao pedido de parar, o líder delega ao finalizador a atualização do `plan.md` (pronto, em andamento, pendente) e só então confirma a parada. Commit na parada só acontece com a integração já verde, para nenhuma T* ser concluída sem validação integrada. Em chat novo, `/vibeflow` lê as linhas de status, a rota, as caixas do plan e o `git log`, e o líder continua sem refazer trabalho com evidência válida. Com o contexto pesado, o líder grava checkpoint e recomenda chat novo. Em host de contexto curto, avisa no início que um chat para todo o planejamento e outro para a implementação resolvem boa parte dos problemas.
 
 ## Compatibilidade com phases v1
 
-Phases da v1 (`etapas-v1`, legado e `coordenacao-v1`, conforme o marcador do plan) são lidas como estão, sem migração nem reescrita. O registro JSON de execução que a v1 gravava continua no disco e no Git, mas não é interpretado: o estado sai das linhas de status, das caixas do plan e dos commits, que existem em todas as phases. Phase v1 sem `# Rota:` não ganha rota retroativa; seus gates seguem os artefatos presentes, e um pedido novo sobre ela abre phase V2.
+Phases da v1 (`etapas-v1`, legado e `coordenacao-v1`, conforme o marcador do plan) são lidas como estão, sem migração nem reescrita. O registro JSON de execução que a v1 gravava continua no disco e no Git, mas não é interpretado: o estado sai das linhas de status, das caixas do plan e dos commits. Plans `coordenacao-v1` não marcavam caixas, então nelas a T* concluída é reconhecida pelo commit `task(...)` com o ID, mesmo com a caixa vazia. Phase v1 sem `# Rota:` não ganha rota retroativa; seus gates seguem os artefatos presentes, e um pedido novo sobre ela abre phase V2.
 
 ## Cortes
 

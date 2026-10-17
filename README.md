@@ -79,7 +79,8 @@ O Codex mantém regras globais em `~/.codex/AGENTS.md` ou `~/.codex/AGENTS.overr
 | Comando | Faz |
 |---|---|
 | `/vibeflow` | Lê o disco, retoma a phase aberta ou classifica o pedido novo e anuncia a rota e as etapas |
-| `/vibeflow <etapa>` | Vai direto a `init`, `interview`, `spec`, `design`, `plan`, `analyze`, `implement` ou `review`, se o pré-requisito estiver satisfeito |
+| `/vibeflow <etapa> [pedido]` | Vai direto a `init`, `interview`, `spec`, `design`, `plan`, `analyze`, `implement` ou `review`, se o pré-requisito estiver satisfeito; o resto do texto é o pedido |
+| `/vibeflow <pedido>` | Texto que não começa por uma etapa é tratado como pedido e classificado |
 
 A skill também entra sozinha quando o pedido é de software: código, correção de bug, ajuste de UI, funcionalidade nova, especificação, plano, revisão ou governança para agentes.
 
@@ -87,7 +88,7 @@ Primeira vez num repo, ou instalação antiga com `.vibeflow/REGRAS.md`, `REGRAS
 
 A rota é proporcional ao pedido. Uma troca de cor é delegada e fechada sem criar `.vibeflow/`; um pedido que toca auth, pagamento ou produção percorre interview, spec, plan, analyze, implement e review. A tabela de rotas fica no `AGENTS.md` que a etapa `init` grava no projeto, a partir de [`skills/vibeflow/templates/AGENTS.md`](skills/vibeflow/templates/AGENTS.md).
 
-Por padrão, um único chat conduz a rota inteira. Em host de contexto curto, use um chat para todo o planejamento e outro para a implementação. Em host sem subagentes, a skill avisa e roda uma etapa ou tarefa por vez, com analyze e review em chat novo.
+Por padrão, um único chat conduz a rota inteira. Em host de contexto curto, use um chat para todo o planejamento e outro para a implementação. Em host sem subagentes, ou sem os perfis carregados, a skill avisa e roda uma etapa ou tarefa por vez, com analyze e review em chat novo.
 
 Aprovar a review, publicar decisões vigentes e fazer push sempre exigem a sua confirmação.
 

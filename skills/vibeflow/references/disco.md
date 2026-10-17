@@ -35,7 +35,7 @@ Artefatos de uma phase ou do MVP, sempre com estes nomes: `interview.md`, `spec.
 ## Cabeçalho
 
 - `# Status:` no cabeçalho de cada artefato, logo abaixo do título: `rascunho` durante a elaboração, `aprovado` depois da aprovação humana, e no `review.md` também `request-changes`. Só o finalizador muda para `aprovado`.
-- `# Rota:` grava a rota da phase no primeiro artefato criado: `interview.md` em `xhigh`, `max` e MVP; `spec.md` em `high`; `review.md` em `medium`. Valores: `medium`, `high`, `xhigh`, `max`, `mvp`. A rota não muda; pedido maior abre nova phase. Express e low nunca abrem phase.
+- `# Rota:` grava a rota da phase no primeiro artefato criado: `interview.md` em `xhigh`, `max` e MVP; `spec.md` em `high`; `review.md` em `medium`. Valores: `medium`, `high`, `xhigh`, `max`, `mvp`. A rota não muda; pedido maior abre nova phase. Low, inclusive Express, nunca abre phase.
 - Plans da V2 não levam `# Protocolo:` nem `# Modo:`; o modo (com ou sem subagentes) é decidido na run.
 
 ## Estado da phase
@@ -43,11 +43,30 @@ Artefatos de uma phase ou do MVP, sempre com estes nomes: `interview.md`, `spec.
 - Phase fechada: `review.md` com `# Status: aprovado` e nenhuma linha `- [ ] R<n>:` aberta. As demais estão abertas.
 - Alvo padrão: a phase aberta de maior `n`. Outra phase só quando o humano a nomeia. O MVP só é alvo quando o pedido é o baseline.
 - Etapa concluída: artefato com `# Status: aprovado`; no `analyze.md`, também veredito `limpo` na seção `## Veredito`. Design sem UI visível conta como concluído quando o `plan.md` ou o Handoff da spec registra `Design: N/A` com motivo.
-- T* concluída: caixa `- [x] Tn concluída` no `plan.md`, confirmada por commit `task(...)` com o ID no `git log`. Caixa marcada sem commit, ou commit sem caixa, é inconsistência a diagnosticar antes de seguir.
+- T* concluída: caixa `- [x] Tn concluída` no `plan.md`, confirmada por commit `task(...)` com o ID no `git log`. Numa phase V2, caixa marcada sem commit, ou commit sem caixa, é inconsistência a diagnosticar antes de seguir.
+- Estado da fila: o resumo curto que o finalizador escreve em cada T* do `plan.md` diz se ela está pronta (prova afetada verde, ainda sem commit), em andamento ou pendente.
+
+Leia a etapa atual na primeira linha da tabela que se aplica:
+
+| Estado no disco | Etapa atual | Próximo responsável |
+|---|---|---|
+| Sem phase aberta | Classificar o pedido (`SKILL.md`, seção 2) | Líder |
+| Commit `task(medium): ...` sem phase de review correspondente | review da rota medium | Revisor |
+| Etapa de planejamento exigida pela rota sem artefato | Essa etapa | Líder conduz; redator grava (revisor no analyze) |
+| Artefato de planejamento em `rascunho` | Essa etapa, aguardando ajuste ou aprovação | Líder apresenta ao humano |
+| `analyze.md` com veredito `bloqueado` | analyze, correção dos achados | Dono do artefato; revisor reconfere |
+| Plan liberado pelo gate, T* abertas e nenhuma pronta ou em andamento | implement, implementar por ondas | Líder monta a onda |
+| T* em andamento ou código não commitado nos `Arquivos:` de T* abertas | implement, retomar a onda | Verificador confere o diff e a prova afetada existentes; falha vai ao corretor; código válido não é refeito |
+| Todas as T* prontas, caixas vazias, sem commit | implement, validar e commitar | Verificador reaproveita prova de inputs inalterados; finalizador commita |
+| Todas as T* concluídas com commit e sem `review.md` | review | Revisor |
+| `review.md` com R* aberto `- [ ]` | implement, corrigir | Corretor ou redator, pelo `papel:` |
+| `review.md` em `request-changes` com todos os R* `[x]` e commit `task(Rn,...)` | review, re-review | Revisor |
+| `review.md` em `rascunho` com Approve proposto e nenhum R* aberto | implement, confirmar | Líder pede a confirmação única |
+| `review.md` aprovado e nenhum R* aberto | Phase fechada; confira `git status -sb` e commits à frente do upstream | Finalizador, só se houver residual ou push pendente |
 
 ## Phases da v1
 
-Phase sem `# Rota:` foi criada pela v1 e é lida como está, sem migração nem reescrita. Seu `plan.md` pode trazer `# Protocolo: coordenacao-v1` ou `# Protocolo: etapas-v1` e `# Modo: A` ou `# Modo: B`; esses marcadores só identificam a origem e não mudam a condução. O estado vem das linhas `# Status:`, das caixas do `plan.md`, dos R* do `review.md` e do `git log`. Linhas `- **Execução:**` e `- **Integração:**` do plan e o arquivo JSON de execução que a v1 deixava na pasta da phase são preservados byte a byte e não são interpretados. Os gates dessa phase seguem os artefatos presentes (`SKILL.md`, seção 3). Pedido novo sobre ela abre phase V2.
+Phase sem `# Rota:` foi criada pela v1 e é lida como está, sem migração nem reescrita. Seu `plan.md` pode trazer `# Protocolo: coordenacao-v1` ou `# Protocolo: etapas-v1` e `# Modo: A` ou `# Modo: B`; esses marcadores só identificam a origem e não mudam a condução. Em plan `coordenacao-v1`, a v1 não marcava caixas: T* concluída é reconhecida pelo commit `task(...)` com o ID no `git log`, mesmo com a caixa vazia, e isso não é inconsistência. O estado vem das linhas `# Status:`, das caixas do `plan.md`, dos R* do `review.md` e do `git log`. Linhas `- **Execução:**` e `- **Integração:**` do plan e o arquivo JSON de execução que a v1 deixava na pasta da phase são preservados byte a byte e não são interpretados. Os gates dessa phase seguem os artefatos presentes (`SKILL.md`, seção 3). Pedido novo sobre ela abre phase V2.
 
 ## Backup de arquivo de regra
 

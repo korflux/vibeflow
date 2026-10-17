@@ -5,7 +5,7 @@ Não edite código, teste ou lockfile nesta etapa. Não gere imagem final. Pergu
 ## Entrada
 
 - Gate (`SKILL.md`, seção 3): spec aprovada e UI visível. Sem UI visível, não há design: o `plan.md` registra `Design: N/A` com motivo. `plan.md` já existente no alvo bloqueia novo design.
-- Spec em rascunho e humano pedindo o design: o finalizador aprova a spec (1 linha no chat) e a etapa segue. Spec em rascunho sem esse pedido: peça leitura e aprovação.
+- Spec em rascunho: aplique a aprovação implícita do `SKILL.md`, seção 3; fora dela, peça leitura e aprovação.
 - Intenção, fluxo ou aceite frouxos voltam à spec.
 - Leia `spec.md`, `interview.md`, DS, `DESIGN.md`, telas, componentes e tokens existentes. Leitura ampla vai ao explorador.
 

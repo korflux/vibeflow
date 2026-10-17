@@ -5,7 +5,7 @@ Um único arquivo. Zero código nesta etapa. Pergunta aberta no arquivo é defei
 ## Entrada
 
 - Gate (`SKILL.md`, seção 3): spec aprovada; com UI visível, design aprovado. `analyze.md` já existente no alvo bloqueia novo plan.
-- Spec ou design em rascunho e humano pedindo o plan: o pedido direto vale como aprovação explícita, inclusive em chat novo; o finalizador aprova a linha `# Status:` (1 linha no chat) e a etapa segue. Sem esse pedido, peça leitura e aprovação. Com UI visível e sem `design.md`, volte ao design.
+- Artefato anterior em rascunho: aplique a aprovação implícita do `SKILL.md`, seção 3; fora dela, peça leitura e aprovação. Com UI visível e sem `design.md`, volte ao design.
 - Sem UI visível, o plan registra `Design: N/A` com motivo, sem bloqueio.
 - Intenção, sucesso ou limites frouxos voltam à interview ou à spec.
 - Leia `spec.md`, `interview.md`, `design.md`, `AGENTS.md`, entradas, testes e comandos de verificação.

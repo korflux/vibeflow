@@ -4,7 +4,7 @@ O líder nunca escreve `analyze.md`. Não atualize decisões vigentes nem `AGENT
 
 ## Entrada
 
-- Gate (`SKILL.md`, seção 3): rota `max` ou MVP e plan aprovado. Sem `plan.md` ou sem `spec.md` no alvo, não há analyze; no MVP, a interview também é obrigatória. Plan em rascunho volta ao líder, que obtém a aprovação antes de delegar.
+- Gate (`SKILL.md`, seção 3): rota `max` ou MVP e plan aprovado. Sem `plan.md` ou sem `spec.md` no alvo, não há analyze; no MVP, a interview também é obrigatória. Plan em rascunho segue a aprovação implícita do `SKILL.md`, seção 3, antes da delegação.
 - O revisor lê `interview.md`, `spec.md`, `design.md`, `plan.md`, o `analyze.md` vivo, `AGENTS.md` e os paths citados, só o que sustenta o cruzamento.
 
 ## Quem faz

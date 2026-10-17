@@ -35,7 +35,7 @@
 ## Checklist de correções
 
 <!-- Todo R* aberto bloqueia, inclusive nit e classificações legadas. O finalizador marca [x] somente após prova certificada. -->
-<!-- R* cujo remédio altera Arquivos: da phase termina com papel: redator (só prosa desses paths) ou papel: corretor; remédio em plan, spec ou AGENTS.md cita o finalizador e não leva papel. -->
+<!-- R* cujo remédio altera Arquivos: da phase termina com papel: redator (só prosa desses paths) ou papel: corretor; remédio de prosa em plan, spec ou AGENTS.md também leva papel: redator; o finalizador só marca. -->
 <!-- Sem bloqueio: uma linha "nenhum bloqueio" e omitir as listas vazias. -->
 <!-- Achado novo em etapa posterior: próximo número livre. Não renumerar fechados. -->
 
@@ -108,7 +108,7 @@ implement | finalização Git da phase
 
 <!-- Omitir em checkpoint. Só a review final, com fila concluída e aprovação humana, abre este gate. -->
 
-- Pré-condições: Approve final confirmado, todas as `T*` concluídas, todos os R* de correção fechados, prova necessária da integração verde, `git diff --check` e gitleaks quando previsto.
+- Pré-condições: Approve final confirmado, todas as `T*` concluídas (no medium, o commit `task(medium): ...`), todos os R* de correção fechados, prova necessária da integração verde, `git diff --check` e gitleaks quando previsto.
 - Commit final: `chore(phase-N): finalize review`, somente com paths residuais autorizados e sem `Co-Authored-By`; sem mudanças residuais, manter o último commit integrado ou da task.
 - Push: `git push` para o upstream atual, sem `--force`. Registrar hash/HEAD, paths e resultado; falha mantém o handoff bloqueado.
 
