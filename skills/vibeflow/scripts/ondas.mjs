@@ -70,13 +70,15 @@ export function analisarPlan(tasks) {
     .filter((t) => t.deps.every(concluida))
     .sort((a, b) => a.num - b.num);
 
-  // Onda: percorre em ordem numérica; T* sem recorte comparável só entra com a onda vazia e a encerra.
+  // Onda: percorre em ordem numérica; T* sem recorte comparável só entra com a onda vazia
+  // e a encerra; com a onda já iniciada, ela é pulada e a montagem continua.
   const onda = [];
   const recortesOnda = [];
   for (const t of elegiveis) {
     const r = recorte(t);
     if (r === null) {
-      if (!onda.length) onda.push(t);
+      if (onda.length) continue;
+      onda.push(t);
       break;
     }
     if (recortesOnda.some((ro) => recortesSobrepoem(ro, r))) continue;

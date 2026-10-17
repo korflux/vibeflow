@@ -107,9 +107,10 @@ export function alvoNomeado(alvos, nome) {
   return alvos.find((a) => a.alvo === nome || a.nome === nome) || null;
 }
 
-/** Caminhos do alvo que são link (proibido escrever através deles). */
+/** Caminhos do alvo que são link, inclusive os próprios artefatos (proibido escrever através deles). */
 export function linksNoCaminho(raiz, pasta) {
-  const candidatos = [join(raiz, '.vibeflow'), join(raiz, '.vibeflow', 'phases'), join(raiz, '.vibeflow', 'mvp'), pasta];
+  const candidatos = [join(raiz, '.vibeflow'), join(raiz, '.vibeflow', 'phases'), join(raiz, '.vibeflow', 'mvp'), pasta,
+    ...ARTEFATOS.map((a) => join(pasta, `${a}.md`))];
   return candidatos.filter((c) => existsSync(c) && lstatSync(c).isSymbolicLink());
 }
 
@@ -178,6 +179,14 @@ export function normalizarPath(bruto) {
     saida.push(s);
   }
   return saida.length ? saida : RAIZ;
+}
+
+/**
+ * Segmentos de um path real vindo do git status, sem a regra de path incomparável, que
+ * vale só para a autoria de `Arquivos:`.
+ */
+export function segmentos(caminho) {
+  return caminho.replace(/\\/g, '/').split('/').filter((s) => s && s !== '.');
 }
 
 /** Recorte de uma T*: lista de paths normalizados, ou null se sem Arquivos ou com path incomparável. */

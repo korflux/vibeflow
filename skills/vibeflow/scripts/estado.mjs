@@ -13,7 +13,7 @@ import { existsSync } from 'node:fs';
 import { join, resolve, relative } from 'node:path';
 import {
   lerLinhas, cabecalho, secao, carregarAlvos, alvoPadrao, alvoNomeado, listarPhases, proximoN,
-  linksNoCaminho, lerTasks, recorte, normalizarPath, sobrepoe, lerRs, vereditoReview, ultimoAjuste,
+  linksNoCaminho, lerTasks, recorte, segmentos, sobrepoe, lerRs, vereditoReview, ultimoAjuste,
   commits, classificarCommit, naoCommitados, naoEnviados, commitQueAdicionou, jsonAscii, executadoDireto,
 } from './_disco.mjs';
 import { analisarPlan } from './ondas.mjs';
@@ -31,11 +31,17 @@ const ETAPAS_ROTA = {
 };
 const PLANEJAMENTO = new Set(['interview', 'spec', 'design', 'plan', 'analyze']);
 
-/** Design conta quando há design.md ou quando o Handoff da spec aponta para design (UI nova). */
+/**
+ * Design conta quando há design.md, ou quando o Handoff da spec aponta para design (UI nova).
+ * `Design: N/A` registrado no Handoff da spec ou no plan.md tira o design da rota.
+ */
 function designConta(alvo) {
   if (alvo.art.design) return true;
-  const handoff = secao(alvo.art.spec, 'Handoff').map((l) => l.trim()).find(Boolean) || '';
-  return /^design\b/i.test(handoff);
+  const na = /design:\s*(\*\*)?\s*n\/a/i;
+  const handoff = secao(alvo.art.spec, 'Handoff').map((l) => l.trim()).filter(Boolean);
+  const planNa = (alvo.art.plan || []).some((l) => na.test(l.replace(/\*\*Design:\*\*/i, 'Design:')));
+  if (planNa || handoff.some((l) => na.test(l))) return false;
+  return /^design\b/i.test(handoff[0] || '');
 }
 
 /** Etapas da rota do alvo, com o design inserido depois da spec quando conta. */
@@ -152,15 +158,11 @@ function semDono(alvos, porAlvo, alterados) {
     const ids = idsCommitados(porAlvo.get(a.alvo));
     for (const r of lerRs(a.art.review)) {
       if ((!r.feito || !ids.has(r.id)) && r.path) {
-        const n = normalizarPath(r.path);
-        if (n) donos.push(n);
+        donos.push(segmentos(r.path));
       }
     }
   }
-  return fora.filter((p) => {
-    const n = normalizarPath(p);
-    return n === null || !donos.some((d) => sobrepoe(d, n));
-  });
+  return fora.filter((p) => !donos.some((d) => sobrepoe(d, segmentos(p))));
 }
 
 // ---------------------------------------------------------------------------
@@ -179,7 +181,7 @@ function etapaDoAlvo(alvo, porAlvo, alterados) {
   const tasks = lerTasks(alvo.art.plan);
   const abertas = tasks.filter((t) => !t.caixa);
   const recortesAbertos = abertas.map(recorte).filter(Boolean).flat();
-  const tocados = (alterados || []).map(normalizarPath).filter(Boolean);
+  const tocados = (alterados || []).map(segmentos);
   const codigoNasAbertas = tocados.some((p) => recortesAbertos.some((r) => sobrepoe(r, p)));
 
   if (abertas.some((t) => t.estado === 'em andamento') || codigoNasAbertas) {
@@ -291,7 +293,7 @@ export function estado(raiz, nomeAlvo = null) {
   // Linhas globais da tabela, na ordem de references/disco.md.
   const abertos = alvos.filter((a) => !a.fechado);
   const medium = temGit ? mediumPendente(raiz, alvos, lista) : null;
-  const pushes = temGit && !abertos.length ? pushPendente(alvos, porAlvo, enviar) : [];
+  const pushes = temGit && !abertos.some((a) => a.n !== null) ? pushPendente(alvos, porAlvo, enviar) : [];
   const orfaos = temGit ? semDono(alvos, porAlvo, alterados) : [];
   if (!nomeado && medium) rel.etapa = { etapa: 'review da entrega medium', situacao: medium.assunto, proximo: 'Revisor' };
   else if (!nomeado && pushes.length) rel.etapa = { etapa: 'push pendente', situacao: pushes.join(', '), proximo: 'Finalizador, com a confirmação humana' };

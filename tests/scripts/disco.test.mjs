@@ -6,9 +6,10 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, dirname } from 'node:path';
+import { join, dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { normalizarPath, sobrepoe, lerTasks } from '../../skills/vibeflow/scripts/_disco.mjs';
 import { analisarPlan } from '../../skills/vibeflow/scripts/ondas.mjs';
@@ -197,4 +198,117 @@ test('phase sem # Rota: é inconsistência', (t) => {
   escrever(raiz, `${PH}/spec.md`, '# Spec: x\n# Status: rascunho\n');
   commit(raiz, 'docs: spec');
   assert.ok(estado(raiz).inconsistencias.some((i) => i.includes('sem # Rota:')));
+});
+
+// ---------------------------------------------------------------------------
+// Rodada de correção R1 a R5 e cenários de R4
+// ---------------------------------------------------------------------------
+
+const SCRIPTS = resolve(dirname(fileURLToPath(import.meta.url)), '../../skills/vibeflow/scripts');
+const review = (status, corpo = '') => `# Review: x\n# Alvo: phase-1-agenda\n# Status: ${status}\n# Rota: medium\n\n${corpo}`;
+const checklist = (...linhas) => `## Checklist de correções\n\n${linhas.join('\n')}\n\n`;
+
+function cli(script, args) {
+  try {
+    const out = execFileSync(process.execPath, [join(SCRIPTS, script), ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    return { codigo: 0, out };
+  } catch (e) {
+    return { codigo: e.status, out: e.stdout || '' };
+  }
+}
+
+test('R1: Design: N/A no Handoff da spec ou no plan tira o design da rota', (t) => {
+  const raiz = repo(t);
+  escrever(raiz, `${PH}/spec.md`, spec('aprovado', 'Design: N/A, sem UI nova'));
+  commit(raiz, 'docs: spec');
+  assert.equal(estado(raiz).etapa.etapa, 'plan');
+  escrever(raiz, `${PH}/spec.md`, spec('aprovado', 'design'));
+  escrever(raiz, `${PH}/plan.md`, `# Plan: x\n# Status: rascunho\n\n## Overview\n\n- **Design:** N/A, ajuste sem tela nova\n`);
+  commit(raiz, 'docs: plan');
+  const r = estado(raiz);
+  assert.equal(r.etapa.etapa, 'plan');
+  assert.equal(r.progresso.percentual, 25);
+});
+
+test('R2: path alterado não ASCII dentro de Arquivos: tem dono', (t) => {
+  const raiz = repo(t);
+  escrever(raiz, `${PH}/spec.md`, spec('aprovado'));
+  escrever(raiz, `${PH}/plan.md`, plan('aprovado', [task(1, { arquivos: '`docs/`' })]));
+  commit(raiz, 'docs: plan');
+  escrever(raiz, 'docs/relatório.md', 'x');
+  assert.equal(estado(raiz).etapa.situacao, 'retomar a onda');
+});
+
+test('R3: T* sem Arquivos é pulada quando a onda já começou', () => {
+  const r = analisarPlan(lerTasks(plan('aprovado', [
+    task(1, { arquivos: '`a/`' }), task(2, { arquivos: null }), task(3, { arquivos: '`b/`' }),
+  ]).split('\n')));
+  assert.deepEqual(r.onda, ['T1', 'T3']);
+});
+
+test('R5: artefato que é link é inconsistência', (t) => {
+  const raiz = repo(t);
+  escrever(raiz, 'fora/spec.md', spec('rascunho'));
+  mkdirSync(join(raiz, PH), { recursive: true });
+  try { symlinkSync(join(raiz, 'fora/spec.md'), join(raiz, PH, 'spec.md')); } catch { t.skip('sistema sem permissão de symlink'); return; }
+  assert.ok(estado(raiz).inconsistencias.some((i) => i.includes('é link')));
+});
+
+test('CRLF e BOM são lidos como LF', (t) => {
+  const raiz = repo(t);
+  escrever(raiz, `${PH}/spec.md`, `﻿${spec('aprovado')}`.replace(/\n/g, '\r\n'));
+  escrever(raiz, `${PH}/plan.md`, plan('rascunho', [task(1)]).replace(/\n/g, '\r\n'));
+  commit(raiz, 'docs: plan');
+  const r = estado(raiz);
+  assert.equal(r.alvo.rota, 'high');
+  assert.equal(r.etapa.etapa, 'plan');
+});
+
+test('alteração fora de qualquer recorte: sem dono', (t) => {
+  const raiz = repo(t);
+  escrever(raiz, 'solto.js', 'x');
+  const r = estado(raiz);
+  assert.equal(r.etapa.etapa, 'alteração sem dono');
+  assert.equal(r.etapa.situacao, 'solto.js');
+});
+
+test('push adiado vale até um commit posterior da phase', (t) => {
+  const raiz = repo(t);
+  escrever(raiz, `${PH}/review.md`, review('aprovado', '## Finalização Git da phase\n\n- Push adiado pelo humano: 2026-10-17\n'));
+  commit(raiz, 'chore(phase-1): finalize review');
+  commit(raiz, 'chore(phase-1): push adiado');
+  assert.equal(estado(raiz).etapa.etapa, 'classificar o pedido');
+  commit(raiz, 'task(phase-1:R2): ajuste depois do adiamento');
+  assert.equal(estado(raiz).etapa.etapa, 'push pendente');
+});
+
+test('request-changes: commitar a correção e depois re-review', (t) => {
+  const raiz = repo(t);
+  escrever(raiz, `${PH}/review.md`, review('request-changes', checklist('- [x] R1: **Required** - `src/a.js` - x')));
+  commit(raiz, 'docs: review');
+  assert.equal(estado(raiz).etapa.situacao, 'commitar a correção (R1)');
+  commit(raiz, 'task(phase-1:R1): corrige a');
+  assert.equal(estado(raiz).etapa.situacao, 're-review');
+});
+
+test('rascunho com Approve proposto: confirmar', (t) => {
+  const raiz = repo(t);
+  escrever(raiz, `${PH}/review.md`, review('rascunho', '## Veredito vigente\n\n- [x] **Approve**: ok\n- [ ] **Request changes**: x\n'));
+  commit(raiz, 'docs: review');
+  assert.equal(estado(raiz).etapa.situacao, 'confirmar');
+});
+
+test('CLI: códigos 0, 1 e 2 e --json só com ASCII', (t) => {
+  const raiz = repo(t);
+  const ok = cli('estado.mjs', ['--raiz', raiz, '--json']);
+  assert.equal(ok.codigo, 0);
+  assert.match(ok.out, /^[\x00-\x7F]*$/);
+  assert.equal(JSON.parse(ok.out).etapa.etapa, 'classificar o pedido');
+  assert.equal(cli('estado.mjs', ['--invalido']).codigo, 2);
+  escrever(raiz, `${PH}/spec.md`, '# Spec: x\n# Status: rascunho\n');
+  commit(raiz, 'docs: spec');
+  assert.equal(cli('estado.mjs', ['--raiz', raiz]).codigo, 1);
+  escrever(raiz, `${PH}/plan.md`, plan('aprovado', [task(1, { arquivos: '`a/`' }), task(2, { arquivos: '`a/b`' })]));
+  assert.equal(cli('ondas.mjs', ['--plan', join(raiz, PH, 'plan.md')]).codigo, 1);
+  assert.equal(cli('ondas.mjs', ['--plan', join(raiz, 'nao-existe.md')]).codigo, 2);
 });

@@ -95,7 +95,8 @@ Aprovar a review, publicar decisões vigentes e fazer push sempre exigem a sua c
 
 ```text
 vibeflow/
-├── skills/vibeflow/      pacote instalável (SKILL.md, references/, templates/)
+├── skills/vibeflow/      pacote instalável (SKILL.md, references/, templates/, scripts/)
+├── tests/scripts/        testes dos scripts (não instala)
 ├── plugin.json           plugin Antigravity
 ├── AGENTS.md             regras deste repo (fonte viva)
 └── LICENSE
