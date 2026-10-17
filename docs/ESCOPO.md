@@ -1,168 +1,33 @@
 # Escopo do vibeflow: feito e na fila
 
-Este arquivo substitui a seção `Fora (v1)` que existia no fim de cada `SKILL.md`. Aquela seção misturava três coisas: invariante operacional que o agente precisa ler durante a run, anti-padrão de escrita do artefato, e escopo de produto ainda não construído. Invariante e anti-padrão voltaram para o corpo da skill, onde são lidos no momento em que valem. Escopo de produto vive aqui.
+Convenção: `[x]` já existe no repositório hoje. `[ ]` entra, ainda não construído. O histórico da v1 (oito skills com motores, até a 9.0.0) fica no Git e nas phases 1 a 20 de `.vibeflow/phases/`.
 
-Convenção: `[x]` já existe no repositório hoje. `[ ]` entra, ainda não construído.
+## 1. Skill
 
-## 1. Cadeia de skills
-
-- [x] `vibe-init` — fonte única de regras e ponteiros.
-- [x] `vibe-interview` — fecha intenção ambígua.
-- [x] `vibe-spec` — grava o decidido.
-- [x] `vibe-plan` — fatia a spec em T*.
-- [x] `vibe-analyze`, cruza interview, spec, `design.md` quando houver UI visível e plan; em `coordenacao-v1`, confere o contrato da implement.
-- [x] `vibe-implement`, executa a fatia com prova. Modo A: piloto da phase com subagentes. Modo B: uma T* por run.
-- [x] `vibe-review`, julga o patch e grava o veredito. No Modo A, audita o executado pelo `execution.json` e pelo diff dentro dos `Arquivos:`.
-- [x] `vibe-design`, grava `design.md` entre spec e plan somente com UI visível, com N/A explícito sem tela. Pacote com motores, SKILL, template, references e distribuição em oito skills.
-- [ ] **Rota MVP.** Projeto novo usa baseline único em `.vibeflow/mvp/` e percorre interview, spec, plan, analyze, implement e review. Pivôs posteriores voltam às phases.
-- [x] **Paralelismo por ondas no Modo A.** Em `coordenacao-v1` Modo A, o plan exige `Arquivos:` e `Prova afetada:` por T* e `Regressão completa` uma vez. O motor da implement (`implement.py`/`implement.ps1`) calcula a disjunção e relata `fila.onda` e `fila.sem_arquivos`; o coordenador despacha a onda numa rodada. Provas em dois níveis: implementador e verificador provam o afetado, e a review final executa a regressão completa. Papel `redator` para T* de prosa.
-- [x] **Cadeia alinhada ao implement (9.0.0).** O plan registra a prontidão com local e destino por requisito, e a implement confere a capacidade de delegação antes da primeira onda; o analyze confere o contrato da implement; a review do Modo A audita o executado, sem checkpoint, e cada R* indica `papel: corretor | redator`; o init gera a regra de erro fora do recorte e perfis por protocolo; spec e design alimentam a `Prova afetada:`. Nenhum motor mudou nesta phase.
+- [x] **V2 só texto (10.0.0, phase 21).** Skill única `vibeflow` em `skills/vibeflow/`, pasta real, com `SKILL.md`, referências por etapa e templates, sem motores. Coordenador-líder conduz todas as rotas com `/vibeflow` e `/vibeflow <etapa>` e delega a execução. Estado nas linhas `# Status:` e `# Rota:`, nas caixas do `plan.md` e no Git. Gates conferidos pelo líder; analyze e review por revisor de contexto limpo. Phases v1 lidas como estão. Distribuição somente de `vibeflow` nos quatro hosts.
+- [x] **Ondas por `Arquivos:` disjuntos.** T* elegíveis com `Arquivos:` disjuntos são despachadas juntas; provas em dois níveis, com a `Regressão completa` só na review final.
+- [ ] **Rota MVP em uso real.** Baseline único em `.vibeflow/mvp/`, rota max completa. Contrato pronto; falta a primeira condução real.
+- [ ] **Testes de comportamento de fragmentos de instrução.** Verificar por execução que cada referência produz o comportamento esperado.
 - [ ] **Worktree por T*.** Isolamento por worktree, com pacote de contexto por T*. Hoje o isolamento é a disjunção de `Arquivos:`.
 - [ ] **Fan-out da review por dimensão.** Review dividida em revisores paralelos por dimensão.
-- [ ] **E2E do piloto na regressão completa.** `docs/vibe-implement/tests/piloto-modo-a.py` fica fora da regressão completa local por não ser determinístico e consumir tokens da conta.
-
-Nenhuma skill dispara a seguinte. O handoff é uma linha no artefato.
+- [ ] **Benchmark de eficiência.** Medição automatizada contra a v1. Hoje a eficiência é avaliada pelo humano no uso.
+- [ ] **Motor determinístico (opcional).** Só se a leitura do disco pela IA errar `n`, slug, onda ou gate no uso real.
 
 ## 2. Infra feita
 
-- [x] **Validação local, sem CI no GitHub.** Por decisão de custo, o repositório não usa CI no GitHub, e o workflow que existiu foi removido. A validação é local, antes do push, e o `AGENTS.md` (Comandos do projeto) é a casa dos comandos. Sem lockfile neste repo, não há varredura de CVE/SCA até existir dependência pinada.
-- [x] **Teste do launcher `.sh`.** `docs/vibe-*/tests/test-<nome>.sh` + harness em `docs/tests/launcher-harness.sh`.
+- [x] **Validação local, sem CI no GitHub.** Por decisão de custo, a validação é local, antes do push: revisão de consistência e gitleaks, com os comandos em `AGENTS.md` (Comandos do projeto).
+- [x] **Distribuição Codex, Claude, Grok e Antigravity.** `npx skills add korflux/vibeflow` e manifestos nativos `.claude-plugin/`, `.codex-plugin/`, `.agents/plugins/`, `.grok-plugin/` e `plugin.json`.
 
-## 3. Entrou nesta rodada
-
-Contrato do que acabou de entrar. Não é fila aberta.
-
-### 3.1 Registro da execução no `plan.md`
-
-- [x] `plan.md` é o registro por T*: status, paths, prova e bloqueios; `implement.md` antigo permanece histórico e não é criado em novas execuções.
-
-A implementação atualiza a task concluída no `plan.md`, e a review confere esse registro contra o estado integrado. Arquivos `implement.md` existentes são preservados sem migração ou reescrita. O motor seleciona o alvo e a fila; `--apply` não prepara um segundo artefato. Contrato: `docs/vibe-implement/ARQUITETURA.md`.
-
-### 3.2 `review.md` único, checklist por etapa
-
-- [x] Mesmo arquivo. Campos abrem e fecham. Item longo = várias etapas no vivo.
-
-Não nasce segundo `review.md`. `## Re-review` no rodapé, como dump da rodada, não é o molde. O arquivo é o mapa do julgamento: a checklist cresce com o achado e encolhe com a prova.
-
-Fluxo de um item longo:
-
-```
-implement (fatia) → review etapa 1
-       ↑                    |
-       |    R* em [ ]       v
-       +← implement corrige
-                            |
-                     review etapa 2 (mesmo arquivo)
-                            |
-              R* novo? abre. R* provado? fecha.
-                            |
-                     …até veredito vigente Approve
-```
-
-Cada etapa registra o que olhou, o que abriu, o que fechou e o veredito **daquela** etapa. O veredito vigente é o da última etapa. Etapas anteriores não se apagam.
-
-#### O que já existe no arquivo (sempre)
-
-| Campo | Papel |
-|---|---|
-| Cabeçalho (título, pasta, status) | Identidade do vivo |
-| Contexto (alvo, cadeia, o que muda) | Uma casa por fase |
-| Checklist de correções (R*) | Fila da implement |
-| Veredito vigente | Approve / Request changes / Approve com defer |
-| Handoff | `vibe-implement` / `volta vibe-spec` / cadeia fechada |
-
-#### O que abre só quando a etapa precisa
-
-| Campo | Abre quando | Fecha / some quando |
-|---|---|---|
-| Cobertura A*/C* | Existe `spec.md` | Spec não existe: seção omitida |
-| R* Critical / Required / Nit | Achado com `path` + evidência | `[x]` quando a implement provou. Lista vazia some. Sem bloqueio: uma linha “nenhum bloqueio” |
-| R* extra na mesma lista | Achado novo em etapa posterior. Número novo. Não renumerar fechados | Idem |
-| Visual (browser, screenshot, leitura) | O aceite depende da UI renderizada ou a T* marcou `Visual: necessária` | Se não há resultado renderizado a julgar e a dispensa está provada, omitir |
-| Segurança | O diff toca input, auth, segredo, upload, pagamento, LLM ou dado pessoal | Diff sem isso: omitir. Sem catálogo fixo |
-| DoD | Há item aplicável nesta etapa | Tudo N/A: omitir |
-| Notas | Há algo que não cabe num R* (teto 5 linhas) | Vazio: omitir |
-| Etapa N | Sempre que a review rodar de novo no mesmo pedido | Nunca apaga etapa antiga. Só acrescenta |
-
-#### Molde de uma etapa (o que falta no template hoje)
-
-```
-## Etapas
-
-### Etapa 1 — first-pass — <o que olhou: T* / diff / fatia>
-- Abriu: R1, R2 (ou nenhum)
-- Fechou: —
-- Veredito desta etapa: Request changes
-
-### Etapa 2 — depois de implement — <o que olhou: R1, R2 + regressão>
-- Leu: implement.md da fatia, se existir
-- Abriu: R3 (achado novo)
-- Fechou: R1, R2
-- Veredito desta etapa: Request changes
-```
-
-Status do arquivo: `rascunho` na primeira passagem; `request-changes` enquanto houver R* bloqueante em `[ ]`; `aprovado` quando o veredito vigente for Approve e o humano confirmou.
-
-Contrato: `docs/vibe-review/ARQUITETURA.md` e `templates/review.md` antes de mudar a skill.
-
-### 3.3 Fila elegível e prova em três andares
-
-- [x] Relatório da implement ganha `fila` (`elegiveis` / `bloqueadas`). Skill pergunta só se houver 2+ T* prontas.
-- [x] Plan congela `concluída`, `Deps` reais e Verificação como comando. Cada T* é a unidade de execução, prova e commit; o fechamento da phase usa a suíte final da review.
-
-### 3.6 Commits por task e fechamento da phase
-
-- [x] `vibe-implement` cria um commit path-scoped depois de cada task verde, sem push, sem `git add -A` e sem misturar paths já alterados.
-- [x] `vibe-review` só faz o commit residual e o `git push` final depois de Approve, confirmação humana, correções fechadas, suíte final, `git diff --check` e gitleaks quando previsto.
-
-### 3.7 Piloto automático de implementação com subagentes
-
-- [x] `vibe-implement` Modo A em `etapas-v1` (protocolo histórico): coordenador delega cada T* a um subagente, confere, registra e commita. Em `coordenacao-v1` Modo A, o finalizador opera registros e Git, e o coordenador não executa essas operações. Nos dois protocolos, a review final roda em subagente, as correções vão a um corretor (até 2 rodadas) e o piloto termina com uma única confirmação (aprovar a review, publicar decisões vigentes e fazer push).
-- [x] `vibe-implement` Modo B: uma T* por run, por pedido, T* nomeada, rota `low` ou `medium` ou falta de subagentes. O modo de plano inteiro inline deixou de existir.
-- [x] Motor do implement informa `etapa` e `rodadas_correcao` lidos de `plan.md` e `review.md`, para retomar e coordenar pelo disco.
-- [x] `references/delegation.md` idêntico em `vibe-plan` e `vibe-implement` (papéis por perfil, relatório fixo, escritor único, fallback), comparado por bytes em `docs/tests/test-distribuicao.py`.
-- [x] `vibe-plan` delega o analyze a subagente na rota max; o handoff aponta `vibe-analyze` também em phase max e o fechamento recomenda com ênfase chat novo com `/vibe-implement` em Modo A.
-- [x] Regra única de instalação de ferramenta necessária à prova em plan, implement e review, com credencial, conta, pagamento, elevação e integração persistente indo ao humano.
-- [x] Versão major 4.0.0, porque muda o comportamento do Modo A e do Modo B que o humano já usa.
-
-Contrato: `docs/vibe-implement/ARQUITETURA.md`, `docs/vibe-review/ARQUITETURA.md`, `docs/vibe-plan/ARQUITETURA.md` e `docs/vibe-analyze/ARQUITETURA.md`.
-
-### 3.4 Distribuição Codex, Claude, Grok e Antigravity
-
-- [x] CLI `npx skills add korflux/vibeflow` (projeto ou `-g` global) para `grok`, `claude-code`, `codex`, `antigravity`.
-- [x] Manifests nativos: `.claude-plugin/`, `.codex-plugin/`, `.agents/plugins/`, `.grok-plugin/`, `plugin.json` (Antigravity). Pasta `skills/` aponta para `vibe-<nome>/`. Sem aliases `/spec` `/plan`.
-
-### 3.5 Fatiamento por resultado e dependências reais
-
-- [x] `vibe-plan` agrupa cada resultado coeso em uma T* e só divide por entrega separada, dependência de execução, isolamento de risco ou prova inviável como uma unidade.
-- [x] Preparo local de ferramentas é checklist; task de setup só existe quando a mudança persistente faz parte da entrega do projeto.
-- [x] Paralelização e, nos protocolos históricos, checkpoints de review aparecem somente quando mudam execução ou review; em `coordenacao-v1` Modo A o plan não promete checkpoint de review; checkpoint de retomada fica temporariamente sob T* incompleta e guarda o snapshot Git da prova. O parser continua lendo somente `T*`, conclusão e `Deps`.
-
-## 4. Limites de contrato
+## 3. Limites de contrato
 
 Não são backlog. Mudá-los quebra o disco.
 
 | Limite | Por quê |
 |---|---|
-| `AGENTS.md` e `CLAUDE.md` nunca são cópia de `REGRAS.md` | Cópia diverge na primeira edição e deixa de existir fonte única. Sem symlink, o init falha alto. |
-| Artefato da cadeia só em `.vibeflow/phases/phase-N-slug/`, salvo o baseline único `.vibeflow/mvp/` | `docs/`, `specs/` e paths de outro produto continuam proibidos; a exceção MVP é fixa, explícita e não versionada. |
-| Segunda fonte de regras fora de `AGENTS.md` | Mesma razão. A ponte Antigravity é apenas `@../../AGENTS.md`, não uma cópia. |
-| A IA não escolhe `n`, slug nem path | Disco decide, script calcula. |
+| `AGENTS.md` é a única fonte de regras; `CLAUDE.md`, `REGRAS.md` e `GEMINI.md` não são criados | Cópia diverge na primeira edição e deixa de existir fonte única. A ponte Antigravity é apenas `@../../AGENTS.md`. |
+| Artefato da cadeia só em `.vibeflow/phases/phase-N-slug/`, salvo o baseline único `.vibeflow/mvp/` | `docs/`, `specs/` e paths de outro produto continuam proibidos; a exceção MVP é fixa e não versionada. |
+| `n`, slug e path seguem as regras escritas | A IA aplica a regra; não escolhe número nem path por preferência. |
 | A IA não escolhe homolog ou produção | Só o humano sabe, e a resposta muda o bloco de migrations. |
-| Commit por task e push final | Em `coordenacao-v1` Modo A, a implement cria um commit de integração depois da prova verde; no Modo B, em `etapas-v1` e no legado, commita cada task verde. Sempre com staging explícito. A finalização da phase faz push somente após aprovação humana, executada pela review ou, no Modo A, pelo finalizador depois da confirmação única transmitida pelo coordenador. |
-| Escritor único dos artefatos vivos e do Git | Em `coordenacao-v1` Modo A, o finalizador genérico apto opera registros, índice Git e commits com ownership temporário exclusivo, e o coordenador não executa essas operações. Nos protocolos históricos e no Modo B, só o coordenador altera `plan.md`, `spec.md`, `review.md` e `AGENTS.md`, opera o índice Git e cria commits. Subagentes devolvem relatório; as exceções são o revisor (`review.md`) e o subagente de analyze (`analyze.md`). |
-| Motor único ("só Python" ou "só PowerShell") | Os dois motores implementam o mesmo contrato; o launcher `.sh` escolhe, sem versão degradada. |
-| Escrita semântica no script ou em arquivo temporário de promoção | O script prepara o vivo e a IA grava a prosa, preservando o histórico já existente. |
-
-## 5. Anti-padrões (já no corpo da skill)
-
-| Anti-padrão | Onde vive agora |
-|---|---|
-| `FR-00N`, mural de user story, CSS/paleta na spec | `vibe-spec`, passo "Escrever e salvar já" |
-| `T001`, `[P]`, `[US1]`, `tasks.md`, `checklists/` | `vibe-plan`, passos "Conferência" e "Fatiar" |
-| `todo.md` / `tasks.md` como saída da implement | `vibe-implement`, invariante do topo |
-| Editar `interview.md`, `spec.md`, `plan.md` na analyze | `vibe-analyze`, invariante do topo |
-| Editar source, teste ou lockfile na review | `vibe-review`, invariante do topo e passo "Julgar" |
-| Marcar `[x]` sem prova, pular verificação visual em silêncio | `vibe-implement`, invariante do topo e gate |
-| Verificação só manual / leitura como prova da T* | `vibe-plan` (fatiar) e `vibe-implement` (ciclo) |
-| Open Questions dentro do artefato, dump do artefato no chat | invariante do topo de cada skill que grava |
+| Commit integrado e push final | Commit `task(T*...)` depois da prova verde, com staging explícito; push somente após aprovação humana. |
+| Escritor único por recurso | Durante uma onda, cada T* tem ownership exclusivo dos seus `Arquivos:`; o finalizador opera índice Git e commits; o revisor escreve `analyze.md` e `review.md`. |
+| Pacote só texto | Código executável na skill exige decisão do humano e versão nova. |

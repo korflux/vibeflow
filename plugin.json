@@ -1,5 +1,5 @@
 {
   "$schema": "https://antigravity.google/schemas/v1/plugin.json",
   "name": "vibeflow",
-  "description": "Cadeia de skills para inicializar e conduzir o trabalho de agentes num repo."
+  "description": "Skill única com coordenador-líder que conduz o trabalho de agentes num repo."
 }

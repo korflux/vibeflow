@@ -1,7 +1,7 @@
 {
   "name": "vibeflow",
-  "version": "9.0.0",
-  "description": "Cadeia de skills para inicializar e conduzir o trabalho de agentes num repo.",
+  "version": "10.0.0",
+  "description": "Skill única com coordenador-líder que conduz o trabalho de agentes num repo.",
   "author": {
     "name": "Marco Kormoczi",
     "url": "https://github.com/korflux"
@@ -12,10 +12,13 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "vibeflow",
-    "shortDescription": "Cadeia spec, plan, implement e review para agentes.",
-    "longDescription": "Oito skills (vibe-init até vibe-review, com vibe-design entre spec e plan) que inicializam regras do repo e conduzem interview, spec, design, plan, analyze, implement e review em .vibeflow/phases/.",
+    "shortDescription": "Coordenador-líder que conduz agentes do pedido ao push.",
+    "longDescription": "Skill única vibeflow: um coordenador-líder classifica a rota, conversa com o humano e delega a execução a subagentes, conduzindo interview, spec, design, plan, analyze, implement e review em .vibeflow/phases/.",
     "developerName": "Marco Kormoczi",
     "category": "Productivity",
-    "capabilities": ["Read", "Write"]
+    "capabilities": [
+      "Read",
+      "Write"
+    ]
   }
 }

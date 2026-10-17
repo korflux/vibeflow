@@ -6,8 +6,8 @@
   "plugins": [
     {
       "name": "vibeflow",
-      "version": "9.0.0",
-      "description": "Cadeia de skills para inicializar e conduzir o trabalho de agentes num repo.",
+      "version": "10.0.0",
+      "description": "Skill única com coordenador-líder que conduz o trabalho de agentes num repo.",
       "source": {
         "source": "local",
         "path": "./"

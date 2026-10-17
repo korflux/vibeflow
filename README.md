@@ -2,40 +2,35 @@
 
 A skill definitiva para VibeCoders.
 
-Fonte canônica das skills `vibe-*` e do contrato `.vibeflow/`. Não é um app de produção.
+Skill única `vibeflow`, com um coordenador-líder que conduz o trabalho de agentes num repo. Este repositório é a fonte canônica do pacote e do contrato `.vibeflow/`. Não é um app de produção.
 
-## O que é o repositório
+## O que é
 
-O vibeflow é uma cadeia de skills para quem programa com agentes (Grok Build, Claude Code, Codex, OpenCode, Pi, Antigravity e qualquer cliente que leia `SKILL.md`): o pedido vira trilha no disco, não recap no chat.
+O vibeflow é uma skill para quem programa com agentes (Grok Build, Claude Code, Codex, OpenCode, Pi, Antigravity e qualquer cliente que leia `SKILL.md`). O líder conversa com você, entende o projeto, escolhe uma rota proporcional ao pedido, planeja e delega toda a execução a subagentes: redação de artefatos, código, testes, provas e Git. Analyze e review são sempre feitos por um revisor de contexto limpo. O pedido vira trilha no disco, não recap no chat.
 
-Cada skill é um pacote instalável (`vibe-init/`, `vibe-interview/`, …) com `SKILL.md`, scripts e, quando precisa, templates e referências. No repo do consumidor, o trabalho da cadeia vive em disco:
+O pacote é só texto: `SKILL.md`, referências por etapa e templates, sem scripts. No repo do consumidor, o trabalho vive em disco:
 
 ```text
 AGENTS.md                                  fonte única de regras do projeto
-.vibeflow/mvp/                              baseline único de projeto novo na rota max
+.agents/rules/vibeflow.md                  ponte Antigravity para AGENTS.md
 .vibeflow/phases/phase-N-slug/interview.md
 .vibeflow/phases/phase-N-slug/spec.md
+.vibeflow/phases/phase-N-slug/design.md    somente com UI visível
 .vibeflow/phases/phase-N-slug/plan.md
-.vibeflow/phases/phase-N-slug/execution.json  estado operacional do novo Modo A
 .vibeflow/phases/phase-N-slug/analyze.md
 .vibeflow/phases/phase-N-slug/review.md
-# implement.md pode existir como histórico, mas não é criado por novas execuções
-.agents/rules/vibeflow.md                  inclusão curta de AGENTS.md
+.vibeflow/mvp/                             baseline único de projeto novo, rota max
 ```
 
-`n` e o slug das phases saem do script, não da IA. Projeto novo classificado como MVP usa uma única `.vibeflow/mvp/`, sem número nem slug, e percorre a rota max completa. Skills seguintes do mesmo pedido gravam na mesma pasta, outro arquivo. Nenhuma skill dispara a próxima: o handoff é uma linha no artefato.
+O estado vem das linhas `# Status:` e `# Rota:` dos artefatos, das caixas do `plan.md` e do Git. Um chat novo com `/vibeflow` retoma de onde a phase parou.
 
-O `--apply` das skills de artefato executa os gates mecânicos e prepara o arquivo vivo somente quando ele ainda não existe. No protocolo coordenacao-v1, a implement mantém plan enxuto e execução em execution.json versionado ao lado. B/etapas-v1/legado conservam seus registros; não há migração implícita nem novo implement.md. A IA escreve e atualiza a prosa diretamente em `interview.md`, `spec.md`, `plan.md`, `analyze.md` e `review.md`.
+Contrato: [`docs/vibeflow/ARQUITETURA.md`](docs/vibeflow/ARQUITETURA.md). Fluxo e decisões: [`docs/vibeflow/ANALISE.md`](docs/vibeflow/ANALISE.md). Escopo: [`docs/ESCOPO.md`](docs/ESCOPO.md).
 
-Escopo do produto: [`docs/ESCOPO.md`](docs/ESCOPO.md). Contrato de cada skill: `docs/vibe-<nome>/ARQUITETURA.md`. Validação: o repositório não usa CI no GitHub, por decisão de custo; a validação é local, antes do push, e os comandos estão no `AGENTS.md`.
-
-## Como instalar as skills
-
-O repositório oferece instalação por `npx skills` e manifests nativos. O pacote Antigravity tem `plugin.json` na raiz e descobre os oito pacotes pela pasta `skills/`; não há aliases em `commands/`.
+## Como instalar
 
 ### Instalador `npx skills`, project-local e global
 
-O CLI [`skills`](https://github.com/vercel-labs/skills) usa, por padrão, o escopo project-local (`./<agent>/skills/`) e, com `-g`, o escopo global (`~/<agent>/skills/`). Os dois comandos abaixo instalam os oito pacotes nos agentes selecionados:
+O CLI [`skills`](https://github.com/vercel-labs/skills) usa, por padrão, o escopo project-local (`./<agent>/skills/`) e, com `-g`, o escopo global (`~/<agent>/skills/`):
 
 ```bash
 # project-local, somente neste projeto e compartilhável com a equipe
@@ -47,44 +42,9 @@ npx skills add korflux/vibeflow -g -a grok -a claude-code -a codex -a antigravit
 
 Windows sem suporte a symlink no destino: acrescente `--copy` ao comando escolhido. Use `npx skills list` para conferir a instalação.
 
-OpenCode e Pi também descobrem skills globais em `~/.agents/skills/`. Portanto, uma cópia atualizada dos oito pacotes nesse diretório atende aos dois CLIs sem duplicar a instalação em `~/.config/opencode/skills/` ou `~/.pi/agent/skills/`. Se houver cópias nesses outros diretórios, mantenha-as sincronizadas ou remova a duplicação para evitar versões divergentes.
+OpenCode e Pi também descobrem skills globais em `~/.agents/skills/`. Uma cópia atualizada do pacote nesse diretório atende aos dois CLIs; se houver cópias em `~/.config/opencode/skills/` ou `~/.pi/agent/skills/`, mantenha-as sincronizadas ou remova a duplicação.
 
-### Antigravity IDE
-
-Para um plugin específico do workspace, coloque a pasta do repositório em:
-
-```text
-<workspace-root>/.agents/plugins/vibeflow/
-```
-
-O fallback documentado pelo host é `_agents/plugins/`. Para uso global na IDE, coloque a pasta em:
-
-```text
-~/.gemini/config/plugins/vibeflow/
-```
-
-Em ambos os casos, `plugin.json` deve permanecer na raiz do plugin e `skills/` deve conter os oito diretórios com `SKILL.md`. Confirme a descoberta por `/skills` quando o host oferecer esse comando ou reabra o workspace/host para recarregar os plugins.
-
-O `vibe-init` cria a regra de workspace em `.agents/rules/vibeflow.md` com a inclusão `@../../AGENTS.md`. Esse arquivo é somente uma ponte curta. A fonte editável continua sendo `AGENTS.md`.
-
-Para skills avulsas sem o bundle de plugin, a IDE usa `.agents/skills/` no workspace e `~/.gemini/antigravity/skills/` globalmente.
-
-### Antigravity CLI
-
-O CLI instala o plugin no perfil global do Antigravity:
-
-```text
-agy plugin install https://github.com/korflux/vibeflow.git
-agy plugin list
-```
-
-O pacote fica disponível em `~/.gemini/antigravity-cli/plugins/vibeflow/`. Para instalar um plugin local, passe o caminho da pasta ao mesmo comando, por exemplo `agy plugin install <caminho-do-plugin>`. O escopo project-local da IDE e o perfil global do CLI são caminhos diferentes.
-
-Para skills avulsas sem o bundle de plugin, o CLI usa `.agents/skills/` no workspace e `~/.gemini/antigravity-cli/skills/` globalmente. Use o caminho de plugin quando precisar carregar o manifest e o conjunto completo do Vibeflow.
-
-### Codex, regras globais e verificação de carga
-
-Marketplace nativo, depois de clonar ou a partir do GitHub:
+### Marketplaces nativos
 
 ```text
 /plugin marketplace add korflux/vibeflow
@@ -97,141 +57,74 @@ grok plugin marketplace add korflux/vibeflow
 grok plugin install vibeflow --trust
 ```
 
-O Codex mantém suas regras globais em `~/.codex/AGENTS.md` ou `~/.codex/AGENTS.override.md`. O Antigravity mantém as regras globais em `~/.gemini/GEMINI.md`. Nenhum desses arquivos substitui `AGENTS.md`, e o pacote não cria uma cópia `GEMINI.md` no workspace.
+### Antigravity
 
-Quando um host puder carregar mais de um nome de regra, como `AGENTS.md` e `CLAUDE.md`, inspecione a carga efetiva com `grok inspect` ou a ferramenta equivalente do host. Se o slash command estiver disponível, `/skills` e `agy plugin list` são as confirmações mínimas para skills e plugins. Reiniciar ou reabrir o host é o fallback quando não houver comando de inspeção.
+IDE, plugin do workspace: coloque a pasta do repositório em `<workspace-root>/.agents/plugins/vibeflow/` (fallback documentado pelo host: `_agents/plugins/`). Uso global na IDE: `~/.gemini/config/plugins/vibeflow/`. Em ambos os casos, `plugin.json` fica na raiz do plugin e `skills/vibeflow/` contém o `SKILL.md`. Confirme a descoberta por `/skills` ou reabra o workspace.
 
-Depois da instalação, os slash names são `/vibe-init` … `/vibe-review`. Não há alias `/spec` nem `/plan`.
-
-Primeira vez num repo sem `AGENTS.md` ou `.vibeflow/`: rode `/vibe-init`. As demais skills recusam sem a infraestrutura necessária.
-
-Projeto já inicializado com `.vibeflow/REGRAS.md`, `REGRAS.md` ou `CLAUDE.md`: rode `/vibe-init` uma vez antes da próxima etapa. O Init materializa `AGENTS.md`, confere backups em `.vibeflow/old/` e remove automaticamente os legados com conteúdo idêntico. Fontes com regras diferentes continuam no projeto e aparecem em `merges` no relatório para consolidação.
-
-## Desenho do fluxo das skills
-
-O bloco de cadeia em `AGENTS.md` escolhe o esforço da rota. A IA não inventa atalho: o esforço manda quais portas existem.
-
-A cadeia `spec → design → plan → implement → review` trata entregas de software. Texto e documentos avulsos seguem edição direta; `vibe-interview` pode esclarecer um briefing ambíguo antes da redação.
+CLI, perfil global:
 
 ```text
-                         ┌────────────┐
-                         │ vibe-init  │  repo sem .vibeflow, ou disco quebrado
-                         └─────┬──────┘
-                               │
-     pedido ──► esforço ───────┼──────────────────────────────►
-                               │
-          low                  │  implement
-          medium               │  implement → review
-          high                 │  spec → [design] → plan → implement → review
-          xhigh                │  interview → spec → [design] → plan → implement → review
-          max                  │  interview → spec → [design] → plan → analyze → implement → review
+agy plugin install https://github.com/korflux/vibeflow.git
+agy plugin list
 ```
 
-| Esforço | Fluxo | Quando |
-|---|---|---|
-| (init) | init | Primeira vez no repo, ou disco quebrado. De novo só para reparar |
-| low | implement | Pedido claro, direto, simples |
-| medium | implement → review | Pedido claro e direto, sem possibilidade de regressão |
-| high | spec → plan → implement → review | Pedido claro, execução difícil, ou possibilidade de regressão |
-| xhigh | interview → spec → plan → implement → review | Pedido ambíguo, confiança baixa, intenção ou sucesso em aberto |
-| max | interview → spec → plan → analyze → implement → review | Auth, pagamento, segredo, perda de dados, produção ou alto blast radius |
+O pacote fica em `~/.gemini/antigravity-cli/plugins/vibeflow/`. Para um plugin local, passe o caminho da pasta ao mesmo comando.
 
-`[design]` entra entre spec e plan quando há UI visível. Sem UI, a etapa é N/A explícito.
+### Regras globais e verificação de carga
 
-O esforço da rota define o rigor da cadeia para o pedido. As T* são agrupadas por resultados verificáveis e dependências reais; quantidade de arquivos, sessões, critérios de aceite ou pontuação não provocam quebras automáticas. O contrato de fatiamento fica em [`vibe-plan/SKILL.md`](vibe-plan/SKILL.md).
+O Codex mantém regras globais em `~/.codex/AGENTS.md` ou `~/.codex/AGENTS.override.md`, e o Antigravity em `~/.gemini/GEMINI.md`. Nenhum desses arquivos substitui `AGENTS.md`, e a skill não cria `GEMINI.md` no workspace. Quando um host puder carregar mais de um nome de regra, inspecione a carga efetiva com `grok inspect` ou a ferramenta equivalente do host; reiniciar ou reabrir o host é o fallback.
 
-Todo MVP de projeto novo usa a rota `max` em `.vibeflow/mvp/`. Feature chamada de MVP dentro de produto existente continua usando uma phase normal. Depois de concluído, o baseline não é sobrescrito; pivôs e reconstruções posteriores entram como phase `max`.
+## Como usar
 
-O mesmo pedido reusa a pasta `phase-N-slug`. Pedido novo: próxima pasta, `n` numérico. Chat não substitui o arquivo quando a skill promete artefato.
+| Comando | Faz |
+|---|---|
+| `/vibeflow` | Lê o disco, retoma a phase aberta ou classifica o pedido novo e anuncia a rota e as etapas |
+| `/vibeflow <etapa>` | Vai direto a `init`, `interview`, `spec`, `design`, `plan`, `analyze`, `implement` ou `review`, se o pré-requisito estiver satisfeito |
 
-### Handoff e isolamento de chat
+A skill também entra sozinha quando o pedido é de software: código, correção de bug, ajuste de UI, funcionalidade nova, especificação, plano, revisão ou governança para agentes.
 
-`init → interview → spec` pode continuar no mesmo chat. As portas `plan`, `analyze`, `implement` e `review` recomendam um novo chat para reduzir contexto residual; na implementação, o chat novo conduz a fila inteira no Modo A (analyze e review rodam em subagente) e, no Modo B, a recomendação é um chat focado por T*. A continuidade é permitida quando o humano a escolhe conscientemente. O artefato vivo e a linha de handoff são a ponte verificável entre chats.
+Primeira vez num repo, ou instalação antiga com `.vibeflow/REGRAS.md`, `REGRAS.md` ou `CLAUDE.md`: a etapa `init` roda antes de qualquer cadeia. Ela grava `AGENTS.md`, a ponte `.agents/rules/vibeflow.md` e seis perfis de subagente (explorador, implementador, redator, verificador, corretor e revisor) em `.codex/agents/` e `.claude/agents/`, guarda cópia conferida das regras substituídas em `.vibeflow/old/` e cria um commit local. Quando os perfis mudam, recarregue o host antes de continuar.
 
-No Modo A (`coordenacao-v1`), o coordenador é o líder estratégico: reconhece o terreno, planeja as ondas, escolhe entregas, responsáveis, dependências e colaboração útil, delega toda execução e valida os dados recebidos (relatórios fixos, saída do motor, `git status`), fazendo no máximo pequenos ajustes finais. A fila anda por ondas: o motor relata em `fila.onda` as T* elegíveis com `Arquivos:` disjuntos, e o coordenador as despacha juntas numa rodada, com ownership exclusivo por T*; T* sem `Arquivos:` ou sobreposta roda sozinha. Subagentes podem preparar recortes em conjunto e conversar diretamente com ownership seguro. Implementador entrega código/testes, redator entrega T* cujo resultado principal é prosa (SKILL, referências, docs, README), verificador confere entrega/aceite e prova integração, finalizador genérico/default apto registra estado e opera Git, e revisor julga independentemente. Contradição ou lacuna volta ao responsável. Plan define trabalho; execution.json versionado guarda estado atual e snapshots, com hashes calculados pelo motor e stdout compacto. Integração verde e commit real liberam conclusão. Provas inalteradas são reaproveitadas. Etapas-v1, legado e B conservam contrato, sem migração; no Modo B, grupo de T* paralelas depende de oferta aprovada pelo humano. Approve, decisões vigentes e push exigem confirmação humana final; finalizador executa fechamento delimitado após essa confirmação.
+A rota é proporcional ao pedido. Uma troca de cor é delegada e fechada sem criar `.vibeflow/`; um pedido que toca auth, pagamento ou produção percorre interview, spec, plan, analyze, implement e review. A tabela de rotas fica no `AGENTS.md` que a etapa `init` grava no projeto, a partir de [`skills/vibeflow/templates/AGENTS.md`](skills/vibeflow/templates/AGENTS.md).
 
-No Codex desktop, a prova de UI prioriza o navegador integrado quando disponível. Se ele não estiver disponível, registre a limitação no resultado ou use o fallback visual existente no projeto.
+Por padrão, um único chat conduz a rota inteira. Em host de contexto curto, use um chat para todo o planejamento e outro para a implementação. Em host sem subagentes, a skill avisa e roda uma etapa ou tarefa por vez, com analyze e review em chat novo.
 
-## Por que usar as skills
+Aprovar a review, publicar decisões vigentes e fazer push sempre exigem a sua confirmação.
 
-Agentes de código otimizam o caminho curto: pulam spec, marcam tarefa sem prova, escolhem path, misturam regras do Claude com as do Codex, disparam a skill seguinte sozinhos.
-
-Esta cadeia separa papéis e deixa o disco como fonte:
-
-- **IA** pilota a run: entende o pedido, investiga o projeto e os scripts, decide a semântica e audita o resultado.
-- **Skill** orienta a IA com invariantes, gates e critérios de fechamento.
-- **Script** auxilia operações determinísticas como inventário, path, número, slug, preparação do alvo e relatório.
-- **Humano** decide apenas o que muda materialmente o resultado e confirma o fechamento. `vibe-implement` commita a integração verde no novo Modo A e cada task verde no Modo B/legado; `vibe-review` faz o commit/push final da phase somente após Approve confirmado.
-
-Efeito prático: as regras do projeto ficam numa fonte (`AGENTS.md`), o pedido deixa trilha (interview → spec → plan → implement → review), e “feito” exige comando e resultado, não recap no chat.
-
-## O que cada skill faz
-
-| Skill | Slash | Faz | Grava |
-|---|---|---|---|
-| [`vibe-init`](vibe-init/SKILL.md) | `/vibe-init` | Inicializa `AGENTS.md` na raiz, preserva regras legadas em backups verificados e atualiza a ponte mínima do Antigravity | `AGENTS.md` e adaptador de host |
-| [`vibe-interview`](vibe-interview/SKILL.md) | `/vibe-interview` | Descobre a solução, jornadas e páginas; usa módulos condicionais para completar o produto | `phase-N-slug/interview.md` ou `.vibeflow/mvp/interview.md` |
-| [`vibe-spec`](vibe-spec/SKILL.md) | `/vibe-spec` | Cobre a origem, fecha comportamento e aceite, e registra somente contratos necessários | `phase-N-slug/spec.md` ou `.vibeflow/mvp/spec.md` |
-| [`vibe-design`](vibe-design/SKILL.md) | `/vibe-design` | Desenha a apresentação com dois modos de entrada e três usos, sem código nem imagem final | `phase-N-slug/design.md` |
-| [`vibe-plan`](vibe-plan/SKILL.md) | `/vibe-plan` | Fatia a spec em T* verificáveis e reutiliza provas por capacidade quando cobrem a entrega | `phase-N-slug/plan.md` |
-| [`vibe-analyze`](vibe-analyze/SKILL.md) | `/vibe-analyze` | Cruza interview, spec, `design.md` quando houver UI visível e plan da mesma fase e, em `coordenacao-v1`, confere o contrato da implement. Corrige lacunas óbvias em `spec.md`, `design.md` e `plan.md`; grava o certificado no vivo | `phase-N-slug/analyze.md` |
-| [`vibe-implement`](vibe-implement/SKILL.md) | `/vibe-implement` | Novo Modo A: coordenação por resultados, colaboração dirigida, conferência/integração delegadas, finalizador exclusivo e review independente; plan enxuto e execução estruturada. B/etapas-v1/legado preservados | `phase-N-slug/plan.md` + `execution.json` no novo A |
-| [`vibe-review`](vibe-review/SKILL.md) | `/vibe-review` | Julga o patch, conduz correções e faz o commit/push final após aprovação. No Modo A, audita o executado pelo `execution.json` e pelo diff dentro dos `Arquivos:` | `phase-N-slug/review.md` |
-
-Arquitetura, análise e testes de contrato de cada skill ficam em `docs/vibe-<nome>/` e **não** entram no pacote instalável.
-
-## Estrutura do projeto
-
-Este repo é a fonte. O consumidor instala o pacote, não a pasta `docs/`.
+## Estrutura do repositório
 
 ```text
 vibeflow/
-├── vibe-init/ … vibe-review/   pacote canônico (SKILL.md, scripts, templates, references, com vibe-design entre spec e plan)
-├── skills/vibe-*               symlink → ../vibe-* (descoberta do CLI e plugins)
-├── .claude-plugin/             marketplace Claude
-├── .codex-plugin/              plugin Codex
-├── .agents/plugins/            marketplace Codex
-├── .grok-plugin/               marketplace Grok
-├── plugin.json                 plugin Antigravity
-├── docs/vibe-<nome>/           ARQUITETURA.md, ANALISE.md, tests/ (não instala)
-├── docs/ESCOPO.md              feito e fila
-├── docs/tests/                 contrato de distribuição e harness dos launchers
-├── AGENTS.md                   regras deste repo (fonte viva)
+├── skills/vibeflow/      pacote instalável (SKILL.md, references/, templates/)
+├── .claude-plugin/       marketplace Claude
+├── .codex-plugin/        plugin Codex
+├── .agents/plugins/      marketplace Codex
+├── .grok-plugin/         marketplace Grok
+├── plugin.json           plugin Antigravity
+├── docs/vibeflow/        ARQUITETURA.md e ANALISE.md (não instala)
+├── docs/ESCOPO.md        feito e fila
+├── AGENTS.md             regras deste repo (fonte viva)
 └── LICENSE
-```
-
-Pacote de uma skill:
-
-```text
-vibe-<nome>/
-  SKILL.md
-  scripts/<nome>.py .ps1 .sh
-  templates/<artefato>.md      se a skill grava markdown
-  references/                  catálogo sob demanda
 ```
 
 ## Como contribuir
 
-1. Skill nova só com o par `docs/vibe-<nome>/ARQUITETURA.md` + `ANALISE.md` antes de `SKILL.md` e scripts.
-2. Scripts em trio, mesmo contrato: `.py` (motor), `.ps1` (Windows), `.sh` (launcher Unix).
-3. Teste de contrato em `docs/vibe-<nome>/tests/`, `unittest`, pasta isolada. Depois: `python docs/vibe-<nome>/tests/test-<nome>.py -v`.
-4. Distribuição: `python docs/tests/test-distribuicao.py -v`.
-5. Não inventar path de artefato fora de `.vibeflow/phases/phase-N-slug/`; a única exceção é o baseline fixo `.vibeflow/mvp/`. Manter `AGENTS.md` como única fonte de regras do projeto.
-6. Inventários são JSON transitório no stdout. O init mantém relatório/pending ignorados para retomada; no novo Modo A, execution.json é estado operacional versionado junto dos artefatos vivos, sem snapshots no plan.
+1. Contrato antes de prosa: mudança de disco, papel ou gate começa em `docs/vibeflow/ARQUITETURA.md`.
+2. O pacote é só texto. Não adicione scripts nem testes de presença de texto.
+3. Antes do push, rode a revisão de consistência e a varredura de segredos descritas em `AGENTS.md`. O repositório não usa CI no GitHub, por decisão de custo.
+4. `AGENTS.md` é a única fonte de regras do projeto. Artefatos só em `.vibeflow/phases/phase-N-slug/` ou no baseline `.vibeflow/mvp/`.
 
-Versão dos manifests: `9.0.0`. O Antigravity mantém o schema mínimo sem campo de versão.
+Versão dos manifestos: `10.0.0`. O Antigravity mantém o schema mínimo sem campo de versão.
 
-O que muda na cadeia com a 9.0.0:
+O que muda com a 10.0.0:
 
-- O plan registra a prontidão técnica com local e destino por requisito, inclusive perfis do Modo A e privilégios do sistema, e a implement confere essa capacidade antes da primeira onda.
-- O analyze confere o contrato da implement em `coordenacao-v1`: `Arquivos:` comparáveis, `Prova afetada:` restrita ao recorte e `Regressão completa` única.
-- A review do Modo A audita o executado pelo `execution.json`, sem checkpoint de review, e cada R* indica `papel: corretor | redator`.
-- O init gera `AGENTS.md` com a regra de registrar erro fora do recorte em `.erros-encontrados/` sem corrigi-lo, e perfis alinhados ao protocolo.
-- Spec e design alimentam a `Prova afetada:`: cada aceite aponta a jornada e o nível de prova, e o design registra a prova visual por tela.
+- As oito skills da v1 viram uma skill única, `vibeflow`, com entrada `/vibeflow` e `/vibeflow <etapa>`. Os comandos da v1 deixam de existir, sem aliases.
+- Um coordenador-líder conduz todas as rotas e delega a execução, inclusive em pedidos pequenos.
+- O pacote é só texto: sem motores, relatório operacional nem registro estruturado de execução. O estado vive nos artefatos e no Git.
+- A rota fica gravada em `# Rota:` no primeiro artefato da phase.
+- Phases criadas pela v1 continuam legíveis, sem migração.
 
-Em `coordenacao-v1` Modo A, as provas têm dois níveis. Implementador e verificador executam somente a `Prova afetada:` de cada T*, e a integração executa a união delas, sem ampliar para suíte completa. A review final é a única dona da `Regressão completa` declarada no plan (suíte inteira e E2E), executada uma vez no estado final e repetida antes do Approve só quando código ou teste mudou desde a última execução completa verde. Nos protocolos históricos e no Modo B, código e testes recebem prova local do fluxo afetado; a verificação certifica integração proporcional e a review audita código, cobertura e evidências válidas, executando somente lacunas, e suíte completa exige risco, consumidores afetados, lacuna concreta ou CI obrigatório. Simplificação e otimização fundamentada permanecem no recorte. Toda correção R* aberta, inclusive nit e classificações legadas, bloqueia aprovação; novas reviews não oferecem defer.
-
-PR contra `main`. Mudança de contrato (path, schema do relatório, flag pública) é Major; o resto segue o semver em `AGENTS.md`.
+PR contra `main`. Mudança de contrato (path de artefato ou comportamento que o humano já usa) é Major; o resto segue o semver em `AGENTS.md`.
 
 ## Créditos
 
@@ -248,5 +141,3 @@ PR contra `main`. Mudança de contrato (path, schema do relatório, flag públic
 ## Licença
 
 [MIT](LICENSE). Pode usar, copiar, modificar e redistribuir, com o aviso de copyright. Sem garantia.
-
-O `vibe-init` distribui seis papéis, explorador, implementador, redator, verificador, corretor e revisor, em `.codex/agents/` e `.claude/agents/` do projeto, num total de doze perfis. O `redator` atende T* cujo resultado principal é prosa; no Claude usa Opus com esforço médio e no Codex usa o modelo do revisor com esforço medium. No re-init, substitui perfil VibeFlow desatualizado, com backup em `.vibeflow/old/` conferido por tamanho e hash, somente quando o diff com o template e o histórico Git do path confirmam que não há conteúdo do usuário; customização ou dúvida é preservada e reportada como conflito. Orienta conferir a disponibilidade na sessão depois de recarregar o host. Não modifica perfis globais nem configurações gerais.
