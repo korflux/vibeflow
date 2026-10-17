@@ -88,7 +88,8 @@ Toda aprovação humana de artefato vai ao finalizador, que marca `# Status: apr
 
    | Situação | Perfis exigidos |
    |---|---|
-   | Low (inclusive Express) | implementador |
+   | Low sem phase (Express) | implementador |
+   | Low com phase ativa | redator (T* nova), implementador, verificador, corretor e agente genérico apto a Git |
    | Texto avulso | redator |
    | Medium | implementador, verificador, revisor e agente genérico apto a Git; corretor ou redator nas correções |
    | init | agente genérico apto a Git |

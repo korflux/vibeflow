@@ -4,39 +4,39 @@
 
 ## Contexto
 
-- Alvo: fase `phase-21-vibeflow-v2-lider-unico`, branch `v2`, diff `07466e6..790f887` (HEAD `790f887`).
+- Alvo: fase `phase-21-vibeflow-v2-lider-unico`, branch `v2`, diff `07466e6..b663295` (etapa 1 em `790f887`; etapa 2 em HEAD `b663295`, correção `task(R1,...,R12)`).
 - Cadeia: interview.md / spec.md (com a Revisão de escopo S1 a S9) / plan.md / analyze.md.
 - O que muda: as oito skills `vibe-*` com motores dão lugar a um pacote único só texto, `skills/vibeflow/` (SKILL.md do líder, referências por etapa, `disco.md`, `delegation.md`, templates de artefato, `templates/AGENTS.md` e 12 perfis). Docs, `AGENTS.md`, README, ESCOPO e manifestos passam a 10.0.0.
 
 ## Tipo de review
 
 - Tipo: final
-- Marco e justificativa: integração final; T1, T2 e T3 com caixa marcada e commit `task(T1,T2,T3)` (`790f887`).
+- Marco e justificativa: integração final; T1, T2 e T3 com caixa marcada e commit `task(T1,T2,T3)` (`790f887`); correção da rodada 1 em `task(R1,...,R12)` (`b663295`).
 - T* abertas fora do marco: nenhuma
-- Provas reaproveitadas: nenhuma; a regressão completa cobre as provas afetadas de T2 e T3.
-- Provas executadas: regressão completa do plan em HEAD `790f887`: `git diff --check 07466e6 790f887` (sem achado) e `git diff --check` na árvore (sem achado); P-REF sobre `skills/vibeflow/` (todos os paths `references/...` e `templates/...` citados existem, salvo placeholders `<...>`; nenhuma ocorrência de `/vibe-`, `vibe-<etapa>`, `scripts/`, `execution.json`, `--etapa` ou `-Etapa`); paths citados em `AGENTS.md`, `README.md` e `docs/` existem; os seis manifestos são JSON válido com somente `vibeflow` 10.0.0 onde há versão; `gitleaks detect --source . --redact --no-banner` (8.30.1): 83 commits, nenhum vazamento. Todos verdes.
+- Provas reaproveitadas: nenhuma; a regressão completa cobre as provas afetadas de T2, T3 e das correções.
+- Provas executadas: regressão completa do plan repetida em HEAD `b663295`, porque paths do pacote e dos docs mudaram desde `790f887`: `git diff --check 07466e6 b663295` (sem achado) e `git diff --check` na árvore (sem achado); P-REF sobre `skills/vibeflow/` (todos os paths `references/...` e `templates/...` citados existem, salvo placeholders `<...>`; nenhuma ocorrência de `/vibe-`, `vibe-<etapa>`, `scripts/`, `execution.json`, `--etapa` ou `-Etapa`); paths citados em `AGENTS.md`, `README.md` e `docs/` existem; os seis manifestos são JSON válido; `gitleaks detect --source . --redact --no-banner` (8.30.1): nenhum vazamento. Todos verdes.
 
 ## Cobertura da solicitação
 
-- Origem e limites: solicitação original e trilha em `interview.md`; revisão de escopo S1 a S9 do humano em `spec.md`; plan aprovado. C1, C2 e C6 dependem de uso real, fora desta phase por decisão registrada. A simulação de condução dos cenários (a) a (j) pedida pelo líder foi feita só com o pacote.
+- Origem e limites: solicitação original e trilha em `interview.md`; revisão de escopo S1 a S9 do humano em `spec.md`; plan aprovado. C1, C2 e C6 dependem de uso real, fora desta phase por decisão registrada. A simulação de condução dos cenários (a) a (j) pedida pelo líder foi feita só com o pacote. Limite de origem: os remédios de R3 (mensagem `task(medium): <resultado>` e base do diff) e R9 (argumento cuja primeira palavra não é etapa vira pedido, substituindo a recusa de F7) foram decididos pelo coordenador, não pelo humano; eles mudam contrato de Git e de entrada e precisam de ratificação humana explícita antes do Approve.
 
 | Item da solicitação e fonte (A*/C* quando houver) | Implementação | Evidência | Situação |
 |---|---|---|---|
 | Skill única `vibeflow` no lugar das oito `vibe-*`, sem aliases (interview, decisão 10, S8, A12) | `skills/vibeflow/`, manifestos, remoção de `vibe-*/`, `skills/vibe-*`, `docs/vibe-*`, `docs/tests/` | `git show --stat 790f887`; manifestos JSON; P-REF sem `vibe-*` | atendido |
 | Líder macro: briefing, planeja, delega, critica, reconhece, decide; sem microgerência nem distância (decisões 3 a 6, A7) | `SKILL.md` seções 5 e 6, `references/delegation.md` | leitura cruzada; cenários (c) e (d) | atendido |
 | Analyze e review nunca pelo coordenador (decisão 7, F4, A6) | `SKILL.md:10`, `references/analyze.md`, `references/review.md`, `delegation.md:16` | leitura cruzada | atendido |
-| Host sem subagentes degradado com aviso; perfis não carregados degradam (F8, A11) | `SKILL.md` seção 7 | cenários (a) e (i): ausência de perfil vira pergunta para init, não Modo B (R1) | parcial |
-| Rota proporcional; pedido pequeno sem cadeia nem `.vibeflow/` (decisão 2, F1, A2) | `SKILL.md` seção 2, `implement.md:12-14`, `review.md:9` | cenários (a) e (b): Express indefinido e contraditório (R2); medium sem commit nem review viável (R3) | parcial |
-| Init como etapa 0, legado migrado, recarga do host (F2, A3) | `references/init.md` | cenário (g): bloco da cadeia não é inserido; CLAUDE.md preservado reabre o init (R4) | parcial |
-| Phases antigas legíveis sem migração (S7, A13) | `disco.md:46-50`, `SKILL.md:61` | cenário (h): phase-20 `coordenacao-v1` não tem caixas e trava (R5) | parcial |
-| `plan.md` atualizado inclusive na interrupção; retomada pelo disco (F5, F6, A8, A9) | `SKILL.md` seção 6, `implement.md` passo 1 | cenário (f): commit na parada contradiz a implement (R6); subestados de retomada sem derivação escrita (R7) | parcial |
-| Papéis: redator grava artefatos de planejamento; finalizador só marca (decisão 4, S6) | `delegation.md:13-17` | `implement.md:13`, `implement.md:60`, `review.md:78` dão prosa ao finalizador (R8) | parcial |
-| `/vibeflow <etapa>` com allowlist e gates (F7, S5, A10) | `SKILL.md` seção 3; `ARQUITETURA.md:22` | cenário (j) ok; argumento fora da allowlist sem regra operacional (R9) | parcial |
+| Host sem subagentes degradado com aviso; perfis não carregados degradam (F8, A11) | `SKILL.md` seções 5 e 7, `delegation.md` Papéis e Host limitado, `implement.md:32` | etapa 2: cenários (a) e (i) refeitos; perfil ausente leva ao Modo B com aviso, sem forçar init em low (R1 fechado) | atendido |
+| Rota proporcional; pedido pequeno sem cadeia nem `.vibeflow/` (decisão 2, F1, A2) | `SKILL.md` seção 2, Express em `templates/AGENTS.md`, `implement.md` seção 8 | etapa 2: Express com casa única (R2 fechado); medium fecha até o push (R3 fechado, com limite de origem); retomada do medium interrompido cai em "classificar" (R13); `AGENTS.md` raiz sem delimitadores reabre o init neste repo (R15) | parcial |
+| Init como etapa 0, legado migrado, recarga do host (F2, A3) | `references/init.md` | etapa 2: bloco inserido sem delimitadores e legado mantido registrado (R4 fechado); efeito colateral no `AGENTS.md` raiz (R15) | parcial |
+| Phases antigas legíveis sem migração (S7, A13) | `disco.md:50`, `ANALISE.md`, `ARQUITETURA.md` seção 6 | etapa 2: phase-20 lida pelo commit `task(...)`; tabela de estado leva à re-review (R5 fechado) | atendido |
+| `plan.md` atualizado inclusive na interrupção; retomada pelo disco (F5, F6, A8, A9) | `SKILL.md` seção 6, `disco.md` tabela de estado | etapa 2: commit só com integração verde (R6 fechado); tabela estado → etapa (R7 fechado), com ordem que esconde o medium (R13) | parcial |
+| Papéis: redator grava artefatos de planejamento; finalizador só marca (decisão 4, S6) | `delegation.md:13-17`, `implement.md:13,60`, `review.md:78`, perfis do redator | etapa 2: prosa com o redator, finalizador só marca (R8 fechado) | atendido |
+| `/vibeflow <etapa>` com allowlist e gates (F7, S5, A10) | `SKILL.md` seção 3, `ARQUITETURA.md:22`, README, `AGENTS.md` | etapa 2: regra de entrada escrita e coerente nas casas (R9 fechado); decisão tomada pelo coordenador, pendente de ratificação humana | parcial |
 | Só texto, sem motores nem testes de código (S1, S9) | pacote só com `SKILL.md`, `references/`, `templates/` | `find skills -type f`; P-REF | atendido |
 | Rota em `# Rota:` no primeiro artefato (S3) | `disco.md:38`, templates de interview, spec e review | leitura cruzada | atendido |
 | Regras mecânicas escritas: `n`, slug, preservação, backup (S4) | `references/disco.md` | leitura | atendido |
 | Ondas por `Arquivos:` disjuntos, prova afetada, regressão na review, duas rodadas, confirmação final (S6, decisão 9) | `implement.md`, `plan.md` passo 1.3, `review.md` | cenário (d) | atendido |
-| Docs, `AGENTS.md`, README, ESCOPO e manifestos coerentes (plan T3) | `docs/vibeflow/`, `AGENTS.md`, `README.md`, `docs/ESCOPO.md` | paths existem; `ANALISE.md:62` e `ARQUITETURA.md:22` divergem do pacote (R5, R9); `AGENTS.md:33` (R2) | parcial |
+| Docs, `AGENTS.md`, README, ESCOPO e manifestos coerentes (plan T3) | `docs/vibeflow/`, `AGENTS.md`, `README.md`, `docs/ESCOPO.md` | etapa 2: paths existem; divergências de R2, R5 e R9 resolvidas; `AGENTS.md` raiz sem o bloco delimitado (R15) | parcial |
 | `execution.json` desde a interview (interview decisão 3 e 5, A5) | removido | S2: "Não existe `execution.json` nem relatório operacional na V2" | retirado explicitamente pelo humano |
 | Motores únicos e paridade (C3, C4, C5) | removidos | S1, coluna Substitui | retirado explicitamente pelo humano |
 | Rota max real sem perda, líder fora do micro, eficiência percebida (C1, C2, C6) | fora desta phase | S9 e plan Overview aprovado: evidência na primeira phase real com `/vibeflow` | retirado explicitamente pelo humano desta phase |
@@ -54,17 +54,22 @@
 - [x] R7: **Required** - `skills/vibeflow/references/disco.md:41` - Sem o motor, a derivação "estado do disco → etapa atual" não está escrita. `SKILL.md:19-21` lista o que ler e `disco.md:41-46` define etapa e T* concluídas, mas não há regra para os subestados da implementação e da review que a retomada encontra: plan aprovado com T* parcialmente concluídas e código não commitado na árvore; todas as T* concluídas sem `review.md`; `review.md` `request-changes` com todos os R* `[x]` (re-review); `review.md` `rascunho` com Approve proposto (aguarda confirmação); phase medium com só `review.md`. No cenário (f) o líder adivinharia a etapa, o que `SKILL.md:76` proíbe. - remédio: acrescentar em `disco.md` (Estado da phase) uma tabela curta estado → etapa e próximo responsável, cobrindo esses casos, e referenciá-la de `SKILL.md` seção 1. - prova: releitura do cenário (f) com cada subestado. - source: F6, S2, S5, A1, A9 - gap: missing - papel: redator
 - [x] R8: **Required** - `skills/vibeflow/references/implement.md:60` - R* sem `papel` com remédio em `plan.md`, `spec.md` ou `AGENTS.md` vai ao finalizador (também `review.md:78` e `templates/review.md:38`), e `implement.md:13` manda o finalizador acrescentar T* no plan. `delegation.md:17` só autoriza o finalizador a marcar status, aprovação, caixas, `[x]`, resumo curto e critérios; `delegation.md:13` tira `plan.md` e `spec.md` do redator durante a implementação. Um remédio como "declarar o path em `Arquivos:`" (exigido por `review.md:53`) ou uma T* nova fica sem dono autorizado, e o finalizador escreveria prosa contra a decisão 4 e a divisão de papéis pedida. - remédio: rotear prosa de `plan.md`, `spec.md` e `AGENTS.md` (fora de `## Decisões vigentes`) ao redator com `papel: redator`, com a exceção explícita em `delegation.md:13` e nos dois perfis do redator; manter o finalizador só nas marcações; ajustar `implement.md:13,60`, `review.md:78` e `templates/review.md:38`. - prova: releitura do roteamento de R* e do Express com phase ativa contra `delegation.md`. - source: decisão 4, S6 - gap: contradicts - papel: redator
 - [x] R9: **Required** - `docs/vibeflow/ARQUITETURA.md:22` - O contrato diz que argumento fora da allowlist é recusado com a allowlist nomeada, mas `SKILL.md` não tem essa regra nem diz como tratar `/vibeflow <texto livre>`, como "/vibeflow troque a cor do botão". O líder se contradiz entre recusar (ARQUITETURA, spec F7) e classificar o texto como pedido (description e seção 2). - remédio: colocar em `SKILL.md` seção 3 a regra de entrada (primeira palavra na allowlist seleciona a etapa; demais casos conforme a decisão do humano abaixo) e alinhar `ARQUITETURA.md:22`. - prova: releitura do cenário (j) e de `/vibeflow` com texto livre. - source: F7, A10 - gap: partial - papel: redator
+- [x] R13: **Required** - `skills/vibeflow/references/disco.md:53` - A tabela estado → etapa (correção de R7) manda usar "a primeira linha que se aplica" (`disco.md:49`), e a linha 53, "Sem phase aberta → classificar o pedido", vem antes da linha 54, "Commit `task(medium): ...` sem phase de review correspondente → review". Na rota medium não há phase até a review (`implement.md` seção 8, passo 4); portanto, num chat novo depois de uma interrupção entre o commit `task(medium)` e a review, a linha 53 sempre se aplica antes e o líder reclassifica em vez de abrir a review (cenários b e f). "Correspondente" também não está definido quando há vários `task(medium)` antigos no `git log`. - remédio: colocar a linha do medium antes de "Sem phase aberta" e defini-la de forma verificável (recomendação: o `task(medium): ...` mais recente do `git log` sem `review.md` com `# Rota: medium` criado depois dele); conferir a ordem das demais linhas contra a regra da primeira linha. - prova: releitura dos cenários (b) e (f) com interrupção logo após o commit `task(medium)`. - source: F6, A9, R7 - gap: contradicts - papel: redator
+- [x] R15: **Required** - `AGENTS.md:7` - A correção de R4 faz o init disparar, em rota com phase, quando o `AGENTS.md` não tem o bloco `VIBEFLOW:CADEIA` (`init.md:7`), e manda inserir aviso e bloco completo após o primeiro título (`init.md:24`). O `AGENTS.md` raiz deste repo, que conduz suas próprias phases com `/vibeflow`, tem a tabela de esforço (`AGENTS.md:7-15`) e um aviso de escopo diferente do template (`AGENTS.md:3`), sem delimitadores. A próxima phase medium ou acima aqui reabre o init e duplica tabela e aviso. - remédio: envolver em `AGENTS.md` raiz, com `<!-- VIBEFLOW:CADEIA start -->` e `<!-- VIBEFLOW:CADEIA end -->`, um bloco igual ao de `templates/AGENTS.md:5-23` e alinhar o aviso do topo ao do template, mantendo fora do bloco a prosa própria do repo. - prova: releitura do gatilho de `init.md:7` e do passo 2 contra o `AGENTS.md` raiz; `git diff --check`. - source: F2, A3, R4 - gap: contradicts - papel: redator
 
 ### Nit
 
 - [x] R10: **Nit** - `skills/vibeflow/references/plan.md:8` - A aprovação implícita por pedido direto tem quatro casas com redações diferentes: `SKILL.md:61` (artefato anterior completo e único pendente), `plan.md:8` (spec ou design, sem condição de completude; aprovaria os dois), `design.md:8` e `implement.md:18`. - remédio: manter a regra só em `SKILL.md:61` e fazer as referências apontarem para ela. - prova: releitura das quatro casas. - papel: redator
 - [x] R11: **Nit** - `AGENTS.md:73` - "Não commitar: `init-report.json`, `init-pending.json`, `*-report.json` e `*-pending.json`" descreve relatórios que a V2 não gera (S2, `ARQUITETURA.md:55`). - remédio: remover a linha ou reescrevê-la como regra histórica das phases v1. - prova: `git diff --check` e releitura da seção Git. - papel: redator
 - [x] R12: **Nit** - `skills/vibeflow/references/review.md:61` - "Árvore suja em path de código ou teste" bloqueia a regressão, e `review.md:62` define código como todo path fora de `.vibeflow/`; um registro novo em `.erros-encontrados/`, exigido pelas regras do projeto, bloquearia a review, enquanto `review.md:53` o trata como Nota. Nesta review, `.erros-encontrados/2026-10-14-init-ps1-symlink-encadeado-hash-mismatch.md` estava não rastreado e não é input de nenhuma prova. - remédio: excluir `.erros-encontrados/` de "path de código ou teste" em `review.md:62`, como em `review.md:53`. - prova: releitura do passo 4 contra o passo 3.1. - papel: redator
+- [x] R14: **Nit** - `skills/vibeflow/SKILL.md:91` - A tabela de perfis exige só o implementador em low, mas low com phase ativa usa o redator para a T* e depois segue as seções 1 a 3 da implement, com verificador e finalizador (`SKILL.md:43`, `implement.md:13`). Sem esses perfis, a precedência de `SKILL.md` seção 5 não leva ao Modo B, porque eles não constam como exigidos. - remédio: separar na tabela "Low sem phase (Express): implementador" e "Low com phase ativa: implementador, redator, verificador e agente genérico apto a Git". - prova: releitura do cenário low com phase ativa contra a precedência. - papel: redator
 
 ## Notas
 
 - Severidade: o líder pediu Critical, Important e Suggestion; esta review usa as seções do template (Critical, Required, Nit). Required corresponde a Important e Nit a Suggestion. Não houve Critical.
-- Organização: `SKILL.md` (100 linhas) segue o corpo do AGENTS.md §7; as oito referências de etapa têm o mesmo esqueleto (Entrada, Quem faz, Passos, Saída, Fechar); nenhuma referência órfã ou faltante; `disco.md` concentra as regras mecânicas.
+- Etapa 2: os R1 a R12 foram conferidos no estado `b663295` e estão resolvidos no texto; os `[x]` são do finalizador. O commit `task(R1,...,R12)` tem exatamente os IDs marcados desde a etapa 1, e todos os paths alterados estão nos `Arquivos:` de T2 e T3 ou na pasta da phase.
+- Medium: o brief só existe no chat e na mensagem do commit `task(medium)`; o revisor deve registrá-lo na matriz da primeira etapa do `review.md` para que re-reviews o encontrem.
+- Organização: `SKILL.md` (118 linhas na etapa 2) segue o corpo do AGENTS.md §7; as oito referências de etapa têm o mesmo esqueleto (Entrada, Quem faz, Passos, Saída, Fechar); nenhuma referência órfã ou faltante; `disco.md` concentra as regras mecânicas.
 - Os perfis carregados neste host ainda são os da v1 (citam `vibe-review` e `coordenacao-v1`); o uso real da V2 aqui exige reinstalar os perfis e recarregar o host.
 - `.erros-encontrados/` guarda registros sobre motores e testes da v1 já removidos; não são path desta phase.
 
@@ -101,6 +106,20 @@ implement
 - Cobertura: matriz criada; 9 itens parciais
 - Abriu: R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12
 - Fechou: nenhum
+- Veredito desta etapa: Request changes
+
+### Etapa 2 - re-review - correção task(R1,...,R12), diff 790f887..b663295, regressão completa, cenários afetados
+
+- Tipo: final
+- Marco e justificativa: integração final com a rodada 1 de correção
+- T* abertas fora do marco: nenhuma
+- Provas reaproveitadas: nenhuma
+- Provas executadas: regressão completa do plan em HEAD `b663295` (P-DIFF `07466e6..b663295` e árvore, P-REF, paths de docs, JSON dos manifestos, gitleaks 8.30.1), todas verdes
+- Execução: commit `task(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12)` (`b663295`, pai `790f887`), cujos IDs são exatamente os R* marcados `[x]`; paths alterados dentro de `skills/vibeflow/`, `docs/vibeflow/`, `AGENTS.md`, `README.md` e da pasta da phase; sem `Co-Authored-By`
+- Leu: diff `790f887..b663295` inteiro; `SKILL.md`, `disco.md`, `delegation.md`, `implement.md`, `review.md`, `init.md`, `templates/AGENTS.md`, `templates/review.md`, perfis do implementador e do redator, `ARQUITETURA.md`, `ANALISE.md`, `README.md`, `AGENTS.md`; cenários refeitos onde o comportamento mudou: (a), (b), (f), (g), (h), (i), (j)
+- Cobertura: R1 a R12 fechados; F8, S7 e decisão 4 passam a atendido; rota proporcional, init, retomada e docs seguem parciais por R13 e R15; entrada com allowlist segue parcial até a ratificação humana de R9 (e R3)
+- Abriu: R13, R14, R15
+- Fechou: R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12
 - Veredito desta etapa: Request changes
 
 <!-- etapa seguinte: copie ### Etapa N abaixo. Não apague as anteriores. -->

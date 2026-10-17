@@ -50,19 +50,20 @@ Leia a etapa atual na primeira linha da tabela que se aplica:
 
 | Estado no disco | Etapa atual | Próximo responsável |
 |---|---|---|
+| Commit `task(medium): ...` mais recente no `git log` sem `review.md` com `# Rota: medium` criado depois dele (`review.md` não commitado conta pela existência; commitado, pela ordem no `git log`) | review da entrega medium | Revisor |
+| Última phase fechada com commits à frente do upstream (`git status -sb`) | Conferir push pendente ou residual da finalização | Finalizador, com a confirmação humana já dada |
 | Sem phase aberta | Classificar o pedido (`SKILL.md`, seção 2) | Líder |
-| Commit `task(medium): ...` sem phase de review correspondente | review da rota medium | Revisor |
 | Etapa de planejamento exigida pela rota sem artefato | Essa etapa | Líder conduz; redator grava (revisor no analyze) |
-| Artefato de planejamento em `rascunho` | Essa etapa, aguardando ajuste ou aprovação | Líder apresenta ao humano |
 | `analyze.md` com veredito `bloqueado` | analyze, correção dos achados | Dono do artefato; revisor reconfere |
+| Artefato de planejamento em `rascunho` | Essa etapa, aguardando ajuste ou aprovação | Líder apresenta ao humano |
 | Plan liberado pelo gate, T* abertas e nenhuma pronta ou em andamento | implement, implementar por ondas | Líder monta a onda |
 | T* em andamento ou código não commitado nos `Arquivos:` de T* abertas | implement, retomar a onda | Verificador confere o diff e a prova afetada existentes; falha vai ao corretor; código válido não é refeito |
 | Todas as T* prontas, caixas vazias, sem commit | implement, validar e commitar | Verificador reaproveita prova de inputs inalterados; finalizador commita |
 | Todas as T* concluídas com commit e sem `review.md` | review | Revisor |
 | `review.md` com R* aberto `- [ ]` | implement, corrigir | Corretor ou redator, pelo `papel:` |
+| `review.md` em `request-changes` com todos os R* `[x]` e sem commit `task(Rn,...)` | implement, commitar a correção | Finalizador commita se a prova da correção está verde; senão, diagnóstico pelo verificador |
 | `review.md` em `request-changes` com todos os R* `[x]` e commit `task(Rn,...)` | review, re-review | Revisor |
 | `review.md` em `rascunho` com Approve proposto e nenhum R* aberto | implement, confirmar | Líder pede a confirmação única |
-| `review.md` aprovado e nenhum R* aberto | Phase fechada; confira `git status -sb` e commits à frente do upstream | Finalizador, só se houver residual ou push pendente |
 
 ## Phases da v1
 
