@@ -7,8 +7,9 @@
 ```text
 AGENTS.md                                 fonte única de regras do projeto
 .agents/rules/vibeflow.md                 ponte Antigravity, conteúdo exato "@../../AGENTS.md"
-.claude/agents/<papel>.md                 perfis de subagente Claude
-.codex/agents/<papel>.toml                perfis de subagente Codex
+~/.claude/agents/<papel>.md               perfis globais de subagente Claude, instalados pelo init
+~/.codex/agents/<papel>.toml              perfis globais de subagente Codex, instalados pelo init
+.claude/agents/ e .codex/agents/          perfis de projeto opcionais, que prevalecem sobre os globais
 .vibeflow/phases/.gitkeep
 .vibeflow/phases/phase-<n>-<slug>/        uma pasta por pedido
 .vibeflow/mvp/                            baseline único de projeto novo
@@ -91,6 +92,7 @@ Leia a etapa atual na primeira linha da tabela que se aplica:
 Antes de substituir ou remover `AGENTS.md`, a ponte ou um perfil:
 
 1. Se o arquivo está commitado sem alteração local, o commit é o backup. Senão, copie para `.vibeflow/old/` com o mesmo nome (a ponte vira `antigravity-vibeflow.md`).
+   Perfil global substituído por decisão humana recebe a cópia em `~/.vibeflow/old/`, com o mesmo nome e as mesmas conferências.
 2. Confira tamanho e SHA-256 da cópia contra o original; divergência apaga a cópia e interrompe a substituição.
 3. Destino em `old/` com o mesmo conteúdo é reutilizado; com conteúdo diferente, acrescente o sufixo UTC `.<AAAAMMDDTHHMMSSZ>`.
 4. Só então substitua ou remova o original.

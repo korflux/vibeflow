@@ -69,7 +69,7 @@ O Codex mantém regras globais em `~/.codex/AGENTS.md` ou `~/.codex/AGENTS.overr
 
 A skill também entra sozinha quando o pedido é de software: código, correção de bug, ajuste de UI, funcionalidade nova, especificação, plano, revisão ou governança para agentes.
 
-Primeira vez num repo: a etapa `init` roda antes da primeira rota com phase. Ela grava `AGENTS.md`, a ponte `.agents/rules/vibeflow.md` e seis perfis de subagente (explorador, implementador, redator, verificador, corretor e revisor) em `.codex/agents/` e `.claude/agents/`, guarda cópia conferida de arquivo substituído em `.vibeflow/old/` e cria um commit local. Um `CLAUDE.md` existente não é removido. Quando os perfis mudam, recarregue o host antes de continuar.
+Primeira vez num repo: a etapa `init` roda antes da primeira rota com phase. Ela grava `AGENTS.md`, a ponte `.agents/rules/vibeflow.md` e guarda cópia conferida de arquivo substituído em `.vibeflow/old/`, com um commit local. Na primeira vez na máquina, instala também os seis perfis de subagente (explorador, implementador, redator, verificador, corretor e revisor) em nível global, em `~/.claude/agents/` e `~/.codex/agents/`; perfil customizado nunca é sobrescrito sem a sua decisão, e um perfil no projeto prevalece sobre o global. Um `CLAUDE.md` existente não é removido. Quando os perfis mudam, recarregue o host antes de continuar.
 
 A rota é proporcional ao pedido. Uma troca de cor é delegada e fechada sem criar `.vibeflow/`; um pedido que toca auth, pagamento ou produção percorre interview, spec, plan, analyze, implement e review. A tabela de rotas fica no `AGENTS.md` que a etapa `init` grava no projeto, a partir de [`skills/vibeflow/templates/AGENTS.md`](skills/vibeflow/templates/AGENTS.md).
 
