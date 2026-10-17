@@ -1,6 +1,6 @@
 # Review: init instala os perfis de subagente em nível global
 # Alvo: phase-2-init-perfis-globais
-# Status: request-changes
+# Status: aprovado
 # Rota: medium
 
 ## Contexto
@@ -20,8 +20,8 @@
 | Uma vez por máquina; nos projetos, só confere (brief) | `init.md:3`, `init.md:8` (lê os globais), tabela `init.md:31-35` (idêntico: mantém), `init.md:48` (sem recarga quando idênticos) | leitura do diff; a run em máquina nova com repo já inicializado gera init sem path no repo e não tem regra de commit vazio (R3) | atendido |
 | Perfil de projeto, se existir, continua prevalecendo (brief) | `init.md:39`; `disco.md:12`; `README.md:72` | leitura do diff; o init não cria nem remove perfil de projeto | atendido |
 | Não sobrescrever customização do usuário fora do repo (foco do líder) | `init.md:35-37`: conflito nunca é sobrescrito sem decisão humana | leitura do diff | atendido |
-| Backup do perfil global em `~/.vibeflow/old/` (foco do líder) | `disco.md:95`, `init.md:37` | leitura do diff; o invariante de `AGENTS.md:42` ainda diz `.vibeflow/old/` para perfil (R1); a tabela Paths de `disco.md` não lista `~/.vibeflow/old/` (R2) | parcial |
-| Compatibilidade Windows (foco do líder) | `init.md:8`: `~` é `%USERPROFILE%` no Windows | leitura do diff; `CODEX_HOME` e `CLAUDE_CONFIG_DIR` não considerados (R4) | parcial |
+| Backup do perfil global em `~/.vibeflow/old/` (foco do líder) | `disco.md:95`, `init.md:37` | leitura do diff; o invariante de `AGENTS.md:42` ainda diz `.vibeflow/old/` para perfil (R1); a tabela Paths de `disco.md` não lista `~/.vibeflow/old/` (R2); corrigidos em `4f3adc3` (`AGENTS.md:42`, `disco.md:13`) | atendido |
+| Compatibilidade Windows (foco do líder) | `init.md:8`: `~` é `%USERPROFILE%` no Windows | leitura do diff; `CODEX_HOME` e `CLAUDE_CONFIG_DIR` não considerados (R4); corrigido em `4f3adc3` (`init.md:9`, `disco.md:12`) | atendido |
 | Commit do init exclui os perfis globais (coerência) | `init.md:40` | leitura do diff | atendido |
 | Recarga do host e conferência dos perfis carregados (coerência com `SKILL.md`, seção 5, e Modo B) | `init.md:48`; `SKILL.md:88`, `SKILL.md:100`, `references/delegation.md:7`, `references/implement.md:53` | leitura cruzada: perfil ausente segue para Modo B com sugestão de `/vibeflow init` e recarga, coerente com a instalação global | atendido |
 | Nenhum ponto manda o init criar perfil no projeto nem proíbe configuração global de forma contraditória (foco do líder) | `init.md:39` restringe a proibição a "fora dos perfis do VibeFlow" | `grep` por `agents/`, `perfil`, `global` em `skills/`, `README.md` e `AGENTS.md`: nenhuma instrução residual de cópia para o projeto; único resíduo é o invariante de backup (R1) | atendido |
@@ -46,14 +46,14 @@
 
 ## Veredito vigente
 
-- [ ] **Approve**: origem suficiente, obrigações atendidas ou retiradas explicitamente pelo humano e nenhum R* de correção em `[ ]`
-- [x] **Request changes**: há R* de correção em `[ ]`
+- [x] **Approve**: origem suficiente, obrigações atendidas ou retiradas explicitamente pelo humano e nenhum R* de correção em `[ ]`
+- [ ] **Request changes**: há R* de correção em `[ ]`
 
 ## Handoff
 
 implement | finalização Git da phase
 
-- [ ] Aprovação humana (leu o arquivo e confirmou)
+- [x] Aprovação humana (leu o arquivo e confirmou)
 
 - Chat: no Modo A, esta review roda em revisor de contexto limpo, a pedido do líder; sem subagentes, roda num chat novo com `/vibeflow review`. As correções seguem pela etapa implement, com corretor ou redator conforme o `papel` de cada R*; sem subagentes, num chat novo com `/vibeflow implement`. Após Approve e confirmação humana, o handoff é a finalização Git da phase. O `review.md` vivo e o diff são a ponte.
 
@@ -75,3 +75,14 @@ implement | finalização Git da phase
 - Abriu: R1, R2, R3, R4
 - Fechou: nenhum
 - Veredito desta etapa: Request changes
+
+### Etapa 2 - re-review - commit `4f3adc3` contra R1 a R4
+
+- Provas reaproveitadas: nenhuma
+- Provas executadas: regressão completa de `AGENTS.md` (Comandos do projeto) em `HEAD` `4f3adc3`, árvore limpa: revisão de consistência de `AGENTS.md`, `skills/vibeflow/references/init.md` e `skills/vibeflow/references/disco.md` (paths do repo citados existem; nenhuma citação à v1); `node --test`: 26/26 verdes; `git diff --check f759050^..HEAD` e `git diff --check`: sem achado; `gitleaks detect --source . --redact --no-banner`: no leaks found
+- Execução: o commit `task(phase-2:R1,R2,R3,R4): ...` existe e seus IDs são exatamente os R* marcados `[x]` desde a Etapa 1; paths do commit restritos aos remédios (`AGENTS.md`, `init.md`, `disco.md`) e a este `review.md`. R1: `AGENTS.md:42` separa `.vibeflow/old/` (AGENTS.md e ponte) de `~/.vibeflow/old/` (perfil global), coerente com `disco.md:97` e `init.md:38`. R2: `disco.md:13` lista `~/.vibeflow/old/`. R3: `init.md:41` cobre o init sem path no repositório, sem commit vazio e com `hash: nenhum`. R4: `init.md:9` define a pasta do host por `CLAUDE_CONFIG_DIR`/`CODEX_HOME` com padrão `~/.claude`/`~/.codex`, e `disco.md:12` aponta para essa regra. Limite registrado pelo redator (passo 5 sem nova referência à Entrada): basta, porque `init.md:9` declara que os passos abaixo escrevem `~/.claude/agents/` e `~/.codex/agents/` seguindo a regra da pasta do host; repetir no passo 5 duplicaria o fato. `README.md:72` mantém os paths padrão, texto de uso para o humano, sem contradição com a regra
+- Leu: diff `f759050..HEAD`; `AGENTS.md:38-43`; `init.md` inteiro; `disco.md` Paths e Backup
+- Cobertura: backup e Windows passam de parcial para atendido
+- Abriu: nenhum
+- Fechou: R1, R2, R3, R4
+- Veredito desta etapa: Approve final
