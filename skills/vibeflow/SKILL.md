@@ -12,7 +12,7 @@ Não inicie a próxima etapa sem autorização explícita do humano, como "pode 
 
 ## 1. Abrir
 
-Leia o disco nesta ordem, só o necessário para saber o estado:
+Com Node 18+ no host, rode na raiz `node <pasta desta skill>/scripts/estado.mjs --json` e use o resultado: ele aplica a tabela de estados de `references/disco.md` e o progresso da seção 9. Inconsistência relatada vai a diagnóstico. Divergência entre o script e a prosa: vale a prosa, e o líder relata ao humano. Sem Node, ou para conferir, leia o disco nesta ordem, só o necessário para saber o estado:
 
 1. `AGENTS.md` na raiz: regras do projeto e tabela de esforço. Em rota com phase (medium ou acima, e MVP), falta de `.vibeflow/`, de `AGENTS.md` ou do bloco da cadeia leva ao init antes da etapa (condições na Entrada de `references/init.md`); low nunca passa pelo init.
 2. `.vibeflow/`: ausente significa repositório sem init.
@@ -134,7 +134,7 @@ O humano nunca fica no escuro. Informe o progresso da phase em uma linha:
 progresso: 62% · etapa: implement · T* 3/6 concluídas · agora: onda 2 (T4, T5) com o implementador
 ```
 
-Calcule pelo disco, com ferramenta, nunca por estimativa, e arredonde para baixo:
+Calcule pelo disco, com ferramenta, nunca por estimativa, e arredonde para baixo; o campo `progresso` de `scripts/estado.mjs` já aplica esta regra:
 
 - As etapas são as da rota gravada em `# Rota:`; o design só conta com UI nova.
 - Cada etapa vale uma parte igual. Etapa concluída (`references/disco.md`, Estado da phase) conta inteira; a review só conta com a phase fechada; etapa de planejamento em andamento conta zero.

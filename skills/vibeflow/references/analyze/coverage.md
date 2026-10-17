@@ -48,7 +48,7 @@ Aplique a todo plan.
 | Sobreposição | `Arquivos:` sobrepostos entre T* sem `Deps` entre si, quando a ordem de escrita importa | HIGH |
 | Prontidão técnica | Requisito das provas sem local (local, CI ou host) ou sem destino (`ok`, `ação em Tn`, `pergunta ao humano`, `bloqueio`) | HIGH |
 
-Formato, sobreposição e paths incomparáveis de `Arquivos:` seguem `references/plan.md`. Só a primeira linha do campo conta; confira a sobreposição pelos paths completos, porque path perdido numa segunda linha pode esconder uma sobreposição HIGH.
+Formato, sobreposição e paths incomparáveis de `Arquivos:` seguem `references/plan.md`; com Node, `scripts/ondas.mjs` lista as sobreposições sem `Deps`, as T* que rodam sozinhas e as `Deps` quebradas. Só a primeira linha do campo conta; confira a sobreposição pelos paths completos, porque path perdido numa segunda linha pode esconder uma sobreposição HIGH.
 
 Prova afetada restrita ao recorte: testes do módulo ou da skill tocada e dos consumidores diretos, E2E só do cenário cuja entrada mudou, evidência visual quando houver `Visual: necessária`. Comando compartilhado definido uma vez na prontidão e referenciado pelo nome é válido. Em T* só de prosa, vale a suíte do consumidor contratual ou uma checagem mecânica; teste de presença de palavras nunca vale.
 

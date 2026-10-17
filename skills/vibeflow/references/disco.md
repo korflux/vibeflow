@@ -72,9 +72,9 @@ Leia a etapa atual na primeira linha da tabela que se aplica:
 | Nenhuma phase aberta e algum alvo fechado (phase ou MVP) está com push pendente (o último commit dela não está no upstream ou o branch não tem upstream), salvo se o `review.md` dela registra push adiado pelo humano e nenhum commit da phase é posterior ao `chore(<alvo>): push adiado` | Push pendente dessa phase, pelo procedimento de retomada de `references/review.md` (Finalizar) | Finalizador, com a confirmação humana |
 | Alteração não commitada fora de `.vibeflow/` sem dono no disco: fora dos `Arquivos:` de T* abertas, de T* aberta sem `Arquivos:` e dos paths de R* abertos ou marcados `[x]` ainda sem commit | Entrega Express ou medium interrompida, ou trabalho alheio | Líder pergunta ao humano, com recomendação, se retoma a entrega ou isola o trabalho |
 | Sem phase aberta | Classificar o pedido (`SKILL.md`, seção 2) | Líder |
-| Etapa de planejamento exigida pela rota sem artefato | Essa etapa | Líder conduz; redator grava (revisor no analyze) |
-| `analyze.md` com veredito `bloqueado` | analyze, correção dos achados | Dono do artefato; revisor reconfere |
-| Artefato de planejamento em `rascunho` | Essa etapa, aguardando ajuste ou aprovação | Líder apresenta ao humano |
+| Primeira etapa de planejamento da rota ainda não concluída, sem artefato | Essa etapa | Líder conduz; redator grava (revisor no analyze) |
+| Primeira etapa de planejamento ainda não concluída é o analyze, com veredito `bloqueado` | analyze, correção dos achados | Dono do artefato; revisor reconfere |
+| Primeira etapa de planejamento ainda não concluída, em `rascunho` | Essa etapa, aguardando ajuste ou aprovação | Líder apresenta ao humano |
 | T* `em andamento` ou código não commitado nos `Arquivos:` de T* abertas | implement, retomar a onda | Verificador confere o diff e a prova afetada existentes; falha vai ao corretor; código válido não é refeito |
 | T* `pronta` sem commit e nenhuma `em andamento` | implement, validar e commitar a onda | Verificador reaproveita prova de inputs inalterados; finalizador commita |
 | Plan liberado pelo gate e T* `pendente` elegível | implement, implementar a próxima onda | Líder monta a onda |

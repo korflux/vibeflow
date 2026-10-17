@@ -56,7 +56,7 @@ Antes da primeira onda, confira nas ferramentas do host os perfis exigidos pela 
 
 ### 1. Implementar por ondas
 
-1. Liste as T* elegíveis: `Estado: pendente` e todas as `Deps` concluídas.
+1. Liste as T* elegíveis: `Estado: pendente` e todas as `Deps` concluídas. Com Node, `node <pasta da skill>/scripts/ondas.mjs --json` devolve as elegíveis e a onda dos passos 1 e 2.
 2. Monte a onda percorrendo as elegíveis em ordem numérica e incluindo cada T* cujos `Arquivos:` não se sobrepõem aos das já incluídas, pelas regras de `references/plan.md`. T* sem `Arquivos:` comparáveis roda sozinha: só entra quando a onda está vazia e a encerra.
 3. O finalizador marca `Estado: em andamento` nas T* da onda. Despache todas elas numa única rodada, em chamadas paralelas, cada responsável com ownership exclusivo dos `Arquivos:` da sua T*. T* que precise de path fora do recorte volta ao líder antes de editar e é serializada.
 4. Enquanto a onda trabalha, o explorador prepara em leitura as T* que ela libera.

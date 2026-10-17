@@ -8,7 +8,7 @@ Skill única `vibeflow`, com um coordenador-líder que conduz o trabalho de agen
 
 O vibeflow é uma skill para quem programa com agentes (Grok Build, Claude Code, Codex, OpenCode, Pi, Antigravity e qualquer cliente que leia `SKILL.md`). O líder conversa com você, entende o projeto, escolhe uma rota proporcional ao pedido, planeja e delega a execução a subagentes: redação de artefatos, código, testes, provas e Git. Ajustes pontuais, como trocar um valor ou destravar um commit, o líder faz direto, porque delegar custaria mais. Analyze e review são sempre feitos por um revisor de contexto limpo. O pedido vira trilha no disco, não recap no chat.
 
-O pacote é só texto: `SKILL.md`, referências por etapa e templates, sem scripts. No repo do consumidor, o trabalho vive em disco:
+O pacote é `SKILL.md`, referências por etapa, templates e dois scripts de leitura em Node (`estado` e `ondas`), sem dependências. No repo do consumidor, o trabalho vive em disco:
 
 ```text
 AGENTS.md                                  fonte única de regras do projeto
@@ -77,6 +77,18 @@ Por padrão, um único chat conduz a rota inteira. Em host de contexto curto, us
 
 Durante a phase, o líder informa o progresso em percentual, calculado pelas etapas e T* concluídas no disco, a cada etapa, onda e commit.
 
+### Scripts de leitura
+
+Com Node 18 ou superior, o líder usa dois scripts da pasta `scripts/` da skill, na raiz do repo. Eles só leem o disco e o Git, nunca escrevem nem fazem commit, e funcionam em Windows e Linux. Sem Node, a skill segue as regras escritas.
+
+```text
+node <pasta da skill>/scripts/estado.mjs [--alvo phase-N|mvp] [--json]
+node <pasta da skill>/scripts/ondas.mjs  [--alvo phase-N|mvp] [--plan <caminho>] [--json]
+```
+
+- `estado`: alvo padrão, rota, status dos artefatos, etapa atual pela tabela de estados, progresso, R* abertos, push pendente, inconsistências e o número da próxima phase.
+- `ondas`: T* elegíveis, a próxima onda pelas regras de `Arquivos:`, T* que rodam sozinhas, sobreposições sem `Deps` e `Deps` quebradas.
+
 Aprovar a review, publicar decisões vigentes e fazer push sempre exigem a sua confirmação.
 
 ## Estrutura do repositório
@@ -92,7 +104,7 @@ vibeflow/
 ## Como contribuir
 
 1. Contrato antes de prosa: mudança de disco começa em `skills/vibeflow/references/disco.md`.
-2. O pacote é só texto. Não adicione scripts nem testes de presença de texto.
+2. Scripts só leem, usam Node 18+ sem dependências e têm teste em `tests/scripts/` (`node --test`). Não adicione testes de presença de texto.
 3. Antes do push, rode a revisão de consistência e a varredura de segredos descritas em `AGENTS.md`. O repositório não usa CI no GitHub, por decisão de custo.
 4. `AGENTS.md` é a única fonte de regras do projeto. Artefatos só em `.vibeflow/phases/phase-N-slug/` ou no baseline `.vibeflow/mvp/`.
 

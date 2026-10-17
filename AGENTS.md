@@ -22,7 +22,7 @@ No Express, o implementador entrega com prova proporcional, sem init, `.vibeflow
 Um único chat conduz a phase por padrão. Em host de contexto curto, use dois: um para todo o planejamento (interview, spec, design, plan e analyze) e outro para a implementação (implement e review). Quando o contexto pesar ou o humano pedir para parar, o estado é gravado conforme a seção 6 do `SKILL.md` e o líder recomenda um chat novo. A retomada parte do disco: em chat novo, `/vibeflow` lê as linhas `# Status:`, as caixas e as linhas `Estado:` do `plan.md` e o Git e segue de onde parou. Sem subagentes, analyze e review pedem chat novo (`/vibeflow analyze`, `/vibeflow review`). Separar chats é recomendação, nunca gate.
 <!-- VIBEFLOW:CADEIA end -->
 
-A skill `vibeflow` é só texto: não tem código, scripts nem testes automatizados. A prova de uma mudança na skill é a revisão de consistência e o uso real.
+A skill `vibeflow` é texto mais scripts de leitura em `skills/vibeflow/scripts/`. A prova de uma mudança na prosa é a revisão de consistência e o uso real; a de um script é `node --test`.
 
 ## Projeto
 
@@ -31,7 +31,8 @@ Skill única `vibeflow`, conduzida por um coordenador-líder, para inicializar e
 ## Comandos do projeto
 
 - Este repositório não usa CI no GitHub, por decisão de custo. Não envie branch só para disparar CI. A regressão completa e a varredura de segredos rodam localmente antes do push.
-- Regressão completa local: revisão de consistência de todos os arquivos alterados. Todo path deste repo citado em `skills/vibeflow/`, `README.md` e `AGENTS.md` existe (paths do projeto consumidor, como `.agents/rules/`, `.claude/agents/`, `.codex/agents/` e `.vibeflow/mvp/`, ficam fora); nenhum arquivo cita a v1 do VibeFlow, scripts ou registro estruturado de execução; `git diff --check` não acusa achado.
+- Regressão completa local: revisão de consistência de todos os arquivos alterados. Todo path deste repo citado em `skills/vibeflow/`, `README.md` e `AGENTS.md` existe (paths do projeto consumidor, como `.agents/rules/`, `.claude/agents/`, `.codex/agents/` e `.vibeflow/mvp/`, ficam fora); nenhum arquivo cita a v1 do VibeFlow ou registro estruturado de execução; `node --test` passa; `git diff --check` não acusa achado.
+- Testes dos scripts: `node --test` na raiz (Node 18+), que descobre `tests/**/*.test.mjs`.
 - Varredura de segredos local: `gitleaks detect --source . --redact --no-banner`.
 
 ## Fluxos e invariantes
@@ -70,6 +71,7 @@ AGENTS.md                    fonte viva das regras
 .vibeflow/old/               backups do init, se houver
 .vibeflow/mvp/               contrato: baseline único de um projeto novo na rota max
 skills/vibeflow/             pacote canônico da skill, pasta real
+tests/scripts/               testes dos scripts, fora do pacote instalável
 plugin.json                  plugin Antigravity (raiz)
 README.md                    instalação e uso
 ```
@@ -85,6 +87,9 @@ skills/vibeflow/
   templates/<artefato>.md      esqueleto de cada artefato vivo
   templates/AGENTS.md          modelo de regras do projeto consumidor
   templates/agents/<host>/     perfis de subagente por host
+  scripts/_disco.mjs           leitura compartilhada do disco e do Git
+  scripts/estado.mjs           estado, etapa atual e progresso da phase
+  scripts/ondas.mjs            próxima onda e sobreposição de Arquivos:
 ```
 
 ### Adaptadores por host
@@ -100,7 +105,7 @@ Estas regras mantêm a skill única coerente a cada mudança. O contrato de disc
 ### 1. Pacote
 
 - Um único pacote instalável: `skills/vibeflow/`, pasta real, sem symlink.
-- Só texto: `SKILL.md`, `references/` e `templates/`. Sem scripts, código executável ou testes.
+- Texto (`SKILL.md`, `references/` e `templates/`) mais `scripts/`, nas regras da seção 4. Testes ficam em `tests/`, fora do pacote.
 - Install: `npx skills add korflux/vibeflow` (projeto ou `-g`) nos agentes `grok`, `claude-code`, `codex`, `antigravity`, ou o plugin Antigravity descrito no `README.md`.
 - Não criar segunda skill nem alias de comando. Etapa nova entra como referência da skill única.
 
@@ -143,11 +148,14 @@ Decisões transversais usam IDs estáveis por dimensão, como `AUTH-01`. Quando 
 
 A tabela de decisões vigentes só muda depois de implementação, review aprovada e confirmação humana. Nesse momento, a IA aplica patch mínimo em `AGENTS.md`. Nenhum analista publica decisão semântica sem essa confirmação.
 
-### 4. Sem código
+### 4. Scripts
 
-- A skill não tem scripts. Operação mecânica (`n`, slug, preservação, backup, gates) é regra escrita, aplicada pela IA e auditada no disco.
+- A prosa é o contrato. Script só acelera regra mecânica já escrita (estado, progresso, ondas) e aponta para a casa dela; divergência é bug do script.
+- Node 18+, módulos `.mjs`, somente módulos nativos, sem dependência nem build. Git chamado com argumentos em lista, sem shell; leitura tolerante a CRLF e BOM; caminhos por `node:path`; nunca cria symlink. Compatível com Windows e Linux.
+- Somente leitura: script não escreve artefato, não faz commit, push nem staging. Saída em texto e em `--json` com não-ASCII escapado; código 0 sem achado, 1 com achado, 2 em erro de uso.
+- Sem Node, o líder aplica a prosa como antes; o script nunca é pré-requisito de etapa.
+- Todo script tem teste de comportamento em `tests/scripts/` com `node:test`, montando cenário de disco temporário.
 - Backup de arquivo do usuário: commit que o contenha ou cópia em `.vibeflow/old/` com tamanho e hash conferidos, **só então** substituir.
-- Reintroduzir código executável na skill é decisão do humano e mudança de contrato.
 
 ### 5. Template
 
@@ -202,7 +210,7 @@ Vale para skill, docs, relatório em prosa e conversa neste repo.
 
 ### 8. Verificação
 
-- Não há testes automatizados. Não criar teste que confira presença de palavras, frases ou seções em `SKILL.md`, referências, templates ou documentação.
+- Testes automatizados existem só para os scripts. Não criar teste que confira presença de palavras, frases ou seções em `SKILL.md`, referências, templates ou documentação.
 - Toda mudança passa pela revisão de consistência dos Comandos do projeto e por review independente de qualidade da skill.
 - O uso real numa phase conduzida com `/vibeflow` é a evidência final de comportamento.
 
@@ -222,6 +230,6 @@ Não inverter: etapa sem contrato de disco vira path inventado.
 - Tratar a ponte `.agents/rules/vibeflow.md` como fonte editável.
 - Artefato da cadeia fora de `.vibeflow/phases/phase-N-slug/`.
 - Exceção única ao item anterior: baseline de projeto novo em `.vibeflow/mvp/`, uma vez por repositório e sempre na rota `max` completa.
-- Segunda skill instalável, alias de comando, scripts ou motores.
-- Código executável no pacote ou dependência nova sem o humano pedir.
+- Segunda skill instalável, alias de comando ou motor que conduz etapa no lugar do líder.
+- Script que escreve, opera Git ou usa dependência externa, sem o humano pedir.
 - Avançar para a próxima etapa sem autorização do humano, salvo o encadeamento implement, review e correções do `SKILL.md`. Se o humano autorizou explicitamente avançar, a IA deve avançar diretamente.
