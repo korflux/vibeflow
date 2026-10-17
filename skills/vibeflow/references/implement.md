@@ -9,23 +9,34 @@ Sem integração verde e commit real, nenhuma T* é concluída. Push e decisões
 
 | Situação | Como conduzir |
 |---|---|
-| Low sem phase aberta do mesmo assunto (Express, definido no `AGENTS.md` do projeto) | Ajuste direto do líder quando cabe nos limites do `SKILL.md`, seção 5, item 3; senão, brief curto ao implementador e prova proporcional (seção 9); com a prova verde, o finalizador faz staging explícito dos paths entregues e cria `task(express): <resultado>`, sem push, sem init, `.vibeflow/`, phase ou artefato |
-| Low com phase aberta do mesmo assunto | Tabela Low com phase aberta, abaixo |
+| Low sem phase de origem (Express, definido no `AGENTS.md` do projeto) | Ajuste direto do líder quando cabe nos limites do `SKILL.md`, seção 5, item 3; senão, brief curto ao implementador e prova proporcional (seção 9); com a prova verde, o finalizador faz staging explícito dos paths entregues e cria `task(express): <resultado>`, sem push, sem init, `.vibeflow/`, phase ou artefato |
+| Ajuste de uma phase ou do MVP | Ajuste de phase, abaixo |
 | Medium | Seção 8 |
 | Plan aprovado e perfis exigidos carregados | Modo A: seções 1 a 6 |
 | Sem subagentes, perfil exigido ausente ou humano pede uma T* por run | Modo B: seção 7 |
 
 O modo é decidido na run pela capacidade do host e pelo pedido do humano, sem marcador no plan. Plan em rascunho segue a aprovação implícita do `SKILL.md`, seção 3.
 
-Low com phase aberta do mesmo assunto entra pela etapa em que a phase está:
+### Ajuste de phase
 
-| Etapa da phase | Como o ajuste entra |
+Ajuste é o pedido low ou medium que corrige, completa ou alinha o que uma phase ou o MVP entregou ou está entregando, sem mudar decisão, banco, autenticação ou autorização da spec. Inclui corrigir um registro de `.erros-encontrados/` que caia nesse escopo. Ajuste volta à phase de origem, aberta ou fechada, e nunca abre phase nova; pedido high ou acima, ou que muda o que a spec decidiu, abre phase nova com substituição explícita. O líder identifica a origem pelo assunto e pelos paths e a anuncia em uma linha; na dúvida entre duas phases, pergunte.
+
+| Situação da phase de origem | Como o ajuste entra |
 |---|---|
 | Planejamento, antes do gate de implement | Vira insumo do artefato vivo da etapa, gravado pelo dono dela; nenhum código antes do plan |
 | Gate de implement satisfeito e sem `review.md` | O redator acrescenta ao `plan.md` uma T* curta com `Arquivos:` e `Prova afetada:`; o pedido do humano vale como aprovação dessa T*, sem novo analyze. A T* segue as seções 1 a 3; ajuste visual segue o `design.md` existente |
 | `review.md` aberto | O líder pede ao revisor que registre o ajuste como R* na etapa vigente, com `papel:`; segue a seção 5 |
+| Fechada | O líder acrescenta ao `review.md` uma etapa `### Ajuste N - <pedido>`, com o pedido e `Abriu: Rn`, e um R* de ajuste por item no grupo Required da Checklist de correções; segue a seção 5. Low: o `# Status: aprovado` é mantido e não há re-review; o finalizador marca o `[x]` somente no handoff do commit `task(<alvo>:Rn,...)`, que inclui o `review.md` da phase, os paths do R* e o registro apagado, e desfaz o `[x]` se o commit falhar. Medium: ao abrir a etapa, o finalizador muda o status para `request-changes` e desmarca o Approve do Veredito vigente e a Aprovação humana; o ajuste segue a seção 5, a re-review de ajuste (`references/review.md`) e a confirmação da seção 6 |
 
-Phase medium não tem plan: antes da review ela ainda não existe, e o pedido segue Express; com `review.md` aberto, vale a última linha.
+R* de ajuste, no grupo Required:
+
+```text
+- [ ] Rn: **Required** - `path` - <pedido do humano> - remédio: <o pedido> - prova: <Prova afetada derivada, seção 9> - source: <pedido humano | path do registro de .erros-encontrados/> - gap: missing - papel: <corretor | redator>
+```
+
+Entrega medium ainda sem `review.md`: antes do commit `task(medium): ...`, o ajuste entra no recorte da própria entrega; depois dele, o líder passa o ajuste ao revisor, que o registra como R* na review que abre a phase. Sem phase de origem, o ajuste low segue Express.
+
+Registro de `.erros-encontrados/`: a correção apaga o arquivo do registro no mesmo commit, e o Git guarda o histórico; esta é a casa da regra.
 
 ## Quem faz
 

@@ -22,8 +22,8 @@ Artefatos de uma phase ou do MVP, sempre com estes nomes: `interview.md`, `spec.
 - `n` é o maior número existente entre as pastas `phase-<n>-<slug>` mais um, comparado em ordem numérica (`phase-10` vem depois de `phase-9`). Sem phases, `n` é 1. Pastas fora do padrão `phase-<n>-<slug>` não contam.
 - Slug: frase curta da phase em minúsculas, sem acento, com `a-z`, `0-9` e hífen; hífens repetidos viram um e hífens das pontas saem; de 2 a 48 caracteres. Fora disso, escolha outro slug antes de criar.
 - O líder fixa o path do alvo (`n` e slug) no brief; quem grava o primeiro artefato cria a pasta.
-- Pasta que já existe não é recriada nem renomeada. Pedido novo vai para a próxima pasta.
-- O MVP usa `.vibeflow/mvp/` uma única vez por repositório. Baseline concluído não é sobrescrito, movido nem versionado; mudança posterior abre phase `max` com substituição explícita.
+- Pasta que já existe não é recriada nem renomeada. Pedido novo vai para a próxima pasta; ajuste volta à phase de origem (`references/implement.md`, Ajuste de phase).
+- O MVP usa `.vibeflow/mvp/` uma única vez por repositório. Baseline concluído não é sobrescrito, movido nem versionado; mudança posterior que altera decisão ou comportamento abre phase `max` com substituição explícita, e ajuste segue `references/implement.md` (Ajuste de phase).
 
 ## Escrever artefato
 
@@ -58,7 +58,7 @@ Os commits de uma phase são os que levam o seu `<alvo>` e, no medium, o `task(m
 ## Estado da phase
 
 - Phase ou MVP fechado: `review.md` com `# Status: aprovado` e nenhuma linha `- [ ] R<n>:` aberta. Os demais estão abertos.
-- Alvo padrão: a phase aberta de maior `n`; sem phase aberta, o MVP aberto. Outro alvo só quando o humano o nomeia.
+- Alvo padrão: a phase aberta de maior `n`; sem phase aberta, o MVP aberto. Outro alvo só quando o humano o nomeia ou quando o líder anuncia a phase de origem de um ajuste. Na retomada com mais de uma phase aberta, pergunte qual retomar, recomendando a de maior `n`.
 - Etapa concluída: artefato com `# Status: aprovado`; no `analyze.md`, também veredito `limpo` na seção `## Veredito`. Design sem UI nova conta como concluído quando o `plan.md` ou o Handoff da spec registra `Design: N/A` com motivo.
 - T* concluída: caixa `- [x] Tn concluída` no `plan.md`, confirmada por commit `task(<alvo>:...)` com o ID no `git log`. Caixa marcada sem commit, ou commit sem caixa, é inconsistência a diagnosticar antes de seguir.
 - Estado da fila: a linha `- **Estado:**` de cada T* no `plan.md`, escrita pelo finalizador, vale `pendente`, `em andamento`, `pronta` (prova afetada verde, ainda sem commit), `bloqueada` ou `concluída`, este marcado junto com a caixa no commit. O resumo curto fica na linha `- **Resumo:**`.
@@ -69,7 +69,7 @@ Leia a etapa atual na primeira linha da tabela que se aplica:
 | Estado no disco | Etapa atual | Próximo responsável |
 |---|---|---|
 | Commit `task(medium): ...` mais recente no `git log` sem `review.md` com `# Rota: medium` criado depois dele (`review.md` não commitado conta pela existência; commitado, pela ordem no `git log`) | review da entrega medium | Revisor |
-| Nenhuma phase aberta e o alvo fechado mais recente (phase de maior `n` ou MVP) está com push pendente (o último commit dela não está no upstream ou o branch não tem upstream), salvo se o `review.md` dela registra push adiado pelo humano | Push pendente dessa phase, pelo procedimento de retomada de `references/review.md` (Finalizar) | Finalizador, com a confirmação humana |
+| Nenhuma phase aberta e algum alvo fechado (phase ou MVP) está com push pendente (o último commit dela não está no upstream ou o branch não tem upstream), salvo se o `review.md` dela registra push adiado pelo humano e nenhum commit da phase é posterior ao `chore(<alvo>): push adiado` | Push pendente dessa phase, pelo procedimento de retomada de `references/review.md` (Finalizar) | Finalizador, com a confirmação humana |
 | Alteração não commitada fora de `.vibeflow/` sem dono no disco: fora dos `Arquivos:` de T* abertas, de T* aberta sem `Arquivos:` e dos paths de R* abertos ou marcados `[x]` ainda sem commit | Entrega Express ou medium interrompida, ou trabalho alheio | Líder pergunta ao humano, com recomendação, se retoma a entrega ou isola o trabalho |
 | Sem phase aberta | Classificar o pedido (`SKILL.md`, seção 2) | Líder |
 | Etapa de planejamento exigida pela rota sem artefato | Essa etapa | Líder conduz; redator grava (revisor no analyze) |

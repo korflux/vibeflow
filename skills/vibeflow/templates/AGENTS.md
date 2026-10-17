@@ -7,13 +7,13 @@
 |---|---|---|
 | N/A | init | primeira vez no repo, ou disco quebrado, de novo só para reparar |
 | low | implement | mudança simples de código de software sem comportamento novo, como cor, texto ou layout de página estática |
-| Express | implement, sem phase nem artefato | low sem phase aberta do mesmo assunto: mudança clara e localizada sem comportamento novo |
+| Express | implement, sem phase nem artefato | low sem phase de origem: mudança clara e localizada sem comportamento novo |
 | medium | implement → review | pedido claro e direto, com comportamento novo pequeno e sem regressão de backend, ou página visual cujo aceite dependa de validação renderizada |
 | high | spec → plan → implement → review | pedido claro de execução difícil, ou mudança que altera banco, painel admin ou cria risco de regressão de backend |
 | xhigh | interview → spec → plan → implement → review | pedido ambíguo, confiança baixa, intenção ou sucesso de software em aberto |
 | max | interview → spec → plan → analyze → implement → review | mudança que altera autenticação, autorização, pagamento, segredo, risco de perda de dados, produção, alto blast radius ou baseline MVP de software |
 
-No Express, o implementador entrega com prova proporcional, sem init, `.vibeflow/`, phase nem artefato. Saem do Express, seguindo a rota aplicável: comportamento, rota, interação, critério de aceite ou acessibilidade alterados, e mudanças que toquem privacidade, dado pessoal, consentimento, retenção, direitos, obrigação jurídica, autenticação, autorização, pagamento, segredo, persistência ou risco de perda de dados. Low com phase aberta do mesmo assunto entra pela etapa em que a phase está. Medium segue implement → review e abre a phase na review.
+No Express, o implementador entrega com prova proporcional, sem init, `.vibeflow/`, phase nem artefato. Saem do Express, seguindo a rota aplicável: comportamento, rota, interação, critério de aceite ou acessibilidade alterados, e mudanças que toquem privacidade, dado pessoal, consentimento, retenção, direitos, obrigação jurídica, autenticação, autorização, pagamento, segredo, persistência ou risco de perda de dados. Ajuste low ou medium ao que uma phase entregou ou está entregando, inclusive registro de `.erros-encontrados/`, volta à phase de origem, mesmo fechada, sem abrir phase nova. Medium segue implement → review e abre a phase na review.
 
 `/vibeflow` conduz todo o fluxo. `/vibeflow <etapa>` vai direto a `init`, `interview`, `spec`, `design`, `plan`, `analyze`, `implement` ou `review`, desde que o pré-requisito esteja satisfeito. Argumento cuja primeira palavra não é etapa é tratado como pedido e classificado. O design entra entre spec e plan somente com UI nova: tela ou decisão visual que o design system e as telas existentes não cobrem.
 
@@ -51,7 +51,7 @@ Um único chat conduz a phase por padrão. Em host de contexto curto, use dois: 
 - **Desenvolvimento Eficiente (YAGNI):** O melhor código é o mínimo necessário. Antes de escrever código novo, reutilizar o que já existe no projeto, na standard library ou recursos nativos da plataforma. Não criar abstrações para necessidades especulativas futuras.
 - **Causa Raiz:** Correção de bugs deve atuar na causa raiz e não no sintoma. Se o problema estiver em função compartilhada, corrigir no ponto de origem.
 - **Limitações Conhecidas:** Registrar limitações de soluções simplificadas com `ponytail: <limitação>, <quando será necessário melhorar>`.
-- **Erros Fora do Escopo:** Erro encontrado fora do recorte da tarefa nunca é corrigido por quem o encontrou, nem ignorado em silêncio. Registrar em `.erros-encontrados/`, um arquivo por erro, quando houver permissão de escrita, e reportar ao líder, ou ao humano quando não houver líder.
+- **Erros Fora do Escopo:** Erro encontrado fora do recorte da tarefa nunca é corrigido por quem o encontrou, nem ignorado em silêncio. Registrar em `.erros-encontrados/`, um arquivo por erro, quando houver permissão de escrita, e reportar ao líder, ou ao humano quando não houver líder. A correção do registro segue a skill `vibeflow`.
 - **Comunicação:** Ao explicar código, priorizar o que está acontecendo, o porquê e o impacto arquitetural, sem exigir domínio de sintaxe da linguagem.
 
 ## Segurança por Padrão

@@ -1,6 +1,6 @@
 # Etapa review
 
-O líder nunca escreve `review.md`. A review não edita código, teste nem lockfile. Pergunta aberta no arquivo é defeito. Correções acontecem na etapa implement; o Git só é finalizado depois do Approve e da confirmação humana. Decisões vigentes em `AGENTS.md` só mudam após Approve sem bloqueios e confirmação humana explícita.
+O líder nunca escreve `review.md`, salvo a etapa de ajuste de phase fechada e seus R*, no formato de `references/implement.md` (Ajuste de phase). A review não edita código, teste nem lockfile. Pergunta aberta no arquivo é defeito. Correções acontecem na etapa implement; o Git só é finalizado depois do Approve e da confirmação humana. Decisões vigentes em `AGENTS.md` só mudam após Approve sem bloqueios e confirmação humana explícita.
 
 ## Entrada
 
@@ -33,6 +33,7 @@ Sem subagentes, o líder grava o estado e instrui abrir chat novo com `/vibeflow
 |---|---|
 | T* abertas | Não faça review; devolva à etapa implement com a lista do que falta |
 | Todas as T* concluídas, ou entrega medium commitada | Review final da integração e dos riscos alterados |
+| Etapa `### Ajuste N` medium com os R* `[x]` e commit `task(<alvo>:Rn,...)` | Re-review de ajuste: só o diff desses commits, contra o pedido do ajuste, com a regressão da seção 4; segurança e banco só se o diff os tocar |
 | Intenção, sucesso ou fora frouxos | Devolva à interview ou à spec |
 | "Já corrige" | Grave o veredito primeiro; a correção segue pela etapa implement |
 | MVP sem cadeia max completa | Recuse e aponte a etapa ausente |
@@ -47,7 +48,7 @@ Barra de Approve: saúde do código e convenção do repo, sem bloquear gosto. E
 
 ### 3. Auditar o executado
 
-1. **Diff na união:** todo path alterado fora de `.vibeflow/` pelos commits da phase está na união dos `Arquivos:` das T* (regras de `references/plan.md`), ou no recorte do brief em medium, ou é path que o remédio de um R* desta review manda alterar; path fora abre R* Required com o remédio de declará-lo ou desfazê-lo. Arquivo novo em `.erros-encontrados/` vai para Notas.
+1. **Diff na união:** todo path alterado fora de `.vibeflow/` pelos commits da phase está na união dos `Arquivos:` das T* (regras de `references/plan.md`), ou no recorte do brief em medium, ou é path que o remédio de um R* desta review manda alterar, ou é o registro de `.erros-encontrados/` citado em `source:` de um R* de ajuste e apagado na correção; path fora abre R* Required com o remédio de declará-lo ou desfazê-lo. Arquivo novo em `.erros-encontrados/` vai para Notas.
 2. **Consumidor compartilhado:** para cada par de T* sem `Deps` entre si, confira que todo consumidor de contrato, componente ou texto que elas compartilham continua coerente com as mudanças de ambas; incoerência abre R* com o path do consumidor.
 3. **Commits:** cada T* com caixa marcada aparece num commit `task(<alvo>:...)` com seu ID e paths coerentes com seus `Arquivos:`. T* marcada sem código correspondente vira R* Critical `gap: missing`.
 4. **Cobertura por prova:** a evidência de cada A*/C* cita a `Prova afetada:` da T* que o declara ou a regressão completa; sem nenhuma das duas, a situação é `parcial`.
@@ -76,7 +77,7 @@ Finding: evidência (path), severidade, remédio nomeado e prova; sem evidência
 
 ### 6. Gravar
 
-O revisor cria o `review.md` a partir de `templates/review.md`, ou acrescenta `### Etapa N` ao vivo sem apagar etapas anteriores, e marca a proposta (`Approve` ou `Request changes`) no veredito vigente. Uma casa por fato; omita seção que a etapa não precisa (Execução e Cobertura sempre que houver plan e spec; Visual e Segurança só quando abertas). Status: `rascunho` enquanto o Approve aguarda confirmação; `request-changes` com R* bloqueante aberto; `aprovado` só na finalização.
+O revisor cria o `review.md` a partir de `templates/review.md`, ou acrescenta `### Etapa N` ao vivo sem apagar etapas anteriores, e marca a proposta (`Approve` ou `Request changes`) no veredito vigente. Uma casa por fato; omita seção que a etapa não precisa (Execução e Cobertura sempre que houver plan e spec; Visual e Segurança só quando abertas). Status: `rascunho` enquanto o Approve aguarda confirmação; `request-changes` com R* bloqueante aberto; `aprovado` só na finalização. O revisor propõe; o finalizador grava o `# Status:` correspondente no handoff do relatório.
 
 ## Saída
 

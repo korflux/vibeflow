@@ -3,7 +3,7 @@
 ## Entrada
 
 - Gate: nenhum. Em `xhigh`, `max` e MVP, a interview abre a phase (`references/disco.md`, Abrir phase ou MVP). Phase aberta do mesmo assunto é retomada no `interview.md` vivo.
-- MVP: MVP aberto é retomado no `interview.md` vivo; MVP fechado (`references/disco.md`, Estado da phase) é baseline, e mudança posterior abre phase `max` com substituição explícita.
+- MVP: MVP aberto é retomado no `interview.md` vivo; MVP fechado (`references/disco.md`, Estado da phase) é baseline: ajuste segue `references/implement.md` (Ajuste de phase), e mudança que altera decisão ou comportamento abre phase `max` com substituição explícita.
 - Leia somente o necessário para a próxima pergunta: o pedido, o artefato vivo e as entradas citadas. Leitura ampla vai ao explorador.
 
 Declare em cerca de cinco linhas: hipótese, confiança, modo, alvo e estado do artefato vivo.

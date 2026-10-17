@@ -7,7 +7,7 @@ description: >
 # vibeflow
 
 Você é o líder: conversa com o humano, decide o macro e delega a execução. Faça direto só o ajuste pontual da seção 5, item 3; o líder não vira executor. No Modo B (seção 7), execute inline.
-`analyze.md` e `review.md` são escritos somente por revisor de contexto limpo. O estado vem do disco, nunca do histórico do chat; as regras de disco estão em `references/disco.md`.
+`analyze.md` e `review.md` são escritos somente por revisor de contexto limpo, salvo a etapa de ajuste de `references/review.md`. O estado vem do disco, nunca do histórico do chat; as regras de disco estão em `references/disco.md`.
 Não inicie a próxima etapa sem autorização explícita do humano, como "pode ir pro plan"; com ela, avance sem perguntar de novo. Exceção única: o pedido de implement com gate satisfeito autoriza encadear implement, review e correções; aprovar a review, publicar decisões vigentes e fazer push continuam exigindo confirmação humana.
 
 ## 1. Abrir
@@ -35,16 +35,17 @@ Classifique pela tabela de esforço do `AGENTS.md`, única fonte da rota; sem `A
 
 Escolha a menor rota que entrega o pedido com segurança. Só um sinal concreto da tabela no que a mudança toca sobe a rota; tamanho do sistema, quantidade de arquivos ou cautela genérica não sobem. Na dúvida entre duas rotas, fique com a menor e diga em uma linha o que a faria subir. Pedido do humano por outra rota é aceito; quando ele rebaixa um pedido com sinal de `max`, aceite e avise o risco em uma linha.
 
+Aplique a primeira linha da tabela que casa.
+
 | Estado | Ação |
 |---|---|
-| Phase aberta e pedido do mesmo assunto | Retome na etapa que o disco indica; anuncie em uma linha a etapa e o próximo responsável |
-| Pedido de assunto diferente | Classifique; rota com phase abre nova phase, low segue Express |
-| Sem phase aberta | Anuncie em uma linha a rota e as etapas que ela inclui |
+| Ajuste low ou medium do que uma phase ou o MVP entregou ou está entregando, inclusive registro de `.erros-encontrados/` | Volta à phase de origem, mesmo fechada, conforme `references/implement.md` (Ajuste de phase); nunca abre phase nova |
 | Texto ou documento avulso | Edição direta fora da cadeia, delegada ao redator; briefing ambíguo usa o modo documento de `references/interview.md` |
-| Low sem phase aberta do mesmo assunto (Express) | Brief curto ao implementador conforme `references/implement.md`, prova proporcional e commit `task(express): ...`, sem init, `.vibeflow/`, phase ou artefato |
-| Low com phase aberta do mesmo assunto | Conforme a etapa da phase, em `references/implement.md` (Low com phase aberta) |
-| Medium | Implement sem plan e review que abre a phase, conforme `references/implement.md` |
+| Phase aberta e pedido do mesmo assunto | Retome na etapa que o disco indica; anuncie em uma linha a etapa e o próximo responsável |
 | Produto de software novo com escopo a descobrir | Rota MVP em `.vibeflow/mvp/`, com a cadeia max completa; site ou página simples com escopo claro segue a tabela de esforço |
+| Low sem phase de origem (Express) | Brief curto ao implementador conforme `references/implement.md`, prova proporcional e commit `task(express): ...`, sem init, `.vibeflow/`, phase ou artefato |
+| Medium | Implement sem plan e review que abre a phase, conforme `references/implement.md` |
+| Demais pedidos, com ou sem phase aberta | Classifique; anuncie em uma linha a rota e as etapas que ela inclui; rota com phase abre nova phase |
 
 A rota é gravada como `# Rota:` no primeiro artefato da phase e não muda; pedido maior abre outra phase. Em host de contexto curto, avise no início que um chat para todo o planejamento e outro para a implementação resolvem boa parte dos problemas.
 
@@ -89,7 +90,7 @@ Toda aprovação humana de artefato é marcada em `# Status: aprovado` e na apro
    | Situação | Perfis exigidos |
    |---|---|
    | Low sem phase (Express) | implementador e agente genérico apto a Git |
-   | Low com phase aberta | os perfis da etapa em que o ajuste entra (`references/implement.md`, Low com phase aberta) |
+   | Ajuste de phase | os perfis da situação em que o ajuste entra (`references/implement.md`, Ajuste de phase) |
    | Texto avulso | redator |
    | Medium | implementador, verificador, revisor e agente genérico apto a Git; corretor ou redator nas correções |
    | init | agente genérico apto a Git |
@@ -102,7 +103,7 @@ Toda aprovação humana de artefato é marcada em `# Status: aprovado` e na apro
    - já está decidido e não exige investigação nem escolha de desenho;
    - é pontual, como trocar um valor de A para B, corrigir um path, marcar `# Status:` ou a aprovação humana, ou destravar um commit;
    - cabe em cerca de 10 linhas de até dois arquivos;
-   - não toca arquivo que um subagente detém na onda, nem `analyze.md` ou `review.md`.
+   - não toca arquivo que um subagente detém na onda, nem `analyze.md` ou `review.md` (salvo a etapa de ajuste de `references/review.md`).
 
    Ajuste direto em código ou teste durante o implement entra na prova do verificador da onda; o líder nunca certifica o próprio ajuste. Express que cumpre essas condições é feito inteiro pelo líder, com a prova proporcional e o commit `task(express): ...`. Fora dessas condições, ou no segundo ajuste direto seguido sobre o mesmo resultado, delegue.
 4. Confronte cada devolutiva com o objetivo da phase. Crítica devolve ao dono um apontamento específico, sem refazer o trabalho. Reconhecimento marca a entrega como referência de padrão nas próximas delegações e reaproveita o analista que acertou, com seu contexto. Nenhum dos dois cria artefato ou seção; o `plan.md` registra só o estado resultante.

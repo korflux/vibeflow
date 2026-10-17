@@ -117,3 +117,4 @@ implement | finalização Git da phase
 - Veredito desta etapa: Request changes | Approve final
 
 <!-- etapa seguinte: copie ### Etapa N abaixo. Não apague as anteriores. -->
+<!-- Ajuste de phase fechada: o líder acrescenta ### Ajuste N - <pedido> com Pedido (texto do humano ou path do registro) e Abriu: Rn; os R* vão na Checklist de correções (references/implement.md, Ajuste de phase). -->
