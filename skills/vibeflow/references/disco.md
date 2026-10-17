@@ -51,7 +51,7 @@ Leia a etapa atual na primeira linha da tabela que se aplica:
 | Estado no disco | Etapa atual | Próximo responsável |
 |---|---|---|
 | Commit `task(medium): ...` mais recente no `git log` sem `review.md` com `# Rota: medium` criado depois dele (`review.md` não commitado conta pela existência; commitado, pela ordem no `git log`) | review da entrega medium | Revisor |
-| Última phase fechada com commits à frente do upstream (`git status -sb`) | Conferir push pendente ou residual da finalização | Finalizador, com a confirmação humana já dada |
+| Nenhuma phase aberta e a phase de maior `n` está fechada com push pendente (o último commit dela não está no upstream ou o branch não tem upstream), salvo se o humano já recusou ou adiou o push dessa phase | Push pendente dessa phase, pelo procedimento de retomada de `references/review.md` (Finalizar) | Finalizador, com a confirmação humana |
 | Sem phase aberta | Classificar o pedido (`SKILL.md`, seção 2) | Líder |
 | Etapa de planejamento exigida pela rota sem artefato | Essa etapa | Líder conduz; redator grava (revisor no analyze) |
 | `analyze.md` com veredito `bloqueado` | analyze, correção dos achados | Dono do artefato; revisor reconfere |

@@ -98,5 +98,11 @@ Somente na review final, depois da confirmação humana explícita, com todas as
 3. Confirma que a regressão completa verde registrada continua válida, executa `git diff --check` e gitleaks quando o repo prevê.
 4. Compara `git status` com o estado registrado na última etapa; path fora da phase, das decisões aprovadas ou das correções registradas interrompe e pede isolamento. Em medium, o código da entrega já está no commit `task(medium): ...` e nos commits de correção, e o diff fora da phase que eles contêm é aceito.
 5. Faz staging explícito só dos paths residuais autorizados (`git add -- <path da phase> AGENTS.md`), confere `git diff --cached --check` e cria `chore(phase-N): finalize review` sem `Co-Authored-By`; sem residual, não cria commit vazio.
-6. Executa `git push` para o upstream do branch atual, sem `--force`. Sem upstream, ou com falha de commit ou push, a phase continua aberta e a causa segura é relatada.
+6. Executa `git push` para o upstream do branch atual, sem `--force`. Falha de commit é relatada com a causa segura e corrigida antes do push. Sem upstream ou com falha de push, a phase fica fechada com push pendente, retomada pela linha de push pendente da tabela de estados de `references/disco.md`, e a causa segura é relatada.
 7. Relata hash final, resultado do push e paths enviados.
+
+Retomada de push pendente (linha de push da tabela de estados de `references/disco.md`), com a confirmação humana:
+
+1. Se o residual da finalização (`# Status: aprovado` e aprovação humana no `review.md`) ainda não foi commitado, commita-o como no passo 5.
+2. Confere `git log @{u}..HEAD` ou, sem upstream, os commits desde a base da phase; commit de outra phase nunca entra nesse push, e havendo um, para e relata.
+3. Executa `git push` sem `--force`; sem upstream, `git push -u origin <branch>`.
