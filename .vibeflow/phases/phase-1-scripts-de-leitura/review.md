@@ -1,6 +1,6 @@
 # Review: scripts de leitura estado e ondas
 # Alvo: phase-1-scripts-de-leitura
-# Status: request-changes
+# Status: aprovado
 # Rota: medium
 
 ## Contexto
@@ -17,15 +17,15 @@
 | Item da solicitação e fonte (A*/C* quando houver) | Implementação | Evidência | Situação |
 |---|---|---|---|
 | Scripts simples para facilitar o uso pelo agente (brief) | `skills/vibeflow/scripts/estado.mjs`, `ondas.mjs`, `_disco.mjs` | `node skills/vibeflow/scripts/estado.mjs` neste repo devolve `review da entrega medium`, código 0 | atendido |
-| Minimizar erro de regra mecânica: estado da phase (brief) | `estado.mjs`, linhas globais e `etapaDoAlvo` | Sondas em repos temporários: alvo padrão `phase-10` sobre `phase-9`, push adiado, medium revisado e CRLF corretos; `Design: N/A` e arquivo não ASCII produzem etapa errada (R1, R2) | parcial |
-| Minimizar erro: progresso % (brief; `SKILL.md`, seção 9) | `estado.mjs:223-244` | Testes 25%, 20%, 62% e ajuste `0/1` verdes; progresso herda o erro de design de R1 | parcial |
-| Minimizar erro: montagem de ondas e sobreposição de `Arquivos:` (brief; `plan.md` 1.3; `implement.md` 1) | `ondas.mjs:62-116`, `_disco.mjs:158-202` | Normalização e sobreposição conferem com `plan.md` 1.3; a onda para na T* sem `Arquivos:` em vez de pulá-la (R3) | parcial |
-| Compatibilidade Windows e Linux (brief) | `execFileSync` com lista, `git status -z`, CRLF e BOM removidos, `node:path`, `executadoDireto` com realpath e caixa no win32, JSON ASCII | Sonda CRLF+BOM verde; nenhum teste cobre CRLF, BOM ou a CLI (R4) | parcial |
+| Minimizar erro de regra mecânica: estado da phase (brief) | `estado.mjs`, linhas globais e `etapaDoAlvo` | Sondas em repos temporários: alvo padrão `phase-10` sobre `phase-9`, push adiado, medium revisado e CRLF corretos; `Design: N/A` e arquivo não ASCII produzem etapa errada (R1, R2); corrigidos em `d95dec6`, testes R1 e R2 verdes | atendido |
+| Minimizar erro: progresso % (brief; `SKILL.md`, seção 9) | `estado.mjs:223-244` | Testes 25%, 20%, 62% e ajuste `0/1` verdes; progresso herda o erro de design de R1; corrigido em `d95dec6` (teste R1, 25%) | atendido |
+| Minimizar erro: montagem de ondas e sobreposição de `Arquivos:` (brief; `plan.md` 1.3; `implement.md` 1) | `ondas.mjs:62-116`, `_disco.mjs:158-202` | Normalização e sobreposição conferem com `plan.md` 1.3; a onda para na T* sem `Arquivos:` em vez de pulá-la (R3); corrigido em `d95dec6`, teste R3 `[T1, T3]` | atendido |
+| Compatibilidade Windows e Linux (brief) | `execFileSync` com lista, `git status -z`, CRLF e BOM removidos, `node:path`, `executadoDireto` com realpath e caixa no win32, JSON ASCII | Sonda CRLF+BOM verde; nenhum teste cobre CRLF, BOM ou a CLI (R4); testes de CRLF+BOM e CLI acrescentados em `d95dec6`, verdes; execução real em Windows não feita (Notas) | atendido |
 | Node.js, `.mjs`, sem dependências (decisão humana) | só `node:fs`, `node:path`, `node:url`, `node:child_process` | leitura dos imports | atendido |
 | Somente leitura, sem artefato, commit, push ou staging (decisão humana) | git só com `log`, `status`, `rev-parse`, `rev-list`; nenhuma escrita em disco | `grep` por escrita e subcomandos Git de escrita nos scripts: nada | atendido |
 | Saída em texto e `--json` (decisão humana) | `texto()` e `jsonAscii()` | `estado.mjs --json` neste repo escapa não-ASCII | atendido |
 | Começar por `estado` e `ondas` (decisão humana) | dois scripts | diff | atendido |
-| Testes de comportamento com `node:test` fora do pacote (decisão humana) | `tests/scripts/disco.test.mjs` | `node --test`: 16/16 verdes; cenários faltando (R4) | parcial |
+| Testes de comportamento com `node:test` fora do pacote (decisão humana) | `tests/scripts/disco.test.mjs` | `node --test`: 16/16 verdes; 26/26 verdes após `d95dec6` com os cenários de R4 | atendido |
 | Prosa continua contrato; script nunca pré-requisito (decisão humana) | `SKILL.md` seção 1, `AGENTS.md` seção 4 | leitura do diff | atendido |
 | Ordem das linhas de planejamento na tabela de `disco.md` (alteração autorizada) | `skills/vibeflow/references/disco.md:75-77` | leitura do diff; `etapaDoAlvo` segue a mesma ordem | atendido |
 
@@ -51,18 +51,18 @@
 
 - `tests/scripts/disco.test.mjs` usa `t.after`, disponível a partir do Node 18.13; "Node 18+" vale na prática para 18.13 ou superior.
 - `etapaDoAlvo` não detecta código não commitado de T* aberta sem `Arquivos:` como `retomar a onda`; `semDono` também não o acusa, e a etapa cai em `implementar a próxima onda`. A prosa cita só "nos `Arquivos:` de T* abertas"; leitura literal aceita.
-- `pushPendente` só é avaliado sem nenhum alvo aberto, inclusive MVP; a prosa diz "Nenhuma phase aberta".
+- Testes rodaram só em Linux (Node v24.22.0); compatibilidade Windows certificada por leitura de código e por cenários CRLF, BOM e CLI, sem execução em Windows.
 
 ## Veredito vigente
 
-- [ ] **Approve**: origem suficiente, obrigações atendidas ou retiradas explicitamente pelo humano e nenhum R* de correção em `[ ]`
-- [x] **Request changes**: há R* de correção em `[ ]`
+- [x] **Approve**: origem suficiente, obrigações atendidas ou retiradas explicitamente pelo humano e nenhum R* de correção em `[ ]`
+- [ ] **Request changes**: há R* de correção em `[ ]`
 
 ## Handoff
 
 implement
 
-- [ ] Aprovação humana (leu o arquivo e confirmou)
+- [x] Aprovação humana (leu o arquivo e confirmou)
 
 - Chat: no Modo A, esta review roda em revisor de contexto limpo, a pedido do líder; sem subagentes, roda num chat novo com `/vibeflow review`. As correções seguem pela etapa implement, com corretor ou redator conforme o `papel` de cada R*; sem subagentes, num chat novo com `/vibeflow implement`. Após Approve e confirmação humana, o handoff é a finalização Git da phase. O `review.md` vivo e o diff são a ponte.
 
@@ -84,3 +84,14 @@ implement
 - Abriu: R1, R2, R3, R4, R5, R6
 - Fechou: nenhum
 - Veredito desta etapa: Request changes
+
+### Etapa 2 - re-review - commit `d95dec6` (R1 a R6) e regressão completa
+
+- Provas reaproveitadas: nenhuma; código e testes mudaram desde a Etapa 1.
+- Provas executadas: regressão completa do `AGENTS.md` em HEAD `d95dec6dde1048f621d6435f4989f4eab44e3240`, árvore limpa, Node v24.22.0: `node --test` na raiz, 26 testes, 26 verdes, 0 pulados; `git diff --check 5716567^..HEAD`, sem achado; `gitleaks detect --source . --redact --no-banner`, código 0, no leaks found; revisão de consistência: árvore do `README.md` cita `scripts/` e `tests/scripts/`, ambos existentes, sem citação da v1. Sondas da Etapa 1 repetidas no scratchpad: Handoff e plan com `Design: N/A` seguem para plan e implement, arquivo acentuado no recorte dá `retomar a onda`, onda `[T1, T3]`, artefato symlink relatado; CRLF, alvo padrão, medium revisado e push adiado seguem corretos.
+- Execução: commit `task(phase-1:R1,R2,R3,R4,R5,R6): ...` existe e seus IDs são exatamente os R* marcados `[x]` desde a Etapa 1. Paths do commit: `review.md` desta phase, `README.md` (R6), `_disco.mjs` (R2, R5), `estado.mjs` (R1, R2), `ondas.mjs` (R3) e `tests/scripts/disco.test.mjs` (R4), todos no recorte do brief ou no remédio dos R*. O alinhamento extra de `pushPendente` a "nenhuma phase aberta" (`estado.mjs:296`) fecha a Nota da Etapa 1 e segue `references/disco.md`. Os testes de regressão R1, R2, R3 e R5 têm asserção real sobre etapa, situação, onda e inconsistência; o R5 pula só onde symlink não é permitido.
+- Leu: diff `5716567..d95dec6`, testes novos, `templates/plan.md` (linha `- **Design:**` compatível com a leitura de `Design: N/A`).
+- Cobertura: os cinco itens parciais passam a atendido; nenhuma obrigação aberta.
+- Abriu: nenhum
+- Fechou: R1, R2, R3, R4, R5, R6 (corrigidos e certificados; a marcação `[x]` já estava gravada)
+- Veredito desta etapa: Approve final, sujeito à confirmação humana; o `# Status:` correspondente é `rascunho` até a finalização.
