@@ -20,12 +20,12 @@ Leia o disco nesta ordem, só o necessário para saber o estado:
 4. Na phase aberta: `# Rota:` do primeiro artefato, a linha `# Status:` de cada artefato, as caixas e as linhas `Estado:` das T* no `plan.md` e os R* do `review.md`.
 5. `git status` e `git log` recente, inclusive commits `task(...)`.
 
-Leia a etapa atual na tabela de estados de `references/disco.md` (Estado da phase) e declare o estado em cerca de cinco linhas:
+Leia a etapa atual na tabela de estados de `references/disco.md` (Estado da phase) e declare o estado em cerca de cinco linhas, com o progresso da seção 9:
 
 ```text
 rota: max · alvo: .vibeflow/phases/phase-3-agenda-online/
 artefatos: interview aprovado, spec aprovado, plan ausente
-etapa: plan · próximo: redator grava plan.md com as decisões fechadas
+progresso: 33% · etapa: plan · próximo: redator grava plan.md com as decisões fechadas
 pendências: nenhuma
 ```
 
@@ -125,3 +125,27 @@ Vale sem subagentes, com perfil exigido ausente ou não carregado (seção 5), i
 ## 8. Fechar
 
 Informe os paths gravados e um resumo factual do que foi coberto. Em commit, diga o hash, os paths enviados e o que ficou de fora. Aprovação de review, publicação de decisões vigentes e push exigem confirmação humana explícita.
+
+## 9. Progresso
+
+O humano nunca fica no escuro. Informe o progresso da phase em uma linha:
+
+```text
+progresso: 62% · etapa: implement · T* 3/6 concluídas · agora: onda 2 (T4, T5) com o implementador
+```
+
+Calcule pelo disco, com ferramenta, nunca por estimativa, e arredonde para baixo:
+
+- As etapas são as da rota gravada em `# Rota:`; o design só conta com UI nova.
+- Cada etapa vale uma parte igual. Etapa concluída (`references/disco.md`, Estado da phase) conta inteira; a review só conta com a phase fechada; etapa de planejamento em andamento conta zero.
+- O implement conta a fração de T* concluídas sobre o total do plan; no medium, conta inteiro com o commit `task(medium): ...`.
+- Ajuste de phase fechada mostra `ajuste: R* <concluídos>/<total>` em vez de percentual.
+- Express e texto avulso não têm percentual: informe o passo atual (editando, provando, commitando).
+
+Informe:
+
+- na declaração de abertura (seção 1) e no fechamento (seção 8);
+- ao iniciar e ao concluir cada etapa;
+- no despacho e no fim de cada onda, e a cada commit;
+- a cada devolutiva de subagente que muda o estado, com o que terminou e o que segue em andamento;
+- na interrupção, com o estado gravado.

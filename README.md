@@ -75,6 +75,8 @@ A rota é proporcional ao pedido. Uma troca de cor é delegada e fechada sem cri
 
 Por padrão, um único chat conduz a rota inteira. Em host de contexto curto, use um chat para todo o planejamento e outro para a implementação. Em host sem subagentes, ou sem os perfis carregados, a skill avisa e roda uma etapa ou tarefa por vez, com analyze e review em chat novo.
 
+Durante a phase, o líder informa o progresso em percentual, calculado pelas etapas e T* concluídas no disco, a cada etapa, onda e commit.
+
 Aprovar a review, publicar decisões vigentes e fazer push sempre exigem a sua confirmação.
 
 ## Estrutura do repositório

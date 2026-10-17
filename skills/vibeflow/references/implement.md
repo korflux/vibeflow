@@ -87,7 +87,7 @@ Apresente resultado, commits, correções, Critical encontrados e decisões prop
 
 ### 7. Uma T* por run
 
-Informe a limitação em uma linha quando vier da falta de subagentes. Execute inline a elegível de menor número, ou a T* que o humano nomeou, seguindo a seção 9. Com a prova verde, marque a caixa e as linhas `Estado:` e `Resumo:` e crie `task(<alvo>:Tn): <resultado>` com staging explícito, sem push. Responda com a T* executada, o total de T* do plan e quantas estão concluídas, a prova, o hash e a próxima T*. Grupo de T* paralelas registrado no plan só roda em paralelo depois de o humano aceitar; senão, segue em sequência. Com todas concluídas, a review roda em chat novo com `/vibeflow review`. Correção de R* no Modo B segue a seção 5 inline, numa rodada por run, com commit `task(<alvo>:Rn,...)`; medium no Modo B segue a seção 8 inline, com o líder nos papéis.
+Informe a limitação em uma linha quando vier da falta de subagentes. Execute inline a elegível de menor número, ou a T* que o humano nomeou, seguindo a seção 9. Com a prova verde, marque a caixa e as linhas `Estado:` e `Resumo:` e crie `task(<alvo>:Tn): <resultado>` com staging explícito, sem push. Responda com a T* executada, a linha de progresso do `SKILL.md`, seção 9, a prova, o hash e a próxima T*. Grupo de T* paralelas registrado no plan só roda em paralelo depois de o humano aceitar; senão, segue em sequência. Com todas concluídas, a review roda em chat novo com `/vibeflow review`. Correção de R* no Modo B segue a seção 5 inline, numa rodada por run, com commit `task(<alvo>:Rn,...)`; medium no Modo B segue a seção 8 inline, com o líder nos papéis.
 
 ## Rota medium
 
@@ -117,4 +117,4 @@ Caixas e linhas `Estado:` e `Resumo:` no `plan.md`, critérios provados no `spec
 
 ## Fechar e próxima etapa
 
-Responda com resultado, T* comprovadas sobre o total, provas, commits e paths, pendências e próximo passo. Pergunta material vai ao humano com recomendação, e trabalho elegível independente segue enquanto ela está pendente. Na retomada, o disco indica o passo; evidência inalterada é preservada e implementação válida não é refeita.
+Responda com resultado, a linha de progresso do `SKILL.md`, seção 9, provas, commits e paths, pendências e próximo passo. Pergunta material vai ao humano com recomendação, e trabalho elegível independente segue enquanto ela está pendente. Na retomada, o disco indica o passo; evidência inalterada é preservada e implementação válida não é refeita.
