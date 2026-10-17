@@ -39,7 +39,7 @@ Skill única `vibeflow`, conduzida por um coordenador-líder, para inicializar e
 
 - A IA interpreta intenção, aplica as regras mecânicas escritas e escreve a prosa dos artefatos vivos; o disco e o Git são a fonte do estado.
 - As fases vivem em `.vibeflow/phases/phase-N-slug/`; o baseline único de software novo vive em `.vibeflow/mvp/`.
-- O init guarda em `.vibeflow/old/`, com tamanho e hash conferidos, o `AGENTS.md`, a ponte ou o perfil que substitui sem backup em commit.
+- O init guarda em `.vibeflow/old/`, com tamanho e hash conferidos, o `AGENTS.md` ou a ponte que substitui sem backup em commit. Perfil global substituído por decisão humana recebe o backup em `~/.vibeflow/old/`, com as mesmas conferências.
 
 ## Ambiente
 

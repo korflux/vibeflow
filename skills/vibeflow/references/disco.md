@@ -9,6 +9,8 @@ AGENTS.md                                 fonte única de regras do projeto
 .agents/rules/vibeflow.md                 ponte Antigravity, conteúdo exato "@../../AGENTS.md"
 ~/.claude/agents/<papel>.md               perfis globais de subagente Claude, instalados pelo init
 ~/.codex/agents/<papel>.toml              perfis globais de subagente Codex, instalados pelo init
+                                          (pasta do host conforme references/init.md, Entrada)
+~/.vibeflow/old/                          backups de perfis globais substituídos por decisão humana
 .claude/agents/ e .codex/agents/          perfis de projeto opcionais, que prevalecem sobre os globais
 .vibeflow/phases/.gitkeep
 .vibeflow/phases/phase-<n>-<slug>/        uma pasta por pedido

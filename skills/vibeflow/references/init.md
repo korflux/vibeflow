@@ -5,7 +5,8 @@
 ## Entrada
 
 - Gatilho, somente em rota com phase (medium ou acima, e MVP) ou com `/vibeflow init`: `.vibeflow/` ausente; `AGENTS.md` ausente ou sem o bloco `VIBEFLOW:CADEIA`; ou disco quebrado, para reparo. Low nunca dispara o init.
-- Leia `AGENTS.md`, `CLAUDE.md` quando existir, `.agents/rules/vibeflow.md`, os perfis globais em `~/.claude/agents/` e `~/.codex/agents/` e, se existirem, os perfis do projeto em `.claude/agents/` e `.codex/agents/`. `~` é a pasta do usuário (`%USERPROFILE%` no Windows).
+- Leia `AGENTS.md`, `CLAUDE.md` quando existir, `.agents/rules/vibeflow.md`, os perfis globais de cada host e, se existirem, os perfis do projeto em `.claude/agents/` e `.codex/agents/`.
+- `~` é a pasta do usuário (`%USERPROFILE%` no Windows). Os perfis globais ficam em `<pasta do host>/agents/`: no Claude Code, a pasta do host é o valor de `CLAUDE_CONFIG_DIR` quando definida, senão `~/.claude`; no Codex, o valor de `CODEX_HOME` quando definida, senão `~/.codex`. Os passos abaixo escrevem `~/.claude/agents/` e `~/.codex/agents/` e seguem esta regra.
 
 ## Quem faz
 
@@ -37,7 +38,7 @@ Sem subagentes ou sem agente genérico apto a Git, o líder executa os passos in
    Perfil global não tem histórico Git que prove a origem: todo conflito é tratado como possível customização. Preserve os bytes e relate host, papel, path e o diff contra a fonte; substituir exige decisão humana e backup em `~/.vibeflow/old/` (`references/disco.md`, Backup de arquivo de regra), e o perfil passa a contar como alterado.
 
    Perfil do projeto em `.claude/agents/` ou `.codex/agents/` prevalece no host sobre o global. O init não cria nem remove perfil de projeto; quando um existe e difere da fonte, relate-o como customização do projeto. Fora dos perfis do VibeFlow, não altere configurações globais, permissões gerais nem modelos pessoais.
-6. **Commit.** Confira que `AGENTS.md` é arquivo regular na raiz, a cadeia está atualizada e a ponte aponta para ele. Faça staging explícito dos paths produzidos no repositório e dos backups necessários em `.vibeflow/old/`; perfis globais ficam fora do repositório e do commit, e trabalho alheio fica fora do staging. Confira o diff e crie commit local sem push.
+6. **Commit.** Confira que `AGENTS.md` é arquivo regular na raiz, a cadeia está atualizada e a ponte aponta para ele. Faça staging explícito dos paths produzidos no repositório e dos backups necessários em `.vibeflow/old/`; perfis globais ficam fora do repositório e do commit, e trabalho alheio fica fora do staging. Confira o diff e crie commit local sem push. Sem path produzido no repositório, como numa máquina nova com o repositório já inicializado, não há commit vazio e o relatório registra `hash: nenhum`.
 
 ## Saída
 
