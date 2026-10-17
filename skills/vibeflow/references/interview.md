@@ -3,7 +3,7 @@
 ## Entrada
 
 - Gate: nenhum. Em `xhigh`, `max` e MVP, a interview abre a phase (`references/disco.md`, Abrir phase ou MVP). Phase aberta do mesmo assunto é retomada no `interview.md` vivo.
-- MVP: `.vibeflow/mvp/interview.md` existente é baseline fechado; mudança posterior abre phase `max` com substituição explícita.
+- MVP: MVP aberto é retomado no `interview.md` vivo; MVP fechado (`references/disco.md`, Estado da phase) é baseline, e mudança posterior abre phase `max` com substituição explícita.
 - Leia somente o necessário para a próxima pergunta: o pedido, o artefato vivo e as entradas citadas. Leitura ampla vai ao explorador.
 
 Declare em cerca de cinco linhas: hipótese, confiança, modo, alvo e estado do artefato vivo.
@@ -19,7 +19,7 @@ modo: mvp · alvo: .vibeflow/mvp/ · artefato vivo: ausente
 | Typo, rename, pedido inequívoco, velocidade pedida ou pergunta informativa | Não entrevistar |
 | Documento, briefing, artigo, proposta ou texto em Markdown | Modo documento: entrevista no chat, focada em público, tom, dor e estrutura, sem phase, sem MVP e sem catálogo de infra ou banco; o restate confirmado orienta a edição direta |
 | `/vibeflow interview` explícito | Entrevistar |
-| Produto digital novo, inclusive site institucional, landing page ou site estático com escopo a descobrir | MVP |
+| Produto digital novo com escopo a descobrir | MVP; site institucional, landing page ou site estático com escopo claro segue a tabela de esforço, sem MVP |
 | Mudança delimitada num produto existente | Phase |
 | Dúvida real entre produto e feature | Perguntar uma vez, com recomendação |
 | CI, loop ou agendado sem humano e pedido subespecificado | Bloquear, sem chutar |
@@ -84,4 +84,4 @@ Depois do sim ao restate, o líder entrega ao redator a trilha ANOTEI/Q/GUESS/R,
 
 ## Fechar e próxima etapa
 
-Handoff padrão: `spec`; no MVP, o handoff registra `rota: max`. Sem commit nesta etapa. A spec só começa com autorização explícita, como “pode ir pro spec”.
+Handoff padrão: `spec`. Sem commit nesta etapa. A spec só começa com autorização explícita, como “pode ir pro spec”.

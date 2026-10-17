@@ -15,7 +15,7 @@ O líder nunca escreve `analyze.md`. Não atualize decisões vigentes nem `AGENT
 | Líder | Delega, confere o relatório, leva as perguntas materiais ao humano e devolve cada resposta ao mesmo revisor |
 | Finalizador | Marca a aprovação humana quando o veredito é `limpo` |
 
-Perfil revisor ausente ou não carregado: pergunte ao humano com a recomendação de rodar `/vibeflow init` e recarregar o host; nada é despachado. Sem subagentes, o líder grava checkpoint e instrui abrir chat novo com `/vibeflow analyze`; nesse chat, o agente atua como revisor e conduz as perguntas e a aprovação inline.
+Sem subagentes ou com o perfil revisor ausente ou não carregado, siga o Modo B do `SKILL.md`, seção 7, com aviso de uma linha e a sugestão de rodar `/vibeflow init` e recarregar o host: o líder grava o estado e instrui abrir chat novo com `/vibeflow analyze`, que escreve o `analyze.md` como revisor e, depois de gravá-lo, conduz como líder as perguntas e a aprovação inline.
 
 ## Passos
 
@@ -34,9 +34,9 @@ Leia `references/analyze/coverage.md` como mapa interno e cruze:
 1. **Interview → spec:** resultado, jornadas, páginas e módulos aplicáveis contra Cobertura da origem, `F*`, Objetivo, A*/C* e Fora. Item omitido sem motivo impede o veredito limpo; módulo N/A não exige detalhe.
 2. **Spec → plan:** cada A*/C* tem T* no campo `Spec:`; cada T* referencia A*/C* ou é infraestrutura justificada.
 3. **Plan → spec:** nenhuma T* inventa comportamento, caminho ou módulo fora do escopo aprovado.
-4. **Design:** com UI visível, design ausente ou não aprovado impede o veredito limpo; sem UI, N/A explícito.
+4. **Design:** com UI nova, design ausente ou não aprovado impede o veredito limpo; sem UI nova, N/A explícito.
 5. **Testes e executabilidade:** cada T* tem `Prova afetada:` com comando executável real; o mesmo teste pode servir a várias T*. Ponto de entrada criado ou alterado traz o smoke na mesma T*. Verificação só manual vira comando real no `plan.md`. Ferramenta ausente segue a regra de instalação de `references/delegation.md` e entra sob a T* que depende dela; bloqueio externo é registrado, sem T* artificial de instalação.
-6. **Contrato da implementação:** formato e sobreposição de `Arquivos:` conforme `references/plan.md`, `Prova afetada:` restrita ao recorte e cobrindo os A*/C* da T*, uma única `Regressão completa` com comandos reais e prontidão com local e destino por requisito, inclusive perfis no Modo A. Gravidades e correções na seção 3 de `references/analyze/coverage.md`. Phase da v1 sem esse formato recebe N/A nesta dimensão, sem migração.
+6. **Contrato da implementação:** formato e sobreposição de `Arquivos:` conforme `references/plan.md`, `Prova afetada:` restrita ao recorte e cobrindo os A*/C* da T*, uma única `Regressão completa` com comandos reais e prontidão com local e destino por requisito. Gravidades e correções na seção 3 de `references/analyze/coverage.md`.
 7. **Decisões críticas (MVP):** cada ID cruzado entre interview, spec e plan; divergência sem `substitui` ou ID órfão é ajustada ou vira pergunta quando a mudança puder ser intencional.
 8. **AGENTS.md:** violação de regra mandatória (segurança, auth, dados, segredos, CSP) recebe patch corretivo nos artefatos.
 9. **Consistência:** duplicação, adjetivo sem métrica, furo de aceite e termo inconsistente recebem correção direta.

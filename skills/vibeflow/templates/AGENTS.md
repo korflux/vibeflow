@@ -6,20 +6,20 @@
 | esforço | fluxo | quando |
 |---|---|---|
 | N/A | init | primeira vez no repo, ou disco quebrado, de novo só para reparar |
-| low | implement | mudança simples de código de software, como cor ou layout de página estática |
-| Express | implement, sem phase nem artefato | low sem phase ativa: mudança clara e localizada sem comportamento novo |
-| medium | implement → review | pedido claro e direto sem regressão de backend, ou página visual cujo aceite dependa de validação renderizada |
-| high | spec → plan → implement → review | pedido claro, execução difícil, ou sistema com auth, painel admin, banco ou regressão |
+| low | implement | mudança simples de código de software sem comportamento novo, como cor, texto ou layout de página estática |
+| Express | implement, sem phase nem artefato | low sem phase aberta do mesmo assunto: mudança clara e localizada sem comportamento novo |
+| medium | implement → review | pedido claro e direto, com comportamento novo pequeno e sem regressão de backend, ou página visual cujo aceite dependa de validação renderizada |
+| high | spec → plan → implement → review | pedido claro de execução difícil, ou mudança que altera banco, painel admin ou cria risco de regressão de backend |
 | xhigh | interview → spec → plan → implement → review | pedido ambíguo, confiança baixa, intenção ou sucesso de software em aberto |
-| max | interview → spec → plan → analyze → implement → review | pedido toca auth, pagamento, segredo, perda de dados, produção, alto blast radius ou baseline MVP de software |
+| max | interview → spec → plan → analyze → implement → review | mudança que altera autenticação, autorização, pagamento, segredo, risco de perda de dados, produção, alto blast radius ou baseline MVP de software |
 
-No Express, o implementador entrega com prova proporcional, sem init, `.vibeflow/`, phase nem artefato. Saem do Express, seguindo a rota aplicável: comportamento, rota, interação, critério de aceite ou acessibilidade alterados, e mudanças que toquem privacidade, dado pessoal, consentimento, retenção, direitos, obrigação jurídica, autenticação, autorização, pagamento, segredo, persistência ou risco de perda de dados. Low com phase ativa reutiliza a phase. Medium segue implement → review e abre a phase na review.
+No Express, o implementador entrega com prova proporcional, sem init, `.vibeflow/`, phase nem artefato. Saem do Express, seguindo a rota aplicável: comportamento, rota, interação, critério de aceite ou acessibilidade alterados, e mudanças que toquem privacidade, dado pessoal, consentimento, retenção, direitos, obrigação jurídica, autenticação, autorização, pagamento, segredo, persistência ou risco de perda de dados. Low com phase aberta do mesmo assunto entra pela etapa em que a phase está. Medium segue implement → review e abre a phase na review.
 
-`/vibeflow` conduz todo o fluxo. `/vibeflow <etapa>` vai direto a `init`, `interview`, `spec`, `design`, `plan`, `analyze`, `implement` ou `review`, desde que o pré-requisito esteja satisfeito. Argumento cuja primeira palavra não é etapa é tratado como pedido e classificado. O design entra entre spec e plan somente com UI visível.
+`/vibeflow` conduz todo o fluxo. `/vibeflow <etapa>` vai direto a `init`, `interview`, `spec`, `design`, `plan`, `analyze`, `implement` ou `review`, desde que o pré-requisito esteja satisfeito. Argumento cuja primeira palavra não é etapa é tratado como pedido e classificado. O design entra entre spec e plan somente com UI nova: tela ou decisão visual que o design system e as telas existentes não cobrem.
 
 ### Continuidade entre chats
 
-Um único chat conduz a phase por padrão. Em host de contexto curto, use dois: um para todo o planejamento (interview, spec, design, plan e analyze) e outro para a implementação (implement e review). Quando o contexto pesar ou o humano pedir para parar, o líder grava o estado no `plan.md` e recomenda um chat novo. A retomada parte do disco: em chat novo, `/vibeflow` lê as linhas `# Status:`, as caixas do `plan.md` e o Git e segue de onde parou. Sem subagentes, analyze e review pedem chat novo (`/vibeflow analyze`, `/vibeflow review`). Separar chats é recomendação, nunca gate.
+Um único chat conduz a phase por padrão. Em host de contexto curto, use dois: um para todo o planejamento (interview, spec, design, plan e analyze) e outro para a implementação (implement e review). Quando o contexto pesar ou o humano pedir para parar, o estado é gravado conforme a seção 6 do `SKILL.md` e o líder recomenda um chat novo. A retomada parte do disco: em chat novo, `/vibeflow` lê as linhas `# Status:`, as caixas e as linhas `Estado:` do `plan.md` e o Git e segue de onde parou. Sem subagentes, analyze e review pedem chat novo (`/vibeflow analyze`, `/vibeflow review`). Separar chats é recomendação, nunca gate.
 <!-- VIBEFLOW:CADEIA end -->
 
 ## Projeto
@@ -43,15 +43,7 @@ Um único chat conduz a phase por padrão. Em host de contexto curto, use dois: 
 ## Git
 - Sem `Co-Authored-By` de ferramenta em commit ou push.
 - Staging somente de paths autorizados. Proibidos `git add -A`, `git add .`, amend, squash e force push.
-- Phases da v1 são lidas como estão, sem migração; o estado vem das linhas `# Status:`, das caixas do `plan.md` e do Git.
-- No Modo A, o líder planeja as ondas e delega toda execução, inclusive o estado do `plan.md` e o Git. Faz no máximo pequenos ajustes finais.
-- Implementador entrega código e testes. Redator grava a prosa de interview, spec, design e plan e as T* de prosa. Verificador certifica a integração. Revisor faz analyze e review, escreve sozinho a prosa e os achados de `analyze.md` e `review.md` e nunca opera Git.
-- Código paralelo só ocorre em onda: T* elegíveis com `Arquivos:` disjuntos, montadas pelo líder, com ownership exclusivo. T* sem `Arquivos:` ou sobreposta roda sozinha. No Modo B, o grupo é oferecido ao humano.
-- Leitura e preparação podem colaborar com comunicação direta, com um dono por arquivo.
-- Implementador e verificador provam só a `Prova afetada:`. A review final executa a `Regressão completa`.
-- Finalizador é um agente genérico apto a Git. Marca `# Status:`, a aprovação humana, as caixas de T* e o `[x]` de R* comprovados, mantém o resumo curto do `plan.md` e opera Git com ownership exclusivo. Perfil que proíbe Git não vira finalizador. Sem agente apto, a run segue no Modo B e o líder opera Git e marcações inline.
-- Plan guarda definição e resumo curto, sem hashes, logs ou saída detalhada. Conclusão exige integração verde e commit real.
-- Na rota medium, sem plan, o finalizador commita a entrega com a prova verde antes da review, com a mensagem `task(medium): <resultado>`. Na interrupção, commit de código só com a integração verde.
+- Papéis, ondas, provas, formatos de commit e finalização seguem a skill `vibeflow`; este arquivo não os repete.
 - Aprovar a review, publicar decisões vigentes e fazer push exigem confirmação humana final explícita.
 
 ## Padrões de Código e Engenharia

@@ -4,7 +4,7 @@ Só o decidido: pergunta aberta no arquivo é defeito. O arquivo vivo é a fonte
 
 ## Entrada
 
-- Gate (`SKILL.md`, seção 3): em `xhigh`, `max` e MVP, interview aprovada; em `high`, a spec abre a phase. `plan.md` já existente no alvo bloqueia nova spec: pedido novo exige outra phase.
+- Gate (`SKILL.md`, seção 3): em `xhigh`, `max` e MVP, interview aprovada; em `high`, a spec abre a phase. `plan.md` já existente no alvo bloqueia nova spec: pedido novo exige outra phase; voltar à spec segue `references/disco.md` (Escrever artefato).
 - Leia `interview.md`, o `spec.md` vivo, `AGENTS.md` e os contratos e decisões citados. Leitura ampla do codebase vai ao explorador.
 
 Declare em cerca de cinco linhas: confiança, rota, alvo, interview e estado do artefato vivo.
@@ -51,7 +51,7 @@ rota: high · alvo: .vibeflow/phases/phase-1-lock-bloco/ · interview: N/A · sp
    - Cada fluxo usa `F*` com Jornada, Rota, Gatilho, Pré-condição, Superfície por passo, Passos com ação e resposta, Validações, Erros, Estados e Aceite `A*`. Passo sem superfície (tela, popup, drawer, inline, redirect ou toast) é defeito. Página informativa simples usa `F*` curto, com N/A e motivo para validações ou erros inexistentes.
    - Sem `FR-00N`, mural de user stories, CSS, paleta ou token visual. Se listar telas e detalhar só o shell, declare que o visual por tela vai para o design. Fato de mock que vira contrato ganha nome, forma, janela e escopo, ou delegação explícita ao design com Ask first. Contrato compartilhado registra os `F*` consumidores.
    - Em Como provar, cada `A*` liga ao `F*` ou jornada, ao nível (`jornada` exige percorrer o fluxo; `local` observa a regra isolada) e à evidência observável; com UI, o que a tela renderizada mostra e em qual estado. Comando, path de teste e ferramenta ficam para o plan.
-   - Handoff: `design` com UI visível, senão `plan` com `Design: N/A` e motivo.
+   - Handoff: `design` com UI nova, senão `plan` com `Design: N/A` e motivo.
 
 ## Saída
 

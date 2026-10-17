@@ -12,7 +12,7 @@ Fechar o que plan/implement **não** inventam. Não é CSS. Sem UI user-visible:
 
 Não fechar na spec: paleta hex, type pairing, “signature” artística. Token visual pertence à design.
 
-Handoff condicional: com UI visível a spec entrega para a etapa design, sem UI visível entrega para a etapa plan. Design e plan não inventam comportamento.
+Handoff condicional: com UI nova a spec entrega para a etapa design, sem UI nova entrega para a etapa plan. Design e plan não inventam comportamento.
 
 A*/C* de UI são observáveis. Não usar “bonito” / “moderno” como C*.
 

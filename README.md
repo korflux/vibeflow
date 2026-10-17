@@ -6,7 +6,7 @@ Skill única `vibeflow`, com um coordenador-líder que conduz o trabalho de agen
 
 ## O que é
 
-O vibeflow é uma skill para quem programa com agentes (Grok Build, Claude Code, Codex, OpenCode, Pi, Antigravity e qualquer cliente que leia `SKILL.md`). O líder conversa com você, entende o projeto, escolhe uma rota proporcional ao pedido, planeja e delega toda a execução a subagentes: redação de artefatos, código, testes, provas e Git. Analyze e review são sempre feitos por um revisor de contexto limpo. O pedido vira trilha no disco, não recap no chat.
+O vibeflow é uma skill para quem programa com agentes (Grok Build, Claude Code, Codex, OpenCode, Pi, Antigravity e qualquer cliente que leia `SKILL.md`). O líder conversa com você, entende o projeto, escolhe uma rota proporcional ao pedido, planeja e delega a execução a subagentes: redação de artefatos, código, testes, provas e Git. Ajustes pontuais, como trocar um valor ou destravar um commit, o líder faz direto, porque delegar custaria mais. Analyze e review são sempre feitos por um revisor de contexto limpo. O pedido vira trilha no disco, não recap no chat.
 
 O pacote é só texto: `SKILL.md`, referências por etapa e templates, sem scripts. No repo do consumidor, o trabalho vive em disco:
 
@@ -15,7 +15,7 @@ AGENTS.md                                  fonte única de regras do projeto
 .agents/rules/vibeflow.md                  ponte Antigravity para AGENTS.md
 .vibeflow/phases/phase-N-slug/interview.md
 .vibeflow/phases/phase-N-slug/spec.md
-.vibeflow/phases/phase-N-slug/design.md    somente com UI visível
+.vibeflow/phases/phase-N-slug/design.md    somente com UI nova
 .vibeflow/phases/phase-N-slug/plan.md
 .vibeflow/phases/phase-N-slug/analyze.md
 .vibeflow/phases/phase-N-slug/review.md
@@ -23,8 +23,6 @@ AGENTS.md                                  fonte única de regras do projeto
 ```
 
 O estado vem das linhas `# Status:` e `# Rota:` dos artefatos, das caixas do `plan.md` e do Git. Um chat novo com `/vibeflow` retoma de onde a phase parou.
-
-Contrato: [`docs/vibeflow/ARQUITETURA.md`](docs/vibeflow/ARQUITETURA.md). Fluxo e decisões: [`docs/vibeflow/ANALISE.md`](docs/vibeflow/ANALISE.md). Escopo: [`docs/ESCOPO.md`](docs/ESCOPO.md).
 
 ## Como instalar
 
@@ -43,19 +41,6 @@ npx skills add korflux/vibeflow -g -a grok -a claude-code -a codex -a antigravit
 Windows sem suporte a symlink no destino: acrescente `--copy` ao comando escolhido. Use `npx skills list` para conferir a instalação.
 
 OpenCode e Pi também descobrem skills globais em `~/.agents/skills/`. Uma cópia atualizada do pacote nesse diretório atende aos dois CLIs; se houver cópias em `~/.config/opencode/skills/` ou `~/.pi/agent/skills/`, mantenha-as sincronizadas ou remova a duplicação.
-
-### Marketplaces nativos
-
-```text
-/plugin marketplace add korflux/vibeflow
-/plugin install vibeflow@vibeflow
-
-codex plugin marketplace add korflux/vibeflow
-codex plugin add vibeflow@vibeflow
-
-grok plugin marketplace add korflux/vibeflow
-grok plugin install vibeflow --trust
-```
 
 ### Antigravity
 
@@ -84,7 +69,7 @@ O Codex mantém regras globais em `~/.codex/AGENTS.md` ou `~/.codex/AGENTS.overr
 
 A skill também entra sozinha quando o pedido é de software: código, correção de bug, ajuste de UI, funcionalidade nova, especificação, plano, revisão ou governança para agentes.
 
-Primeira vez num repo, ou instalação antiga com `.vibeflow/REGRAS.md`, `REGRAS.md` ou `CLAUDE.md`: a etapa `init` roda antes de qualquer cadeia. Ela grava `AGENTS.md`, a ponte `.agents/rules/vibeflow.md` e seis perfis de subagente (explorador, implementador, redator, verificador, corretor e revisor) em `.codex/agents/` e `.claude/agents/`, guarda cópia conferida das regras substituídas em `.vibeflow/old/` e cria um commit local. Quando os perfis mudam, recarregue o host antes de continuar.
+Primeira vez num repo: a etapa `init` roda antes da primeira rota com phase. Ela grava `AGENTS.md`, a ponte `.agents/rules/vibeflow.md` e seis perfis de subagente (explorador, implementador, redator, verificador, corretor e revisor) em `.codex/agents/` e `.claude/agents/`, guarda cópia conferida de arquivo substituído em `.vibeflow/old/` e cria um commit local. Um `CLAUDE.md` existente não é removido. Quando os perfis mudam, recarregue o host antes de continuar.
 
 A rota é proporcional ao pedido. Uma troca de cor é delegada e fechada sem criar `.vibeflow/`; um pedido que toca auth, pagamento ou produção percorre interview, spec, plan, analyze, implement e review. A tabela de rotas fica no `AGENTS.md` que a etapa `init` grava no projeto, a partir de [`skills/vibeflow/templates/AGENTS.md`](skills/vibeflow/templates/AGENTS.md).
 
@@ -97,33 +82,17 @@ Aprovar a review, publicar decisões vigentes e fazer push sempre exigem a sua c
 ```text
 vibeflow/
 ├── skills/vibeflow/      pacote instalável (SKILL.md, references/, templates/)
-├── .claude-plugin/       marketplace Claude
-├── .codex-plugin/        plugin Codex
-├── .agents/plugins/      marketplace Codex
-├── .grok-plugin/         marketplace Grok
 ├── plugin.json           plugin Antigravity
-├── docs/vibeflow/        ARQUITETURA.md e ANALISE.md (não instala)
-├── docs/ESCOPO.md        feito e fila
 ├── AGENTS.md             regras deste repo (fonte viva)
 └── LICENSE
 ```
 
 ## Como contribuir
 
-1. Contrato antes de prosa: mudança de disco, papel ou gate começa em `docs/vibeflow/ARQUITETURA.md`.
+1. Contrato antes de prosa: mudança de disco começa em `skills/vibeflow/references/disco.md`.
 2. O pacote é só texto. Não adicione scripts nem testes de presença de texto.
 3. Antes do push, rode a revisão de consistência e a varredura de segredos descritas em `AGENTS.md`. O repositório não usa CI no GitHub, por decisão de custo.
 4. `AGENTS.md` é a única fonte de regras do projeto. Artefatos só em `.vibeflow/phases/phase-N-slug/` ou no baseline `.vibeflow/mvp/`.
-
-Versão dos manifestos: `10.0.0`. O Antigravity mantém o schema mínimo sem campo de versão.
-
-O que muda com a 10.0.0:
-
-- As oito skills da v1 viram uma skill única, `vibeflow`, com entrada `/vibeflow` e `/vibeflow <etapa>`. Os comandos da v1 deixam de existir, sem aliases.
-- Um coordenador-líder conduz todas as rotas e delega a execução, inclusive em pedidos pequenos.
-- O pacote é só texto: sem motores, relatório operacional nem registro estruturado de execução. O estado vive nos artefatos e no Git.
-- A rota fica gravada em `# Rota:` no primeiro artefato da phase.
-- Phases criadas pela v1 continuam legíveis, sem migração.
 
 PR contra `main`. Mudança de contrato (path de artefato ou comportamento que o humano já usa) é Major; o resto segue o semver em `AGENTS.md`.
 

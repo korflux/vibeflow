@@ -11,7 +11,7 @@
 |---|---|
 | interview.md | presente | ausente |
 | spec.md | presente |
-| design.md | presente | N/A sem UI visível |
+| design.md | presente | N/A sem UI nova |
 | plan.md | presente |
 | AGENTS.md | lido |
 
@@ -64,7 +64,7 @@
 - T* no plan:
 - Cobertura (A*/C* com >= 1 T*):
 - Qualidade de Testes: <`Prova afetada:` restrita ao recorte por T*; `Regressão completa` única; smoke na T* que entrega o ponto de entrada; ferramentas necessárias ou limitações registradas>
-- Contrato da implement: <`Arquivos:` válidos e comparáveis; sobreposição sem `Deps`; prontidão com local e destino; ou N/A em phase da v1>
+- Contrato da implement: <`Arquivos:` válidos e comparáveis; sobreposição sem `Deps`; prontidão com local e destino>
 - Achados corrigidos / resolvidos:
 - Achados bloqueantes pendentes: 0
 
@@ -77,7 +77,6 @@ limpo | bloqueado
 ## Handoff
 
 implement
-<!-- Na rota max (MVP ou phase), acrescentar: rota: max -->
 
 - Chat: com subagentes, o analyze roda em revisor de contexto limpo a partir do chat do líder; sem eles, roda num chat novo com `/vibeflow analyze`. A implementação segue com `/vibeflow implement`, em Modo A num host com subagentes e em Modo B sem eles; em host de contexto curto, ela abre o segundo chat. O `analyze.md` e os artefatos vivos são a ponte.
 

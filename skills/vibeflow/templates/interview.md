@@ -107,6 +107,5 @@ Entendi assim:
 ## Handoff
 
 spec
-<!-- No MVP, acrescentar na linha seguinte: rota: max -->
 
 - Chat: o planejamento segue neste chat com `/vibeflow spec`. Em chat pesado ou host de contexto curto, um chat novo com `/vibeflow` retoma pela etapa gravada. Este arquivo vivo é a ponte.

@@ -10,12 +10,12 @@ Abrir **só** na varredura da etapa analyze. Não copiar esta tabela para o chat
 | Spec A*/C* | Plan T* campo `Spec:` | A*/C* órfão; T* sem A*/C* (só ok se for infra justificada no Overview) |
 | Spec Fora | Plan T* / Escopo | Task que implementa o recusado |
 | Plan T* (o quê, arquivos) | Spec Escopo / Contratos e restrições necessárias | Comportamento ou módulo fora do escopo; path interno não precisa constar na spec |
-| Design (com UI visível) | Spec F*/A* e Plan T* | Tela, estado ou prova visual sem T*; T* que contradiz o design |
+| Design (com UI nova) | Spec F*/A* e Plan T* | Tela, estado ou prova visual sem T*; T* que contradiz o design |
 | Os artefatos | `AGENTS.md` | Choque com Never, Git, semver, política do repo |
 | Interview Decisões críticas | Spec Decisões críticas | Mesmo ID e opção, ou ação `substitui` explícita com motivo |
 | Spec Decisões críticas | Plan T* campo `Decisões:` | ID criado/substituído com task responsável; nenhuma task implementa opção divergente |
 
-Interview ausente: pule a primeira linha. Sem UI visível: registre N/A na linha do design. Não invente Resultado.
+Interview ausente: pule a primeira linha. Sem UI nova: registre N/A na linha do design. Não invente Resultado.
 
 ## 2. Passes (spec-kit analyze, traduzido)
 
@@ -35,7 +35,7 @@ Faça todos os passes da tabela. `contrato_implement` segue a seção 3. Ache **
 
 ## 3. Contrato da implement
 
-Aplique a todo plan da V2. Plan de phase da v1 sem esse formato recebe N/A desta dimensão, sem migração, e conserva as conferências das seções 1 e 2.
+Aplique a todo plan.
 
 | Conferência | Sinal de achado | Gravidade |
 |---|---|---|
@@ -47,13 +47,12 @@ Aplique a todo plan da V2. Plan de phase da v1 sem esse formato recebe N/A desta
 | `Arquivos:` | Campo em mais de uma linha física, path fora de crases ou path incomparável | MEDIUM |
 | Sobreposição | `Arquivos:` sobrepostos entre T* sem `Deps` entre si, quando a ordem de escrita importa | HIGH |
 | Prontidão técnica | Requisito das provas sem local (local, CI ou host) ou sem destino (`ok`, `ação em Tn`, `pergunta ao humano`, `bloqueio`) | HIGH |
-| Prontidão técnica | Plan que promete Modo A sem os perfis exigidos verificados | HIGH |
 
 Formato, sobreposição e paths incomparáveis de `Arquivos:` seguem `references/plan.md`. Só a primeira linha do campo conta; confira a sobreposição pelos paths completos, porque path perdido numa segunda linha pode esconder uma sobreposição HIGH.
 
 Prova afetada restrita ao recorte: testes do módulo ou da skill tocada e dos consumidores diretos, E2E só do cenário cuja entrada mudou, evidência visual quando houver `Visual: necessária`. Comando compartilhado definido uma vez na prontidão e referenciado pelo nome é válido. Em T* só de prosa, vale a suíte do consumidor contratual ou uma checagem mecânica; teste de presença de palavras nunca vale.
 
-Destinos esperados na prontidão seguem a tabela da seção 3 de `references/plan.md`, inclusive os perfis exigidos no Modo A.
+Destinos esperados na prontidão seguem a tabela da seção 3 de `references/plan.md`. Perfis de subagente não entram na prontidão: o líder os confere na run.
 
 Sobreposição sem ordem relevante não é achado obrigatório: o líder serializa as T* na montagem das ondas. Registre MEDIUM de paralelismo perdido somente quando a perda for relevante.
 
@@ -66,7 +65,7 @@ Correções de `contrato_implement`:
 - `Prova afetada:` com suíte inteira: troque pelo comando do recorte e deixe a suíte inteira só na `Regressão completa`. Nenhuma correção grava a suíte inteira como `Prova afetada:`.
 - Sobreposição cuja ordem importa: acrescente a `Deps` real ou concentre o arquivo compartilhado numa T* final com `Deps`.
 - Path incomparável: recomende renomear ou isolar a T*; renomear arquivo do projeto é decisão do humano.
-- Requisito sem destino: aplique o destino quando ele decorre da regra acima; perfil, MCP, privilégio do SO ou credencial viram pergunta ao humano.
+- Requisito sem destino: aplique o destino quando ele decorre da regra acima; MCP, privilégio do SO ou credencial viram pergunta ao humano.
 
 Pergunte ao usuário no chat (uma por vez com recomendação e impacto) quando:
 1. O achado apontar uma ambiguidade real de negócio, escopo ou arquitetura.

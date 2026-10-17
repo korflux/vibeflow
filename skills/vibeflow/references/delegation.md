@@ -4,7 +4,7 @@ Leia antes da primeira delegação da run e ao escolher colaboração. O `SKILL.
 
 ## Papéis
 
-Use perfis realmente disponíveis, sem escolher modelo pelo nome. Antes da primeira delegação, o líder confere os perfis carregados no host; os perfis exigidos por situação estão no `SKILL.md`, seção 5. Perfil exigido ausente ou não carregado nunca é substituído por outro papel: a etapa segue no Modo B, com aviso de uma linha. O finalizador é um agente genérico/default apto a Git com pedido explícito; não reutilize um perfil que proíba Git.
+Use perfis realmente disponíveis. O líder não escolhe modelo ao delegar; o modelo e o esforço vêm do perfil instalado. Antes da primeira delegação, o líder confere os perfis carregados no host; os perfis exigidos por situação estão no `SKILL.md`, seção 5. Perfil exigido ausente ou não carregado nunca é substituído por outro papel: a etapa segue no Modo B, com aviso de uma linha. O finalizador é um agente genérico/default apto a Git com pedido explícito; não reutilize um perfil que proíba Git. Ajuste pontual que custaria mais delegar que fazer é do líder, nos limites do `SKILL.md`, seção 5, item 3.
 
 | Papel | Entrega | Escrita autorizada |
 |---|---|---|
@@ -14,7 +14,7 @@ Use perfis realmente disponíveis, sem escolher modelo pelo nome. Antes da prime
 | verificador | Conferência de diff, ownership, aceite e cobertura; certificação independente da `Prova afetada:` por T* e da união das provas afetadas na integração, reaproveitando prova verde de inputs inalterados | Somente saídas normais das provas |
 | corretor | Correção pela causa raiz de falha pré-review ou de R* roteado a ele, com a `Prova afetada:` da correção | Código e testes da correção |
 | revisor | Julgamento independente, com contexto limpo, de código, cobertura da origem e validade das evidências; executa o analyze e a review, incluindo a `Regressão completa` do plan | `analyze.md` e `review.md`, exclusivos deste papel na prosa e nos achados. No analyze, também as correções diretas em `spec.md`, `design.md` e `plan.md` previstas em `references/analyze.md` |
-| finalizador | Marcação de aprovação, estado do `plan.md` ao fim de cada onda e na interrupção, operações Git delimitadas e finalização confirmada | Em qualquer artefato, somente a linha `# Status:` e a marcação de aprovação humana; em `review.md`, também o `[x]` de R* comprovados, nunca prosa nem achados; no `plan.md`, caixas de T* comprovadas e o resumo curto de estado; no `spec.md`, a marcação dos critérios provados; nunca prosa de definição desses artefatos; `AGENTS.md` só na finalização confirmada; índice Git exclusivo |
+| finalizador | Marcação de aprovação, estado do `plan.md` no despacho e no fim de cada onda e na interrupção, operações Git delimitadas e finalização confirmada | Em qualquer artefato, somente a linha `# Status:` e a marcação de aprovação humana; em `review.md`, também o `[x]` de R* comprovados e a linha de push adiado, nunca prosa nem achados; no `plan.md`, caixas de T* comprovadas e as linhas `Estado:` e `Resumo:`; no `spec.md`, a marcação dos critérios provados; nunca prosa de definição desses artefatos; `AGENTS.md` só na finalização confirmada; índice Git exclusivo |
 
 ## Delegar e colaborar
 
@@ -47,12 +47,12 @@ pergunta: <somente quando pergunta; recomendação>
 
 Verde certifica somente o recorte. Bloqueado é impedimento real; pergunta é decisão humana material. O revisor acrescenta os campos de `references/analyze.md` ou `references/review.md`. O plan sozinho não certifica completude.
 
-## Provas em dois níveis
+## Níveis de prova
 
 | Nível | Responsável | Executa |
 |---|---|---|
 | Afetado | Implementador, redator e corretor; verificador, de forma independente, por T* | Somente a `Prova afetada:` da T*: testes do módulo tocado e dos consumidores diretos; E2E só do cenário da jornada cuja entrada mudou |
-| Integração | Verificador, depois da última T* | A união das `Prova afetada:` das T* da phase, uma vez por inputs finais |
+| Integração | Verificador, ao fim de cada onda | A união das `Prova afetada:` das T* da onda, uma vez por inputs finais |
 | Regressão completa | Revisor, na review final | Suíte inteira e E2E completo declarados no plan |
 
 Nenhum papel de implementação ou verificação amplia a prova afetada para a suíte completa nem repete prova só por assumir a etapa; segurança, paridade e CI obrigatório ficam na `Regressão completa`. Mudança ou falha renova somente a prova afetada, incluindo consumidores e dependências.

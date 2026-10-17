@@ -111,11 +111,10 @@
 
 ## Handoff
 
-<!-- Com UI visível: design. Sem UI visível: plan, com design N/A registrado. Não pular design em silêncio. Plan existente bloqueia nova escrita, pedido novo exige outra phase. -->
+<!-- Com UI nova: design. Sem UI nova: plan, com design N/A registrado. Não pular design em silêncio. Plan existente bloqueia nova escrita, pedido novo exige outra phase. -->
 
-design com UI visível, senão plan
-<!-- No MVP, acrescentar: rota: max -->
+design com UI nova, senão plan
 
-- Chat: o planejamento segue neste chat com `/vibeflow design` com UI visível, senão `/vibeflow plan`. Em chat pesado ou host de contexto curto, um chat novo com `/vibeflow` retoma pela etapa gravada. O `spec.md` vivo é a ponte.
+- Chat: o planejamento segue neste chat com `/vibeflow design` com UI nova, senão `/vibeflow plan`. Em chat pesado ou host de contexto curto, um chat novo com `/vibeflow` retoma pela etapa gravada. O `spec.md` vivo é a ponte.
 
 - [ ] Aprovação humana (leu o arquivo e confirmou)

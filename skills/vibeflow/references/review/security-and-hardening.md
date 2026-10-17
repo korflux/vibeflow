@@ -44,4 +44,4 @@ Bloqueio imediato. Falhas exploráveis ou perda de dados/segredos:
 | **Required** | Falta de limite de tamanho, ausência de validação de borda, CORS excessivo, log verboso de dados. | Sim |
 | **Nit** | Correção fundamentada de defesa adicional ou mensagem dentro da entrega. | Sim, enquanto R* estiver aberto |
 
-Informação sem remédio fica em Notas, sem R*. Optional/FYI legados com R* aberto também bloqueiam aprovação. Não transforme preferência ou endurecimento especulativo em correção.
+Informação sem remédio fica em Notas, sem R*. Todo R* aberto bloqueia aprovação. Não transforme preferência ou endurecimento especulativo em correção.
