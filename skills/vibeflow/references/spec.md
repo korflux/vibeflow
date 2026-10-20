@@ -55,7 +55,7 @@ rota: high · alvo: .vibeflow/phases/phase-1-lock-bloco/ · interview: N/A · sp
 
 ## Saída
 
-O líder confere a entrega contra as decisões e responde:
+O líder confere a entrega conforme `references/delegation.md`, Conferência do líder, e responde:
 
 ```text
 Spec gravada: <alvo>/spec.md

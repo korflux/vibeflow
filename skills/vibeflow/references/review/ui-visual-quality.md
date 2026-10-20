@@ -6,7 +6,7 @@ Abra esta referência quando `Visual: necessária` estiver no plan ou quando o d
 
 Use a seleção definida em `references/chrome-devtools.md`: navegador integrado (`@Browser` ou equivalente) primeiro quando disponível, MCP Server `chrome-devtools` para snapshot, screenshot, DOM, estilos, console, rede e assets, e Playwright somente se já existir no repositório ou for solicitado para fluxos repetíveis e assertions. Se a prova renderizada for necessária e não houver capacidade ou evidência válida, aplique a regra de instalação da review (`references/review.md`, seção 3); se a capacidade continuar ausente, registre `R*` `Required` e não aprove silenciosamente.
 
-Reaproveite a prova registrada no plan quando seus inputs continuarem válidos e cobrirem a integração; não abra o navegador de novo apenas para repetir uma captura. Quando precisar executar a prova, registre rota, viewport, estado, ações e evidência observada do recorte afetado. Screenshot isolado não substitui a inspeção da interação relevante.
+Reaproveite a evidência visual válida (`references/chrome-devtools.md`, Captura e reaproveitamento) quando seus inputs continuarem válidos e cobrirem a integração; não abra o navegador de novo apenas para repetir uma captura. Quando precisar executar a prova, registre rota, viewport, estado, ações e evidência observada do recorte afetado. Screenshot isolado não substitui a inspeção da interação relevante.
 
 ## Checklist única de auditoria renderizada
 

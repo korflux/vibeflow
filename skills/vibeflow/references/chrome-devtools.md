@@ -10,7 +10,19 @@ Escolha a primeira capacidade disponível:
 2. **MCP Server `chrome-devtools`:** use `navigate_page`, `take_snapshot`, `click` ou `fill`, `take_screenshot` e, quando necessário, a inspeção de DOM, estilos, console, rede e assets.
 3. **Playwright:** use somente quando já existir no repositório ou quando o humano o solicitar, para fluxos repetíveis, viewports, screenshots e assertions de visibilidade ou acessibilidade.
 
-Se a prova visual for necessária e nenhuma capacidade estiver disponível, aplique a regra de instalação da etapa (implement ou review) antes de declarar limitação: registrar um MCP é configuração persistente de integração e vai ao humano. Se a capacidade continuar ausente, registre a limitação e não marque a validação visual como concluída. Depois de uma prova verde, reutilize-a enquanto os inputs renderizados não mudarem; não repita apenas para produzir outra captura.
+Se a prova visual for necessária e nenhuma capacidade estiver disponível, aplique a regra de instalação da etapa (implement ou review) antes de declarar limitação: registrar um MCP é configuração persistente de integração e vai ao humano. Se a capacidade continuar ausente, registre a limitação e não marque a validação visual como concluída.
+
+## Captura e reaproveitamento
+
+| Papel | Faz |
+|---|---|
+| Implementador | Dono da captura da entrega: captura screenshots nos viewports e estados do `design.md` ou do brief, grava as imagens na pasta temporária do sistema, fora do repositório, e cita os paths no campo `prova` do relatório fixo (`references/delegation.md`) |
+| Corretor | Recaptura quando a correção altera a UI renderizada, com o mesmo critério do implementador |
+| Verificador | Reaproveita essa evidência na certificação, sem nova captura |
+| Líder | Fora do Modo B, só abre as imagens citadas e nunca captura; no Modo B, executa inline conforme o `SKILL.md`, seção 7 |
+| Revisor | Com `Visual: necessária` no plan, recaptura somente quando a evidência citada não existe mais (por exemplo, em chat novo) ou os inputs renderizados mudaram; senão, reaproveita |
+
+Evidência verde vale enquanto os inputs renderizados não mudarem; não repita a captura apenas para produzir outra. Imagem capturada nunca entra em commit.
 
 ## Checklist renderizada
 

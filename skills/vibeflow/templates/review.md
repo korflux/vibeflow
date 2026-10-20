@@ -46,7 +46,7 @@
 
 ## Visual
 
-<!-- omitir se não há prova renderizada necessária; reaproveitar a evidência válida registrada no plan -->
+<!-- omitir se não há prova renderizada necessária; reaproveitar a evidência válida (`references/chrome-devtools.md`, Captura e reaproveitamento) -->
 
 - Browser: <DevTools | E2E do repo>
 - Screenshot: <path> - leitura: <ok | falhas>

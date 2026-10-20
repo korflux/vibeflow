@@ -9,7 +9,7 @@ Sem integração verde e commit real, nenhuma T* é concluída. Push e decisões
 
 | Situação | Como conduzir |
 |---|---|
-| Low sem phase de origem (Express, definido no `AGENTS.md` do projeto) | Ajuste direto do líder quando cabe nos limites do `SKILL.md`, seção 5, item 3; senão, brief curto ao implementador e prova proporcional (seção 9); com a prova verde, o finalizador faz staging explícito dos paths entregues e cria `task(express): <resultado>`, sem push, sem init, `.vibeflow/`, phase ou artefato |
+| Low sem phase de origem (Express, definido no `AGENTS.md` do projeto) | Ajuste direto do líder quando cabe nos limites do `SKILL.md`, seção 5, item 3; senão, brief curto ao implementador e prova proporcional (seção 9), com a devolutiva conferida conforme `references/delegation.md`, Conferência do líder; com a prova verde, o finalizador faz staging explícito dos paths entregues e cria `task(express): <resultado>`, sem push, sem init, `.vibeflow/`, phase ou artefato |
 | Ajuste de uma phase ou do MVP | Ajuste de phase, abaixo |
 | Medium | Seção 8 |
 | Plan aprovado e perfis exigidos carregados | Modo A: seções 1 a 6 |
@@ -60,7 +60,7 @@ Antes da primeira onda, confira nas ferramentas do host os perfis exigidos pela 
 2. Monte a onda percorrendo as elegíveis em ordem numérica e incluindo cada T* cujos `Arquivos:` não se sobrepõem aos das já incluídas, pelas regras de `references/plan.md`. T* sem `Arquivos:` comparáveis roda sozinha: só entra quando a onda está vazia e a encerra.
 3. O finalizador marca `Estado: em andamento` nas T* da onda. Despache todas elas numa única rodada, em chamadas paralelas, cada responsável com ownership exclusivo dos `Arquivos:` da sua T*. T* que precise de path fora do recorte volta ao líder antes de editar e é serializada.
 4. Enquanto a onda trabalha, o explorador prepara em leitura as T* que ela libera.
-5. Confronte cada devolutiva com o objetivo da phase (`SKILL.md`, seção 5). Cada T* verde vai ao verificador com sua `Prova afetada:`, sem esperar a onda; falha vai ao corretor sem bloquear as demais. Impedimento real que o corretor não resolve deixa a T* `bloqueada` e vai ao humano.
+5. Cada T* verde vai ao verificador com sua `Prova afetada:`, sem esperar a onda. A T* que roda sozinha é conferida pelo líder antes do verificador; numa onda com mais de uma T*, não há conferência individual, e ela ocorre uma vez na integração, conforme `references/delegation.md`, Conferência do líder. Falha vai ao corretor sem bloquear as demais. Impedimento real que o corretor não resolve deixa a T* `bloqueada` e vai ao humano.
 6. Com a onda verificada, o finalizador atualiza no `plan.md`, num único handoff, as linhas `Estado:` e `Resumo:` de cada T* da onda. A caixa só é marcada no commit.
 
 ### 2. Validar a onda
@@ -93,7 +93,7 @@ Informe a limitação em uma linha quando vier da falta de subagentes. Execute i
 
 ### 8. Implement e review sem plan
 
-1. O implementador entrega a mudança do brief com prova proporcional (seção 9).
+1. O implementador entrega a mudança do brief com prova proporcional (seção 9), e o líder a confere conforme `references/delegation.md`, Conferência do líder.
 2. O verificador certifica a prova; falha vai ao corretor.
 3. Com a prova verde, o finalizador faz staging explícito dos paths entregues, confere `git diff --cached --check` e cria `task(medium): <resultado>`.
 4. A review abre a phase: o líder fixa o alvo (`references/disco.md`), e o revisor cria o `review.md` com `# Rota: medium`, registra no Contexto o commit `task(medium): ...` como base, usa como início do diff o commit anterior a ele e julga o diff contra o brief, sem T*.
@@ -106,7 +106,7 @@ Informe a limitação em uma linha quando vier da falta de subagentes. Execute i
 1. **Reconhecer:** trace entrada, chamadas, consumidores, padrões compartilhados e a prova da jornada antes de editar, sem varredura cega. Edite somente os `Arquivos:` da T* ou o recorte do brief. UI segue design, tokens e motion aprovados quando existirem.
 2. **Codar e simplificar:** reutilize o que existe no projeto, na standard library, na plataforma e nas dependências instaladas. Código e testes acompanham a entrega; complemente só lacunas concretas de comportamento, erro ou risco. Prefira um teste que percorra a jornada com resultados observáveis; não crie um teste por função, campo ou T*. Remova duplicação no recorte, sem abstração especulativa nem limpeza externa. Documente semanticamente decisões e responsabilidades.
 3. **Provar:** execute a `Prova afetada:` da T*. Sem ela (low ou medium), derive o recorte: testes do módulo tocado e dos consumidores diretos, e E2E só do cenário cuja entrada mudou, com o smoke da entrada alterada. Os níveis de prova estão em `references/delegation.md`.
-4. **Visual:** quando o aceite depender da UI renderizada, siga `references/chrome-devtools.md`. Limitação visual necessária impede certificação.
+4. **Visual:** quando o aceite depender da UI renderizada, capture e cite a evidência conforme `references/chrome-devtools.md`, Captura e reaproveitamento. Limitação visual necessária impede certificação.
 5. **Entregar:** relatório fixo com paths, inputs reais, comando e resultado da prova e pendências. Barra de acabamento em `references/definition-of-done.md`; banco ou dinheiro exige `references/database-and-migrations.md`.
 
 Prova vermelha exige correção da causa, sem limite de tentativas antes da review; não enfraqueça, pule ou apague teste para obter verde, e mudança de asserção exige justificativa pelo aceite. Credencial, conta, pagamento, elevação administrativa ou integração persistente são impedimentos reais: relate a tentativa, o impedimento e a recomendação.

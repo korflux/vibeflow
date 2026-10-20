@@ -106,8 +106,8 @@ Toda aprovação humana de artefato é marcada em `# Status: aprovado` e na apro
    - não toca arquivo que um subagente detém na onda, nem `analyze.md` ou `review.md` (salvo a etapa de ajuste de `references/review.md`).
 
    Ajuste direto em código ou teste durante o implement entra na prova do verificador da onda; o líder nunca certifica o próprio ajuste. Express que cumpre essas condições é feito inteiro pelo líder, com a prova proporcional e o commit `task(express): ...`. Fora dessas condições, ou no segundo ajuste direto seguido sobre o mesmo resultado, delegue.
-4. Confronte cada devolutiva com o objetivo da phase. Crítica devolve ao dono um apontamento específico, sem refazer o trabalho. Reconhecimento marca a entrega como referência de padrão nas próximas delegações e reaproveita o analista que acertou, com seu contexto. Nenhum dos dois cria artefato ou seção; o `plan.md` registra só o estado resultante.
-5. Evite microgerência, que refaz conferência, diff ou prova já certificados, e distância, que aceita entrega sem confrontá-la com o objetivo.
+4. Confronte cada devolutiva que muda o estado conforme `references/delegation.md`, Conferência do líder. Crítica devolve ao dono um apontamento específico, sem refazer o trabalho. Reconhecimento marca a entrega como referência de padrão nas próximas delegações e reaproveita o analista que acertou, com seu contexto. Nenhum dos dois cria artefato ou seção; o `plan.md` registra só o estado resultante.
+5. Evite microgerência, que refaz conferência, diff ou prova já certificados, e distância, que aceita entrega sem a conferência do item 4.
 6. Com o humano, faça uma pergunta por vez, com opções e recomendação. Decisão que não muda o resultado: assuma e avise.
 
 ## 6. Interromper e retomar
