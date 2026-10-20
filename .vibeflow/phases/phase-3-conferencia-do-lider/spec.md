@@ -82,9 +82,9 @@ Sem interview (rota `high`). Itens da entrega que poderiam ficar esquecidos:
 - Rota: qualquer rota cujo aceite dependa da UI renderizada (`Visual: necessária` no plan, ou brief com aceite visual em low e medium)
 - Gatilho: o implementador devolve o relatório fixo de uma entrega com aceite visual
 - Pré-condição: viewports e estados definidos no `design.md` ou no brief
-- Superfície por passo: arquivo fora do repositório (pasta temporária da sessão); relatório fixo do subagente; chat do líder com o humano
+- Superfície por passo: arquivo fora do repositório (pasta temporária do sistema); relatório fixo do subagente; chat do líder com o humano
 - Passos:
-  1. O implementador captura screenshots nos viewports e estados definidos no `design.md` ou no brief e grava as imagens fora do repositório, na pasta temporária da sessão [superfície: arquivo fora do repositório]
+  1. O implementador captura screenshots nos viewports e estados definidos no `design.md` ou no brief e grava as imagens fora do repositório, na pasta temporária do sistema [superfície: arquivo fora do repositório]
   2. O implementador informa os paths das imagens no campo `prova` do relatório fixo [superfície: relatório fixo do subagente]
   3. O verificador reaproveita essa evidência na sua certificação, sem nova captura enquanto os inputs renderizados não mudarem [superfície: relatório fixo do subagente]
   4. O líder abre as imagens e as confronta com o `design.md` ou o brief -> confirma direção visual [superfície: arquivo fora do repositório]
@@ -171,7 +171,7 @@ Sem interview (rota `high`). Itens da entrega que poderiam ficar esquecidos:
 ### Critérios de sucesso
 
 - [x] C1: a contradição entre o `AGENTS.md` (a IA audita o resultado no disco e no Git) e `references/delegation.md` (consumir o relatório) desaparece; a regra da conferência tem uma única casa no pacote e as demais casas apontam para ela.
-- [x] C2: nenhum papel ganha execução de prova pelo líder; nenhuma frase da skill manda o líder executar comando de prova, subir servidor ou criar evidência.
+- [x] C2: fora do Modo B, nenhum papel ganha execução de prova pelo líder e nenhuma frase da skill manda o líder executar comando de prova, subir servidor ou criar evidência; no Modo B, o líder executa inline conforme o `SKILL.md`, seção 7.
 - [x] C3: a captura da evidência visual pertence a quem altera a UI renderizada: o implementador e, na correção, o corretor; fora do Modo B, verificador e líder só a reaproveitam.
 - [x] C4: correção técnica continua exclusiva do verificador e do revisor; nenhuma frase da conferência atribui ao líder julgamento técnico de código ou prova.
 - [x] C5: nenhum path contratual novo surge em `references/disco.md` e nenhum script de `skills/vibeflow/scripts/` muda.

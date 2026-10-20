@@ -31,7 +31,7 @@ Antes de aceitar cada devolutiva que muda o estado da phase, confira forma e dir
 | Entrega | Leia | Confronte com |
 |---|---|---|
 | Prosa de etapa de planejamento ou texto avulso | O arquivo gravado | As decisões e respostas do humano entregues no brief: cada uma presente e nada decidido além delas; não reescreva o artefato |
-| Código de T* que roda sozinha, inclusive a serializada | O relatório fixo e `git diff --stat`; um trecho do diff só quando o relatório citar algo estranho | Os `Arquivos:` da T*: nenhum path fora do recorte |
+| Código de T* que não divide a onda com outra, inclusive a serializada | O relatório fixo e `git diff --stat`; um trecho do diff só quando o relatório citar algo estranho | Os `Arquivos:` da T*: nenhum path fora do recorte |
 | Onda com mais de uma T* | O mesmo do código, uma vez na integração devolvida pelo verificador, não por T* isolada | Os `Arquivos:` das T* da onda |
 | Aceite visual | As imagens citadas no campo `prova` | O `design.md` ou o aceite visual do brief; `prova` sem paths de imagem reprova |
 | API ou CLI | A evidência anexada: chamada real com resposta ou saída de comando | O aceite do plan ou do brief; evidência ausente reprova |

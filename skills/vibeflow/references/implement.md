@@ -60,7 +60,7 @@ Antes da primeira onda, confira nas ferramentas do host os perfis exigidos pela 
 2. Monte a onda percorrendo as elegíveis em ordem numérica e incluindo cada T* cujos `Arquivos:` não se sobrepõem aos das já incluídas, pelas regras de `references/plan.md`. T* sem `Arquivos:` comparáveis roda sozinha: só entra quando a onda está vazia e a encerra.
 3. O finalizador marca `Estado: em andamento` nas T* da onda. Despache todas elas numa única rodada, em chamadas paralelas, cada responsável com ownership exclusivo dos `Arquivos:` da sua T*. T* que precise de path fora do recorte volta ao líder antes de editar e é serializada.
 4. Enquanto a onda trabalha, o explorador prepara em leitura as T* que ela libera.
-5. Cada T* verde vai ao verificador com sua `Prova afetada:`, sem esperar a onda. A T* que roda sozinha é conferida pelo líder antes do verificador; numa onda com mais de uma T*, não há conferência individual, e ela ocorre uma vez na integração, conforme `references/delegation.md`, Conferência do líder. Falha vai ao corretor sem bloquear as demais. Impedimento real que o corretor não resolve deixa a T* `bloqueada` e vai ao humano.
+5. Cada T* verde vai ao verificador com sua `Prova afetada:`, sem esperar a onda; a T* que não divide a onda com outra passa antes pela conferência do líder (`references/delegation.md`, Conferência do líder), e a onda com mais de uma T* é conferida uma vez na integração. Falha vai ao corretor sem bloquear as demais. Impedimento real que o corretor não resolve deixa a T* `bloqueada` e vai ao humano.
 6. Com a onda verificada, o finalizador atualiza no `plan.md`, num único handoff, as linhas `Estado:` e `Resumo:` de cada T* da onda. A caixa só é marcada no commit.
 
 ### 2. Validar a onda
