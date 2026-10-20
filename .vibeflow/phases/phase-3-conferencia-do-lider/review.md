@@ -1,22 +1,22 @@
 # Review: conferência obrigatória do líder a cada devolutiva
 # Alvo: phase-3-conferencia-do-lider
-# Status: rascunho
+# Status: aprovado
 
 ## Contexto
 
-- Alvo: fase `.vibeflow/phases/phase-3-conferencia-do-lider/`, branch `main`, diff `87916fe..3a2f3b4`
+- Alvo: fase `.vibeflow/phases/phase-3-conferencia-do-lider/`, branch `main`, diff `87916fe..461cb8c` (etapa 1: `87916fe..3a2f3b4`; etapa 2: `3a2f3b4..461cb8c`)
 - Cadeia: spec.md / plan.md (sem interview e sem analyze, rota high)
 - O que muda: o líder passa a conferir forma e direção de cada devolutiva que muda o estado, com casa única em `references/delegation.md`, Conferência do líder; a captura visual passa a ter casa única em `references/chrome-devtools.md`, Captura e reaproveitamento, com o implementador como dono; `SKILL.md`, `implement.md`, `spec.md` (referência), `ui-visual-quality.md` e `templates/review.md` apontam para essas casas.
 
 ## Cobertura da solicitação
 
-- Origem e limites: pedido do humano transmitido pelo líder (conferência barata e obrigatória do líder, no disco e no Git, a cada etapa antes de aceitar a entrega), `spec.md` e `plan.md` aprovados, e as regras P1, P2, P3 e P10 decididas pelo líder na implementação e refletidas na spec. O disco não registra confirmação humana posterior a P1, P2, P3 e P10, porque spec e plan nasceram no mesmo commit da T1; a confirmação humana final cobre essas regras.
+- Origem e limites: pedido do humano transmitido pelo líder (conferência barata e obrigatória do líder, no disco e no Git, a cada etapa antes de aceitar a entrega), `spec.md` e `plan.md` aprovados, e as regras P1, P2, P3 e P10 decididas pelo líder na implementação e refletidas na spec. O disco não registra confirmação humana posterior a P1, P2, P3 e P10, porque spec e plan nasceram no mesmo commit da T1. Pendente de confirmação humana: o líder leva P1, P2, P3 e P10 ao humano na confirmação final, junto do Approve; sem R*.
 
 | Item da solicitação e fonte (A*/C* quando houver) | Implementação | Evidência | Situação |
 |---|---|---|---|
-| Conferência barata e obrigatória do líder a cada devolutiva que muda o estado, lendo disco e Git (pedido do humano; Suposições 1 e 4) | `references/delegation.md`, Conferência do líder; `SKILL.md`, seção 5, itens 4 e 5 | Revisão de consistência no diff `87916fe..3a2f3b4` | atendido |
+| Conferência barata e obrigatória do líder a cada devolutiva que muda o estado, lendo disco e Git (pedido do humano; Suposições 1 e 4) | `references/delegation.md`, Conferência do líder; `SKILL.md`, seção 5, itens 4 e 5 | Revisão de consistência no diff `87916fe..461cb8c` (etapa 1: `87916fe..3a2f3b4`; etapa 2: `3a2f3b4..461cb8c`) | atendido |
 | A1: prosa confrontada com as decisões do humano, sem reescrever | `delegation.md`, linha "Prosa de etapa de planejamento"; `references/spec.md`, Saída | Revisão de consistência | atendido |
-| A2: código por `git diff --stat` contra `Arquivos:`, trecho do diff só com algo estranho, sem testes nem leitura linha a linha | `delegation.md`, linha "Código de T*" e Limites; `implement.md`, seção 1, passo 5 | Revisão de consistência | atendido, com ambiguidade de termo em R2 |
+| A2: código por `git diff --stat` contra `Arquivos:`, trecho do diff só com algo estranho, sem testes nem leitura linha a linha | `delegation.md`, linha "Código de T*" e Limites; `implement.md`, seção 1, passo 5 | Revisão de consistência; termo corrigido em `461cb8c` (R2) | atendido |
 | A3: onda paralela conferida uma vez na integração | `delegation.md`, linha "Onda com mais de uma T*"; `implement.md`, seção 1, passo 5 | Revisão de consistência | atendido |
 | A4: implementador captura nos viewports e estados, fora do repositório, paths no campo `prova`; verificador reaproveita | `chrome-devtools.md`, Captura e reaproveitamento; `delegation.md`, campo `prova`; `implement.md`, seção 9, passo 4 | Revisão de consistência | atendido |
 | A5: líder abre as imagens sem servidor nem navegação; review recaptura com `Visual: necessária` quando a evidência sumiu ou os inputs mudaram | `chrome-devtools.md`, linhas Líder e Revisor; `delegation.md`, linha "Aceite visual"; `ui-visual-quality.md`; `templates/review.md` | Revisão de consistência | atendido |
@@ -26,15 +26,15 @@
 | A9: direção ao dono, técnica ao verificador, sem desempate do líder | `delegation.md`, parágrafo de divergência | Revisão de consistência | atendido |
 | A10: aprovação só na linha de progresso, reprovação só como devolução, sem seção nem registro | `delegation.md`, parágrafo de visibilidade | Revisão de consistência | atendido |
 | C1: casa única, demais casas apontam | `delegation.md` e `chrome-devtools.md` como casas; `SKILL.md`, `implement.md`, `spec.md`, `ui-visual-quality.md` e `templates/review.md` apontam | `grep` de "confer" e "captur" no pacote | atendido; repetição parcial do momento em `implement.md` vai a Notas |
-| C2: líder não executa prova, não sobe servidor nem cria evidência | Limites de `delegation.md` e linha Líder de `chrome-devtools.md`, com a exceção do Modo B | Revisão de consistência | atendido na skill; texto da C2 na spec sem a ressalva do Modo B (R1) |
+| C2: líder não executa prova, não sobe servidor nem cria evidência | Limites de `delegation.md` e linha Líder de `chrome-devtools.md`, com a exceção do Modo B | Revisão de consistência; C2 da spec alinhada em `461cb8c` (R1) | atendido |
 | C3: captura pertence a quem altera a UI; fora do Modo B, verificador e líder reaproveitam | `chrome-devtools.md`, Captura e reaproveitamento | Revisão de consistência | atendido |
 | C4: correção técnica exclusiva do verificador e do revisor | `delegation.md`, primeiro parágrafo e parágrafo de divergência | Revisão de consistência | atendido |
 | C5: sem path contratual novo em `disco.md` e sem mudança em `scripts/` | Nenhum dos dois no diff | `git diff --stat 87916fe HEAD`; `node --test` 26/26 | atendido |
 | C6: minor, sem arquivo de versão alterado | Nenhum manifesto alterado; sem campo `version` nem tags | `grep '"version"'` nos manifestos sem resultado; `git tag` vazio | atendido |
-| P1: Modo B como exceção a "líder não executa prova" (decisão do líder) | `delegation.md`, Limites e último parágrafo; `chrome-devtools.md`, linha Líder | Revisão de consistência; coerente com `SKILL.md`, seção 7 | atendido; confirmação humana na finalização |
-| P2: revisor recaptura só quando a evidência sumiu ou os inputs mudaram (decisão do líder) | `chrome-devtools.md`, linha Revisor | Revisão de consistência | atendido; confirmação humana na finalização |
-| P3: corretor recaptura quando a correção altera a UI (decisão do líder) | `chrome-devtools.md`, linha Corretor | Revisão de consistência | atendido; confirmação humana na finalização |
-| P10: T* sozinha conferida antes do verificador; onda com mais de uma T*, uma vez na integração (decisão do líder) | `implement.md`, seção 1, passo 5; `delegation.md`, tabela | Revisão de consistência | atendido, com ambiguidade de termo em R2 |
+| P1: Modo B como exceção a "líder não executa prova" (decisão do líder) | `delegation.md`, Limites e último parágrafo; `chrome-devtools.md`, linha Líder | Revisão de consistência; coerente com `SKILL.md`, seção 7 | atendido; pendente de confirmação humana na finalização |
+| P2: revisor recaptura só quando a evidência sumiu ou os inputs mudaram (decisão do líder) | `chrome-devtools.md`, linha Revisor | Revisão de consistência | atendido; pendente de confirmação humana na finalização |
+| P3: corretor recaptura quando a correção altera a UI (decisão do líder) | `chrome-devtools.md`, linha Corretor | Revisão de consistência | atendido; pendente de confirmação humana na finalização |
+| P10: T* sozinha conferida antes do verificador; onda com mais de uma T*, uma vez na integração (decisão do líder) | `implement.md`, seção 1, passo 5; `delegation.md`, tabela | Revisão de consistência; termo corrigido em `461cb8c` (R2) | atendido |
 
 ## Checklist de correções
 
@@ -48,7 +48,7 @@
 - [x] Uma casa por fato para a conferência (`delegation.md`) e para a captura visual (`chrome-devtools.md`)
 - [x] Conferência barata: só `git diff --stat`, leitura do artefato ou da evidência anexada, sem execução de prova fora do Modo B
 - [x] Sem path citado inexistente, sem teste de prosa, sem script alterado
-- [ ] Sem contradição entre spec e skill (R1) nem termo ambíguo no fluxo (R2)
+- [x] Sem contradição entre spec e skill (R1) nem termo ambíguo no fluxo (R2)
 
 ## Notas
 
@@ -60,14 +60,14 @@
 
 ## Veredito vigente
 
-- [ ] **Approve**: origem suficiente, obrigações atendidas ou retiradas explicitamente pelo humano e nenhum R* de correção em `[ ]`
-- [x] **Request changes**: há R* de correção em `[ ]`
+- [x] **Approve**: origem suficiente, obrigações atendidas ou retiradas explicitamente pelo humano e nenhum R* de correção em `[ ]`
+- [ ] **Request changes**: há R* de correção em `[ ]`
 
 ## Handoff
 
-implement
+finalização Git da phase
 
-- [ ] Aprovação humana (leu o arquivo e confirmou)
+- [x] Aprovação humana (leu o arquivo e confirmou)
 
 - Chat: no Modo A, esta review roda em revisor de contexto limpo, a pedido do líder; sem subagentes, roda num chat novo com `/vibeflow review`. As correções seguem pela etapa implement, com corretor ou redator conforme o `papel` de cada R*; sem subagentes, num chat novo com `/vibeflow implement`. Após Approve e confirmação humana, o handoff é a finalização Git da phase. O `review.md` vivo e o diff são a ponte.
 
@@ -96,3 +96,19 @@ implement
 - Abriu: R1, R2
 - Fechou: nenhum
 - Veredito desta etapa: Request changes
+
+### Etapa 2 - re-review - R1, R2, diff 3a2f3b4..461cb8c
+
+- Provas reaproveitadas: prova da correção certificada pelo verificador para R1 e R2; da etapa 1, `gitleaks` e as checagens de paths dos arquivos não alterados.
+- Provas executadas (HEAD `461cb8c`, árvore limpa; só onde os inputs mudaram):
+  - Revisão de consistência de `spec.md`, `references/delegation.md` e `references/implement.md`: a C2 traz "fora do Modo B" nas duas orações e remete o Modo B ao `SKILL.md`, seção 7; o F3 diz "pasta temporária do sistema" nos dois pontos, coerente com `chrome-devtools.md`; "roda sozinha" sobra só no sentido técnico (`implement.md`, passo 2; `delegation.md`, Delegar e colaborar; `plan.md`), e a conferência usa "T* que não divide a onda com outra", com "onda com mais de uma T*" como complemento, o que cobre a onda de uma só T*.
+  - `checagem-de-paths` do plan sobre `delegation.md` e `implement.md`: nenhuma linha `AUSENTE`.
+  - `node --test`: 26 pass, 0 fail.
+  - `git diff --check 3a2f3b4 461cb8c`: sem saída, código 0.
+  - `gitleaks detect --source . --redact --no-banner`: no leaks found, código 0.
+- Execução: o commit `task(phase-3:R1,R2): ...` (`461cb8c`, pai `3a2f3b4`) existe, e seus IDs são exatamente os R* marcados `[x]` desde a etapa 1 (R1, R2). Os paths alterados (`spec.md`, `review.md`, `delegation.md`, `implement.md`) estão nos remédios dos R* e nos `Arquivos:` da T1. O ajuste direto do líder na C2 está dentro do remédio do R1.
+- Leu: diff `3a2f3b4..461cb8c`, `git log`, `review.md` da etapa 1 e o pedido de re-review do líder.
+- Cobertura: A2, C2 e P10 sem ressalva; P1, P2, P3 e P10 pendentes de confirmação humana na finalização, sem R*.
+- Abriu: nenhum
+- Fechou: R1, R2
+- Veredito desta etapa: Approve final
