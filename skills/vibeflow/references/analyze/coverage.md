@@ -15,6 +15,7 @@ Abrir só na etapa analyze. Ache a instância concreta, não o padrão genérico
 | Prova fora do contrato | Comando que o repo não tem, E2E ou suíte inteira no passo | Trocar pelos testes afetados do passo |
 | Checkpoint ausente | Grupo que fecha critérios sem checkpoint em phase não pequena, ou grupo de risco sem checkpoint com `# Risco:` | Acrescentar a linha de checkpoint |
 | Regressão completa | Seção ausente ou com comando que o repo não tem | Corrigir com os comandos reais |
+| Isolamento do E2E | Critério de tela sem a escolha do isolamento registrada em `## Regressão completa` (`references/plan.md`, Ambiente de teste) | Registrar a escolha do líder; sem ela, parar e perguntar ao líder |
 | `AGENTS.md` | Passo que viola regra mandatória do projeto | Ajustar o passo à regra |
 
-Formato do passo, `Arquivos:` e checkpoint: `references/disco.md` (Plan). Prova do passo e Regressão completa: `references/plan.md`.
+Formato do passo, `Arquivos:` e checkpoint: `references/disco.md` (Plan). Prova do passo e Regressão completa: `references/plan.md`. Regras de teste: `references/testes.md`.

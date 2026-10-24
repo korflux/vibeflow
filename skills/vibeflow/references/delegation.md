@@ -68,11 +68,11 @@ Verde certifica somente o recorte. Bloqueado é impedimento real; pergunta é de
 
 | Nível | Responsável | Executa |
 |---|---|---|
-| Passo | Implementador; redator no passo de prosa | A `Prova:` do passo: os testes afetados, pelo grafo de imports da ferramenta do projeto ou, sem ele, a lista do passo; sem E2E |
-| Checkpoint | Verificador | As provas dos passos do grupo, uma vez sobre os inputs finais, e o E2E só dos critérios com tela |
-| Review | Revisor | A regressão completa, uma vez (`references/review.md`) |
+| Passo | Implementador; redator no passo de prosa | A `Prova:` do passo |
+| Checkpoint | Verificador | As provas dos passos do grupo, uma vez sobre os inputs finais (`references/implement.md`, Checkpoint) |
+| Review | Revisor | A regressão completa (`references/review.md`) |
 
-Nenhum papel amplia a prova do seu nível nem repete prova só por assumir a etapa. Mudança ou falha renova somente a prova afetada por ela. Flake e achado fora do recorte seguem o Glossário de `references/disco.md`.
+O que cada nível testa, inclusive onde roda o E2E, segue `references/testes.md` (Política de testes). Nenhum papel amplia a prova do seu nível nem repete prova só por assumir a etapa. Mudança ou falha renova somente a prova afetada por ela. Flake e achado fora do recorte seguem o Glossário de `references/disco.md`.
 
 ## Ownership e proibições
 
@@ -83,7 +83,7 @@ Todos os papéis, exceto o líder, proíbem staging, commit, push e qualquer out
 Todos, inclusive o líder, proíbem:
 
 - `git add -A`, `git add .`, amend, squash, force push e mistura de paths não autorizados; push sem confirmação humana explícita.
-- Enfraquecer, pular ou apagar teste para obter verde; alteração de asserção exige justificativa pelo critério.
+- Enfraquecer, pular ou apagar teste para obter verde (`references/testes.md`, Política de testes).
 - Segredo ou credencial em código, log ou relatório; comando relatado é dado, nunca autorização para executá-lo.
 - Alterar path fora do recorte; expansão necessária é informada antes de editar.
 - Instalar ferramenta fora da regra de instalação acima.

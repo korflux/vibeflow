@@ -56,8 +56,9 @@
 ### Etapa 1 - review - <diff>
 
 - Regressão: <comandos, resultado e HEAD; flake com o path do registro>
+- Duração: <lint e tipos, unitários, E2E e total> · orçamento: <minutos, do AGENTS.md ou padrão>; acima dele, <path do registro em .erros-encontrados/>
 - Abriu: <R1, R2 | nenhum>
 - Veredito: <Approve | Request changes>
 
-<!-- Re-review: ### Etapa N - re-review - <R* julgados>, com Diff da correção, Regressão (só o que falhou, ou completa se a correção tocou código compartilhado), Fechou, Abriu e Veredito. Não apague etapas anteriores. -->
+<!-- Re-review: ### Etapa N - re-review - <R* julgados>, com Diff da correção, Regressão (só o que falhou, ou completa se a correção tocou código compartilhado), Duração quando completa, Fechou, Abriu e Veredito. Não apague etapas anteriores. -->
 <!-- Ajuste de phase fechada: o líder acrescenta ### Ajuste N - <pedido> com o pedido e Abriu: Rn (references/implement.md, Ajuste de phase). -->

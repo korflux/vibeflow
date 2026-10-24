@@ -30,11 +30,13 @@ Um único chat conduz a phase por padrão. Em host de contexto curto, use dois: 
 
 ## Comandos do projeto
 <!-- SLOT:comandos -->
-<!-- Registrar só comandos existentes, cada um com onde roda (local, CI ou host): instalar, executar, lintar, validar tipos, teste por recorte (arquivo, módulo ou filtro), suíte completa, E2E, varredura de segredos e CI obrigatório. -->
+<!-- Registrar só comandos existentes, cada um com onde roda (local, CI ou host): instalar, executar, lintar, validar tipos, teste por recorte (arquivo, módulo ou filtro), suíte completa, E2E, varredura de segredos e CI obrigatório. Registrar também o orçamento da regressão completa em minutos; sem declaração, vale o padrão de `references/testes.md` da skill `vibeflow`. -->
 
 ## Ambiente
 <!-- SLOT:ambiente -->
 <!-- homolog | producao -->
+<!-- Serviços de teste locais: <serviço>: <nativo | embutido | Docker> -->
+<!-- Docker nos testes: <decisão do humano>, decidido em <AAAA-MM-DD> -->
 
 ## Versão (semver)
 - **Major:** quebra contrato (API, schema, comportamento que caller já usa).

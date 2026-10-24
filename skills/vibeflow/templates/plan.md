@@ -5,6 +5,7 @@
 ## Regressão completa
 
 <comandos reais da suíte inteira, do mais barato ao mais caro: lint e tipos, unitários, E2E>
+Isolamento do E2E: <a, b ou c, conforme references/testes.md; apague a linha sem critério com tela>
 <!-- Só a review executa esta seção; nenhum passo nem checkpoint a repete. -->
 
 ## Passos

@@ -8,7 +8,7 @@ Abra no fechamento do passo, não no boot. Na review, julgue se o diff passa Cor
 
 - Critério de aceite do passo, ou do R*, atendido.
 - Roda em runtime, não só no typecheck.
-- Testes conforme `references/implement.md`, Política de testes: cada critério provado por teste capaz de detectar a ausência do comportamento, sem enfraquecer, pular ou apagar teste.
+- Testes conforme `references/testes.md` (Política de testes), capazes de detectar a ausência do comportamento.
 - `Prova:` do passo verde. Passo só manual não conta.
 - Quando o critério depende de aparência, layout, responsividade ou comportamento renderizado de UI web, prova focada no browser (`references/chrome-devtools.md`).
 

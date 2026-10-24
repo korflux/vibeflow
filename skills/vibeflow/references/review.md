@@ -36,14 +36,15 @@ Ao abrir a review final, o revisor dispara a regressão completa uma vez, em seg
 - Ordem: do mais barato ao mais caro (lint e tipos, unitários, E2E), parando na primeira falha.
 - Árvore suja em path de código ou teste (tudo fora de `.vibeflow/` e `.erros-encontrados/`) impede a execução: devolva `estado: bloqueado` pedindo o isolamento.
 - Falha que passa ao reexecutar o mesmo comando é flake: o revisor grava o registro em `.erros-encontrados/`, cita-o em Notas e segue, sem bloquear. Falha reproduzível abre R* Required com o comando.
-- Registre na etapa os comandos, o resultado e o `HEAD`.
+- Registre na etapa os comandos, o resultado, o `HEAD` e a duração de cada nível que rodou (lint e tipos, unitários, E2E) e o total, lidos da saída dos comandos ou do relógio da execução.
+- Compare o total com o orçamento declarado no `AGENTS.md` do projeto ou, sem declaração, com o padrão de `references/testes.md` (Orçamento de duração). Acima dele, grave o registro que essa seção define, cite-o em Notas e siga; o orçamento não entra no veredito.
 
 A execução registrada vale para o Approve enquanto as correções posteriores não tocarem código compartilhado. Esta é a única execução da regressão completa na review; a re-review só a repete na exceção do passo 4.
 
 ### 2. Julgar o produto
 
 1. **Critérios de aceite:** cada critério da spec, ou item do brief em medium, está atendido e provado por ao menos um teste. Preencha a tabela de critérios com o teste e o resultado. Critério não atendido ou sem teste que o prove abre R* Required; só o humano retira um critério, com a decisão citada.
-2. **Defeitos no código alterado:** correção, bordas e erros das superfícies tocadas; testes falsos (sem asserção real ou que só exercitam mock); teste enfraquecido, pulado ou apagado (`references/implement.md`, Política de testes); barra de `references/definition-of-done.md`.
+2. **Defeitos no código alterado:** correção, bordas e erros das superfícies tocadas; testes falsos (sem asserção real ou que só exercitam mock); teste enfraquecido, pulado ou apagado (`references/testes.md`, Política de testes); barra de `references/definition-of-done.md`.
 3. **Segurança:** só quando o diff toca input, auth, sessão, permissão, segredo, upload, integração externa ou dado pessoal, conforme `references/review/security-and-hardening.md`.
 4. **Banco e precisão:** só quando o diff toca persistência ou valor monetário, conforme `references/database-and-migrations.md`.
 5. **Visual:** quando um critério depende da interface renderizada, conforme `references/review/ui-visual-quality.md`, reaproveitando a evidência válida.
@@ -68,13 +69,13 @@ Todo achado é resolvido. Só Critical e Required passam por re-review; Nit fech
 1. Confira que o commit `task(<alvo>:Rn,...)` existe e que seus IDs são exatamente os R* marcados `[x]` desde a etapa anterior; divergência volta ao líder.
 2. Julgue só o diff da correção contra os R* que ela fecha.
 3. Se a regressão falhou na etapa anterior, rerode primeiro só o comando que falhou e, verde, os níveis que não chegaram a rodar.
-4. Rerode a regressão completa só quando a correção tocou código compartilhado: módulo, contrato, componente ou configuração usado fora dos paths dos R*.
+4. Rerode a regressão completa só quando a correção tocou código compartilhado: módulo, contrato, componente ou configuração usado fora dos paths dos R*. Ela repete a duração e o orçamento do passo 1.
 
 No máximo duas rodadas de correção. Na segunda sem convergência, o revisor devolve os R* restantes e o líder os traz ao humano com recomendação.
 
 ## Saída
 
-O relatório fixo de `references/delegation.md` acrescenta `veredito`, `abertos`, `fechados`, `critical_encontrados`, `decisoes_vigencia`, a regressão (comandos, resultado, `HEAD`) e os registros gravados em `.erros-encontrados/`. O revisor não pergunta ao humano: veredito que depende dele volta como `estado: pergunta`. O revisor não commita, não faz push, não edita `AGENTS.md`, não marca aprovação humana nem `[x]` e não corrige código.
+O relatório fixo de `references/delegation.md` acrescenta `veredito`, `abertos`, `fechados`, `critical_encontrados`, `decisoes_vigencia`, a regressão (comandos, resultado, `HEAD`, duração por nível e total, orçamento) e os registros gravados em `.erros-encontrados/`. O revisor não pergunta ao humano: veredito que depende dele volta como `estado: pergunta`. O revisor não commita, não faz push, não edita `AGENTS.md`, não marca aprovação humana nem `[x]` e não corrige código.
 
 ## Confirmar
 
