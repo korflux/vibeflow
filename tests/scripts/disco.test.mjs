@@ -100,8 +100,13 @@ test('numeração fora de sequência e letras fora do padrão são achado', () =
   assert.match(achadosDoPlan(passosDe(passo('1a')))[0], /IDs do passo 1 fora do padrão: 1a \(esperado 1\)/);
   assert.match(achadosDoPlan(passosDe(passo('1a'), passo('1c')))[0], /fora do padrão: 1a, 1c \(esperado 1a, 1b\)/);
   assert.match(achadosDoPlan(passosDe(passo('1', { arquivos: '`a/`' }), passo('1', { arquivos: '`b/`' })))[0], /fora do padrão: 1, 1 \(esperado 1a, 1b\)/);
-  // Mesmo número em dois trechos do arquivo.
-  assert.ok(achadosDoPlan(passosDe(passo('1a'), passo('2'), passo('1b'))).length > 0);
+  // Mesmo número em dois trechos do arquivo: o segundo trecho (1b) quebra a sequência,
+  // esperada como 3, e cada trecho sozinho tem letra em passo sem irmão (esperado 1).
+  assert.deepEqual(achadosDoPlan(passosDe(passo('1a'), passo('2'), passo('1b'))), [
+    'numeração fora de sequência no passo 1b (esperado 3)',
+    'IDs do passo 1 fora do padrão: 1a (esperado 1)',
+    'IDs do passo 1 fora do padrão: 1b (esperado 1)',
+  ]);
 });
 
 // ---------------------------------------------------------------------------

@@ -4,7 +4,7 @@ O revisor de contexto limpo julga o produto e grava o `review.md`; ele não edit
 
 ## Entrada
 
-- Gate: em `high` e `mvp`, todos os passos e checkpoints do plan marcados com commit; em medium, o commit `task(medium): ...` da entrega.
+- Gate: em `high` e `mvp`, todos os passos do plan marcados com commit e todos os checkpoints marcados, com a marcação do checkpoint no commit seguinte da phase (`references/disco.md`, Checkpoint); em medium, o commit `task(medium): ...` da entrega.
 - Sem alvo e sem diff, peça path, branch ou PR. Não grude review nova no `n` de outro pedido.
 - Medium: o líder fixa o alvo de uma phase nova e o `review.md` nasce com `# Rota: medium`. `review.md` existente recebe a próxima etapa no mesmo arquivo.
 - O revisor lê os critérios de aceite da `spec.md` (em medium, o brief), o `plan.md`, o `AGENTS.md`, o `git log` com os commits do alvo e o diff. O diff vai do commit anterior ao primeiro `task(<alvo>:...)` até `HEAD`, ou da base que o líder informar; em medium, do commit anterior ao `task(medium): ...` registrado como base.
@@ -82,11 +82,11 @@ Com Approve proposto e nenhum R* aberto, o líder resume no chat, em poucas linh
 
 ## Finalizar
 
-Depois da confirmação humana explícita, com o gate da Entrada satisfeito e nenhum R* aberto, o líder:
+Depois da confirmação humana explícita, com todos os passos marcados com commit, todos os checkpoints marcados (`references/disco.md`, Checkpoint) e nenhum R* aberto, o líder:
 
 1. Marca `# Status: aprovado` e a aprovação humana no `review.md`; o veredito do revisor não muda.
 2. Com Decisões para vigência preenchida, aplica patch mínimo em `AGENTS.md`: uma única seção `## Decisões vigentes` com a tabela `ID | Decisão vigente | Fonte`, atualizada por ID, preservando linhas não citadas e usando como fonte o review aprovado. Relê e confirma que só os IDs aprovados mudaram. Sem decisões, não toca regras.
-3. Confere que a regressão registrada continua válida para o código final (passo 1), executa `git diff --check` e gitleaks quando o repo prevê.
+3. Confere no `review.md` que a regressão registrada pelo revisor cobre o HEAD final, inclusive `git diff --check` e gitleaks quando o repo prevê; não executa prova. A única checagem que executa é o `git diff --cached --check` do passo 5, como operação de Git do commit.
 4. Compara `git status` com o estado registrado; registro novo em `.erros-encontrados/` é aceito, e path fora da phase, das decisões aprovadas, das correções e desses registros interrompe e pede isolamento.
 5. Faz staging explícito só dos paths residuais, registros novos em `.erros-encontrados/` incluídos (`git add -- <path da phase> AGENTS.md <registros>`; `references/disco.md`, Glossário), confere `git diff --cached --check` e commita `chore(<alvo>): finalize review`; sem residual, não cria commit vazio.
 6. Confere o intervalo como no passo 2 da retomada abaixo e executa `git push` para o upstream do branch atual, sem `--force`. Humano que recusa ou adia o push: grave a linha de push adiado (`references/disco.md`, Estado da phase) e commite `chore(<alvo>): push adiado`, sem push. Sem upstream ou com falha de push, a phase fica fechada com push pendente e a causa segura é relatada.

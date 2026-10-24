@@ -62,7 +62,7 @@ Antes de cada etapa, confira o pré-requisito pela rota gravada e pelo disco. Et
 | plan | Spec aprovada |
 | analyze | `plan.md` presente, em toda phase com plan |
 | implement | `high` e MVP: `## Achados do analyze` presente no `plan.md`. Low e medium: nenhum |
-| review | Todos os passos e checkpoints marcados com commit; em medium, o commit `task(medium): ...` da entrega |
+| review | Todos os passos marcados com commit e todos os checkpoints marcados, com a marcação do checkpoint no commit seguinte da phase (`references/disco.md`, Checkpoint); em medium, o commit `task(medium): ...` da entrega |
 
 Aprovação da spec: o humano leu e confirmou, ou pediu diretamente o plan ("pode ir pro plan", `/vibeflow plan`) com a spec completa em `rascunho`. "Ok" isolado não aprova. O líder marca `# Status: aprovado` e a aprovação humana com o texto dela.
 
