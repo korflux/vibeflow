@@ -115,9 +115,11 @@ Sem achado, a seção traz a linha `Nenhum achado.`. A presença da seção indi
 | Finalização da review | `chore(<alvo>): finalize review` |
 | Push adiado pelo humano | `chore(<alvo>): push adiado` |
 
+O commit `task(medium): ...` leva no corpo, depois de uma linha em branco, os critérios de aceite do brief, um por linha, no formato `- A1: <critério>` de `references/spec.md` (Critérios de aceite). É a única cópia em disco do aceite do medium, lida pela review.
+
 Os commits de uma phase são os que levam o seu `<alvo>` e, no medium, o `task(medium): ...` que o `review.md` registra como base. ID de passo ou de R* só vale no commit do mesmo `<alvo>`. Nenhuma mensagem leva `Co-Authored-By`.
 
-Com Node, depois do staging e antes de cada commit, o líder roda `scripts/conferir.mjs --commit "<mensagem>"`: ele confere o formato da mensagem, as caixas e os R* marcados no índice contra os IDs, os paths em staging contra o recorte e o `git diff --cached --check`. Achado é resolvido no staging, na marcação ou na mensagem antes do commit; aviso indica conferência indisponível pelo disco e segue pelo relatório.
+Com Node, depois do staging e antes de cada commit, o líder roda `scripts/conferir.mjs --commit "<mensagem>"`: ele confere o formato da mensagem, os critérios no corpo do `task(medium): ...`, as caixas e os R* marcados no índice contra os IDs, os paths em staging contra o recorte e o `git diff --cached --check`. Achado é resolvido no staging, na marcação ou na mensagem antes do commit; aviso indica conferência indisponível pelo disco e segue pelo relatório.
 
 ## Estado da phase
 

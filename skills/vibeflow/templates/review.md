@@ -16,7 +16,7 @@
 
 | Critério | Evidência (teste e resultado) | Situação |
 |---|---|---|
-| <A1 ou item do brief> | <teste e resultado> | <atendido / parcial / ausente / retirado pelo humano: decisão> |
+| <A1, da spec ou do corpo do commit medium> | <teste e resultado> | <atendido / parcial / ausente / retirado pelo humano: decisão> |
 
 ## Achados
 

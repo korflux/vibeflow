@@ -59,9 +59,9 @@ Informe a limitação em uma linha. Cada run executa um passo, o primeiro aberto
 
 ## Rota medium
 
-1. O implementador entrega a mudança do brief com a prova por `references/testes.md`, e o líder confere o relatório.
-2. Prova verde, o líder faz staging explícito dos paths entregues, confere `git diff --cached --check` e commita `task(medium): <resultado>`.
-3. A review abre a phase: o líder fixa o alvo e o revisor cria o `review.md` com `# Rota: medium`, registra o commit `task(medium): ...` como base e julga o diff contra o brief.
+1. O líder escreve no brief os critérios de aceite `A1`, `A2` em diante, na forma de `references/spec.md` (Critérios de aceite). O implementador entrega a mudança com a prova por `references/testes.md`, e o líder confere o relatório.
+2. Prova verde, o líder faz staging explícito dos paths entregues, confere `git diff --cached --check` e commita `task(medium): <resultado>` com os critérios do brief no corpo (`references/disco.md`, Commits).
+3. A review abre a phase: o líder fixa o alvo e o revisor cria o `review.md` com `# Rota: medium`, registra o commit `task(medium): ...` como base e julga o diff contra os critérios do corpo desse commit.
 4. Achados seguem o passo 4, com commit `task(<alvo>:Rn,...)`.
 
 ## Ajuste de phase
@@ -81,7 +81,7 @@ R* de ajuste:
 - [ ] Rn: **Required** - `path` - <pedido do humano> - remédio: <o pedido> - prova: <testes afetados> - source: <pedido humano | path do registro de .erros-encontrados/> - papel: <implementador | redator>
 ```
 
-Entrega medium ainda sem `review.md`: antes do commit `task(medium): ...`, o ajuste entra no recorte da entrega; depois dele, o revisor o registra como R* na review que abre a phase. Sem phase de origem, o ajuste segue a linha low da Entrada.
+Entrega medium ainda sem `review.md`: antes do commit `task(medium): ...`, o ajuste entra no recorte da entrega e, quando muda o aceite, nos critérios do brief; depois dele, o revisor o registra como R* na review que abre a phase. Sem phase de origem, o ajuste segue a linha low da Entrada.
 
 Registro de `.erros-encontrados/` corrigido é apagado no mesmo commit da correção; o Git guarda o histórico.
 

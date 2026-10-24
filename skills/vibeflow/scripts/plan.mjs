@@ -10,8 +10,12 @@
 // contradição com a spec) continua do revisor. Só lê; divergência entre este script e a
 // prosa é bug do script.
 //
+// Com --spec, confere só a spec, antes da aprovação (references/spec.md, Fechar): seções
+// obrigatórias, decisão sem Pergunta: ou Motivo:, critério repetido, adjetivo vago no
+// critério e placeholder esquecido. Não exige plan.md.
+//
 // Uso:
-//   node plan.mjs [--alvo phase-N|mvp] [--raiz <dir>] [--json]
+//   node plan.mjs [--spec] [--alvo phase-N|mvp] [--raiz <dir>] [--json]
 // Saída: 0 sem achado, 1 com achado, 2 em erro de uso.
 
 import { dirname, join, resolve } from 'node:path';
@@ -163,15 +167,70 @@ function linhasEstranhas(linhasPlan) {
 }
 
 // ---------------------------------------------------------------------------
+// Forma da spec antes da aprovação (references/spec.md, Gravação, Critérios de aceite e Fechar)
+// ---------------------------------------------------------------------------
+
+const SECOES_SPEC = ['Objetivo', 'Pontos do projeto', 'Decisões', 'Critérios de aceite', 'Fora do escopo'];
+
+// Adjetivos que não dizem o que observar (references/spec.md, Gravação).
+// Aceita a palavra com ou sem acento. Texto entre crases ou aspas fica de fora, porque é
+// como a spec cita código ou a mensagem exibida ao usuário.
+// ponytail: lista fixa e curta; vago escrito de outro jeito ("de modo ágil") passa, e só a
+// conferência do líder e o analyze o pegam.
+const RE_VAGO = /(?<!\p{L})(r[aá]pid[oa]s?|rapidamente|bonit[oa]s?|modern[oa]s?|intuitiv[oa]s?|amig[aá]ve(?:l|is)|f[aá]c(?:il|eis)|facilmente|adequad[oa]s?|adequadamente|corretamente|eficientes?|eficientemente|robust[oa]s?|elegantes?|agrad[aá]ve(?:l|is))(?!\p{L})/giu;
+const RE_CITACAO = /`[^`]*`|"[^"]*"|“[^”]*”|'[^']*'/g;
+
+/** Achados de forma da spec: seções, decisões sem pergunta ou motivo, critérios e placeholders. */
+function formaDaSpec(linhasSpec) {
+  const achados = [];
+  for (const s of SECOES_SPEC) if (!secao(linhasSpec, s)) achados.push(`spec sem a seção ## ${s}`);
+
+  for (const l of semComentarios(secao(linhasSpec, 'Decisões') || [])) {
+    const m = l.match(/^(\d+)\. /);
+    if (!m) continue;
+    if (!/Pergunta:/.test(l)) achados.push(`decisão ${m[1]}: sem Pergunta:`);
+    if (!/Motivo:/.test(l)) achados.push(`decisão ${m[1]}: sem Motivo:`);
+  }
+
+  const { ids, repetidos } = criteriosDaSpec(linhasSpec);
+  if (!ids.length) achados.push('spec sem critério A<n> em ## Critérios de aceite');
+  for (const a of repetidos) achados.push(`spec com o critério ${a} repetido`);
+  for (const l of semComentarios(secao(linhasSpec, 'Critérios de aceite') || [])) {
+    const m = l.match(/^- (A[1-9][0-9]*):(.*)$/);
+    if (!m) continue;
+    const vagos = [...m[2].normalize('NFC').replace(RE_CITACAO, '').matchAll(RE_VAGO)].map((v) => v[1].toLowerCase());
+    if (vagos.length) achados.push(`critério ${m[1]}: adjetivo vago (${[...new Set(vagos)].join(', ')}); diga o resultado observável`);
+  }
+
+  achados.push(...placeholdersEsquecidos(linhasSpec, 'spec.md', 'spec.md'));
+  return { criterios: ids, achados };
+}
+
+// ---------------------------------------------------------------------------
 // Relatório
 // ---------------------------------------------------------------------------
 
-/** Confere o plan do alvo; exportado para os testes. */
-export function conferirPlan(raiz, nomeAlvo = null) {
+/** Alvo nomeado ou padrão, já recusando o formato antigo. */
+function resolverAlvo(raiz, nomeAlvo) {
   const alvos = carregarAlvos(raiz);
   const alvo = nomeAlvo ? alvoNomeado(alvos, nomeAlvo) : alvoPadrao(alvos);
   if (!alvo) return { erro: nomeAlvo ? `alvo não encontrado: ${nomeAlvo}` : 'sem alvo aberto; informe --alvo' };
   if (alvo.antigo) return { erro: `${alvo.alvo} está no formato antigo (references/disco.md, Compatibilidade); só o contrato atual é conferido` };
+  return { alvo };
+}
+
+/** Confere só a spec do alvo, antes da aprovação; exportado para os testes. */
+export function conferirSpec(raiz, nomeAlvo = null) {
+  const { alvo, erro } = resolverAlvo(raiz, nomeAlvo);
+  if (erro) return { erro };
+  if (!alvo.art.spec) return { erro: `${alvo.alvo} sem spec.md` };
+  return { alvo: alvo.alvo, ...formaDaSpec(alvo.art.spec) };
+}
+
+/** Confere o plan do alvo; exportado para os testes. */
+export function conferirPlan(raiz, nomeAlvo = null) {
+  const { alvo, erro } = resolverAlvo(raiz, nomeAlvo);
+  if (erro) return { erro };
   if (!alvo.art.plan) return { erro: `${alvo.alvo} sem plan.md` };
   if (!alvo.art.spec) return { erro: `${alvo.alvo} sem spec.md` };
 
@@ -210,10 +269,11 @@ export function conferirPlan(raiz, nomeAlvo = null) {
 // ---------------------------------------------------------------------------
 
 function lerArgs(argv) {
-  const args = { raiz: process.cwd(), alvo: null, json: false };
+  const args = { raiz: process.cwd(), alvo: null, json: false, spec: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--json') args.json = true;
+    else if (a === '--spec') args.spec = true;
     else if ((a === '--raiz' || a === '--alvo') && argv[i + 1]) args[a.slice(2)] = argv[++i];
     else return { erro: `argumento desconhecido ou sem valor: ${a}` };
   }
@@ -221,7 +281,8 @@ function lerArgs(argv) {
 }
 
 function texto(r) {
-  const l = [`alvo: ${r.alvo} · critérios: ${r.criterios.join(', ') || 'nenhum'} · passos: ${r.passos} · checkpoints: ${r.checkpoints}`];
+  const contagem = r.passos === undefined ? '' : ` · passos: ${r.passos} · checkpoints: ${r.checkpoints}`;
+  const l = [`alvo: ${r.alvo} · critérios: ${r.criterios.join(', ') || 'nenhum'}${contagem}`];
   for (const a of r.achados) l.push(`achado: ${a}`);
   if (!r.achados.length) l.push('sem achado');
   return `${l.join('\n')}\n`;
@@ -230,7 +291,7 @@ function texto(r) {
 function principal() {
   const args = lerArgs(process.argv.slice(2));
   if (args.erro) { console.error(args.erro); return 2; }
-  const r = conferirPlan(resolve(args.raiz), args.alvo);
+  const r = (args.spec ? conferirSpec : conferirPlan)(resolve(args.raiz), args.alvo);
   if (r.erro) { console.error(r.erro); return 2; }
   process.stdout.write(args.json ? `${jsonAscii(r)}\n` : texto(r));
   return r.achados.length ? 1 : 0;

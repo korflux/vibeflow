@@ -90,8 +90,9 @@ Com Node 18 ou superior, a skill usa os scripts da pasta `scripts/`, sempre na r
 |---|---|---|
 | `estado.mjs [--alvo phase-N\|mvp] [--slug "<frase>"] [--linha]` | Líder, ao abrir e retomar | Alvo padrão, rota, risco, status dos artefatos, etapa atual, progresso, próximo passo ou grupo paralelo, R* abertos, push pendente, inconsistências e o path da próxima phase; `--slug` normaliza a frase do slug e `--linha` imprime só a linha de progresso |
 | `conferir.mjs --passo <IDs>` | Líder, ao receber um passo ou um R* | Alterações não commitadas fora dos `Arquivos:` do passo ou do path do R* |
-| `conferir.mjs --commit "<mensagem>"` | Líder, depois do staging e antes de cada commit | Formato da mensagem, ausência de `Co-Authored-By`, caixas e R* marcados no índice contra os IDs, paths em staging contra o recorte e `git diff --cached --check` |
+| `conferir.mjs --commit "<mensagem>"` | Líder, depois do staging e antes de cada commit | Formato da mensagem, ausência de `Co-Authored-By`, critérios de aceite no corpo do `task(medium): ...`, caixas e R* marcados no índice contra os IDs, paths em staging contra o recorte e `git diff --cached --check` |
 | `plan.mjs [--alvo phase-N\|mvp]` | Líder depois de gravar o plan; revisor no analyze | Forma dos passos e checkpoints, critérios inexistentes ou sem passo, seções obrigatórias e placeholder de template esquecido |
+| `plan.mjs --spec [--alvo phase-N\|mvp]` | Líder antes de apresentar a spec para aprovação | Seções obrigatórias da spec, decisão sem pergunta ou motivo, critério repetido, adjetivo vago no critério e placeholder esquecido |
 | `governanca.mjs` e `governanca.mjs --backup <original> <cópia>` | Líder no init | `AGENTS.md` e bloco da cadeia, ponte, `.gitkeep`, perfis globais contra a fonte, perfil `corretor` obsoleto, perfis de projeto customizados; no modo `--backup`, tamanho e SHA-256 da cópia |
 
 ### Apoios opcionais do host
@@ -128,6 +129,18 @@ node "<pasta da skill>/scripts/conferir.mjs" --commit-arquivo "$1"
 ```
 
 Aprovar a review, publicar decisões vigentes e fazer push sempre exigem a sua confirmação.
+
+## Novidades da 5.3.0
+
+A 5.3.0 é uma versão minor, sem migração. Rode `/vibeflow init` para atualizar os perfis globais de subagente.
+
+- Critérios de aceite com forma fixa (contexto, ação e resultado observável), critério de falha quando há entrada externa, autorização ou dinheiro, tabela de exemplos para cálculo exato e critério de preservação do que já funciona.
+- `plan.mjs --spec` confere a forma da spec antes da aprovação, inclusive adjetivo vago no critério.
+- Testes com vermelho antes do verde: o teste do critério falha antes da mudança e passa depois, com as duas execuções no relatório.
+- Nova seção Desenho de casos em `references/testes.md`: limites, classes, transições, autorização, mock só na fronteira e determinismo.
+- Na rota medium, os critérios do brief vão no corpo do commit `task(medium): ...`, e a review os lê de lá; `conferir.mjs` acusa o commit sem eles.
+- O plan começa pelo caminho mais fino de ponta a ponta ou pela suposição mais arriscada.
+- O perfil revisor sobe para esforço alto nos dois hosts.
 
 ## Novidades da 5.2.0
 

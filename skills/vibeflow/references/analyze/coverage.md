@@ -12,6 +12,7 @@ Abrir só na etapa analyze. Ache a instância concreta, não o padrão genérico
 | Contradição com a spec | Passo que entrega comportamento fora do escopo, do Fora ou de uma decisão da spec | Alinhar o passo à spec; se a spec precisar mudar, parar e perguntar |
 | Paralelo inseguro | Passos irmãos com `Arquivos:` sobrepostos ou path incomparável | Separar em números diferentes |
 | Ordem quebrada | Passo que usa o resultado de outro posterior a ele | Reordenar |
+| Risco no fim | Suposição mais arriscada ou caminho de ponta a ponta do critério central deixado para depois de passos que dependem dele (`references/plan.md`, Fatiar e ordenar) | Antecipar o passo |
 | Prova fora do contrato | Comando que o repo não tem, E2E ou suíte inteira no passo | Trocar pelos testes afetados do passo |
 | Checkpoint ausente | Grupo que fecha critérios sem checkpoint em phase não pequena, ou grupo de risco sem checkpoint com `# Risco:` | Acrescentar a linha de checkpoint |
 | Regressão completa | Seção ausente ou com comando que o repo não tem | Corrigir com os comandos reais |

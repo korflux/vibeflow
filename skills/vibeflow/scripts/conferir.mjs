@@ -6,7 +6,8 @@
 //                     (ou os paths dos R*) indicados: Conferência do líder de
 //                     references/delegation.md e passo 3 de references/implement.md.
 //   --commit <msg>    confere a mensagem e o índice antes do commit: formatos de
-//                     references/disco.md (Commits), caixas e R* marcados no índice,
+//                     references/disco.md (Commits), critérios no corpo do task(medium),
+//                     caixas e R* marcados no índice,
 //                     paths em staging dentro do recorte e `git diff --cached --check`
 //                     limpo (references/implement.md, passo 4).
 // Não faz staging nem commit e não decide nada: devolve achados para o líder. Divergência
@@ -164,6 +165,13 @@ export function conferirCommit(raiz, mensagem) {
   } else if (tipo && tipo.tipo === 'init') {
     permitidos = PATHS_INIT;
   } else if (tipo) {
+    // O corpo do task(medium) é a única cópia em disco do aceite da entrega
+    // (references/disco.md, Commits); a review o lê para julgar o diff.
+    if (tipo.tipo === 'medium') {
+      const linhas = mensagem.replace(/^﻿/, '').split(/\r?\n/);
+      if (linhas.length > 1 && linhas[1].trim()) achados.push('task(medium) sem linha em branco entre o assunto e o corpo');
+      if (!linhas.slice(2).some((l) => /^- A[1-9][0-9]*: \S/.test(l.trim()))) achados.push('task(medium) sem critérios de aceite no corpo (- A1: <critério>)');
+    }
     avisos.push(`entrega ${tipo.tipo} sem recorte no disco: confira o staging contra o brief`);
   }
 

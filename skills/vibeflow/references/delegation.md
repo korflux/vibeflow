@@ -31,7 +31,7 @@ Antes de aceitar cada devolutiva que muda o estado da phase, confira forma e dir
 | Entrega | Leia | Confronte com |
 |---|---|---|
 | Prosa de spec, plan, init ou texto avulso | O arquivo gravado | As decisões e respostas do humano entregues no brief: cada uma presente e nada decidido além delas; não reescreva o artefato |
-| Passo ou grupo paralelo | O relatório fixo e o `git diff --stat`; um trecho do diff só quando o relatório citar algo estranho | Os `Arquivos:` de cada passo: nenhum path fora do recorte; o campo `prova` verde |
+| Passo ou grupo paralelo | O relatório fixo e o `git diff --stat`; um trecho do diff só quando o relatório citar algo estranho | Os `Arquivos:` de cada passo: nenhum path fora do recorte; o campo `prova` verde, com a execução vermelha anterior do teste do critério ou o motivo da isenção (`references/testes.md`, Política de testes) |
 | Checkpoint | O relatório fixo do verificador | Os critérios listados na linha do checkpoint, todos cobertos |
 | Aceite visual | As imagens citadas no campo `prova` | O aceite visual da spec ou do brief; `prova` sem paths de imagem reprova |
 | API ou CLI | A evidência anexada: chamada real com resposta ou saída de comando | O critério do plan ou do brief; evidência ausente reprova |
@@ -55,7 +55,7 @@ Regra de instalação, para todo papel: instale ferramenta ausente necessária �
 estado: verde | bloqueado | pergunta
 etapa: init | interview | spec | plan | analyze | passo | checkpoint | correcao | review | exploracao | texto
 paths: <alterados, um por linha, ou nenhum>
-prova: <comando e resultado; inputs reais; com aceite visual, paths das imagens conforme references/chrome-devtools.md>
+prova: <comando e resultado; teste do critério vermelho antes da mudança e verde depois, ou motivo da isenção; inputs reais; com aceite visual, paths das imagens conforme references/chrome-devtools.md>
 cobertura: <critérios certificados e limites do recorte>
 pendencias: <nenhuma ou falha/impedimento concreto>
 proximo: <ação e responsável>

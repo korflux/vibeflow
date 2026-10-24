@@ -19,7 +19,8 @@
 
 ## Critérios de aceite
 
-- A1: <resultado observável e verificável>
+- A1: <contexto ou estado>; quando <ação ou evento>, <resultado observável>
+<!-- Forma, caso de falha, tabela de exemplos e preservação: references/spec.md (Critérios de aceite). Tabela de exemplos fica logo abaixo do critério que a usa. -->
 
 ## Fora do escopo
 

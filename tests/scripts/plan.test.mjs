@@ -7,7 +7,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { conferirPlan } from '../../skills/vibeflow/scripts/plan.mjs';
+import { conferirPlan, conferirSpec } from '../../skills/vibeflow/scripts/plan.mjs';
 import { repo, escrever, cli, PH, passo, checkpoint, plan } from './_apoio.mjs';
 
 /** spec.md com os critérios dados na seção `## Critérios de aceite`. */
@@ -86,4 +86,80 @@ test('CLI: 0 sem achado, 1 com achado, 2 sem plan ou alvo', (t) => {
   assert.ok(JSON.parse(r.out).achados.includes('critério A1 da spec sem passo'));
   assert.equal(cli('plan.mjs', ['--raiz', raiz, '--alvo', 'phase-9']).codigo, 2);
   assert.equal(cli('plan.mjs', ['--raiz', repo(t)]).codigo, 2);
+});
+
+// ---------------------------------------------------------------------------
+// --spec: forma da spec antes da aprovação (references/spec.md, Fechar)
+// ---------------------------------------------------------------------------
+
+/** spec.md completa, com as seções do template; `trocas` substitui trechos para montar o defeito. */
+const specCompleta = (trocas = {}) => {
+  const partes = {
+    decisoes: '1. Reserva sem login. Pergunta: exige conta? Motivo: reduz atrito.',
+    criterios: '- A1: com 10h livre; quando o cliente reserva 10h, a reserva aparece na agenda\n- A2: com 10h ocupado; quando outro cliente reserva 10h, vê "horário indisponível"',
+    fora: '- Pagamento online: phase própria',
+    ...trocas,
+  };
+  return `# Spec: agenda\n# Alvo: phase-1-agenda\n# Status: rascunho\n# Rota: high\n\n## Objetivo\n\nx\n\n## Pontos do projeto\n\n- \`src/agenda.js\`: muda\n\n## Decisões\n\n${partes.decisoes}\n\n## Critérios de aceite\n\n${partes.criterios}\n\n## Fora do escopo\n\n${partes.fora}\n`;
+};
+
+function faseSpec(t, texto) {
+  const raiz = repo(t);
+  escrever(raiz, `${PH}/spec.md`, texto);
+  return raiz;
+}
+
+test('--spec: spec completa, sem plan.md, não tem achado', (t) => {
+  const r = conferirSpec(faseSpec(t, specCompleta()));
+  assert.deepEqual(r.achados, []);
+  assert.deepEqual(r.criterios, ['A1', 'A2']);
+});
+
+test('--spec: seção ausente, decisão sem pergunta ou motivo e critério repetido são achado', (t) => {
+  const texto = specCompleta({
+    decisoes: '1. Reserva sem login. Motivo: reduz atrito.\n2. Fuso de Brasília. Pergunta: qual fuso?',
+    criterios: '- A1: com 10h livre; quando reserva, aparece\n- A1: de novo',
+  }).replace('## Fora do escopo', '## Outra');
+  assert.deepEqual(conferirSpec(faseSpec(t, texto)).achados, [
+    'spec sem a seção ## Fora do escopo',
+    'decisão 1: sem Pergunta:',
+    'decisão 2: sem Motivo:',
+    'spec com o critério A1 repetido',
+  ]);
+});
+
+test('--spec: adjetivo vago no critério é achado, salvo entre crases e fora dos critérios', (t) => {
+  const texto = specCompleta({
+    criterios: '- A1: a agenda carrega Rápido e de forma intuitiva\n- A2: o campo `corretamente` aparece no formulário\n- A3: o rapidinho continua igual',
+    fora: '- Tela bonita: phase própria',
+  });
+  assert.deepEqual(conferirSpec(faseSpec(t, texto)).achados, [
+    'critério A1: adjetivo vago (rápido, intuitiva); diga o resultado observável',
+  ]);
+});
+
+test('--spec: placeholder do template esquecido é achado', (t) => {
+  const r = conferirSpec(faseSpec(t, specCompleta({ criterios: '- A1: <contexto ou estado>; quando <ação ou evento>, <resultado observável>' })));
+  assert.equal(r.achados.length, 3);
+  assert.match(r.achados[0], /placeholder <contexto ou estado>/);
+});
+
+test('CLI --spec: 0 sem achado, 1 com achado, 2 sem spec', (t) => {
+  const raiz = faseSpec(t, specCompleta());
+  assert.equal(cli('plan.mjs', ['--spec', '--raiz', raiz]).codigo, 0);
+  escrever(raiz, `${PH}/spec.md`, specCompleta({ criterios: '- A1: resposta rápida' }));
+  const r = cli('plan.mjs', ['--spec', '--raiz', raiz, '--json']);
+  assert.equal(r.codigo, 1);
+  assert.match(JSON.parse(r.out).achados[0], /^critério A1: adjetivo vago \(rápida\)/);
+  assert.equal(cli('plan.mjs', ['--spec', '--raiz', repo(t)]).codigo, 2);
+});
+
+test('--spec: texto entre aspas não é vago; palavra sem acento, em NFD ou com CRLF é', (t) => {
+  const texto = specCompleta({
+    criterios: '- A1: com senha curta; quando envia, vê "Escolha uma senha mais robusta" e “Use algo fácil de lembrar”\n- A2: a busca responde rapida\n- A3: o menu fica intuitivo e a lista rápida',
+  }).replace(/\n/g, '\r\n');
+  assert.deepEqual(conferirSpec(faseSpec(t, texto)).achados, [
+    'critério A2: adjetivo vago (rapida); diga o resultado observável',
+    'critério A3: adjetivo vago (intuitivo, rápida); diga o resultado observável',
+  ]);
 });

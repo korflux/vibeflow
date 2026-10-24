@@ -1,16 +1,35 @@
 # Testes
 
-Casa única das regras de teste do projeto consumidor: o que testar, onde rodar, como desenhar o E2E e quanto a suíte pode durar. A mecânica de cada etapa fica na referência dela: passo e checkpoint em `references/implement.md`, regressão completa em `references/review.md`.
+Casa única das regras de teste do projeto consumidor: o que testar, como desenhar os casos, onde rodar, como desenhar o E2E e quanto a suíte pode durar. A mecânica de cada etapa fica na referência dela: passo e checkpoint em `references/implement.md`, regressão completa em `references/review.md`.
 
 ## Política de testes
 
 - Cada critério de aceite tem ao menos um teste que o prova, de preferência percorrendo o fluxo com resultado observável.
 - Teste novo só para critério não coberto ou risco concreto: erro, borda, segurança ou dinheiro. Antes de criar, procure um teste existente do fluxo e estenda-o.
+- Vermelho antes do verde: o teste que prova um critério, ou que reproduz um bug, roda antes da mudança e falha pelo motivo esperado; depois da mudança, passa. O relatório traz as duas execuções no campo `prova`. Ficam isentos refatoração sem mudança de comportamento, critério de preservação (que passa antes e depois), passo de infraestrutura e passo de prosa, com o motivo no relatório. Teste que já passa antes da mudança não prova o critério.
 - No passo, rode só os testes afetados, pelo grafo de imports da ferramenta do projeto (por exemplo, `vitest run --changed <base>` ou `playwright test --only-changed=<ref>`), sem E2E. Sem esse recurso, rode a `Prova:` do passo; sem plan, os testes do módulo tocado e dos consumidores diretos.
 - O E2E dos critérios com tela roda no checkpoint; a regressão completa roda uma vez, na review.
 - Nunca enfraqueça, pule ou apague teste para obter verde. Mudança de asserção exige justificativa pelo critério de aceite.
 - Teste falso, sem asserção real ou que só exercita mock, não prova critério nem passo.
 - Passo só de prosa prova com uma checagem mecânica do que o texto alimenta, nunca com teste de presença de palavras.
+
+## Desenho de casos
+
+Os casos saem do critério de aceite, não do código. Para cada critério, escolha só as técnicas que a regra aciona:
+
+| Quando a regra tem | Casos |
+|---|---|
+| Faixa ou limite (valor, tamanho, data, quantidade) | O limite, um abaixo e um acima; zero e vazio |
+| Classes de entrada com o mesmo tratamento | Um caso por classe, válida e inválida, sem repetir a classe |
+| Estados e transições (pedido, reserva, assinatura) | Cada transição permitida e a principal proibida |
+| Autorização | O dono, outro usuário (anti-IDOR) e quem não está autenticado |
+| Tabela de exemplos na spec | Uma linha da tabela por caso, de preferência num teste parametrizado |
+| Critério de preservação | Um teste do comportamento existente, rodado antes e depois da mudança |
+
+- O nome do teste descreve o comportamento do critério ("recusa horário ocupado"), não a função chamada.
+- Mock só na fronteira do sistema: rede externa, relógio, aleatoriedade e serviço pago. Código do próprio projeto e banco de teste rodam reais.
+- Teste determinístico: relógio e semente fixos, sem depender da ordem de execução nem de dado deixado por outro teste.
+- Dados de teste montados pelo próprio teste, ou por fábrica do projeto, com só os campos que o caso exige.
 
 ## Ambiente local
 

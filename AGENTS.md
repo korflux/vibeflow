@@ -54,7 +54,7 @@ Este repo não tem banco, migration nem tráfego de usuário. Skills aqui mudam 
 - **Major:** quebra contrato (path ou nome de artefato, linha de cabeçalho como `# Status:` ou `# Rota:`, comportamento do líder que o humano já usa).
 - **Minor:** adiciona sem quebrar (nova seção opcional no artefato, nova referência de etapa).
 - **Patch:** correção sem mudança de contrato.
-- Versão atual: 5.2.0 (scripts de apoio `conferir`, `plan` e `governanca`, e `--slug` e `--linha` no `estado`).
+- Versão atual: 5.3.0 (critérios de aceite estruturados com `plan.mjs --spec`, vermelho antes do verde, desenho de casos, critérios do medium no corpo do commit, plan começando pelo risco e revisor em esforço alto).
 - Produção: migration só com plano de rollback; não rodar migration destrutiva sem o humano pedir.
 
 ## Git
@@ -96,7 +96,7 @@ skills/vibeflow/
   scripts/_disco.mjs           leitura compartilhada do disco e do Git
   scripts/estado.mjs           estado, etapa atual, progresso, próximo passo, sobreposição de Arquivos:, slug e linha de statusline
   scripts/conferir.mjs         recorte do passo ou do R* e conferência do commit antes de criá-lo
-  scripts/plan.mjs             forma do plan, cobertura dos critérios da spec e placeholder esquecido
+  scripts/plan.mjs             forma do plan, cobertura dos critérios da spec, forma da spec (--spec) e placeholder esquecido
   scripts/governanca.mjs       resultado do init (AGENTS.md, ponte, perfis globais) e backup por tamanho e SHA-256
 ```
 

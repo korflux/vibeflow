@@ -139,9 +139,24 @@ test('entrega low ou medium não tem recorte no disco: só aviso', (t) => {
   const raiz = repo(t);
   escrever(raiz, 'src/x.js', 'x\n');
   stage(raiz, 'src/x.js');
-  const r = conferirCommit(raiz, 'task(medium): entrega');
+  const r = conferirCommit(raiz, 'task(medium): entrega\n\n- A1: com horário livre, quando o cliente agenda, a reserva aparece na agenda');
   assert.deepEqual(r.achados, []);
   assert.match(r.avisos[0], /sem recorte no disco/);
+  assert.deepEqual(conferirCommit(raiz, 'task(low): ajuste').achados, []);
+});
+
+test('task(medium) sem critérios no corpo, ou sem linha em branco antes dele, é achado; CRLF é aceito', (t) => {
+  const raiz = repo(t);
+  escrever(raiz, 'src/x.js', 'x\n');
+  stage(raiz, 'src/x.js');
+  const esperado = ['task(medium) sem critérios de aceite no corpo (- A1: <critério>)'];
+  assert.deepEqual(conferirCommit(raiz, 'task(medium): entrega').achados, esperado);
+  assert.deepEqual(conferirCommit(raiz, 'task(medium): entrega\n\nsó texto, sem critério').achados, esperado);
+  assert.deepEqual(conferirCommit(raiz, 'task(medium): entrega\r\n\r\n- A1: com horário livre; quando reserva, aparece').achados, []);
+  assert.deepEqual(conferirCommit(raiz, 'task(medium): entrega\n- A1: colado no assunto').achados, [
+    'task(medium) sem linha em branco entre o assunto e o corpo',
+    'task(medium) sem critérios de aceite no corpo (- A1: <critério>)',
+  ]);
 });
 
 test('chore(init) só leva os arquivos de governança', (t) => {

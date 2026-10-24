@@ -52,8 +52,9 @@ Opções: <duas ou três, cada uma com o impacto em uma linha>
 |---|---|---|
 | Tela nova ou alterada | Decisões visuais do humano: modo, tom, o que evitar, copy e as telas e estados a ver renderizados, em no máximo duas perguntas | `references/spec/ui-visual-direction.md` |
 | Intenção clara e forma em aberto | Uma lente, opções e a direção recomendada | `references/interview/frameworks.md`, `references/interview/refinement-criteria.md` e, se necessário, `references/interview/examples.md` |
-| Banco, persistência, valor monetário ou cálculo exato | Invariantes de dados e precisão | `references/database-and-migrations.md` |
-| Entrada externa (request, query, headers, arquivo) | Allowlist de campos e valores e tamanho máximo por entrada | |
+| Banco, persistência, valor monetário ou cálculo exato | Invariantes de dados, precisão e os exemplos concretos, com bordas, da tabela do critério (`references/spec.md`, Critérios de aceite) | `references/database-and-migrations.md` |
+| Entrada externa (request, query, headers, arquivo) | Allowlist de campos e valores, tamanho máximo por entrada e o que o usuário vê quando a entrada é recusada | |
+| Comportamento existente que a mudança arrisca | O que precisa continuar igual, que vira critério de preservação | |
 | API, token, segredo, dado pessoal ou rota autenticada | Validade e invalidação de credenciais, autorização no servidor com anti-IDOR, rate limit, CSRF, CORS com allowlist (nunca `*` com credenciais), headers e CSP, com N/A fundamentado | |
 | `# Risco:` | Modelo de ameaça (ativo, quem ataca, por onde, controle) e rollback (como desfazer, o que se perde, quem decide) | |
 | MVP | Núcleo, módulos acionados, privacidade e jurídico | `references/interview/mvp-discovery.md` |
