@@ -9,7 +9,7 @@ Um passo só é concluído com prova verde e commit real. O plan define a ordem 
 
 | Situação | Como conduzir |
 |---|---|
-| Low sem phase de origem | Brief curto ao implementador, prova proporcional pela Política de testes; o líder confere o relatório e commita com staging explícito dos paths entregues, sem push, sem phase nem artefato |
+| Low sem phase de origem | Brief curto ao implementador, prova proporcional por `references/testes.md`; o líder confere o relatório e commita com staging explícito dos paths entregues, sem push, sem phase nem artefato |
 | Ajuste de uma phase ou do MVP | Ajuste de phase, abaixo |
 | Medium | Rota medium |
 | `high` ou `mvp` com os perfis carregados | Passos 1 a 4 |
@@ -59,7 +59,7 @@ Informe a limitação em uma linha. Cada run executa um passo, o primeiro aberto
 
 ## Rota medium
 
-1. O implementador entrega a mudança do brief com a prova pela Política de testes, e o líder confere o relatório.
+1. O implementador entrega a mudança do brief com a prova por `references/testes.md`, e o líder confere o relatório.
 2. Prova verde, o líder faz staging explícito dos paths entregues, confere `git diff --cached --check` e commita `task(medium): <resultado>`.
 3. A review abre a phase: o líder fixa o alvo e o revisor cria o `review.md` com `# Rota: medium`, registra o commit `task(medium): ...` como base e julga o diff contra o brief.
 4. Achados seguem o passo 4, com commit `task(<alvo>:Rn,...)`.
@@ -89,7 +89,7 @@ Registro de `.erros-encontrados/` corrigido é apagado no mesmo commit da corre�
 
 1. **Reconhecer:** trace entrada, chamadas, consumidores e padrões compartilhados antes de editar, sem varredura cega. Edite só os `Arquivos:` do passo ou o recorte do brief.
 2. **Codar:** reutilize o que existe no projeto, na standard library, na plataforma e nas dependências instaladas. Sem abstração especulativa nem limpeza fora do recorte. Documente semanticamente responsabilidades e decisões. Barra de acabamento em `references/definition-of-done.md`; banco ou dinheiro exige `references/database-and-migrations.md`.
-3. **Testar e provar:** siga a Política de testes e rode a `Prova:` do passo.
+3. **Testar e provar:** siga `references/testes.md` e rode a `Prova:` do passo.
 4. **Visual:** quando um critério depende da interface renderizada, capture e cite a evidência conforme `references/chrome-devtools.md`.
 5. **Entregar:** relatório fixo de `references/delegation.md`, com paths, comando e resultado da prova e pendências.
 
@@ -97,13 +97,7 @@ Credencial, conta, pagamento, elevação administrativa ou integração persiste
 
 ### Política de testes
 
-Casa única desta regra.
-
-- Cada critério de aceite tem ao menos um teste que o prova, de preferência percorrendo o fluxo com resultado observável.
-- Teste novo só para critério não coberto ou risco concreto: erro, borda, segurança ou dinheiro. Antes de criar, procure um teste existente do fluxo e estenda-o.
-- No passo, rode só os testes afetados, pelo grafo de imports da ferramenta do projeto (por exemplo, `vitest run --changed <base>` ou `playwright test --only-changed=<ref>`), sem E2E. Sem esse recurso, rode a `Prova:` do passo; sem plan, os testes do módulo tocado e dos consumidores diretos.
-- O E2E dos critérios com tela roda no checkpoint; a regressão completa roda uma vez, na review.
-- Nunca enfraqueça, pule ou apague teste para obter verde. Mudança de asserção exige justificativa pelo critério de aceite.
+A política, o ambiente local, a pirâmide, o desenho do E2E e o orçamento de duração moram em `references/testes.md`.
 
 ## Saída
 
