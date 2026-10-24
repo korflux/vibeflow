@@ -94,6 +94,15 @@ Ele informa alvo padrão, rota, risco, status dos artefatos, etapa atual pela ta
 
 Aprovar a review, publicar decisões vigentes e fazer push sempre exigem a sua confirmação.
 
+## Novidades da 5.1.0
+
+A 5.1.0 é uma versão minor, sem migração.
+
+- As regras de teste ficam numa referência única, `skills/vibeflow/references/testes.md`.
+- Os testes locais preferem serviços nativos ou embutidos a containers; em projeto que já usa Docker nos testes, o líder pergunta uma vez se você prefere migrar para uma forma mais leve.
+- O E2E é leve e roda em paralelo.
+- A regressão completa tem orçamento de duração, de 10 minutos por padrão; acima dele, o revisor registra um alarme sem bloquear a entrega.
+
 ## Migração para a 5.0.0
 
 A 5.0.0 é uma versão major: muda artefatos, rotas e papéis.

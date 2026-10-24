@@ -54,7 +54,7 @@ Este repo não tem banco, migration nem tráfego de usuário. Skills aqui mudam 
 - **Major:** quebra contrato (path ou nome de artefato, linha de cabeçalho como `# Status:` ou `# Rota:`, comportamento do líder que o humano já usa).
 - **Minor:** adiciona sem quebrar (nova seção opcional no artefato, nova referência de etapa).
 - **Patch:** correção sem mudança de contrato.
-- Versão atual: 5.0.0 (phase-4, contrato de fluxo enxuto).
+- Versão atual: 5.1.0 (phase-5, testes locais leves e orçamento de duração).
 - Produção: migration só com plano de rollback; não rodar migration destrutiva sem o humano pedir.
 
 ## Git
@@ -88,6 +88,7 @@ skills/vibeflow/
   references/<etapa>.md        uma referência por etapa, com catálogos em references/<etapa>/
   references/disco.md          regras mecânicas do disco
   references/delegation.md     papéis, brief e relatório fixo
+  references/testes.md         casa única das regras de teste: política, ambiente local, pirâmide, desenho do E2E e orçamento
   references/<tema>.md         apoio do implementador e do revisor (banco, navegador, definição de pronto)
   templates/<artefato>.md      esqueleto de spec.md, plan.md e review.md
   templates/AGENTS.md          modelo de regras do projeto consumidor
