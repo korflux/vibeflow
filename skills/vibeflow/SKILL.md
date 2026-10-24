@@ -12,7 +12,7 @@ Não inicie a próxima etapa sem autorização explícita do humano; com ela, av
 
 ## 1. Abrir
 
-Com Node 18+ no host, rode na raiz `node <pasta desta skill>/scripts/estado.mjs --json` e use o resultado: ele aplica a tabela de estados de `references/disco.md` e o progresso da seção 9. Inconsistência relatada vai a diagnóstico. Divergência entre o script e a prosa: vale a prosa, e o líder relata ao humano. Sem Node, ou para conferir, leia o disco nesta ordem, só o necessário:
+Com Node 18+ no host, rode na raiz `node <pasta desta skill>/scripts/estado.mjs --json` e use o resultado: ele aplica a tabela de estados de `references/disco.md` e o progresso da seção 9. Inconsistência relatada vai a diagnóstico. Os demais scripts de `scripts/` (`conferir.mjs`, `plan.mjs` e `governanca.mjs`) também só leem e aceleram regras já escritas; a referência de cada regra diz quando rodá-los, e nenhum é pré-requisito de etapa. Divergência entre um script e a prosa: vale a prosa, e o líder relata ao humano. Sem Node, ou para conferir, leia o disco nesta ordem, só o necessário:
 
 1. `AGENTS.md` na raiz: regras do projeto e tabela de esforço. Em rota com phase (medium, high e MVP), falta de `.vibeflow/`, de `AGENTS.md` ou do bloco da cadeia leva ao init antes da etapa (Entrada de `references/init.md`); low nunca passa pelo init.
 2. `.vibeflow/mvp/` e `.vibeflow/phases/`: identifique o alvo padrão (`references/disco.md`, Estado da phase).

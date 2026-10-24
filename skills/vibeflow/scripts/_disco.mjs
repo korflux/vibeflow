@@ -1,4 +1,5 @@
-// _disco.mjs: leitura compartilhada do disco do VibeFlow pelo script estado.
+// _disco.mjs: leitura compartilhada do disco do VibeFlow pelos scripts estado, conferir,
+// plan e governanca.
 //
 // Responsabilidade: transformar artefatos (.md) e Git em dados, aplicando as regras
 // mecânicas de references/disco.md (cabeçalho, passo do plan, Arquivos:, checkpoint,
@@ -50,6 +51,17 @@ const RE_PHASE = /^phase-([1-9][0-9]*)-([a-z0-9]+(?:-[a-z0-9]+)*)$/;
 /** Slug válido: a-z, 0-9 e hífen simples, sem hífen nas pontas, 2 a 48 caracteres. */
 export function slugValido(slug) {
   return slug.length >= 2 && slug.length <= 48 && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug);
+}
+
+/**
+ * Slug a partir de uma frase (disco.md, Abrir phase): minúsculas, sem acento, só a-z, 0-9
+ * e hífen, hífens repetidos viram um e os das pontas saem. Não corta nem inventa: o
+ * resultado fora de 2 a 48 caracteres é recusado por slugValido, e quem chama escolhe
+ * outra frase.
+ */
+export function normalizarSlug(frase) {
+  return frase.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
 /** Pastas de phase no padrão, ordenadas por n numérico; pastas fora do padrão não contam. */
@@ -125,9 +137,9 @@ export function linksNoCaminho(raiz, pasta) {
 // Plan: passos e checkpoints (references/disco.md, Plan)
 // ---------------------------------------------------------------------------
 
-const SEP = ' · ';
-const RE_PASSO = /^- \[([ xX])\] ([1-9][0-9]*)([a-z])?: (.*)$/;
-const RE_CHECKPOINT = /^- \[([ xX])\] Checkpoint:\s*(.*)$/;
+export const SEP = ' · ';
+export const RE_PASSO = /^- \[([ xX])\] ([1-9][0-9]*)([a-z])?: (.*)$/;
+export const RE_CHECKPOINT = /^- \[([ xX])\] Checkpoint:\s*(.*)$/;
 
 /**
  * Paths do campo `Arquivos:` de uma linha de passo: só o texto entre crases do trecho
@@ -144,9 +156,25 @@ function lerArquivos(restoDaLinha) {
 }
 
 /**
+ * Critérios do campo `Aceite:` de uma linha de passo: o texto entre `Aceite:` e o campo
+ * seguinte (`Arquivos:` ou `Prova:`). Devolve { bruto, ids }, com ids vazio para `nenhum`;
+ * null quando a linha não tem o campo.
+ */
+function lerAceite(restoDaLinha) {
+  const marca = `${SEP}Aceite:`;
+  const i = restoDaLinha.indexOf(marca);
+  if (i < 0) return null;
+  const depois = restoDaLinha.slice(i + marca.length);
+  const fim = [`${SEP}Arquivos:`, `${SEP}Prova:`].map((m) => depois.indexOf(m)).filter((j) => j >= 0);
+  const bruto = (fim.length ? depois.slice(0, Math.min(...fim)) : depois).trim();
+  return { bruto, ids: [...bruto.matchAll(/\bA[1-9][0-9]*\b/g)].map((a) => a[0]) };
+}
+
+/**
  * Lê o plan: itens na ordem do arquivo (passos e checkpoints, cada um com a caixa),
  * passos e se o analyze já rodou (seção `## Achados do analyze` presente).
- * Passo: { tipo, id, num, letra, caixa, arquivos }. Checkpoint: { tipo, caixa, aceite }.
+ * Passo: { tipo, id, num, letra, caixa, arquivos, aceite, resto }, com `resto` sendo a
+ * linha depois de `<ID>: `. Checkpoint: { tipo, caixa, aceite }.
  *
  * ponytail: lê o arquivo inteiro, sem distinguir seção nem bloco de código; restringir à
  * seção de passos se o template do plan ganhar outra lista com linhas no formato do passo.
@@ -156,7 +184,7 @@ export function lerPlan(linhasPlan) {
   for (const l of linhasPlan || []) {
     let m = l.match(RE_PASSO);
     if (m) {
-      itens.push({ tipo: 'passo', id: `${m[2]}${m[3] || ''}`, num: Number(m[2]), letra: m[3] || null, caixa: m[1] !== ' ', arquivos: lerArquivos(m[4]) });
+      itens.push({ tipo: 'passo', id: `${m[2]}${m[3] || ''}`, num: Number(m[2]), letra: m[3] || null, caixa: m[1] !== ' ', arquivos: lerArquivos(m[4]), aceite: lerAceite(m[4]), resto: m[4] });
       continue;
     }
     m = l.match(RE_CHECKPOINT);
@@ -237,6 +265,11 @@ export function sobrepoe(a, b) {
   const n = Math.min(a.length, b.length);
   for (let i = 0; i < n; i++) if (minusculaAscii(a[i]) !== minusculaAscii(b[i])) return false;
   return true;
+}
+
+/** Path real (segmentos) dentro do recorte: algum path do recorte é ele mesmo ou um diretório acima dele. */
+export function dentroDoRecorte(caminho, rec) {
+  return rec.some((r) => r.length <= caminho.length && sobrepoe(r, caminho));
 }
 
 /** Dois recortes se sobrepõem quando algum par de paths se sobrepõe. */
@@ -336,6 +369,30 @@ export function git(raiz, args) {
   } catch {
     return null;
   }
+}
+
+/**
+ * Executa git com argumentos em lista e devolve { codigo, out } mesmo quando o comando
+ * falha, para checagens cujo código de saída é o resultado (`git diff --cached --check`).
+ */
+export function gitComCodigo(raiz, args) {
+  try {
+    return { codigo: 0, out: execFileSync('git', args, { cwd: raiz, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }) };
+  } catch (e) {
+    return { codigo: typeof e.status === 'number' ? e.status : 2, out: e.stdout ? String(e.stdout) : '' };
+  }
+}
+
+/** Paths no índice (staging) em relação ao HEAD, relativos à raiz, com barra; null sem Git. */
+export function emStaging(raiz) {
+  const out = git(raiz, ['diff', '--cached', '--name-only', '-z']);
+  return out === null ? null : out.split('\0').filter(Boolean);
+}
+
+/** Linhas de um arquivo no índice (`:path`) ou no HEAD (`HEAD:path`); null se ausente lá. */
+export function linhasNoGit(raiz, ref, caminhoRelativo) {
+  const out = git(raiz, ['show', `${ref}:${caminhoRelativo}`]);
+  return out === null ? null : out.replace(/^\uFEFF/, '').split(/\r?\n/);
 }
 
 /** Commits do branch atual, do mais novo ao mais antigo: { hash, assunto }. */

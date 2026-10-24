@@ -8,13 +8,16 @@
 // Divergência entre este script e a prosa do disco.md é bug do script.
 //
 // Uso:
-//   node estado.mjs [--alvo phase-N|mvp] [--raiz <dir>] [--json]
+//   node estado.mjs [--alvo phase-N|mvp] [--raiz <dir>] [--json] [--slug "<frase>"] [--linha]
+// --slug normaliza a frase pela regra de references/disco.md (Abrir phase) e devolve o path
+// da próxima phase; frase que não vira slug válido é erro de uso. --linha imprime só uma
+// linha de progresso, vazia fora de um repo com .vibeflow/, para a statusline do host.
 // Saída: 0 sem inconsistência, 1 com inconsistência a diagnosticar, 2 em erro de uso.
 
 import { existsSync } from 'node:fs';
 import { join, resolve, relative } from 'node:path';
 import {
-  lerLinhas, cabecalho, carregarAlvos, alvoPadrao, alvoNomeado, listarPhases, proximoN, ROTAS,
+  lerLinhas, cabecalho, carregarAlvos, alvoPadrao, alvoNomeado, listarPhases, proximoN, normalizarSlug, slugValido, ROTAS,
   linksNoCaminho, lerPlan, achadosDoPlan, grupos, recorte, segmentos, sobrepoe, lerRs, vereditoReview, ultimoAjuste,
   commits, classificarCommit, naoCommitados, naoEnviados, commitQueAdicionou, jsonAscii, executadoDireto,
 } from './_disco.mjs';
@@ -276,11 +279,12 @@ function progresso(alvo) {
 // ---------------------------------------------------------------------------
 
 function lerArgs(argv) {
-  const args = { raiz: process.cwd(), alvo: null, json: false };
+  const args = { raiz: process.cwd(), alvo: null, json: false, slug: null, linha: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--json') args.json = true;
-    else if ((a === '--raiz' || a === '--alvo') && argv[i + 1]) args[a.slice(2)] = argv[++i];
+    else if (a === '--linha') args.linha = true;
+    else if ((a === '--raiz' || a === '--alvo' || a === '--slug') && argv[i + 1]) args[a.slice(2)] = argv[++i];
     else return { erro: `argumento desconhecido ou sem valor: ${a}` };
   }
   return args;
@@ -371,8 +375,21 @@ function texto(r) {
   if (r.init) l.push(`init: ${r.init}`);
   if (!r.git) l.push('git: indisponível; linhas de commit, push e alteração não avaliadas');
   for (const i of r.inconsistencias) l.push(`inconsistência: ${i}`);
-  l.push(`próxima phase: phase-${r.proximoN}-<slug>`);
+  l.push(`próxima phase: ${r.proximaPhase || `phase-${r.proximoN}-<slug>`}`);
   return `${l.join('\n')}\n`;
+}
+
+/**
+ * Uma linha de progresso para a statusline do host (SKILL.md, seção 9). Vazia fora de um
+ * repo com .vibeflow/, para não poluir a statusline de projetos sem a skill.
+ */
+function linha(r) {
+  if (!r.governanca.vibeflow) return '';
+  const p = r.progresso;
+  const prog = p ? (p.ajuste ? `ajuste: R* ${p.ajuste}` : p.percentual === null ? null : `${p.percentual}%`) : null;
+  const partes = ['vibeflow', r.alvo ? r.alvo.alvo : null, prog, `etapa: ${r.etapa.etapa}`, `próximo: ${r.etapa.proximo}`];
+  if (r.inconsistencias.length) partes.push(`inconsistências: ${r.inconsistencias.length}`);
+  return `${partes.filter(Boolean).join(' · ')}\n`;
 }
 
 function principal() {
@@ -380,7 +397,12 @@ function principal() {
   if (args.erro) { console.error(args.erro); return 2; }
   const r = estado(resolve(args.raiz), args.alvo);
   if (r.erro) { console.error(r.erro); return 2; }
-  process.stdout.write(args.json ? `${jsonAscii(r)}\n` : texto(r));
+  if (args.slug !== null) {
+    const slug = normalizarSlug(args.slug);
+    if (!slugValido(slug)) { console.error(`slug fora da regra (2 a 48 caracteres a-z, 0-9 e hífen): "${slug}"; escolha outra frase`); return 2; }
+    r.proximaPhase = `phase-${r.proximoN}-${slug}`;
+  }
+  process.stdout.write(args.linha ? linha(r) : args.json ? `${jsonAscii(r)}\n` : texto(r));
   return r.inconsistencias.length ? 1 : 0;
 }
 

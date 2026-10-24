@@ -29,7 +29,7 @@ Artefatos de uma phase ou do MVP, sempre com estes nomes: `spec.md`, `plan.md` e
 ## Abrir phase ou MVP
 
 - `n` é o maior número existente entre as pastas `phase-<n>-<slug>` mais um, comparado em ordem numérica (`phase-10` vem depois de `phase-9`). Sem phases, `n` é 1. Pastas fora do padrão `phase-<n>-<slug>` não contam.
-- Slug: frase curta da phase em minúsculas, sem acento, com `a-z`, `0-9` e hífen; hífens repetidos viram um e hífens das pontas saem; de 2 a 48 caracteres. Fora disso, escolha outro slug antes de criar.
+- Slug: frase curta da phase em minúsculas, sem acento, com `a-z`, `0-9` e hífen; hífens repetidos viram um e hífens das pontas saem; de 2 a 48 caracteres. Fora disso, escolha outro slug antes de criar. Com Node, `scripts/estado.mjs --slug "<frase>"` aplica esta regra e devolve o path da próxima phase.
 - O líder fixa o path do alvo (`n` e slug) no brief; quem grava o primeiro artefato cria a pasta.
 - Pasta que já existe não é recriada nem renomeada. Pedido novo vai para a próxima pasta; ajuste volta à phase de origem (`references/implement.md`, Ajuste de phase).
 - O MVP usa `.vibeflow/mvp/` uma única vez por repositório. Baseline concluído não é sobrescrito, movido nem versionado; mudança posterior que altera decisão ou comportamento abre phase `high` com `# Risco:` e substituição explícita, e ajuste segue `references/implement.md` (Ajuste de phase).
@@ -117,6 +117,8 @@ Sem achado, a seção traz a linha `Nenhum achado.`. A presença da seção indi
 
 Os commits de uma phase são os que levam o seu `<alvo>` e, no medium, o `task(medium): ...` que o `review.md` registra como base. ID de passo ou de R* só vale no commit do mesmo `<alvo>`. Nenhuma mensagem leva `Co-Authored-By`.
 
+Com Node, depois do staging e antes de cada commit, o líder roda `scripts/conferir.mjs --commit "<mensagem>"`: ele confere o formato da mensagem, as caixas e os R* marcados no índice contra os IDs, os paths em staging contra o recorte e o `git diff --cached --check`. Achado é resolvido no staging, na marcação ou na mensagem antes do commit; aviso indica conferência indisponível pelo disco e segue pelo relatório.
+
 ## Estado da phase
 
 - Phase ou MVP fechado: `review.md` com `# Status: aprovado` e nenhuma linha `- [ ] R<n>:` aberta. Os demais estão abertos.
@@ -161,7 +163,7 @@ Antes de substituir ou remover `AGENTS.md`, a ponte ou um perfil:
 
 1. Se o arquivo está commitado sem alteração local, o commit é o backup. Senão, copie para `.vibeflow/old/` com o mesmo nome (a ponte vira `antigravity-vibeflow.md`).
    Perfil global substituído por decisão humana recebe a cópia em `~/.vibeflow/old/`, com o mesmo nome e as mesmas conferências.
-2. Confira tamanho e SHA-256 da cópia contra o original; divergência apaga a cópia e interrompe a substituição.
+2. Confira tamanho e SHA-256 da cópia contra o original (com Node, `scripts/governanca.mjs --backup <original> <cópia>`); divergência apaga a cópia e interrompe a substituição.
 3. Destino em `old/` com o mesmo conteúdo é reutilizado; com conteúdo diferente, acrescente o sufixo UTC `.<AAAAMMDDTHHMMSSZ>`.
 4. Só então substitua ou remova o original.
 

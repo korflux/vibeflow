@@ -1,9 +1,10 @@
 // disco.test.mjs: testes de comportamento da leitura compartilhada (_disco.mjs).
 //
-// Cobre as regras mecânicas de references/disco.md que o estado aplica: formato do passo,
-// Arquivos: (normalização, sobreposição, path incomparável), numeração e grupo paralelo,
-// formato dos commits, reconhecimento do formato antigo e tolerância a CRLF e BOM.
-// Os cenários de etapa e progresso ficam em estado.test.mjs. Rodar com: node --test
+// Cobre as regras mecânicas de references/disco.md que os scripts aplicam: formato do
+// passo e do campo Aceite:, Arquivos: (normalização, sobreposição, path incomparável,
+// path real dentro do recorte), numeração e grupo paralelo, slug da phase, formato dos
+// commits, reconhecimento do formato antigo e tolerância a CRLF e BOM. Os cenários de cada
+// script ficam no teste dele (estado, conferir, plan e governanca). Rodar com: node --test
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -11,7 +12,7 @@ import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   normalizarPath, sobrepoe, lerPlan, grupos, achadosDoPlan, classificarCommit, carregarAlvos, lerLinhas,
-  listarPhases, proximoN, vereditoReview, lerRs,
+  listarPhases, proximoN, vereditoReview, lerRs, normalizarSlug, slugValido, dentroDoRecorte, segmentos,
 } from '../../skills/vibeflow/scripts/_disco.mjs';
 import { repo, escrever, spec, passo, checkpoint, plan, review, veredito, achados } from './_apoio.mjs';
 
@@ -199,4 +200,31 @@ test('CRLF e BOM são lidos como LF no cabeçalho e no plan', (t) => {
   assert.deepEqual(p.passos[0].arquivos, ['src/p1.js', 'tests/p1.test.js']);
   assert.deepEqual(p.itens[3].aceite, ['A1', 'A2']);
   assert.ok(lerLinhas(join(raiz, 'nao-existe.md')) === null);
+});
+
+// ---------------------------------------------------------------------------
+// Slug, Aceite: e recorte de path real
+// ---------------------------------------------------------------------------
+
+test('slug a partir da frase: minúsculas, sem acento, hífen simples e pontas limpas', () => {
+  assert.equal(normalizarSlug('  Conferência do Líder: scripts!! '), 'conferencia-do-lider-scripts');
+  assert.equal(normalizarSlug('API -- v2'), 'api-v2');
+  assert.ok(slugValido(normalizarSlug('Agenda online')));
+  assert.equal(slugValido(normalizarSlug('é')), false); // 1 caractere
+  assert.equal(slugValido(normalizarSlug('x'.repeat(49))), false); // não corta: recusa
+});
+
+test('lê o Aceite: do passo, com A* ou nenhum', () => {
+  const [a, b, c] = passosDe(passo('1', { aceite: 'A1, A3' }), passo('2', { aceite: 'nenhum', arquivos: null }), '- [ ] 3: sem campos');
+  assert.deepEqual(a.aceite, { bruto: 'A1, A3', ids: ['A1', 'A3'] });
+  assert.deepEqual(b.aceite, { bruto: 'nenhum', ids: [] });
+  assert.equal(c.aceite, null);
+});
+
+test('path real dentro do recorte só quando o recorte é ele ou um diretório acima', () => {
+  const rec = [normalizarPath('src/a'), normalizarPath('tests/a.test.js')];
+  assert.equal(dentroDoRecorte(segmentos('src/a/b.js'), rec), true);
+  assert.equal(dentroDoRecorte(segmentos('tests/a.test.js'), rec), true);
+  assert.equal(dentroDoRecorte(segmentos('src/ab.js'), rec), false);
+  assert.equal(dentroDoRecorte(segmentos('src'), rec), false); // o recorte é mais estreito que o path
 });

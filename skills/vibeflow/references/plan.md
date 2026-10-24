@@ -25,7 +25,7 @@ O `plan.md` é o tracking interno da phase: um checklist na ordem real de execu�
 5. **Prova do passo.** Os testes do passo, ou a checagem do passo só de prosa, conforme `references/testes.md` (Política de testes). Comando que o repo não tem não vira prova: ferramenta instalável no projeto, sem credencial nem elevação, entra no passo que depende dela; credencial, conta, pagamento ou privilégio do SO volta ao líder como pergunta ao humano.
 6. **Checkpoints.** Marque um checkpoint depois de cada grupo de passos que fecha critérios de aceite. Phase pequena não tem checkpoint. Com `# Risco:` na spec, há um checkpoint depois de cada grupo de risco.
 7. **Regressão completa.** Defina os comandos reais da suíte inteira, do mais barato ao mais caro: lint e tipos, unitários, E2E. Quando cada nível roda está em `references/testes.md` (Política de testes).
-8. **Gravar.** O redator cria o `plan.md` a partir de `templates/plan.md`, ou edita o vivo. O plan guarda a definição do trabalho e as caixas; nunca hashes, logs nem histórico de comandos.
+8. **Gravar.** O redator cria o `plan.md` a partir de `templates/plan.md`, ou edita o vivo. O plan guarda a definição do trabalho e as caixas; nunca hashes, logs nem histórico de comandos. Com Node, o líder roda `scripts/plan.mjs` no alvo depois da gravação, para preencher a Saída; achado de forma ou critério sem passo volta ao redator.
 
 ## Saída
 

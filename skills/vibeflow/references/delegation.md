@@ -26,7 +26,7 @@ Escrita paralela de código só ocorre num grupo paralelo, com ownership exclusi
 
 ### Conferência do líder
 
-Antes de aceitar cada devolutiva que muda o estado da phase, confira forma e direção: a entrega é o que o humano pediu e o que o plan prevê. Correção técnica pertence ao verificador no checkpoint e ao revisor no analyze e na review. Consuma resultado, cobertura, exceções e próximo responsável, sem repetir prova. Ler o `git diff --stat` é checagem de forma, paths contra `Arquivos:`, e não reexame do conteúdo.
+Antes de aceitar cada devolutiva que muda o estado da phase, confira forma e direção: a entrega é o que o humano pediu e o que o plan prevê. Correção técnica pertence ao verificador no checkpoint e ao revisor no analyze e na review. Consuma resultado, cobertura, exceções e próximo responsável, sem repetir prova. Ler o `git diff --stat` é checagem de forma, paths contra `Arquivos:`, e não reexame do conteúdo; com Node, `scripts/conferir.mjs --passo <IDs>` faz essa comparação para passos e R*, e path fora do recorte volta ao dono.
 
 | Entrega | Leia | Confronte com |
 |---|---|---|

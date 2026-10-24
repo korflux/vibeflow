@@ -82,17 +82,61 @@ Por padrão, um único chat conduz a rota inteira. Em host de contexto curto, us
 
 Durante a phase, o líder informa o progresso em percentual, calculado pelas etapas e pelos passos concluídos no disco, a cada etapa, checkpoint e commit.
 
-### Script de leitura
+### Scripts de leitura
 
-Com Node 18 ou superior, o líder usa o script `estado` da pasta `scripts/` da skill, na raiz do repo. Ele só lê o disco e o Git, nunca escreve nem faz commit, e funciona em Windows e Linux. Sem Node, a skill segue as regras escritas.
+Com Node 18 ou superior, a skill usa os scripts da pasta `scripts/`, sempre na raiz do repo. Eles só leem o disco e o Git, nunca escrevem, fazem staging ou commit, e funcionam em Windows e Linux. Cada um acelera uma regra já escrita nas referências; quando divergem, vale a regra escrita. Sem Node, a skill segue as regras escritas. Todos aceitam `--json` e saem com 0 sem achado, 1 com achado e 2 em erro de uso.
 
-```text
-node <pasta da skill>/scripts/estado.mjs [--alvo phase-N|mvp] [--json]
+| Script | Quem roda e quando | O que confere |
+|---|---|---|
+| `estado.mjs [--alvo phase-N\|mvp] [--slug "<frase>"] [--linha]` | Líder, ao abrir e retomar | Alvo padrão, rota, risco, status dos artefatos, etapa atual, progresso, próximo passo ou grupo paralelo, R* abertos, push pendente, inconsistências e o path da próxima phase; `--slug` normaliza a frase do slug e `--linha` imprime só a linha de progresso |
+| `conferir.mjs --passo <IDs>` | Líder, ao receber um passo ou um R* | Alterações não commitadas fora dos `Arquivos:` do passo ou do path do R* |
+| `conferir.mjs --commit "<mensagem>"` | Líder, depois do staging e antes de cada commit | Formato da mensagem, ausência de `Co-Authored-By`, caixas e R* marcados no índice contra os IDs, paths em staging contra o recorte e `git diff --cached --check` |
+| `plan.mjs [--alvo phase-N\|mvp]` | Líder depois de gravar o plan; revisor no analyze | Forma dos passos e checkpoints, critérios inexistentes ou sem passo, seções obrigatórias e placeholder de template esquecido |
+| `governanca.mjs` e `governanca.mjs --backup <original> <cópia>` | Líder no init | `AGENTS.md` e bloco da cadeia, ponte, `.gitkeep`, perfis globais contra a fonte, perfil `corretor` obsoleto, perfis de projeto customizados; no modo `--backup`, tamanho e SHA-256 da cópia |
+
+### Apoios opcionais do host
+
+A skill não instala estes apoios. Eles reforçam as regras sem conduzir nada, e você decide se os adota.
+
+**Hook `commit-msg` do Git (qualquer host).** Barra o commit cuja mensagem ou cujo índice fogem do contrato. Ele vale para todo commit do repo, inclusive os seus feitos à mão, então use só em repo em que todo commit passa pela skill. Em `.git/hooks/commit-msg`:
+
+```sh
+#!/bin/sh
+node "<pasta da skill>/scripts/conferir.mjs" --commit-arquivo "$1"
 ```
 
-Ele informa alvo padrão, rota, risco, status dos artefatos, etapa atual pela tabela de estados, progresso, próximo passo ou grupo paralelo, R* abertos, push pendente, inconsistências e o número da próxima phase.
+**Bloqueios no Claude Code.** No `.claude/settings.json` do projeto, regras `deny` impedem os comandos que o contrato proíbe. Elas casam o comando como foi escrito, então são uma rede de segurança, não uma garantia:
+
+```json
+{
+  "permissions": {
+    "deny": [
+      "Bash(git add -A*)", "Bash(git add --all*)", "Bash(git add .)", "Bash(git add . *)",
+      "Bash(git commit --amend*)", "Bash(git commit * --amend*)",
+      "Bash(git push --force*)", "Bash(git push -f*)", "Bash(git push * --force*)"
+    ]
+  }
+}
+```
+
+**Statusline no Claude Code.** Mostra a linha de progresso da phase abaixo do prompt e fica vazia em repo sem `.vibeflow/`. No `settings.json` do usuário ou do projeto (no Windows, a statusline roda pelo Git Bash):
+
+```json
+{
+  "statusLine": { "type": "command", "command": "node <pasta da skill>/scripts/estado.mjs --linha || true" }
+}
+```
 
 Aprovar a review, publicar decisões vigentes e fazer push sempre exigem a sua confirmação.
+
+## Novidades da 5.2.0
+
+A 5.2.0 é uma versão minor, sem migração.
+
+- Três scripts de leitura novos apoiam o líder e o revisor sem conduzir etapa: `conferir.mjs` (recorte do passo e conferência antes do commit), `plan.mjs` (forma do plan e cobertura dos critérios) e `governanca.mjs` (resultado do init e backup).
+- O `estado.mjs` ganhou `--slug`, que aplica a regra do slug, e `--linha`, para a statusline.
+- O init passa a tratar como idêntico o perfil global que difere da fonte só na quebra de linha (CRLF ou LF) ou no BOM.
+- Hook `commit-msg`, bloqueios e statusline do Claude Code ficam documentados como apoios opcionais.
 
 ## Novidades da 5.1.0
 

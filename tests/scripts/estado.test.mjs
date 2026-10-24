@@ -8,7 +8,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, symlinkSync } from 'node:fs';
+import { mkdirSync, symlinkSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { estado } from '../../skills/vibeflow/scripts/estado.mjs';
 import {
@@ -459,4 +459,25 @@ test('CLI: texto com o próximo grupo paralelo e a fração de passos', (t) => {
   assert.equal(codigo, 0);
   assert.match(out, /progresso: 66% · etapa: implement, implementar o grupo paralelo 2 \(2a, 2b\) · passos 1\/3 marcados/);
   assert.match(out, /^passos: 2a, 2b$/m);
+});
+
+// ---------------------------------------------------------------------------
+// --slug e --linha
+// ---------------------------------------------------------------------------
+
+test('--slug normaliza a frase no path da próxima phase; frase sem slug válido é erro de uso', (t) => {
+  const raiz = repo(t);
+  const ok = cli('estado.mjs', ['--raiz', raiz, '--slug', 'Agenda Online: v2', '--json']);
+  assert.equal(ok.codigo, 0);
+  assert.equal(JSON.parse(ok.out).proximaPhase, 'phase-1-agenda-online-v2');
+  assert.equal(cli('estado.mjs', ['--raiz', raiz, '--slug', '!']).codigo, 2);
+});
+
+test('--linha imprime uma linha de progresso, e nada fora de um repo com .vibeflow/', (t) => {
+  const raiz = fase(t, [passo('1'), passo('2')]);
+  const r = cli('estado.mjs', ['--raiz', raiz, '--linha']);
+  assert.equal(r.out, 'vibeflow · phase-1 · 60% · etapa: implement · próximo: Líder delega ao implementador\n');
+  const vazio = repo(t);
+  rmSync(join(vazio, '.vibeflow'), { recursive: true, force: true });
+  assert.equal(cli('estado.mjs', ['--raiz', vazio, '--linha']).out, '');
 });
