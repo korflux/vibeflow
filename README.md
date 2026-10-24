@@ -6,23 +6,20 @@ Skill única `vibeflow`, com um coordenador-líder que conduz o trabalho de agen
 
 ## O que é
 
-O vibeflow é uma skill para quem programa com agentes (Grok Build, Claude Code, Codex, OpenCode, Pi, Antigravity e qualquer cliente que leia `SKILL.md`). O líder conversa com você, entende o projeto, escolhe uma rota proporcional ao pedido, planeja e delega a execução a subagentes: redação de artefatos, código, testes, provas e Git. Ajustes pontuais, como trocar um valor ou destravar um commit, o líder faz direto, porque delegar custaria mais. Analyze e review são sempre feitos por um revisor de contexto limpo. O pedido vira trilha no disco, não recap no chat.
+O vibeflow é uma skill para quem programa com agentes (Grok Build, Claude Code, Codex, OpenCode, Pi, Antigravity e qualquer cliente que leia `SKILL.md`). Ela roda só quando você a chama. O líder conversa com você, entende o projeto, escolhe uma rota proporcional ao pedido, planeja e delega a execução a subagentes: redação de artefatos, código, testes e provas. O líder confere cada entrega, marca o progresso e faz os commits; código e teste ficam sempre com os subagentes. Analyze, checkpoints e review são feitos em contexto limpo. O pedido vira trilha no disco, não recap no chat.
 
-O pacote é `SKILL.md`, referências por etapa, templates e dois scripts de leitura em Node (`estado` e `ondas`), sem dependências. No repo do consumidor, o trabalho vive em disco:
+O pacote é `SKILL.md`, referências por etapa, templates, perfis de subagente e um script de leitura em Node (`estado`), sem dependências. No repo do consumidor, o trabalho vive em disco:
 
 ```text
 AGENTS.md                                  fonte única de regras do projeto
 .agents/rules/vibeflow.md                  ponte Antigravity para AGENTS.md
-.vibeflow/phases/phase-N-slug/interview.md
-.vibeflow/phases/phase-N-slug/spec.md
-.vibeflow/phases/phase-N-slug/design.md    somente com UI nova
-.vibeflow/phases/phase-N-slug/plan.md
-.vibeflow/phases/phase-N-slug/analyze.md
+.vibeflow/phases/phase-N-slug/spec.md      gravada pela interview; única aprovação antes do código
+.vibeflow/phases/phase-N-slug/plan.md      checklist de passos, com os achados do analyze no fim
 .vibeflow/phases/phase-N-slug/review.md
-.vibeflow/mvp/                             baseline único de projeto novo, rota max
+.vibeflow/mvp/                             baseline único de projeto novo, rota high com risco
 ```
 
-O estado vem das linhas `# Status:` e `# Rota:` dos artefatos, das caixas do `plan.md` e do Git. Um chat novo com `/vibeflow` retoma de onde a phase parou.
+O estado vem das linhas `# Rota:`, `# Risco:` e `# Status:`, das caixas de passos e checkpoints do `plan.md`, dos R* do `review.md` e do Git. Um chat novo com `/vibeflow` retoma de onde a phase parou.
 
 ## Como instalar
 
@@ -61,41 +58,55 @@ O Codex mantém regras globais em `~/.codex/AGENTS.md` ou `~/.codex/AGENTS.overr
 
 ## Como usar
 
+A skill não entra sozinha. No Claude Code, chame `/vibeflow`; no Codex, `$vibeflow`. Nos demais hosts, chame `/vibeflow`. Fora dessa chamada, o agente trabalha direto pelas regras do `AGENTS.md`, sem rota, phase nem artefato.
+
 | Comando | Faz |
 |---|---|
 | `/vibeflow` | Lê o disco, retoma a phase aberta ou classifica o pedido novo e anuncia a rota e as etapas |
-| `/vibeflow <etapa> [pedido]` | Vai direto a `init`, `interview`, `spec`, `design`, `plan`, `analyze`, `implement` ou `review`, se o pré-requisito estiver satisfeito; o resto do texto é o pedido |
+| `/vibeflow <etapa> [pedido]` | Vai direto a `init`, `interview`, `spec`, `plan`, `analyze`, `implement` ou `review`, se o pré-requisito estiver satisfeito; o resto do texto é o pedido |
 | `/vibeflow <pedido>` | Texto que não começa por uma etapa é tratado como pedido e classificado |
 
-A skill também entra sozinha quando o pedido é de software: código, correção de bug, ajuste de UI, funcionalidade nova, especificação, plano, revisão ou governança para agentes.
+Primeira vez num repo: a etapa `init` roda antes da primeira rota com phase. Ela grava `AGENTS.md`, a ponte `.agents/rules/vibeflow.md` e guarda cópia conferida de arquivo substituído em `.vibeflow/old/`, com um commit local. Na primeira vez na máquina, instala também os cinco perfis de subagente (explorador, implementador, redator, verificador e revisor) em nível global, em `~/.claude/agents/` e `~/.codex/agents/`; perfil customizado nunca é sobrescrito sem a sua decisão, e um perfil no projeto prevalece sobre o global. Um `CLAUDE.md` existente não é removido. Quando os perfis mudam, recarregue o host antes de continuar.
 
-Primeira vez num repo: a etapa `init` roda antes da primeira rota com phase. Ela grava `AGENTS.md`, a ponte `.agents/rules/vibeflow.md` e guarda cópia conferida de arquivo substituído em `.vibeflow/old/`, com um commit local. Na primeira vez na máquina, instala também os seis perfis de subagente (explorador, implementador, redator, verificador, corretor e revisor) em nível global, em `~/.claude/agents/` e `~/.codex/agents/`; perfil customizado nunca é sobrescrito sem a sua decisão, e um perfil no projeto prevalece sobre o global. Um `CLAUDE.md` existente não é removido. Quando os perfis mudam, recarregue o host antes de continuar.
+A rota é proporcional ao pedido:
 
-A rota é proporcional ao pedido. Uma troca de cor é delegada e fechada sem criar `.vibeflow/`; um pedido que toca auth, pagamento ou produção percorre interview, spec, plan, analyze, implement e review. A tabela de rotas fica no `AGENTS.md` que a etapa `init` grava no projeto, a partir de [`skills/vibeflow/templates/AGENTS.md`](skills/vibeflow/templates/AGENTS.md).
+| Rota | Etapas |
+|---|---|
+| `low` | implement direto, com prova proporcional, sem criar `.vibeflow/` |
+| `medium` | implement e review |
+| `high` | interview, spec, plan, analyze, implement com checkpoints e review |
 
-Por padrão, um único chat conduz a rota inteira. Em host de contexto curto, use um chat para todo o planejamento e outro para a implementação. Em host sem subagentes, ou sem os perfis carregados, a skill avisa e roda uma etapa ou tarefa por vez, com analyze e review em chat novo.
+Na `high`, a linha `# Risco:` marca mudanças que tocam autenticação, autorização, pagamento, segredo, perda de dados ou produção; ela não acrescenta etapa, mas aprofunda a interview, os checkpoints e a review. A aprovação da `spec.md` é a única antes do código: com ela, o líder segue até a review sem pedir outras aprovações. A tabela de rotas fica no `AGENTS.md` que a etapa `init` grava no projeto, a partir de [`skills/vibeflow/templates/AGENTS.md`](skills/vibeflow/templates/AGENTS.md).
 
-Durante a phase, o líder informa o progresso em percentual, calculado pelas etapas e T* concluídas no disco, a cada etapa, onda e commit.
+Por padrão, um único chat conduz a rota inteira. Em host de contexto curto, use um chat para o planejamento e outro para a implementação. Em host sem subagentes, ou sem os perfis carregados, a skill avisa e roda uma etapa ou um passo por vez, com analyze, checkpoint e review em chat novo.
 
-### Scripts de leitura
+Durante a phase, o líder informa o progresso em percentual, calculado pelas etapas e pelos passos concluídos no disco, a cada etapa, checkpoint e commit.
 
-Com Node 18 ou superior, o líder usa dois scripts da pasta `scripts/` da skill, na raiz do repo. Eles só leem o disco e o Git, nunca escrevem nem fazem commit, e funcionam em Windows e Linux. Sem Node, a skill segue as regras escritas.
+### Script de leitura
+
+Com Node 18 ou superior, o líder usa o script `estado` da pasta `scripts/` da skill, na raiz do repo. Ele só lê o disco e o Git, nunca escreve nem faz commit, e funciona em Windows e Linux. Sem Node, a skill segue as regras escritas.
 
 ```text
 node <pasta da skill>/scripts/estado.mjs [--alvo phase-N|mvp] [--json]
-node <pasta da skill>/scripts/ondas.mjs  [--alvo phase-N|mvp] [--plan <caminho>] [--json]
 ```
 
-- `estado`: alvo padrão, rota, status dos artefatos, etapa atual pela tabela de estados, progresso, R* abertos, push pendente, inconsistências e o número da próxima phase.
-- `ondas`: T* elegíveis, a próxima onda pelas regras de `Arquivos:`, T* que rodam sozinhas, sobreposições sem `Deps` e `Deps` quebradas.
+Ele informa alvo padrão, rota, risco, status dos artefatos, etapa atual pela tabela de estados, progresso, próximo passo ou grupo paralelo, R* abertos, push pendente, inconsistências e o número da próxima phase.
 
 Aprovar a review, publicar decisões vigentes e fazer push sempre exigem a sua confirmação.
+
+## Migração para a 5.0.0
+
+A 5.0.0 é uma versão major: muda artefatos, rotas e papéis.
+
+- Phases fechadas no formato antigo (com `interview.md`, `design.md`, `analyze.md`, rotas `xhigh` ou `max`, ou tasks `T*`) ficam como estão e são reconhecidas como fechadas.
+- Uma phase aberta no formato antigo deve ser fechada com a versão anterior da skill antes de atualizar; a 5.0.0 a relata como inconsistência e não a conduz.
+- O perfil global `corretor` de versões anteriores é relatado pelo init como obsoleto e preservado; removê-lo exige a sua decisão.
 
 ## Estrutura do repositório
 
 ```text
 vibeflow/
-├── skills/vibeflow/      pacote instalável (SKILL.md, references/, templates/, scripts/)
+├── skills/vibeflow/      pacote instalável (SKILL.md, agents/, references/, templates/, scripts/)
 ├── tests/scripts/        testes dos scripts (não instala)
 ├── plugin.json           plugin Antigravity
 ├── AGENTS.md             regras deste repo (fonte viva)

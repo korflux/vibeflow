@@ -104,9 +104,9 @@ Reescreve o pacote `skills/vibeflow/` para o contrato 5.0.0 descrito na spec: ap
 - **Prova afetada:** `git diff --check`; verificador confere que os perfis Claude e Codex de cada papel dizem a mesma coisa e que o init lista exatamente os cinco
 
 ### T8: regras do projeto, README e versão 5.0.0
-- [ ] T8 concluída
-- **Estado:** pendente
-- **Resumo:** nenhum
+- [x] T8 concluída
+- **Estado:** concluída
+- **Resumo:** AGENTS.md, template e README no contrato 5.0.0, versão registrada; pacote de 30368 para 21467 palavras; próximo: review
 - **Spec:** A9, A10, A12, C1, C3
 - **Deps:** T2, T3, T4, T5, T6, T7
 - **O quê:** Resultado principal: prosa (redator). `templates/AGENTS.md` com a tabela de três rotas e o marcador `risco`, e o bloco da cadeia valendo só com `/vibeflow`. `AGENTS.md` deste repo com o mesmo bloco, a estrutura do pacote sem design, analyze e `ondas.mjs`, a regra da `description` trocada pela chamada explícita e o registro da versão 5.0.0. `README.md` com instalação, uso e a mudança major para quem tem phases antigas. Medição do tamanho do pacote antes e depois, por ferramenta, para o C3.

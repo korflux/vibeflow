@@ -1,25 +1,27 @@
 # Regras do projeto
 
-> VibeFlow: documentos e edição apenas de texto ficam fora das etapas spec, design, plan, analyze, implement e review da skill única `vibeflow`. Essas etapas tratam código de software. A etapa interview pode esclarecer um briefing ambíguo de documento.
+> VibeFlow: documentos e edição apenas de texto ficam fora da cadeia da skill única `vibeflow`, que trata código de software. Um briefing ambíguo de documento pode passar antes pelas perguntas da interview.
 
 <!-- VIBEFLOW:CADEIA start -->
-| esforço | fluxo | quando |
+A cadeia da skill `vibeflow` vale só quando o humano a chama com `/vibeflow` (`$vibeflow` no Codex). Fora disso, o agente trabalha direto pelas demais regras deste arquivo, sem rota, phase nem artefato.
+
+| esforço | etapas | quando |
 |---|---|---|
-| N/A | init | primeira vez no repo, ou disco quebrado, de novo só para reparar |
-| low | implement | mudança simples de código de software sem comportamento novo, como cor, texto ou layout de página estática |
-| Express | implement, sem phase nem artefato | low sem phase de origem: mudança clara e localizada sem comportamento novo |
-| medium | implement → review | pedido claro e direto, com comportamento novo pequeno e sem regressão de backend, ou página visual cujo aceite dependa de validação renderizada |
-| high | spec → plan → implement → review | pedido claro de execução difícil, ou mudança que altera banco, painel admin ou cria risco de regressão de backend |
-| xhigh | interview → spec → plan → implement → review | pedido ambíguo, confiança baixa, intenção ou sucesso de software em aberto |
-| max | interview → spec → plan → analyze → implement → review | mudança que altera autenticação, autorização, pagamento, segredo, risco de perda de dados, produção, alto blast radius ou baseline MVP de software |
+| low | implement, sem init, `.vibeflow/`, phase nem artefato | mudança clara e localizada de código de software sem comportamento novo, como cor, texto ou layout de página estática |
+| medium | implement → review | pedido claro e direto, com comportamento novo pequeno, sem banco nem risco de regressão de backend, ou página visual cujo aceite dependa de validação renderizada |
+| high | interview → spec → plan → analyze → implement com checkpoints → review | pedido ambíguo ou de execução difícil, mudança que altera banco ou painel admin, risco de regressão de backend, ou tela que o design system e as telas existentes não cobrem |
 
-No Express, o implementador entrega com prova proporcional, sem init, `.vibeflow/`, phase nem artefato. Saem do Express, seguindo a rota aplicável: comportamento, rota, interação, critério de aceite ou acessibilidade alterados, e mudanças que toquem privacidade, dado pessoal, consentimento, retenção, direitos, obrigação jurídica, autenticação, autorização, pagamento, segredo, persistência ou risco de perda de dados. Ajuste low ou medium ao que uma phase entregou ou está entregando, inclusive registro de `.erros-encontrados/`, volta à phase de origem, mesmo fechada, sem abrir phase nova. Medium segue implement → review e abre a phase na review.
+Saem do low, seguindo a rota aplicável: comportamento, rota, interação, critério de aceite ou acessibilidade alterados, e mudanças que toquem privacidade, dado pessoal, consentimento, retenção, direitos, obrigação jurídica, autenticação, autorização, pagamento, segredo, persistência ou risco de perda de dados.
 
-`/vibeflow` conduz todo o fluxo. `/vibeflow <etapa>` vai direto a `init`, `interview`, `spec`, `design`, `plan`, `analyze`, `implement` ou `review`, desde que o pré-requisito esteja satisfeito. Argumento cuja primeira palavra não é etapa é tratado como pedido e classificado. O design entra entre spec e plan somente com UI nova: tela ou decisão visual que o design system e as telas existentes não cobrem.
+Na high, a linha `# Risco:` da spec marca mudança que toca autenticação, autorização, pagamento, segredo, perda de dados ou produção. O risco não acrescenta etapa: a interview cobre modelo de ameaça e rollback, o plan põe checkpoint depois de cada grupo de risco e a review abre segurança e banco. Produto de software novo com escopo a descobrir é o MVP: rota high com risco, em `.vibeflow/mvp/`.
+
+A interview tem tamanho proporcional à clareza do pedido e grava direto a `spec.md`. A aprovação da `spec.md` é a única aprovação humana antes do código e encadeia plan, analyze, implement e review até a confirmação final. Aprovar a review, publicar decisões vigentes e fazer push exigem confirmação humana explícita. Ajuste low ou medium ao que uma phase entregou ou está entregando, inclusive registro de `.erros-encontrados/`, volta à phase de origem, mesmo fechada, sem abrir phase nova. Medium abre a phase na review.
+
+`/vibeflow` conduz todo o fluxo. `/vibeflow <etapa>` vai direto a `init`, `interview`, `spec`, `plan`, `analyze`, `implement` ou `review`, desde que o pré-requisito esteja satisfeito. Argumento cuja primeira palavra não é etapa é tratado como pedido e classificado. O init roda na primeira rota com phase do repo, ou de novo só para reparar o disco.
 
 ### Continuidade entre chats
 
-Um único chat conduz a phase por padrão. Em host de contexto curto, use dois: um para todo o planejamento (interview, spec, design, plan e analyze) e outro para a implementação (implement e review). Quando o contexto pesar ou o humano pedir para parar, o estado é gravado conforme a seção 6 do `SKILL.md` e o líder recomenda um chat novo. A retomada parte do disco: em chat novo, `/vibeflow` lê as linhas `# Status:`, as caixas e as linhas `Estado:` do `plan.md` e o Git e segue de onde parou. Sem subagentes, analyze e review pedem chat novo (`/vibeflow analyze`, `/vibeflow review`). Separar chats é recomendação, nunca gate.
+Um único chat conduz a phase por padrão. Em host de contexto curto, use dois: um para o planejamento (interview, spec, plan e analyze) e outro para a implementação (implement e review). Quando o contexto pesar ou o humano pedir para parar, o estado é gravado conforme a seção 6 do `SKILL.md` e o líder recomenda um chat novo. A retomada parte do disco: em chat novo, `/vibeflow` lê as linhas `# Rota:`, `# Risco:` e `# Status:`, as caixas de passos e checkpoints e a seção de achados do analyze do `plan.md`, os R* do `review.md` e o Git, e segue de onde parou. Sem subagentes (Modo B), analyze, checkpoint e review pedem chat novo (`/vibeflow analyze`, `/vibeflow implement`, `/vibeflow review`). Separar chats é recomendação, nunca gate.
 <!-- VIBEFLOW:CADEIA end -->
 
 A skill `vibeflow` é texto mais scripts de leitura em `skills/vibeflow/scripts/`. A prova de uma mudança na prosa é a revisão de consistência e o uso real; a de um script é `node --test`.
@@ -31,7 +33,7 @@ Skill única `vibeflow`, conduzida por um coordenador-líder, para inicializar e
 ## Comandos do projeto
 
 - Este repositório não usa CI no GitHub, por decisão de custo. Não envie branch só para disparar CI. A regressão completa e a varredura de segredos rodam localmente antes do push.
-- Regressão completa local: revisão de consistência de todos os arquivos alterados. Todo path deste repo citado em `skills/vibeflow/`, `README.md` e `AGENTS.md` existe (paths do projeto consumidor, como `.agents/rules/`, `.claude/agents/`, `.codex/agents/` e `.vibeflow/mvp/`, ficam fora); nenhum arquivo cita a v1 do VibeFlow ou registro estruturado de execução; `node --test` passa; `git diff --check` não acusa achado.
+- Regressão completa local: revisão de consistência de todos os arquivos alterados. Todo path deste repo citado em `skills/vibeflow/`, `README.md` e `AGENTS.md` existe (paths do projeto consumidor, como `.agents/rules/`, `.claude/agents/`, `.codex/agents/` e `.vibeflow/mvp/`, ficam fora); nenhum arquivo cita a v1 do VibeFlow ou registro estruturado de execução; nenhum arquivo cita como vigente o contrato anterior à 5.0.0 (`interview.md`, `design.md` ou `analyze.md` como artefato, as rotas Express, `xhigh` ou `max`, `ondas.mjs`, os papéis corretor e finalizador), salvo como compatibilidade ou perfil obsoleto; `node --test` passa; `git diff --check` não acusa achado.
 - Testes dos scripts: `node --test` na raiz (Node 18+), que descobre `tests/**/*.test.mjs`.
 - Varredura de segredos local: `gitleaks detect --source . --redact --no-banner`.
 
@@ -52,13 +54,14 @@ Este repo não tem banco, migration nem tráfego de usuário. Skills aqui mudam 
 - **Major:** quebra contrato (path ou nome de artefato, linha de cabeçalho como `# Status:` ou `# Rota:`, comportamento do líder que o humano já usa).
 - **Minor:** adiciona sem quebrar (nova seção opcional no artefato, nova referência de etapa).
 - **Patch:** correção sem mudança de contrato.
+- Versão atual: 5.0.0 (phase-4, contrato de fluxo enxuto).
 - Produção: migration só com plano de rollback; não rodar migration destrutiva sem o humano pedir.
 
 ## Git
 
 - Sem `Co-Authored-By` de ferramenta em commit/push.
 - Staging somente de paths autorizados. Nunca usar `git add -A`, `git add .`, amend, squash ou force push.
-- Papéis, ondas, provas, formatos de commit e finalização seguem a skill `vibeflow` (`skills/vibeflow/references/disco.md`, Commits).
+- Papéis, passos, checkpoints, provas, formatos de commit e finalização seguem a skill `vibeflow` (`skills/vibeflow/references/disco.md`, Commits).
 - Aprovar a review, publicar decisões vigentes e fazer push exigem confirmação humana final explícita.
 - Commitável: `AGENTS.md`, `.vibeflow/old/` se existir, `.vibeflow/phases/` (`.gitkeep` e artefatos vivos), `.vibeflow/mvp/` e o pacote da skill.
 - `AGENTS.md` é a fonte editável na raiz. O init não cria `CLAUDE.md`.
@@ -69,9 +72,9 @@ Este repo não tem banco, migration nem tráfego de usuário. Skills aqui mudam 
 AGENTS.md                    fonte viva das regras
 .vibeflow/phases/            artefatos da cadeia (phase-N-slug/)
 .vibeflow/old/               backups do init, se houver
-.vibeflow/mvp/               contrato: baseline único de um projeto novo na rota max
+.vibeflow/mvp/               contrato: baseline único de um projeto novo na rota high com risco
 skills/vibeflow/             pacote canônico da skill, pasta real
-tests/scripts/               testes dos scripts, fora do pacote instalável
+tests/scripts/               testes dos scripts e apoio comum, fora do pacote instalável
 plugin.json                  plugin Antigravity (raiz)
 README.md                    instalação e uso
 ```
@@ -80,16 +83,17 @@ Pacote da skill:
 
 ```
 skills/vibeflow/
-  SKILL.md
+  SKILL.md                     frontmatter com disable-model-invocation: true
+  agents/openai.yaml           política do Codex, com allow_implicit_invocation: false
   references/<etapa>.md        uma referência por etapa, com catálogos em references/<etapa>/
   references/disco.md          regras mecânicas do disco
   references/delegation.md     papéis, brief e relatório fixo
-  templates/<artefato>.md      esqueleto de cada artefato vivo
+  references/<tema>.md         apoio do implementador e do revisor (banco, navegador, definição de pronto)
+  templates/<artefato>.md      esqueleto de spec.md, plan.md e review.md
   templates/AGENTS.md          modelo de regras do projeto consumidor
-  templates/agents/<host>/     perfis de subagente por host
+  templates/agents/<host>/     cinco perfis de subagente por host (claude e codex)
   scripts/_disco.mjs           leitura compartilhada do disco e do Git
-  scripts/estado.mjs           estado, etapa atual e progresso da phase
-  scripts/ondas.mjs            próxima onda e sobreposição de Arquivos:
+  scripts/estado.mjs           estado, etapa atual, progresso, próximo passo e sobreposição de Arquivos:
 ```
 
 ### Adaptadores por host
@@ -105,11 +109,11 @@ Estas regras mantêm a skill única coerente a cada mudança. O contrato de disc
 ### 1. Pacote
 
 - Um único pacote instalável: `skills/vibeflow/`, pasta real, sem symlink.
-- Texto (`SKILL.md`, `references/` e `templates/`) mais `scripts/`, nas regras da seção 4. Testes ficam em `tests/`, fora do pacote.
+- Texto (`SKILL.md`, `agents/openai.yaml`, `references/` e `templates/`) mais `scripts/`, nas regras da seção 4. Testes ficam em `tests/`, fora do pacote.
 - Install: `npx skills add korflux/vibeflow` (projeto ou `-g`) nos agentes `grok`, `claude-code`, `codex`, `antigravity`, ou o plugin Antigravity descrito no `README.md`.
 - Não criar segunda skill nem alias de comando. Etapa nova entra como referência da skill única.
 
-### 2. Disco: uma fonte, uma pasta de fase, um arquivo por etapa
+### 2. Disco: uma fonte, uma pasta de fase, um arquivo por tipo
 
 ```
 AGENTS.md
@@ -117,25 +121,25 @@ AGENTS.md
 .vibeflow/phases/phase-<n>-<slug>/<artefato>.md
 ```
 
-- Projeto novo classificado pela IA como MVP usa uma única pasta fixa `.vibeflow/mvp/` e percorre obrigatoriamente `interview`, `spec`, `plan`, `analyze`, `implement` e `review`.
+- Projeto novo classificado pela IA como MVP usa uma única pasta fixa `.vibeflow/mvp/` e segue a rota `high` com `# Risco:`: `interview`, `spec`, `plan`, `analyze`, `implement` e `review`.
 - O modo MVP não usa `n` nem slug.
-- Só existe um baseline MVP por repositório. Depois de concluído, ele não é sobrescrito, movido nem versionado; pivô ou reconstrução integral entra como phase `max`.
+- Só existe um baseline MVP por repositório. Depois de concluído, ele não é sobrescrito, movido nem versionado; pivô ou reconstrução integral entra como phase `high` com `# Risco:`.
 - `n` inteiro crescente, sem zero à esquerda, ordem **numérica**: maior existente mais 1. A IA aplica a regra e não inventa `n`.
 - `slug`: frase curta da fase, `a-z0-9` e hífen, 2 a 48 caracteres.
 - As regras mecânicas completas moram em `skills/vibeflow/references/disco.md`.
 - Pasta da fase agrupa o pedido. Etapas seguintes gravam **na mesma pasta**, outro arquivo.
-- Nome do arquivo é o tipo, não o título: `interview.md`, `spec.md`, `design.md`, `plan.md`, `analyze.md`, `review.md`.
-- A rota fica em `# Rota:` no cabeçalho do primeiro artefato da phase (`interview.md` em xhigh, max e MVP; `spec.md` em high; `review.md` em medium) e não muda. Plans não levam `# Protocolo:` nem `# Modo:`; o modo é decidido na run.
+- Nome do arquivo é o tipo, não o título: `spec.md`, `plan.md` e `review.md`. A interview grava direto a `spec.md`, e o analyze grava seus achados no fim do `plan.md`.
+- A rota fica em `# Rota:` (`medium`, `high` ou `mvp`) no cabeçalho do primeiro artefato da phase (`spec.md` em high e MVP; `review.md` em medium) e não muda. `# Risco:` vem logo depois, na `spec.md`: opcional em high, obrigatório no MVP. O `plan.md` não leva `# Status:`; o modo é decidido na run.
 - Não gravar cadeia em `docs/`, na raiz, nem em path de outro produto.
 - O artefato vivo nasce da forma do template somente quando ausente. Conteúdo existente é editado no lugar, nunca recriado.
 - Continuar o mesmo pedido: editar o vivo. Pedido novo: próxima pasta. Não renomear pasta depois de criada.
-- Sem `.vibeflow/` numa rota com phase (medium ou acima, e MVP): a primeira etapa é `init`.
+- Sem `.vibeflow/` numa rota com phase (medium, high e MVP): a primeira etapa é `init`.
 
 ### 3. Papéis na run
 
 ```
-Líder (IA)        →  conversa com o humano, entende o pedido e o projeto, classifica a rota, planeja, delega, critica, reconhece e decide
-Analistas         →  explorador, redator, implementador, verificador, corretor, revisor e finalizador executam o micro
+Líder (IA)        →  conversa com o humano, entende o pedido e o projeto, classifica a rota, planeja, delega, confere, decide, marca, commita e finaliza
+Analistas         →  explorador, redator, implementador, verificador (checkpoint) e revisor (analyze e review) executam o micro
 Skill (SKILL.md)  →  orienta com invariantes, sequência, gates e critérios de fechamento
 Humano            →  decide apenas o que muda materialmente o resultado e não pode ser concluído pelo contexto
 ```
@@ -150,7 +154,7 @@ A tabela de decisões vigentes só muda depois de implementação, review aprova
 
 ### 4. Scripts
 
-- A prosa é o contrato. Script só acelera regra mecânica já escrita (estado, progresso, ondas) e aponta para a casa dela; divergência é bug do script.
+- A prosa é o contrato. Script só acelera regra mecânica já escrita (estado, progresso, próximo passo) e aponta para a casa dela; divergência é bug do script.
 - Node 18+, módulos `.mjs`, somente módulos nativos, sem dependência nem build. Git chamado com argumentos em lista, sem shell; leitura tolerante a CRLF e BOM; caminhos por `node:path`; nunca cria symlink. Compatível com Windows e Linux.
 - Somente leitura: script não escreve artefato, não faz commit, push nem staging. Saída em texto e em `--json` com não-ASCII escapado; código 0 sem achado, 1 com achado, 2 em erro de uso.
 - Sem Node, o líder aplica a prosa como antes; o script nunca é pré-requisito de etapa.
@@ -174,13 +178,13 @@ Frontmatter obrigatório:
 ---
 name: vibeflow
 description: >
-  O que faz, em 1 ou 2 frases, e onde grava. Use when the user runs
-  /vibeflow ou /vibeflow <etapa>, <gatilhos em português e em
-  comportamento>, mesmo que não diga vibeflow.
+  O que faz, em 1 ou 2 frases, e onde grava. Use somente quando o humano
+  chamar /vibeflow ou /vibeflow <etapa>; sem essa chamada, não use.
+disable-model-invocation: true
 ---
 ```
 
-`description` dispara auto-invoke. Sem ela a skill não entra sozinha.
+A skill roda só por chamada explícita. No Claude Code, `disable-model-invocation: true` impede a invocação automática; no Codex, `skills/vibeflow/agents/openai.yaml` faz o mesmo com `policy.allow_implicit_invocation: false`. Antigravity e Grok não têm mecanismo confirmado: a `description` não leva gatilhos de comportamento e diz para usar só com `/vibeflow`.
 
 Corpo do `SKILL.md`: invariantes em duas ou três linhas, abertura com o estado lido do disco, classificação da rota, roteamento por etapa para a referência dela, delegação, retomada e fechamento. Cada etapa tem uma referência própria com gate, trabalho semântico, gravação e fechamento.
 
@@ -192,8 +196,8 @@ Regras de prosa:
 - Sem seção órfã ("ver template abaixo" sem template) e sem path citado que não exista.
 - Uma pergunta por vez. Várias respostas de uma vez: aceitar e fechar.
 - Patch de SLOT = só aquele trecho, texto do humano, sem reescrever.
-- Não avançar para a próxima etapa a menos que o humano autorize explicitamente (ex.: "pode ir pro plan", "segue pro implement"). Se autorizado, avançar imediatamente sem perguntar de novo. A única exceção é o encadeamento implement, review e correções, definido no topo do `SKILL.md`.
-- A etapa init commita os arquivos de governança produzidos, sem push. As etapas de definição e análise não commitam. A etapa implement commita cada onda com integração verde com subagentes ou cada task verde sem subagentes; a etapa review finaliza a phase. No fechar, dizer o hash, os paths enviados e o que ficou de fora.
+- Não avançar para a próxima etapa a menos que o humano autorize explicitamente (ex.: "pode ir pro plan"). Se autorizado, avançar imediatamente sem perguntar de novo. A aprovação da `spec.md` é a única antes do código e encadeia plan, analyze, implement, review e correções até a confirmação final, conforme o topo do `SKILL.md`.
+- O líder faz todos os commits, nos formatos de `skills/vibeflow/references/disco.md` (Commits): o init commita os arquivos de governança produzidos, sem push; spec, plan e analyze não commitam; o implement commita cada passo ou grupo paralelo com prova verde e conferido; a review finaliza a phase. No fechar, dizer o hash, os paths enviados e o que ficou de fora.
 - Português do Brasil. Frase completa. Sem emoji. Sem travessão longo. Tom factual, calmo, sem acolhimento.
 
 ### 7. Tom (chat e artefato)
@@ -229,7 +233,8 @@ Não inverter: etapa sem contrato de disco vira path inventado.
 - Criar um `GEMINI.md` no workspace para duplicar a fonte canônica.
 - Tratar a ponte `.agents/rules/vibeflow.md` como fonte editável.
 - Artefato da cadeia fora de `.vibeflow/phases/phase-N-slug/`.
-- Exceção única ao item anterior: baseline de projeto novo em `.vibeflow/mvp/`, uma vez por repositório e sempre na rota `max` completa.
+- Exceção única ao item anterior: baseline de projeto novo em `.vibeflow/mvp/`, uma vez por repositório e sempre na rota `high` com `# Risco:`.
 - Segunda skill instalável, alias de comando ou motor que conduz etapa no lugar do líder.
 - Script que escreve, opera Git ou usa dependência externa, sem o humano pedir.
-- Avançar para a próxima etapa sem autorização do humano, salvo o encadeamento implement, review e correções do `SKILL.md`. Se o humano autorizou explicitamente avançar, a IA deve avançar diretamente.
+- Avançar para a próxima etapa sem autorização do humano, salvo o encadeamento que a aprovação da `spec.md` autoriza no `SKILL.md`. Se o humano autorizou explicitamente avançar, a IA deve avançar diretamente.
+- Skill que entra sem chamada explícita: `description` com gatilhos de comportamento, ou frontmatter e `agents/openai.yaml` sem o bloqueio de invocação implícita.
