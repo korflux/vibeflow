@@ -9,12 +9,14 @@ Casa única das regras de teste do projeto consumidor: o que testar, onde rodar,
 - No passo, rode só os testes afetados, pelo grafo de imports da ferramenta do projeto (por exemplo, `vitest run --changed <base>` ou `playwright test --only-changed=<ref>`), sem E2E. Sem esse recurso, rode a `Prova:` do passo; sem plan, os testes do módulo tocado e dos consumidores diretos.
 - O E2E dos critérios com tela roda no checkpoint; a regressão completa roda uma vez, na review.
 - Nunca enfraqueça, pule ou apague teste para obter verde. Mudança de asserção exige justificativa pelo critério de aceite.
+- Teste falso, sem asserção real ou que só exercita mock, não prova critério nem passo.
+- Passo só de prosa prova com uma checagem mecânica do que o texto alimenta, nunca com teste de presença de palavras.
 
 ## Ambiente local
 
 - Prefira serviços nativos (instalação oficial do sistema) ou embutidos no processo de teste (binário como dependência de desenvolvimento, como `embedded-postgres`) a containers. Docker fica para o CI.
 - Banco limpo vem de banco por arquivo, por worker ou por template, de reset de schema ou de transação com rollback, nunca de recriar container.
-- Quando o projeto já usa Docker nos testes (comando de teste, `docker compose` no setup ou documentação que o prefere) e o `AGENTS.md` do projeto não registra a decisão, o líder pergunta ao humano uma vez, com recomendação, se prefere migrar para uma forma mais leve, e registra a resposta na seção Ambiente do `AGENTS.md` do projeto. Com a decisão registrada, não pergunte de novo.
+- Quando o projeto já usa Docker nos testes (comando de teste que chama `docker`, `docker compose` no setup de teste, arquivo de compose do projeto como `docker-compose.yml`, `compose.yaml` e variantes, ou documentação que o prefere) e o `AGENTS.md` do projeto não registra a decisão, o líder pergunta ao humano uma vez, com recomendação, se prefere migrar para uma forma mais leve, e registra a resposta na seção Ambiente do `AGENTS.md` do projeto. Com a decisão registrada, não pergunte de novo.
 - A pergunta acontece no init, em projeto novo, e no plan, em projeto já inicializado sem a decisão registrada.
 
 ## Pirâmide

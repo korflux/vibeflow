@@ -37,14 +37,14 @@ Ao abrir a review final, o revisor dispara a regressão completa uma vez, em seg
 - Árvore suja em path de código ou teste (tudo fora de `.vibeflow/` e `.erros-encontrados/`) impede a execução: devolva `estado: bloqueado` pedindo o isolamento.
 - Falha que passa ao reexecutar o mesmo comando é flake: o revisor grava o registro em `.erros-encontrados/`, cita-o em Notas e segue, sem bloquear. Falha reproduzível abre R* Required com o comando.
 - Registre na etapa os comandos, o resultado, o `HEAD` e a duração de cada nível que rodou (lint e tipos, unitários, E2E) e o total, lidos da saída dos comandos ou do relógio da execução.
-- Compare o total com o orçamento declarado no `AGENTS.md` do projeto ou, sem declaração, com o padrão de `references/testes.md` (Orçamento de duração). Acima dele, grave o registro que essa seção define, cite-o em Notas e siga; o orçamento não entra no veredito.
+- Compare o total com o orçamento declarado no `AGENTS.md` do projeto ou, sem declaração, com o padrão de `references/testes.md` (Orçamento de duração). Acima dele, grave em `.erros-encontrados/` o tempo total, o nível mais lento e a causa provável (`references/testes.md`, Orçamento de duração), cite o registro em Notas e siga; o orçamento não entra no veredito.
 
 A execução registrada vale para o Approve enquanto as correções posteriores não tocarem código compartilhado. Esta é a única execução da regressão completa na review; a re-review só a repete na exceção do passo 4.
 
 ### 2. Julgar o produto
 
 1. **Critérios de aceite:** cada critério da spec, ou item do brief em medium, está atendido e provado por ao menos um teste. Preencha a tabela de critérios com o teste e o resultado. Critério não atendido ou sem teste que o prove abre R* Required; só o humano retira um critério, com a decisão citada.
-2. **Defeitos no código alterado:** correção, bordas e erros das superfícies tocadas; testes falsos (sem asserção real ou que só exercitam mock); teste enfraquecido, pulado ou apagado (`references/testes.md`, Política de testes); barra de `references/definition-of-done.md`.
+2. **Defeitos no código alterado:** correção, bordas e erros das superfícies tocadas; teste falso, enfraquecido, pulado ou apagado (`references/testes.md`, Política de testes); barra de `references/definition-of-done.md`.
 3. **Segurança:** só quando o diff toca input, auth, sessão, permissão, segredo, upload, integração externa ou dado pessoal, conforme `references/review/security-and-hardening.md`.
 4. **Banco e precisão:** só quando o diff toca persistência ou valor monetário, conforme `references/database-and-migrations.md`.
 5. **Visual:** quando um critério depende da interface renderizada, conforme `references/review/ui-visual-quality.md`, reaproveitando a evidência válida.
