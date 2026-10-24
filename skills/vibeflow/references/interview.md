@@ -1,26 +1,18 @@
 # Etapa interview
 
+A interview abre a phase `high` e o MVP e termina com a `spec.md` em rascunho. Ela não grava artefato próprio.
+
 ## Entrada
 
-- Gate: nenhum. Em `xhigh`, `max` e MVP, a interview abre a phase (`references/disco.md`, Abrir phase ou MVP). Phase aberta do mesmo assunto é retomada no `interview.md` vivo.
-- MVP: MVP aberto é retomado no `interview.md` vivo; MVP fechado (`references/disco.md`, Estado da phase) é baseline: ajuste segue `references/implement.md` (Ajuste de phase), e mudança que altera decisão ou comportamento abre phase `max` com substituição explícita.
-- Leia somente o necessário para a próxima pergunta: o pedido, o artefato vivo e as entradas citadas. Leitura ampla vai ao explorador.
-
-Declare em cerca de cinco linhas: hipótese, confiança, modo, alvo e estado do artefato vivo.
-
-```text
-HIPÓTESE: produto novo para organizar solicitações internas
-CONFIDENCE: ~35%, faltam público, jornada e operação
-modo: mvp · alvo: .vibeflow/mvp/ · artefato vivo: ausente
-```
+- Gate: rota `high` ou `mvp` e `spec.md` ausente no alvo (`references/disco.md`, Estado da phase). A interview abre a phase ou o MVP (`references/disco.md`, Abrir phase ou MVP). Com `spec.md` em rascunho, siga `references/spec.md`.
+- O líder fixa no brief o alvo, a rota e, quando houver, o motivo de `# Risco:` (`references/disco.md`, Cabeçalho).
+- Leia só o necessário para a próxima pergunta. Leitura ampla do código vai ao explorador.
 
 | Sinal | Modo |
 |---|---|
-| Typo, rename, pedido inequívoco, velocidade pedida ou pergunta informativa | Não entrevistar |
-| Documento, briefing, artigo, proposta ou texto em Markdown | Modo documento: entrevista no chat, focada em público, tom, dor e estrutura, sem phase, sem MVP e sem catálogo de infra ou banco; o restate confirmado orienta a edição direta |
-| `/vibeflow interview` explícito | Entrevistar |
+| Documento, briefing, artigo, proposta ou texto em Markdown com intenção ambígua | Modo documento |
 | Produto digital novo com escopo a descobrir | MVP; site institucional, landing page ou site estático com escopo claro segue a tabela de esforço, sem MVP |
-| Mudança delimitada num produto existente | Phase |
+| Mudança num produto existente | Phase |
 | Dúvida real entre produto e feature | Perguntar uma vez, com recomendação |
 | CI, loop ou agendado sem humano e pedido subespecificado | Bloquear, sem chutar |
 
@@ -28,60 +20,54 @@ modo: mvp · alvo: .vibeflow/mvp/ · artefato vivo: ausente
 
 | Quem | Faz |
 |---|---|
-| Líder | Conduz cada turno com o humano, mantém a trilha e confirma o restate |
-| Redator | Cria ou atualiza `interview.md` a partir da trilha e do restate |
-| Finalizador | Marca a aprovação |
+| Explorador | Mapeia o que o pedido toca no código, antes da primeira pergunta |
+| Líder | Conduz as perguntas, uma por vez, e decide o que assumir |
+| Redator | Grava a `spec.md` com os pontos e as decisões entregues |
 
 ## Passos
 
-### Entrevista
+### 1. Explorar
 
-1. Um turno por vez, nesta ordem:
-   - `Anotei:` uma frase fiel sobre o pedido ou a última resposta, separando o confirmado da hipótese, sem dar a entender que algo foi salvo.
-   - `**Pergunta:**` uma única pergunta focada, em linha própria.
-   - `**Meu guess (GUESS):**` a resposta provisória mais provável, ancorada no que o humano disse ou em evidência do projeto, com motivo curto e baixa confiança indicada quando a base for limitada.
-   - O convite: “`sim` confirma somente este guess; você também pode corrigi-lo ou responder de outro jeito.”
-2. Não invente base para o palpite. Sem evidência, diga isso; guess de baixa confiança só para hipótese reversível. Em decisão sensível, legal, cara ou irreversível, guess não é autorização.
-3. Com intenção clara e forma em aberto, leia `references/interview/frameworks.md`, `references/interview/refinement-criteria.md` e, se necessário, `references/interview/examples.md`; use uma lente, gere opções e recomende uma direção.
-4. No modo documento, concentre-se em público, objetivo, tom, tópicos essenciais e formato de saída.
-5. Com UI e tom em aberto, no máximo duas perguntas visuais, uma por turno. Não feche CSS.
-6. Quando conseguir prever as próximas três reações, apresente o restate curto: o quê, pra quem, por quê, sucesso, limite, fora e visual ou formato quando aplicável. Exija um sim claro; “o que você achar melhor” permite recomendar e assumir, mas “parece bom” ou “bora” ainda pede confirmação direta.
+O líder delega ao explorador o mapa do que o pedido toca: fluxos, consumidores, comportamento atual, bordas e testes existentes, cada um com path e evidência. No MVP sem código, o mapa registra o estado do repositório e o que já existe de stack, design system e infraestrutura. Cada ponto relevante vira linha de Pontos do projeto, com o que implica.
+
+### 2. Perguntar
+
+- Pergunte a partir dos pontos: o que o código e o pedido não decidem e que muda o resultado. Não pergunte o que já está respondido.
+- Tamanho proporcional à clareza: pedido claro tem uma ou duas perguntas; pedido ambíguo tem mais, até as decisões restantes serem previsíveis. No MVP, feche o núcleo e os módulos acionados de `references/interview/mvp-discovery.md`.
+- Um turno por vez, neste formato:
 
 ```text
-Anotei: <leitura fiel do pedido ou da resposta anterior>
-**Pergunta: <uma pergunta focada>**
-**Meu guess (GUESS):** <resposta provisória + motivo curto e, se necessário, confiança>
-“Sim” confirma somente este guess; também pode corrigi-lo ou responder de outro jeito.
+Anotei: <leitura fiel do pedido ou da última resposta, separando fato de hipótese>
+**Pergunta:** <uma pergunta focada>
+Opções: <duas ou três, cada uma com o impacto em uma linha>
+**Recomendo:** <opção>, <motivo e impacto em uma linha>
 ```
 
-Várias respostas de uma vez são válidas: registre tudo e feche os gaps restantes sem repetir perguntas.
+- Sem base para recomendar, diga isso. Várias respostas de uma vez são válidas: registre tudo e siga só com o que falta. "Tanto faz" crava a recomendação.
+- Lacuna reversível e de baixo risco: o líder assume a recomendação, avisa e a registra como decisão assumida. Decisão cara, sensível, irreversível ou que altera a lógica central é perguntada; recomendação não é autorização.
 
-### Módulo MVP
+### 3. Cobrir o que o pedido aciona
 
-Leia `references/interview/mvp-discovery.md` somente no MVP. Feche primeiro o núcleo (solicitação, solução imaginada, jornadas e páginas) e depois os módulos de completude acionados.
+| Quando | Feche | Leia |
+|---|---|---|
+| Tela nova ou alterada | Decisões visuais do humano: modo, tom, o que evitar, copy e as telas e estados a ver renderizados, em no máximo duas perguntas | `references/spec/ui-visual-direction.md` |
+| Intenção clara e forma em aberto | Uma lente, opções e a direção recomendada | `references/interview/frameworks.md`, `references/interview/refinement-criteria.md` e, se necessário, `references/interview/examples.md` |
+| Banco, persistência, valor monetário ou cálculo exato | Invariantes de dados e precisão | `references/database-and-migrations.md` |
+| Entrada externa (request, query, headers, arquivo) | Allowlist de campos e valores e tamanho máximo por entrada | |
+| API, token, segredo, dado pessoal ou rota autenticada | Validade e invalidação de credenciais, autorização no servidor com anti-IDOR, rate limit, CSRF, CORS com allowlist (nunca `*` com credenciais), headers e CSP, com N/A fundamentado | |
+| `# Risco:` | Modelo de ameaça (ativo, quem ataca, por onde, controle) e rollback (como desfazer, o que se perde, quem decide) | |
+| MVP | Núcleo, módulos acionados, privacidade e jurídico | `references/interview/mvp-discovery.md` |
 
-1. Comece por produto, público, dor, resultado e funcionamento esperado, uma pergunta principal por turno, sem lista de pendências.
-2. Aceite “não sei”. Lacuna reversível e de baixo risco recebe o padrão mais adequado, com recomendação e impacto, registrada como `ASSUMIDO`. Decisão irreversível, cara, sensível ou que altere a lógica central é perguntada.
-3. Na Cobertura, cada módulo fica `DECIDIDO`, `ASSUMIDO`, `N/A` ou `PENDENTE CRÍTICO`, com evidência. Não encerre com pendente crítico.
-4. Decisões críticas estáveis recebem IDs por domínio, como `AUTH-01`, `DATA-01` e `INFRA-01`, com opção, estado, motivo e impacto.
-5. Segurança entra desde o início. Recuperação administrativa pode usar break-glass temporário e auditado via ambiente; nunca senha master permanente.
-6. No Mapa do produto, jornada essencial sem saída, estado crítico ou caminho de navegação não fecha.
+Proteção exigida sem decisão bloqueia a aprovação da spec.
 
-O MVP prefere uma primeira versão pequena e operável. Minimalismo não autoriza cortar validação, segurança, acessibilidade, backup ou recuperação necessários.
+### 4. Gravar
 
-### Gravação
+Com as perguntas fechadas, o líder entrega ao redator o alvo, a rota, o motivo de `# Risco:` quando houver, os pontos do explorador e as decisões com a pergunta que originou cada uma. O redator grava a `spec.md` conforme `references/spec.md`, Gravação.
 
-Depois do sim ao restate, o líder entrega ao redator a trilha ANOTEI/Q/GUESS/R, o restate, o modo, a rota e o path do alvo. O redator cria o `interview.md` a partir de `templates/interview.md`, ou atualiza o vivo, preserva Solicitação e Trilha, grava `# Rota:` quando a interview abre a phase e mantém `# Status: rascunho`. No MVP, preenche também Cobertura, Mapa do produto, Direção técnica, Direção visual, Operação e Decisões críticas; no modo phase, omite essas seções.
+## Modo documento
 
-## Saída
+Sem phase, sem `spec.md` e sem MVP. Pergunte no chat, no formato de turno acima, sobre público, objetivo, tom, tópicos essenciais e formato de saída, sem catálogo de infra ou banco. Feche com um restate curto e exija um sim claro; o restate confirmado orienta a edição direta, delegada ao redator.
 
-`<alvo>/interview.md` em rascunho, com a ordem de aprovação fixa:
+## Fechar
 
-1. O redator grava o `interview.md`.
-2. O líder apresenta o path e um resumo factual, e o humano lê.
-3. Ajuste pedido pelo humano volta ao redator, e o ciclo retorna ao passo 2.
-4. Com o sim final do humano, o finalizador marca `# Status: aprovado`.
-
-## Fechar e próxima etapa
-
-Handoff padrão: `spec`. Sem commit nesta etapa. A spec só começa com autorização explícita, como “pode ir pro spec”.
+Sem commit nesta etapa. A spec em rascunho segue `references/spec.md`, Fechar.

@@ -1,9 +1,11 @@
 #!/usr/bin/env node
-// estado.mjs: lê o disco e o Git e devolve o estado da phase, a etapa atual e o progresso.
+// estado.mjs: lê o disco e o Git e devolve o estado da phase, a etapa atual, o progresso
+// e o próximo passo ou grupo paralelo.
 //
 // Implementa a tabela "Estado da phase" de references/disco.md, na mesma ordem de
 // linhas, e o cálculo de progresso de SKILL.md, seção 9. Só lê; a decisão continua do
 // líder. Linha da tabela que depende de julgamento (assunto do pedido) fica de fora.
+// Divergência entre este script e a prosa do disco.md é bug do script.
 //
 // Uso:
 //   node estado.mjs [--alvo phase-N|mvp] [--raiz <dir>] [--json]
@@ -12,59 +14,25 @@
 import { existsSync } from 'node:fs';
 import { join, resolve, relative } from 'node:path';
 import {
-  lerLinhas, cabecalho, secao, carregarAlvos, alvoPadrao, alvoNomeado, listarPhases, proximoN,
-  linksNoCaminho, lerTasks, recorte, segmentos, sobrepoe, lerRs, vereditoReview, ultimoAjuste,
+  lerLinhas, cabecalho, carregarAlvos, alvoPadrao, alvoNomeado, listarPhases, proximoN, ROTAS,
+  linksNoCaminho, lerPlan, achadosDoPlan, grupos, recorte, segmentos, sobrepoe, lerRs, vereditoReview, ultimoAjuste,
   commits, classificarCommit, naoCommitados, naoEnviados, commitQueAdicionou, jsonAscii, executadoDireto,
 } from './_disco.mjs';
-import { analisarPlan } from './ondas.mjs';
 
 // ---------------------------------------------------------------------------
-// Rotas e etapas (tabela de esforço do AGENTS.md)
+// Rotas e etapas (references/disco.md, Cabeçalho)
 // ---------------------------------------------------------------------------
 
+// Etapas que contam no progresso (SKILL.md, seção 9): cinco em high e mvp, duas em medium.
+// O analyze é etapa própria no progresso, embora não tenha artefato nem aprovação: a
+// presença de `## Achados do analyze` no plan.md o marca como concluído.
 const ETAPAS_ROTA = {
   medium: ['implement', 'review'],
-  high: ['spec', 'plan', 'implement', 'review'],
-  xhigh: ['interview', 'spec', 'plan', 'implement', 'review'],
-  max: ['interview', 'spec', 'plan', 'analyze', 'implement', 'review'],
-  mvp: ['interview', 'spec', 'plan', 'analyze', 'implement', 'review'],
+  high: ['spec', 'plan', 'analyze', 'implement', 'review'],
+  mvp: ['spec', 'plan', 'analyze', 'implement', 'review'],
 };
-const PLANEJAMENTO = new Set(['interview', 'spec', 'design', 'plan', 'analyze']);
 
-/**
- * Design conta quando há design.md, ou quando o Handoff da spec aponta para design (UI nova).
- * `Design: N/A` registrado no Handoff da spec ou no plan.md tira o design da rota.
- */
-function designConta(alvo) {
-  if (alvo.art.design) return true;
-  const na = /design:\s*(\*\*)?\s*n\/a/i;
-  const handoff = secao(alvo.art.spec, 'Handoff').map((l) => l.trim()).filter(Boolean);
-  const planNa = (alvo.art.plan || []).some((l) => na.test(l.replace(/\*\*Design:\*\*/i, 'Design:')));
-  if (planNa || handoff.some((l) => na.test(l))) return false;
-  return /^design\b/i.test(handoff[0] || '');
-}
-
-/** Etapas da rota do alvo, com o design inserido depois da spec quando conta. */
-function etapasDoAlvo(alvo) {
-  const base = ETAPAS_ROTA[alvo.rota] || [];
-  if (!designConta(alvo) || !base.includes('spec')) return base;
-  const i = base.indexOf('spec');
-  return [...base.slice(0, i + 1), 'design', ...base.slice(i + 1)];
-}
-
-/** Veredito do analyze na seção `## Veredito`: 'limpo', 'bloqueado' ou null. */
-function vereditoAnalyze(alvo) {
-  const corpo = secao(alvo.art.analyze, 'Veredito').map((l) => l.trim());
-  if (corpo.includes('limpo')) return 'limpo';
-  if (corpo.includes('bloqueado')) return 'bloqueado';
-  return null;
-}
-
-/** Etapa de planejamento concluída: aprovado; no analyze, também veredito limpo. */
-function planejamentoConcluido(alvo, etapa) {
-  const aprovado = cabecalho(alvo.art[etapa], 'Status') === 'aprovado';
-  return etapa === 'analyze' ? aprovado && vereditoAnalyze(alvo) === 'limpo' : aprovado;
-}
+const DIAGNOSTICO = 'Diagnóstico delegado';
 
 // ---------------------------------------------------------------------------
 // Commits por alvo (references/disco.md, Commits)
@@ -82,28 +50,39 @@ function commitsPorAlvo(lista) {
   return mapa;
 }
 
-/** IDs (T* e R*) presentes em commits task do alvo. */
+/** IDs (passos como `2a` e R* como `R1`) presentes em commits task do alvo. */
 function idsCommitados(lista) {
   return new Set((lista || []).filter((c) => c.tipo === 'task').flatMap((c) => c.ids));
 }
 
 // ---------------------------------------------------------------------------
-// Inconsistências
+// Inconsistências (disco.md: Cabeçalho, Plan, Estado da phase e Compatibilidade)
 // ---------------------------------------------------------------------------
 
+/**
+ * Achados a diagnosticar antes de seguir. Alvo antigo fechado fica intocado e não gera
+ * achado; alvo antigo aberto gera um só, porque esta versão não o conduz.
+ */
 function inconsistencias(raiz, alvos, porAlvo, temGit) {
   const achados = [];
   for (const a of alvos) {
+    for (const l of linksNoCaminho(raiz, a.pasta)) achados.push(`${a.alvo}: caminho é link, não escreva através dele: ${relative(raiz, l)}`);
+    if (a.antigo) {
+      if (!a.fechado) achados.push(`${a.alvo}: formato antigo aberto; esta versão não o conduz, feche a phase com a versão anterior da skill`);
+      continue;
+    }
     const algumArtefato = Object.values(a.art).some(Boolean);
     if (algumArtefato && !a.rota) achados.push(`${a.alvo}: primeiro artefato sem # Rota:`);
-    for (const l of linksNoCaminho(raiz, a.pasta)) achados.push(`${a.alvo}: caminho é link, não escreva através dele: ${relative(raiz, l)}`);
+    if (a.rota && !ROTAS.includes(a.rota)) achados.push(`${a.alvo}: # Rota: ${a.rota} inválida (medium, high ou mvp)`);
+    if (algumArtefato && (a.alvo === 'mvp' || a.rota === 'mvp') && !a.risco) achados.push(`${a.alvo}: MVP sem # Risco: na spec`);
+    const plan = lerPlan(a.art.plan);
+    for (const m of achadosDoPlan(plan.passos)) achados.push(`${a.alvo}: plan: ${m}`);
     if (!temGit) continue;
+    // Passo concluído = caixa marcada confirmada por commit task(<alvo>:...) com o ID.
     const ids = idsCommitados(porAlvo.get(a.alvo));
-    const tasks = lerTasks(a.art.plan);
-    for (const t of tasks) {
-      if (t.caixa && !ids.has(t.id)) achados.push(`${a.alvo}: ${t.id} marcada sem commit task(${a.alvo}:...)`);
-      if (!t.caixa && ids.has(t.id)) achados.push(`${a.alvo}: ${t.id} com commit e caixa vazia`);
-      if (t.caixa && t.estado && t.estado !== 'concluída' && t.estado !== 'concluida') achados.push(`${a.alvo}: ${t.id} com caixa marcada e Estado: ${t.estado}`);
+    for (const p of plan.passos) {
+      if (p.caixa && !ids.has(p.id)) achados.push(`${a.alvo}: passo ${p.id} marcado sem commit task(${a.alvo}:...)`);
+      if (!p.caixa && ids.has(p.id)) achados.push(`${a.alvo}: passo ${p.id} com commit e caixa vazia`);
     }
   }
   return achados;
@@ -144,105 +123,152 @@ function pushPendente(alvos, porAlvo, enviar) {
   return pendentes;
 }
 
-/** Linha 3: alteração não commitada fora de .vibeflow/ sem dono em T* ou R* abertos. */
-function semDono(alvos, porAlvo, alterados) {
-  const fora = (alterados || []).filter((p) => !p.startsWith('.vibeflow/'));
+/**
+ * Linha 3: alteração não commitada fora de .vibeflow/ e de .erros-encontrados/ (o
+ * chamador já os filtrou de `fora`) sem dono. Donos: os `Arquivos:` de
+ * passos abertos (passo aberto sem Arquivos comparáveis é dono de qualquer path) e os
+ * paths de R* abertos ou marcados [x] ainda sem commit. Alvo antigo fechado não conta;
+ * alvo antigo aberto tem passos ilegíveis para esta versão e, por isso, também é dono
+ * de qualquer path: a linha 5 (formato antigo) é que o relata.
+ */
+function semDono(alvos, porAlvo, fora) {
   if (!fora.length) return [];
   const donos = [];
-  for (const a of alvos.filter((x) => !x.fechado || lerRs(x.art.review).some((r) => !r.feito))) {
-    for (const t of lerTasks(a.art.plan).filter((x) => !x.caixa)) {
-      const r = recorte(t);
-      if (r === null) return []; // T* aberta sem Arquivos comparáveis pode ser dona de qualquer path
-      donos.push(...r);
+  for (const a of alvos) {
+    if (a.antigo) {
+      if (a.fechado) continue;
+      return [];
+    }
+    if (!a.fechado) {
+      for (const p of lerPlan(a.art.plan).passos.filter((x) => !x.caixa)) {
+        const r = recorte(p);
+        if (r === null) return []; // passo aberto sem Arquivos comparáveis pode ser dono de qualquer path
+        donos.push(...r);
+      }
     }
     const ids = idsCommitados(porAlvo.get(a.alvo));
     for (const r of lerRs(a.art.review)) {
-      if ((!r.feito || !ids.has(r.id)) && r.path) {
-        donos.push(segmentos(r.path));
-      }
+      if ((!r.feito || !ids.has(r.id)) && r.path) donos.push(segmentos(r.path));
     }
   }
   return fora.filter((p) => !donos.some((d) => sobrepoe(d, segmentos(p))));
 }
 
 // ---------------------------------------------------------------------------
-// Etapa do alvo (linhas da tabela a partir de "Primeira etapa de planejamento")
+// Etapa do alvo (linhas da tabela a partir de "Alvo aberto no formato antigo")
 // ---------------------------------------------------------------------------
 
-function etapaDoAlvo(alvo, porAlvo, alterados) {
-  const etapas = etapasDoAlvo(alvo);
-  for (const e of etapas.filter((x) => PLANEJAMENTO.has(x))) {
-    if (planejamentoConcluido(alvo, e)) continue;
-    if (!alvo.art[e]) return { etapa: e, situacao: 'sem artefato', proximo: e === 'analyze' ? 'Revisor' : 'Líder conduz; redator grava' };
-    if (e === 'analyze' && vereditoAnalyze(alvo) === 'bloqueado') return { etapa: 'analyze', situacao: 'correção dos achados', proximo: 'Dono do artefato; revisor reconfere' };
-    return { etapa: e, situacao: 'aguardando ajuste ou aprovação', proximo: 'Líder apresenta ao humano' };
+/** Linhas de spec a "Todos os passos e checkpoints marcados": só high e mvp. */
+function etapaDeSpecAPassos(alvo, fora) {
+  const spec = alvo.art.spec;
+  if (!spec) return { etapa: 'interview', situacao: 'spec.md ausente', proximo: 'Líder conduz; redator grava a spec.md' };
+  if (cabecalho(spec, 'Status') !== 'aprovado') return { etapa: 'spec', situacao: 'aguardando ajuste ou aprovação', proximo: 'Líder apresenta ao humano' };
+  if (!alvo.art.plan) return { etapa: 'plan', situacao: 'sem plan.md', proximo: 'Líder define; redator grava' };
+  const plan = lerPlan(alvo.art.plan);
+  if (!plan.analisado) return { etapa: 'analyze', situacao: 'plan sem ## Achados do analyze', proximo: 'Revisor de contexto limpo' };
+  if (!plan.passos.length) return { etapa: 'indeterminado', situacao: 'plan sem passos reconhecidos', proximo: DIAGNOSTICO };
+
+  // Código não commitado nos Arquivos: de passos abertos (comparáveis): retomar o passo.
+  // ponytail: passo aberto sem Arquivos comparáveis nunca aciona esta linha e cai em
+  // "implementar o passo"; o implementador reencontra o código na redelegação.
+  const tocados = fora.map(segmentos);
+  const retomar = plan.passos.filter((p) => !p.caixa && recorte(p)?.some((r) => tocados.some((t) => sobrepoe(r, t))));
+  if (retomar.length) {
+    return { etapa: 'implement', situacao: 'retomar o passo', proximo: 'Implementador conclui a prova; líder confere e commita', passos: retomar.map((p) => p.id) };
   }
 
-  const tasks = lerTasks(alvo.art.plan);
-  const abertas = tasks.filter((t) => !t.caixa);
-  const recortesAbertos = abertas.map(recorte).filter(Boolean).flat();
-  const tocados = (alterados || []).map(segmentos);
-  const codigoNasAbertas = tocados.some((p) => recortesAbertos.some((r) => sobrepoe(r, p)));
+  // Primeiro item aberto na ordem do arquivo: checkpoint ou passo (grupo paralelo inteiro).
+  const aberto = plan.itens.find((i) => !i.caixa);
+  if (aberto?.tipo === 'checkpoint') {
+    const anteriores = plan.itens.slice(0, plan.itens.indexOf(aberto));
+    const iUltimoCheckpoint = anteriores.map((i) => i.tipo).lastIndexOf('checkpoint');
+    const cobertos = anteriores.slice(iUltimoCheckpoint + 1).filter((i) => i.tipo === 'passo').map((i) => i.id);
+    return { etapa: 'implement', situacao: 'checkpoint', proximo: 'Verificador de contexto limpo', checkpoint: { aceite: aberto.aceite, passos: cobertos } };
+  }
+  if (aberto) {
+    const grupo = grupos(plan.passos).find((g) => g.passos.includes(aberto));
+    const abertos = grupo.passos.filter((p) => !p.caixa).map((p) => p.id);
+    const situacao = grupo.passos.length > 1 ? `implementar o grupo paralelo ${grupo.num} (${abertos.join(', ')})` : `implementar o passo ${grupo.num}`;
+    return { etapa: 'implement', situacao, proximo: 'Líder delega ao implementador', passos: abertos };
+  }
+  return null; // todos os passos e checkpoints marcados: segue para as linhas do review.md
+}
 
-  if (abertas.some((t) => t.estado === 'em andamento') || codigoNasAbertas) {
-    return { etapa: 'implement', situacao: 'retomar a onda', proximo: 'Verificador confere diff e prova afetada; falha vai ao corretor' };
-  }
-  if (abertas.some((t) => t.estado === 'pronta')) {
-    return { etapa: 'implement', situacao: 'validar e commitar a onda', proximo: 'Verificador; finalizador commita' };
-  }
-  if (abertas.length) {
-    const fila = analisarPlan(tasks);
-    if (fila.onda.length) return { etapa: 'implement', situacao: 'implementar a próxima onda', proximo: 'Líder monta a onda', onda: fila.onda };
-    return { etapa: 'implement', situacao: 'impedimento', proximo: 'Líder leva o impedimento ao humano' };
-  }
-
+/** Linhas de review.md da tabela: fila de R*, re-review, confirmação e retomada. */
+function etapaDaReview(alvo, porAlvo) {
   const review = alvo.art.review;
-  if (!review) {
-    if (tasks.length) return { etapa: 'review', situacao: 'sem review.md', proximo: 'Revisor' };
-    return { etapa: 'indeterminado', situacao: 'plan sem T*', proximo: 'Diagnóstico delegado' };
-  }
+  if (!review) return { etapa: 'review', situacao: 'sem review.md', proximo: 'Revisor' };
   const rs = lerRs(review);
   const status = cabecalho(review, 'Status');
-  if (rs.some((r) => !r.feito)) return { etapa: 'implement', situacao: 'corrigir R*', proximo: 'Corretor ou redator, pelo papel:' };
+  if (rs.some((r) => !r.feito)) return { etapa: 'implement', situacao: 'corrigir R*', proximo: 'Implementador ou redator, pelo papel:' };
   if (status === 'request-changes') {
     const ids = idsCommitados(porAlvo.get(alvo.alvo));
     const semCommit = rs.filter((r) => r.feito && !ids.has(r.id)).map((r) => r.id);
-    if (semCommit.length) return { etapa: 'implement', situacao: `commitar a correção (${semCommit.join(', ')})`, proximo: 'Finalizador, se a prova da correção está verde' };
+    if (semCommit.length) return { etapa: 'implement', situacao: `commitar a correção (${semCommit.join(', ')})`, proximo: 'Líder commita, se a prova da correção está verde' };
     return { etapa: 'review', situacao: 're-review', proximo: 'Revisor' };
   }
   if (status === 'rascunho') {
     const veredito = vereditoReview(review);
-    if (veredito === 'approve') return { etapa: 'implement', situacao: 'confirmar', proximo: 'Líder pede a confirmação única' };
+    if (veredito === 'approve') return { etapa: 'review', situacao: 'confirmar', proximo: 'Líder resume no chat e pede a confirmação única' };
     if (veredito === null) return { etapa: 'review', situacao: 'retomar', proximo: 'Revisor' };
   }
-  return { etapa: 'indeterminado', situacao: `review.md em ${status || 'status ausente'}`, proximo: 'Diagnóstico delegado' };
+  return { etapa: 'indeterminado', situacao: `review.md em ${status || 'status ausente'}`, proximo: DIAGNOSTICO };
+}
+
+/** Etapa atual do alvo aberto, pela primeira linha da tabela que se aplica. */
+function etapaDoAlvo(alvo, porAlvo, fora) {
+  if (alvo.antigo) {
+    return { etapa: 'inconsistência', situacao: 'alvo aberto no formato antigo', proximo: 'Líder relata ao humano, que fecha a phase com a versão anterior da skill' };
+  }
+  // Pasta sem artefato: ainda não há onde ler a rota, e a primeira etapa é a interview.
+  if (!Object.values(alvo.art).some(Boolean)) {
+    return { etapa: 'interview', situacao: 'spec.md ausente', proximo: 'Líder conduz; redator grava a spec.md' };
+  }
+  if (!ROTAS.includes(alvo.rota)) {
+    return { etapa: 'indeterminado', situacao: alvo.rota ? `# Rota: ${alvo.rota} inválida` : 'primeiro artefato sem # Rota:', proximo: DIAGNOSTICO };
+  }
+  // Medium não tem spec nem plan: a phase nasce no review.md.
+  if (alvo.rota !== 'medium') {
+    const etapa = etapaDeSpecAPassos(alvo, fora);
+    if (etapa) return etapa;
+  }
+  return etapaDaReview(alvo, porAlvo);
 }
 
 // ---------------------------------------------------------------------------
 // Progresso (SKILL.md, seção 9)
 // ---------------------------------------------------------------------------
 
+/**
+ * Regra de SKILL.md, seção 9: cada etapa da rota vale uma parte igual. Spec conta com
+ * `# Status: aprovado`; plan, com o plan.md presente; analyze, com `## Achados do
+ * analyze`; implement, com a fração de passos marcados (checkpoints não entram na
+ * fração); review, só com a phase fechada. Medium conta o implement inteiro, porque a
+ * phase só nasce depois da entrega. Soma em inteiros para arredondar para baixo sem erro
+ * de ponto flutuante: cada etapa vale `den` unidades e o implement vale `feitos`.
+ */
 function progresso(alvo) {
   const ajuste = ultimoAjuste(alvo.art.review);
   if (ajuste && ajuste.length) {
     const rs = lerRs(alvo.art.review).filter((r) => ajuste.includes(r.id));
     if (rs.some((r) => !r.feito)) return { ajuste: `${rs.filter((r) => r.feito).length}/${rs.length}` };
   }
-  const etapas = etapasDoAlvo(alvo);
-  if (!etapas.length) return { percentual: null };
-  const tasks = lerTasks(alvo.art.plan);
-  const total = tasks.length;
-  const feitas = tasks.filter((t) => t.caixa).length;
-  // Soma em inteiros para arredondar para baixo sem erro de ponto flutuante:
-  // cada etapa vale `den` unidades; o implement vale a fração de T* concluídas.
+  if (alvo.antigo) return { percentual: alvo.fechado ? 100 : null };
+  const etapas = ETAPAS_ROTA[alvo.rota];
+  if (!etapas) return { percentual: null };
+  const plan = lerPlan(alvo.art.plan);
+  const total = plan.passos.length;
+  const feitos = plan.passos.filter((p) => p.caixa).length;
   const den = total || 1;
   let soma = 0;
   for (const e of etapas) {
-    if (PLANEJAMENTO.has(e)) soma += planejamentoConcluido(alvo, e) ? den : 0;
-    else if (e === 'implement') soma += alvo.rota === 'medium' ? den : (total ? feitas : 0);
+    if (e === 'spec') soma += cabecalho(alvo.art.spec, 'Status') === 'aprovado' ? den : 0;
+    else if (e === 'plan') soma += alvo.art.plan ? den : 0;
+    else if (e === 'analyze') soma += plan.analisado ? den : 0;
+    else if (e === 'implement') soma += alvo.rota === 'medium' ? den : feitos;
     else if (e === 'review') soma += alvo.fechado ? den : 0;
   }
-  return { percentual: Math.floor((soma * 100) / (den * etapas.length)), tasks: total ? `${feitas}/${total}` : null };
+  return { percentual: Math.floor((soma * 100) / (den * etapas.length)), passos: total ? `${feitos}/${total}` : null };
 }
 
 // ---------------------------------------------------------------------------
@@ -260,6 +286,11 @@ function lerArgs(argv) {
   return args;
 }
 
+/** Resumo de um alvo para o relatório. */
+function resumoAlvo(raiz, a) {
+  return { alvo: a.alvo, pasta: relative(raiz, a.pasta).replace(/\\/g, '/'), rota: a.rota, risco: a.risco, fechado: a.fechado, antigo: a.antigo };
+}
+
 /** Monta o relatório completo; exportado para os testes. */
 export function estado(raiz, nomeAlvo = null) {
   const agents = lerLinhas(join(raiz, 'AGENTS.md'));
@@ -274,13 +305,16 @@ export function estado(raiz, nomeAlvo = null) {
   const porAlvo = commitsPorAlvo(lista);
   const alterados = temGit ? naoCommitados(raiz) : null;
   const enviar = temGit ? naoEnviados(raiz) : null;
+  // Código e teste: tudo fora de .vibeflow/ (artefatos da cadeia) e de .erros-encontrados/
+  // (registros de achado fora do recorte), como na linha 3 de references/disco.md.
+  const fora = (alterados || []).filter((p) => !p.startsWith('.vibeflow/') && !p.startsWith('.erros-encontrados/'));
 
   const rel = {
     raiz,
     governanca,
     git: temGit,
     proximoN: proximoN(listarPhases(raiz)),
-    alvos: alvos.map((a) => ({ alvo: a.alvo, pasta: relative(raiz, a.pasta).replace(/\\/g, '/'), rota: a.rota, fechado: a.fechado })),
+    alvos: alvos.map((a) => resumoAlvo(raiz, a)),
     inconsistencias: inconsistencias(raiz, alvos, porAlvo, temGit),
     alvo: null,
     etapa: null,
@@ -294,18 +328,21 @@ export function estado(raiz, nomeAlvo = null) {
   const abertos = alvos.filter((a) => !a.fechado);
   const medium = temGit ? mediumPendente(raiz, alvos, lista) : null;
   const pushes = temGit && !abertos.some((a) => a.n !== null) ? pushPendente(alvos, porAlvo, enviar) : [];
-  const orfaos = temGit ? semDono(alvos, porAlvo, alterados) : [];
+  const orfaos = temGit ? semDono(alvos, porAlvo, fora) : [];
   if (!nomeado && medium) rel.etapa = { etapa: 'review da entrega medium', situacao: medium.assunto, proximo: 'Revisor' };
-  else if (!nomeado && pushes.length) rel.etapa = { etapa: 'push pendente', situacao: pushes.join(', '), proximo: 'Finalizador, com a confirmação humana' };
+  else if (!nomeado && pushes.length) rel.etapa = { etapa: 'push pendente', situacao: pushes.join(', '), proximo: 'Líder, com a confirmação humana' };
   else if (!nomeado && orfaos.length) rel.etapa = { etapa: 'alteração sem dono', situacao: orfaos.join(', '), proximo: 'Líder pergunta ao humano se retoma a entrega ou isola o trabalho' };
 
   const alvo = nomeado || alvoPadrao(alvos);
   if (alvo) {
-    rel.alvo = { alvo: alvo.alvo, pasta: relative(raiz, alvo.pasta).replace(/\\/g, '/'), rota: alvo.rota, fechado: alvo.fechado };
-    rel.artefatos = Object.fromEntries(Object.entries(alvo.art).filter(([, v]) => v).map(([k, v]) => [k, cabecalho(v, 'Status') || 'sem status']));
+    rel.alvo = resumoAlvo(raiz, alvo);
+    rel.artefatos = {};
+    if (alvo.art.spec) rel.artefatos.spec = cabecalho(alvo.art.spec, 'Status') || 'sem status';
+    if (alvo.art.plan) rel.artefatos.plan = alvo.antigo ? 'formato antigo' : lerPlan(alvo.art.plan).analisado ? 'analisado' : 'sem analyze';
+    if (alvo.art.review) rel.artefatos.review = cabecalho(alvo.art.review, 'Status') || 'sem status';
     rel.rAbertos = lerRs(alvo.art.review).filter((r) => !r.feito).map((r) => r.id);
     rel.progresso = progresso(alvo);
-    if (!rel.etapa) rel.etapa = alvo.fechado ? { etapa: 'fechada', situacao: 'phase fechada', proximo: 'Líder' } : etapaDoAlvo(alvo, porAlvo, alterados);
+    if (!rel.etapa) rel.etapa = alvo.fechado ? { etapa: 'fechada', situacao: 'phase fechada', proximo: 'Líder' } : etapaDoAlvo(alvo, porAlvo, fora);
     if (abertos.filter((a) => a.n !== null).length > 1 && !nomeado) rel.aviso = 'mais de uma phase aberta: pergunte qual retomar, recomendando a de maior n';
   } else if (!rel.etapa) {
     rel.etapa = { etapa: 'classificar o pedido', situacao: 'sem phase aberta', proximo: 'Líder' };
@@ -318,13 +355,17 @@ export function estado(raiz, nomeAlvo = null) {
 
 function texto(r) {
   const l = [];
-  if (r.alvo) l.push(`alvo: ${r.alvo.alvo} (${r.alvo.pasta}) · rota: ${r.alvo.rota || 'ausente'}${r.alvo.fechado ? ' · fechada' : ''}`);
+  if (r.alvo) {
+    const risco = r.alvo.risco ? ` · risco: ${r.alvo.risco}` : '';
+    l.push(`alvo: ${r.alvo.alvo} (${r.alvo.pasta}) · rota: ${r.alvo.rota || (r.alvo.antigo ? 'não lida (formato antigo)' : 'ausente')}${risco}${r.alvo.antigo ? ' · formato antigo' : ''}${r.alvo.fechado ? ' · fechada' : ''}`);
+  }
   if (r.artefatos) l.push(`artefatos: ${Object.entries(r.artefatos).map(([k, v]) => `${k} ${v}`).join(', ') || 'nenhum'}`);
   const p = r.progresso;
-  const prog = p ? (p.ajuste ? `ajuste: R* ${p.ajuste}` : p.percentual === null ? 'progresso: sem rota' : `progresso: ${p.percentual}%`) : null;
-  const tks = p && p.tasks ? ` · T* ${p.tasks} concluídas` : '';
-  l.push(`${prog ? `${prog} · ` : ''}etapa: ${r.etapa.etapa}, ${r.etapa.situacao}${tks} · próximo: ${r.etapa.proximo}`);
-  if (r.etapa.onda) l.push(`próxima onda: ${r.etapa.onda.join(', ')}`);
+  const prog = p ? (p.ajuste ? `ajuste: R* ${p.ajuste}` : p.percentual === null ? 'progresso: indisponível' : `progresso: ${p.percentual}%`) : null;
+  const marcados = p && p.passos ? ` · passos ${p.passos} marcados` : '';
+  l.push(`${prog ? `${prog} · ` : ''}etapa: ${r.etapa.etapa}, ${r.etapa.situacao}${marcados} · próximo: ${r.etapa.proximo}`);
+  if (r.etapa.passos) l.push(`passos: ${r.etapa.passos.join(', ')}`);
+  if (r.etapa.checkpoint) l.push(`checkpoint cobre os passos ${r.etapa.checkpoint.passos.join(', ') || 'nenhum'} e os critérios ${r.etapa.checkpoint.aceite.join(', ') || 'nenhum'}`);
   if (r.rAbertos && r.rAbertos.length) l.push(`R* abertos: ${r.rAbertos.join(', ')}`);
   if (r.aviso) l.push(`aviso: ${r.aviso}`);
   if (r.init) l.push(`init: ${r.init}`);

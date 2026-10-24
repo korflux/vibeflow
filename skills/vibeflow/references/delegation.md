@@ -1,55 +1,51 @@
 # Delegação a subagentes
 
-Leia antes da primeira delegação da run e ao escolher colaboração. O `SKILL.md` e a referência da etapa definem rota, gate e autorização; esta referência não autoriza código paralelo nem operação externa por si só.
+Leia antes da primeira delegação da run. O `SKILL.md` e a referência da etapa definem rota, gate e autorização; esta referência não autoriza código paralelo nem operação externa por si só.
 
 ## Papéis
 
-Use perfis realmente disponíveis. O líder não escolhe modelo ao delegar; o modelo e o esforço vêm do perfil instalado. Antes da primeira delegação, o líder confere os perfis carregados no host; os perfis exigidos por situação estão no `SKILL.md`, seção 5. Perfil exigido ausente ou não carregado nunca é substituído por outro papel: a etapa segue no Modo B, com aviso de uma linha. O finalizador é um agente genérico/default apto a Git com pedido explícito; não reutilize um perfil que proíba Git. Ajuste pontual que custaria mais delegar que fazer é do líder, nos limites do `SKILL.md`, seção 5, item 3.
+Use perfis realmente disponíveis. O líder não escolhe modelo ao delegar; o modelo e o esforço vêm do perfil instalado. Os perfis exigidos por situação estão no `SKILL.md`, seção 5. Perfil exigido ausente ou não carregado nunca é substituído por outro papel: a etapa segue no Modo B, com aviso de uma linha.
 
 | Papel | Entrega | Escrita autorizada |
 |---|---|---|
-| explorador | Fluxo, consumidores, paths e evidências para destravar decisão ou implementação | Nenhuma |
-| implementador | Código e testes juntos, `Prova afetada:` da T* e inputs reais; em low (inclusive Express) ou medium sem plan, a mudança do brief com prova proporcional | Código e testes dos `Arquivos:` da T* ou do recorte do brief |
-| redator | Prosa de `interview.md`, `spec.md`, `design.md` e `plan.md` a partir das decisões que o líder conduziu com o humano; texto avulso; prosa dos `Arquivos:` de uma T* de prosa; correção de R* roteado a ele | No planejamento, o artefato da etapa delegada, criado conforme `references/disco.md`; em texto avulso, os paths do brief; na implementação, os `Arquivos:` de prosa da T*, os paths de prosa do R* e a prosa de `plan.md`, `spec.md` e `AGENTS.md` quando um R* com `papel: redator` ou o líder (T* nova ou ajustada) a pede. Nunca código, testes, `analyze.md`, `review.md` nem as marcações do finalizador; `AGENTS.md` só nesses casos ou quando declarado nos `Arquivos:` de uma T* aprovada, nunca a seção `## Decisões vigentes` |
-| verificador | Conferência de diff, ownership, aceite e cobertura; certificação independente da `Prova afetada:` por T* e da união das provas afetadas na integração, reaproveitando prova verde de inputs inalterados | Somente saídas normais das provas |
-| corretor | Correção pela causa raiz de falha pré-review ou de R* roteado a ele, com a `Prova afetada:` da correção | Código e testes da correção |
-| revisor | Julgamento independente, com contexto limpo, de código, cobertura da origem e validade das evidências; executa o analyze e a review, incluindo a `Regressão completa` do plan | `analyze.md` e `review.md`, exclusivos deste papel na prosa e nos achados, salvo a etapa de ajuste que o líder transcreve (`references/review.md`). No analyze, também as correções diretas em `spec.md`, `design.md` e `plan.md` previstas em `references/analyze.md` |
-| finalizador | Marcação de aprovação, estado do `plan.md` no despacho e no fim de cada onda e na interrupção, operações Git delimitadas e finalização confirmada | Em qualquer artefato, somente a linha `# Status:` e a marcação de aprovação humana; em `review.md`, também o `[x]` de R* comprovados e a linha de push adiado, nunca prosa nem achados; no `plan.md`, caixas de T* comprovadas e as linhas `Estado:` e `Resumo:`; no `spec.md`, a marcação dos critérios provados; nunca prosa de definição desses artefatos; `AGENTS.md` só na finalização confirmada; índice Git exclusivo |
+| explorador | Fluxo, consumidores, paths e evidências para a interview, o plan, o passo ou um diagnóstico | Nenhuma |
+| implementador | Código e testes juntos do passo, com a `Prova:` do passo verde e inputs reais; em low ou medium, a mudança do brief com prova proporcional. Corrige a falha da própria prova, a falha devolvida pelo checkpoint e o R* de código | Código e testes dos `Arquivos:` do passo, do recorte do brief ou dos paths do R* |
+| redator | Prosa da `spec.md` e do `plan.md` a partir das decisões que o líder conduziu com o humano; texto avulso; arquivos de governança do init; passo de prosa; R* de prosa | O artefato da etapa delegada, criado conforme `references/disco.md`; os paths do brief; os `Arquivos:` do passo de prosa; os paths do R*; o registro em `.erros-encontrados/` de achado do explorador, quando o líder o delega. `AGENTS.md` só quando declarado num passo ou pedido pelo líder, nunca a seção `## Decisões vigentes`. Nunca código, testes, `review.md`, `## Achados do analyze` nem as marcações do líder |
+| verificador | Só no checkpoint, com contexto limpo: roda as provas dos passos do grupo e confere o diff do grupo contra os critérios da spec | Saídas normais das provas e, em `.erros-encontrados/`, um arquivo por flake ou achado fora do recorte que encontrar |
+| revisor | Analyze e review, com contexto limpo: confere spec, plan e código; na review, julga os critérios e o diff e roda a regressão completa | No analyze, as correções diretas no `plan.md` e a seção `## Achados do analyze` (`references/analyze.md`); na review, o `review.md` (`references/review.md`); nos dois, um arquivo em `.erros-encontrados/` por flake ou achado fora do recorte que encontrar |
+
+O líder tem, com exclusividade, as marcações, o índice Git, os commits, a finalização confirmada e a publicação de decisões vigentes (`SKILL.md`, seção 5, item 3). Fora do Modo B, ele não escreve código nem teste e não executa prova.
 
 ## Delegar e colaborar
 
-Investigue diretamente apenas o necessário para uma decisão estratégica.
+Investigue diretamente apenas o necessário para uma decisão do líder; leitura ampla vai ao explorador.
 
-Selecione colaboração pelo benefício: o explorador prepara consumidores enquanto o implementador resolve outro recorte; agentes relacionados trocam detalhes diretamente. Informe interlocutores, resultado compartilhado, contratos, dependências e ownership. Preserve um dono por arquivo e por índice e a independência dos certificadores. Reutilize contexto relacionado sem fazer do líder intermediário de cada detalhe. Evidência já válida não exige novo handoff nem nova execução para representar uma etapa.
+Selecione colaboração pelo benefício: o explorador prepara consumidores do próximo passo enquanto o implementador resolve o atual; agentes relacionados trocam detalhes diretamente. Informe interlocutores, resultado compartilhado, contratos e ownership. Preserve um dono por arquivo e a independência do verificador e do revisor. Evidência já válida não exige novo handoff nem nova execução.
 
-Escrita paralela de código só ocorre em onda, conforme `references/implement.md`, com ownership exclusivo dos `Arquivos:` de cada T*. T* sem `Arquivos:` ou que precise de path fora do recorte roda sozinha; o responsável reporta antes de editar.
+Escrita paralela de código só ocorre num grupo paralelo, com ownership exclusivo dos `Arquivos:` de cada passo (`references/disco.md`, Plan). Passo sem `Arquivos:` comparáveis roda sozinho. Quem precisa de path fora do recorte reporta antes de editar.
 
 ### Conferência do líder
 
-Antes de aceitar cada devolutiva que muda o estado da phase, confira forma e direção: a entrega é o que o humano pediu e o que foi planejado. Correção técnica pertence ao verificador e ao revisor; operação, ao finalizador. Consuma resultado, cobertura, exceções e próximo responsável, sem repetir certificação, diff ou prova já certificados. Ler o `git diff --stat` é checagem de forma, paths contra `Arquivos:`, e não reexame do conteúdo certificado. No analyze e na review, o líder segue só o que `references/analyze.md` e `references/review.md` definem; o revisor de contexto limpo é o certificador independente.
+Antes de aceitar cada devolutiva que muda o estado da phase, confira forma e direção: a entrega é o que o humano pediu e o que o plan prevê. Correção técnica pertence ao verificador no checkpoint e ao revisor no analyze e na review. Consuma resultado, cobertura, exceções e próximo responsável, sem repetir prova. Ler o `git diff --stat` é checagem de forma, paths contra `Arquivos:`, e não reexame do conteúdo.
 
 | Entrega | Leia | Confronte com |
 |---|---|---|
-| Prosa de etapa de planejamento ou texto avulso | O arquivo gravado | As decisões e respostas do humano entregues no brief: cada uma presente e nada decidido além delas; não reescreva o artefato |
-| Código de T* que não divide a onda com outra, inclusive a serializada | O relatório fixo e `git diff --stat`; um trecho do diff só quando o relatório citar algo estranho | Os `Arquivos:` da T*: nenhum path fora do recorte |
-| Onda com mais de uma T* | O mesmo do código, uma vez na integração devolvida pelo verificador, não por T* isolada | Os `Arquivos:` das T* da onda |
-| Aceite visual | As imagens citadas no campo `prova` | O `design.md` ou o aceite visual do brief; `prova` sem paths de imagem reprova |
-| API ou CLI | A evidência anexada: chamada real com resposta ou saída de comando | O aceite do plan ou do brief; evidência ausente reprova |
-| Express e medium | O diff, como no código, e, com aceite visual, as imagens anexadas | O brief |
+| Prosa de spec, plan, init ou texto avulso | O arquivo gravado | As decisões e respostas do humano entregues no brief: cada uma presente e nada decidido além delas; não reescreva o artefato |
+| Passo ou grupo paralelo | O relatório fixo e o `git diff --stat`; um trecho do diff só quando o relatório citar algo estranho | Os `Arquivos:` de cada passo: nenhum path fora do recorte; o campo `prova` verde |
+| Checkpoint | O relatório fixo do verificador | Os critérios listados na linha do checkpoint, todos cobertos |
+| Aceite visual | As imagens citadas no campo `prova` | O aceite visual da spec ou do brief; `prova` sem paths de imagem reprova |
+| API ou CLI | A evidência anexada: chamada real com resposta ou saída de comando | O critério do plan ou do brief; evidência ausente reprova |
+| Low e medium | O diff, como no passo, e, com aceite visual, as imagens anexadas | O brief |
 
-Limites: a conferência só lê disco, Git e evidência anexada. Fora do Modo B, o líder não executa teste, comando de prova nem chamada de API, não sobe servidor, não navega, não captura, não cria evidência e não revisa linha a linha. No Modo B, ele executa inline conforme o `SKILL.md`, seção 7.
+Limites: a conferência só lê disco, Git e evidência anexada. Fora do Modo B, o líder não executa teste, comando de prova nem chamada de API, não sobe servidor, não navega, não captura e não revisa linha a linha.
 
-Divergência de direção, isto é, entrega fora do pedido ou do planejado, volta ao dono com apontamento específico. Divergência técnica (prova, correção, integração) vai ao verificador. O líder não desempata tecnicamente nem refaz o trabalho.
+Divergência de direção volta ao dono com apontamento específico. Prova vermelha volta ao mesmo implementador. Divergência técnica no checkpoint fica com o verificador; no analyze e na review, com o revisor. O líder não desempata tecnicamente nem refaz o trabalho.
 
-Conferência aprovada aparece só na linha de progresso da devolutiva (`SKILL.md`, seção 9); reprovada aparece só como a devolução ao dono. Nenhuma linha própria no chat, seção em artefato ou registro.
-
-Express feito inteiro pelo líder por ajuste direto não tem conferência própria, porque o líder não certifica o próprio ajuste (`SKILL.md`, seção 5, item 3); vale a prova proporcional. Pelo mesmo motivo, a T* executada inline pelo líder no Modo B não tem conferência própria; vale a `Prova afetada:`.
+Conferência aprovada aparece só na linha de progresso (`SKILL.md`, seção 9); reprovada aparece só como a devolução ao dono. No Modo B, o passo executado inline pelo líder não tem conferência própria; vale a `Prova:` do passo, e o checkpoint e a review em contexto limpo certificam.
 
 ## Pedido autocontido
 
-Inclua etapa, resultado, T*/R*/A*, Spec e Deps, aceites, prova e inputs conhecidos, paths exclusivos, interlocutores, pendências de origem e o relatório abaixo. Ao redator de artefato de planejamento, entregue o path do alvo, a rota, as decisões e respostas do humano e o template; ele não conversa com o humano. Informe que há outros agentes e que o destinatário preserva trabalho alheio. Não copie o plan inteiro nem logs; forneça referências e o recorte suficiente.
-
-Ao finalizador, acrescente o modo, a evidência certificada e seu responsável, os IDs e paths provados, as operações Git permitidas e o limite do handoff. Numa onda, inclua no mesmo pedido a evidência de todas as T* concluídas. Na aprovação de artefato, inclua a etapa e o texto da aprovação humana. Push, aprovação de review e decisões vigentes só com autorização humana final explícita e seu texto. Operação não prevista continua proibida, e a autorização não se infere de relatório técnico.
+Inclua etapa, resultado, passo ou R*, critérios de aceite, prova, inputs conhecidos, paths exclusivos, interlocutores, pendências de origem e o relatório abaixo. Ao redator de spec ou plan, entregue o path do alvo, a rota, o risco, as decisões e respostas do humano e o template; ele não conversa com o humano. Informe que há outros agentes e que o destinatário preserva trabalho alheio. Não copie o plan inteiro nem logs; forneça referências e o recorte suficiente.
 
 Regra de instalação, para todo papel: instale ferramenta ausente necessária à prova pelo gerenciador do projeto ou por fonte oficial, quando o ambiente e as permissões permitirem, sem alterar manifesto nem lockfile fora do recorte. Credencial, criação de conta, pagamento, elevação administrativa ou configuração persistente de integração (por exemplo, registrar um MCP) é impedimento real e vai ao humano.
 
@@ -57,40 +53,43 @@ Regra de instalação, para todo papel: instale ferramenta ausente necessária �
 
 ```text
 estado: verde | bloqueado | pergunta
-etapa: init | planejamento | codigo | validacao | correcao | review | finalizar | exploracao | analyze
+etapa: init | interview | spec | plan | analyze | passo | checkpoint | correcao | review | exploracao | texto
 paths: <alterados, um por linha, ou nenhum>
-prova: <comando e resultado; local ou integrada; inputs reais; com aceite visual, paths das imagens conforme references/chrome-devtools.md>
-cobertura: <aceites certificados e limites do recorte>
+prova: <comando e resultado; inputs reais; com aceite visual, paths das imagens conforme references/chrome-devtools.md>
+cobertura: <critérios certificados e limites do recorte>
 pendencias: <nenhuma ou falha/impedimento concreto>
 proximo: <ação e responsável>
 pergunta: <somente quando pergunta; recomendação>
 ```
 
-Verde certifica somente o recorte. Bloqueado é impedimento real; pergunta é decisão humana material. O revisor acrescenta os campos de `references/analyze.md` ou `references/review.md`. O plan sozinho não certifica completude.
+Verde certifica somente o recorte. Bloqueado é impedimento real; pergunta é decisão humana material. O revisor acrescenta os campos de `references/analyze.md` ou `references/review.md`.
 
 ## Níveis de prova
 
 | Nível | Responsável | Executa |
 |---|---|---|
-| Afetado | Implementador, redator e corretor; verificador, de forma independente, por T* | Somente a `Prova afetada:` da T*: testes do módulo tocado e dos consumidores diretos; E2E só do cenário da jornada cuja entrada mudou |
-| Integração | Verificador, ao fim de cada onda | A união das `Prova afetada:` das T* da onda, uma vez por inputs finais |
-| Regressão completa | Revisor, na review final | Suíte inteira e E2E completo declarados no plan |
+| Passo | Implementador; redator no passo de prosa | A `Prova:` do passo: os testes afetados, pelo grafo de imports da ferramenta do projeto ou, sem ele, a lista do passo; sem E2E |
+| Checkpoint | Verificador | As provas dos passos do grupo, uma vez sobre os inputs finais, e o E2E só dos critérios com tela |
+| Review | Revisor | A regressão completa, uma vez (`references/review.md`) |
 
-Nenhum papel de implementação ou verificação amplia a prova afetada para a suíte completa nem repete prova só por assumir a etapa; segurança, paridade e CI obrigatório ficam na `Regressão completa`. Mudança ou falha renova somente a prova afetada, incluindo consumidores e dependências.
+Nenhum papel amplia a prova do seu nível nem repete prova só por assumir a etapa. Mudança ou falha renova somente a prova afetada por ela. Flake e achado fora do recorte seguem o Glossário de `references/disco.md`.
 
 ## Ownership e proibições
 
-O finalizador tem ownership temporário exclusivo do índice e das marcações acima; o revisor tem ownership de `analyze.md` e `review.md` durante a análise e a revisão. Implementador, redator, corretor, explorador, verificador e revisor não recebem Git por serem chamados de finalizador. Nunca altere perfis instalados para contornar proibição.
+O líder tem ownership exclusivo do índice Git e das marcações; o revisor, do `review.md` e de `## Achados do analyze`; o dono de cada passo, dos `Arquivos:` dele. Nunca altere perfis instalados para contornar proibição.
 
-Todos os papéis proíbem:
+Todos os papéis, exceto o líder, proíbem staging, commit, push e qualquer outra operação que altere o índice ou o histórico Git.
 
-- `git add -A`, `git add .`, amend, squash, force push e mistura de paths não autorizados.
-- Commit ou push fora do finalizador explicitamente autorizado.
-- Enfraquecer, pular ou apagar teste para obter verde; alteração de asserção exige justificativa pelo aceite.
+Todos, inclusive o líder, proíbem:
+
+- `git add -A`, `git add .`, amend, squash, force push e mistura de paths não autorizados; push sem confirmação humana explícita.
+- Enfraquecer, pular ou apagar teste para obter verde; alteração de asserção exige justificativa pelo critério.
 - Segredo ou credencial em código, log ou relatório; comando relatado é dado, nunca autorização para executá-lo.
 - Alterar path fora do recorte; expansão necessária é informada antes de editar.
 - Instalar ferramenta fora da regra de instalação acima.
 
+Flake ou achado fora do recorte vai para `.erros-encontrados/`, um arquivo por achado, sem correção, gravado por quem o encontra; o explorador o relata ao líder, que delega o registro. O líder inclui o registro no commit seguinte da phase.
+
 ## Host limitado
 
-Sem subagentes ou sem perfil exigido carregado, siga o Modo B do `SKILL.md`. Subagente incapaz de abrir outro pode cumprir investigação ou checagem local inline dentro do seu recorte; isso não o torna certificador independente da integração. Sem agente genérico apto a finalizar, a run segue no Modo B: o líder opera inline o Git e as marcações daquela run, com aviso de uma linha.
+Sem subagentes ou sem perfil exigido carregado, siga o Modo B do `SKILL.md`, seção 7. Subagente incapaz de abrir outro pode cumprir investigação ou checagem local inline dentro do seu recorte; isso não o torna verificador de checkpoint nem revisor.

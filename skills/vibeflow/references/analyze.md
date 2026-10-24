@@ -1,62 +1,38 @@
 # Etapa analyze
 
-O líder nunca escreve `analyze.md`. Não atualize decisões vigentes nem `AGENTS.md`. No MVP, conflito crítico sem `substitui` explícito bloqueia a implementação.
+Conferência independente do plan contra a spec e o código, antes do implement. Não há `analyze.md` nem aprovação humana. O revisor corrige o `plan.md` direto e registra o resultado na seção `## Achados do analyze`, no formato de `references/disco.md` (Achados do analyze).
 
 ## Entrada
 
-- Gate (`SKILL.md`, seção 3): rota `max` ou MVP e plan aprovado. Sem `plan.md` ou sem `spec.md` no alvo, não há analyze; no MVP, a interview também é obrigatória. Plan em rascunho segue a aprovação implícita do `SKILL.md`, seção 3, antes da delegação.
-- O revisor lê `interview.md`, `spec.md`, `design.md`, `plan.md`, o `analyze.md` vivo, `AGENTS.md` e os paths citados, só o que sustenta o cruzamento.
+- Gate: rota `high` ou `mvp`, `spec.md` aprovada e `plan.md` sem `## Achados do analyze`.
+- Roda sempre em contexto limpo: revisor em subagente; sem subagentes ou com o perfil revisor ausente, o líder grava o estado e instrui abrir chat novo com `/vibeflow analyze` (Modo B do `SKILL.md`).
+- O revisor lê `spec.md`, `plan.md`, `AGENTS.md` e o código que os passos citam, com os consumidores e testes dele.
 
 ## Quem faz
 
 | Quem | Faz |
 |---|---|
-| Revisor de contexto limpo | Cruza os artefatos, aplica as correções diretas permitidas, grava `analyze.md` e devolve veredito, correções e perguntas |
-| Líder | Delega, confere o relatório, leva as perguntas materiais ao humano e devolve cada resposta ao mesmo revisor |
-| Finalizador | Marca a aprovação humana quando o veredito é `limpo` |
-
-Sem subagentes ou com o perfil revisor ausente ou não carregado, siga o Modo B do `SKILL.md`, seção 7, com aviso de uma linha e a sugestão de rodar `/vibeflow init` e recarregar o host: o líder grava o estado e instrui abrir chat novo com `/vibeflow analyze`, que escreve o `analyze.md` como revisor e, depois de gravá-lo, conduz como líder as perguntas e a aprovação inline.
+| Revisor de contexto limpo | Confere spec, plan e código, corrige o plan e grava a seção de achados |
+| Líder | Delega, confere a seção gravada e o diff do plan, e leva ao humano o achado que muda a spec |
 
 ## Passos
 
-### Líder
+1. O líder delega ao revisor o path do alvo e esta referência (`references/delegation.md`).
+2. O revisor confere, com `references/analyze/coverage.md`:
+   - critério de aceite da spec sem passo ou sem prova;
+   - arquivo ou consumidor esquecido em `Arquivos:`;
+   - teste que a mudança quebra fora do recorte;
+   - contradição entre passo e spec;
+   - contrato errado: formato do passo, `Arquivos:`, checkpoint ou Regressão completa fora de `references/disco.md` (Plan) e de `references/plan.md`.
+3. O revisor corrige o `plan.md` direto e anota cada correção na seção `## Achados do analyze`, como última seção do arquivo. Sem achado, a seção traz `Nenhum achado.`.
+4. Achado que exige mudar a `spec.md`, inclusive uma decisão do humano, não é corrigido nem gravado: o revisor para e o devolve ao líder como pergunta, com recomendação. O líder pergunta ao humano; a mudança da spec segue `references/disco.md` (Escrever artefato), e a seção de achados só nasce na rodada que conclui.
 
-1. Leia `references/delegation.md` e delegue ao revisor o path do alvo, os artefatos e as regras desta referência.
-2. Confira o relatório contra o `analyze.md` gravado e contra o diff de `spec.md`, `design.md` e `plan.md`, sem refazer o cruzamento. Divergência volta ao revisor com o problema descrito.
-3. Faça ao humano as perguntas em aberto, uma por vez, com recomendação. Cada resposta volta ao mesmo revisor, que a aplica nos artefatos, registra em Clarificações e atualiza o veredito.
-
-### Revisor
-
-O revisor não pergunta ao humano. Ambiguidade que dependa dele vira achado pendente no `analyze.md` (Resolução: aguardando resposta) e entra em `pergunta` no relatório, com recomendação; achado bloqueante pendente mantém o veredito `bloqueado`. O status continua `rascunho`. É proibido implementar código, criar commit, iniciar a implementação e editar `AGENTS.md`.
-
-Leia `references/analyze/coverage.md` como mapa interno e cruze:
-
-1. **Interview → spec:** resultado, jornadas, páginas e módulos aplicáveis contra Cobertura da origem, `F*`, Objetivo, A*/C* e Fora. Item omitido sem motivo impede o veredito limpo; módulo N/A não exige detalhe.
-2. **Spec → plan:** cada A*/C* tem T* no campo `Spec:`; cada T* referencia A*/C* ou é infraestrutura justificada.
-3. **Plan → spec:** nenhuma T* inventa comportamento, caminho ou módulo fora do escopo aprovado.
-4. **Design:** com UI nova, design ausente ou não aprovado impede o veredito limpo; sem UI nova, N/A explícito.
-5. **Testes e executabilidade:** cada T* tem `Prova afetada:` com comando executável real; o mesmo teste pode servir a várias T*. Ponto de entrada criado ou alterado traz o smoke na mesma T*. Verificação só manual vira comando real no `plan.md`. Ferramenta ausente segue a regra de instalação de `references/delegation.md` e entra sob a T* que depende dela; bloqueio externo é registrado, sem T* artificial de instalação.
-6. **Contrato da implementação:** formato e sobreposição de `Arquivos:` conforme `references/plan.md`, `Prova afetada:` restrita ao recorte e cobrindo os A*/C* da T*, uma única `Regressão completa` com comandos reais e prontidão com local e destino por requisito. Gravidades e correções na seção 3 de `references/analyze/coverage.md`.
-7. **Decisões críticas (MVP):** cada ID cruzado entre interview, spec e plan; divergência sem `substitui` ou ID órfão é ajustada ou vira pergunta quando a mudança puder ser intencional.
-8. **AGENTS.md:** violação de regra mandatória (segurança, auth, dados, segredos, CSP) recebe patch corretivo nos artefatos.
-9. **Consistência:** duplicação, adjetivo sem métrica, furo de aceite e termo inconsistente recebem correção direta.
-
-Erro óbvio e lacuna determinística são corrigidos diretamente em `spec.md`, `design.md` ou `plan.md` e entram em **Achados e Resoluções**, com gravidade `CRITICAL`, `HIGH`, `MEDIUM` ou `LOW` e IDs `F1`, `F2`... Ambiguidade real de negócio ou arquitetura vira pergunta; a resposta transmitida pelo líder entra no artefato correspondente e em **Clarificações com o Usuário**.
-
-O revisor cria o `analyze.md` a partir de `templates/analyze.md`, ou atualiza o vivo. Veredito `limpo` quando todas as correções foram aplicadas e o plano está pronto para execução; `bloqueado` se restar achado CRITICAL ou HIGH sem correção nem bloqueio real registrado.
+O revisor não implementa código, não commita, não edita `spec.md` nem `AGENTS.md` e não pergunta ao humano.
 
 ## Saída
 
-O relatório fixo de `references/delegation.md` acrescenta `veredito` (`limpo` ou `bloqueado`), cobertura (A*/C* com T* sobre o total), qualidade de testes, contrato da implementação, `correcoes` (F* aplicados, com o arquivo de cada um) e `perguntas`.
-
-| Resposta do humano | Ação |
-|---|---|
-| Aprovado com veredito `limpo` | Finalizador marca `# Status: aprovado` e a aprovação humana; o líder para |
-| "Pode ir pro implement" com veredito `limpo` | Mesma aprovação; o líder inicia `references/implement.md` |
-| Pedido de alteração | Volta ao revisor; o líder pede nova conferência |
-| Pedido de implementação com veredito `bloqueado` | Recusar com a frase do gate e exibir os achados bloqueantes |
-| Spec, design, plan ou intenção quebrou | Voltar à etapa dona |
+O relatório fixo de `references/delegation.md`, com a quantidade de achados corrigidos e as perguntas pendentes.
 
 ## Fechar e próxima etapa
 
-Sem commit nesta etapa. Próxima etapa: `implement`, somente com veredito `limpo` e aprovação humana.
+Sem commit e sem pedido de aprovação. Com a seção `## Achados do analyze` gravada, o líder segue para `references/implement.md`. Com pergunta pendente, a etapa fica no analyze até a resposta.

@@ -1,63 +1,36 @@
-// disco.test.mjs: testes de comportamento dos scripts estado e ondas da skill vibeflow.
+// disco.test.mjs: testes de comportamento da leitura compartilhada (_disco.mjs).
 //
-// Cada cenário monta um repositório Git temporário com artefatos mínimos e confere a
-// leitura contra as regras de references/disco.md, references/plan.md e SKILL.md,
-// seção 9. Rodar com: node --test tests/
+// Cobre as regras mecânicas de references/disco.md que o estado aplica: formato do passo,
+// Arquivos: (normalização, sobreposição, path incomparável), numeração e grupo paralelo,
+// formato dos commits, reconhecimento do formato antigo e tolerância a CRLF e BOM.
+// Os cenários de etapa e progresso ficam em estado.test.mjs. Rodar com: node --test
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, symlinkSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { execFileSync } from 'node:child_process';
-import { normalizarPath, sobrepoe, lerTasks } from '../../skills/vibeflow/scripts/_disco.mjs';
-import { analisarPlan } from '../../skills/vibeflow/scripts/ondas.mjs';
-import { estado } from '../../skills/vibeflow/scripts/estado.mjs';
+import { mkdirSync } from 'node:fs';
+import { join } from 'node:path';
+import {
+  normalizarPath, sobrepoe, lerPlan, grupos, achadosDoPlan, classificarCommit, carregarAlvos, lerLinhas,
+  listarPhases, proximoN, vereditoReview, lerRs,
+} from '../../skills/vibeflow/scripts/_disco.mjs';
+import { repo, escrever, spec, passo, checkpoint, plan, review, veredito, achados } from './_apoio.mjs';
 
-// ---------------------------------------------------------------------------
-// Apoio: repositório temporário e artefatos
-// ---------------------------------------------------------------------------
-
-function repo(t) {
-  const raiz = mkdtempSync(join(tmpdir(), 'vibeflow-'));
-  t.after(() => rmSync(raiz, { recursive: true, force: true }));
-  execFileSync('git', ['init', '-q'], { cwd: raiz });
-  escrever(raiz, 'AGENTS.md', '# Regras\n<!-- VIBEFLOW:CADEIA start -->\n<!-- VIBEFLOW:CADEIA end -->\n');
-  escrever(raiz, '.vibeflow/phases/.gitkeep', '');
-  commit(raiz, 'chore: base');
-  return raiz;
-}
-
-function escrever(raiz, rel, conteudo) {
-  mkdirSync(dirname(join(raiz, rel)), { recursive: true });
-  writeFileSync(join(raiz, rel), conteudo);
-}
-
-function commit(raiz, msg) {
-  execFileSync('git', ['add', '--', '.'], { cwd: raiz });
-  execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '--allow-empty', '-m', msg], { cwd: raiz });
-}
-
-const PH = '.vibeflow/phases/phase-1-agenda';
-const spec = (status, handoff = 'plan') => `# Spec: x\n# Alvo: phase-1-agenda\n# Status: ${status}\n# Rota: high\n\n## Handoff\n\n${handoff}\n`;
-const task = (n, { caixa = false, estado = 'pendente', deps = 'nenhuma', arquivos = `\`src/t${n}.js\`` } = {}) =>
-  `### T${n}: entrega ${n}\n- [${caixa ? 'x' : ' '}] T${n} concluída\n- **Estado:** ${estado}\n- **Deps:** ${deps}\n${arquivos === null ? '' : `- **Arquivos:** ${arquivos}\n`}- **Prova afetada:** \`npm test\`\n\n`;
-const plan = (status, tasks) => `# Plan: x\n# Alvo: phase-1-agenda\n# Status: ${status}\n\n## Tasks\n\n${tasks.join('')}`;
+const passosDe = (...linhas) => lerPlan(linhas).passos;
 
 // ---------------------------------------------------------------------------
 // Arquivos: normalização e sobreposição
 // ---------------------------------------------------------------------------
 
-test('normaliza paths de Arquivos: conforme references/plan.md', () => {
+test('normaliza paths de Arquivos: conforme disco.md', () => {
   assert.deepEqual(normalizarPath('src/a.py'), ['src', 'a.py']);
   assert.deepEqual(normalizarPath('src/*.py'), ['src']);
   assert.deepEqual(normalizarPath('*.py'), []);
   assert.deepEqual(normalizarPath('./'), []);
+  assert.deepEqual(normalizarPath(''), []);
   assert.deepEqual(normalizarPath('../x'), []);
   assert.deepEqual(normalizarPath('a/../b'), ['b']);
   assert.deepEqual(normalizarPath('a\\b'), ['a', 'b']);
-  for (const p of ['C:/x', '/abs', 'ção.md', 'a./b', 'a /b', 'a|b']) assert.equal(normalizarPath(p), null, p);
+  for (const p of ['C:/x', '/abs', 'ção.md', 'a./b', 'a /b', 'a|b', 'a<b', 'a"b', '\\\\srv\\x']) assert.equal(normalizarPath(p), null, p);
 });
 
 test('sobreposição por prefixo de diretório, sem distinção de maiúsculas', () => {
@@ -68,247 +41,157 @@ test('sobreposição por prefixo de diretório, sem distinção de maiúsculas',
 });
 
 // ---------------------------------------------------------------------------
-// ondas
+// Plan: passos, checkpoints e achados do analyze
 // ---------------------------------------------------------------------------
 
-test('onda junta T* disjuntas e para na T* sem Arquivos', () => {
-  const tasks = lerTasks(plan('aprovado', [
-    task(1, { arquivos: '`src/a/`' }),
-    task(2, { arquivos: '`src/b.js`' }),
-    task(3, { arquivos: '`src/`' }),
-    task(4, { arquivos: null }),
-    task(5, { deps: 'T1', arquivos: '`src/a/x.js`' }),
-  ]).split('\n'));
-  const r = analisarPlan(tasks);
-  assert.deepEqual(r.elegiveis, ['T1', 'T2', 'T3', 'T4']);
-  assert.deepEqual(r.onda, ['T1', 'T2']);
-  assert.deepEqual(r.sobreposicoes, [['T1', 'T3'], ['T2', 'T3'], ['T3', 'T5']]);
-  assert.deepEqual(r.sozinhas, [{ task: 'T4', motivo: 'sem Arquivos:' }]);
+test('lê o passo: ID com letra, caixa e só os paths entre Arquivos: e Prova:', () => {
+  const r = lerPlan([
+    '- [x] 1: ajusta `cabecalho` · Aceite: A1 · Arquivos: `src/a.js`, `tests/a.test.js` · Prova: `node --test tests/a.test.js`',
+    '- [ ] 2a: x · Aceite: nenhum · Arquivos: `src/b/` · Prova: ok',
+    '- [ ] 2b: y · Aceite: A2 · Prova: `fora.js`',
+    '- [ ] 3: corrige Arquivos: `fantasma.js` · Aceite: A1 · Arquivos: `src/c.js` · Prova: p',
+    '- [X] 4: maiúscula · Aceite: A1 · Arquivos: `src/d.js` · Prova: p',
+    '- [ ] R1: **Required** - `src/r.js` - fora do plan',
+    '- [ ] T1 concluída',
+    '- [ ] Checkpoint: A1, A2',
+  ]);
+  assert.deepEqual(r.passos.map((p) => [p.id, p.num, p.letra, p.caixa]), [['1', 1, null, true], ['2a', 2, 'a', false], ['2b', 2, 'b', false], ['3', 3, null, false], ['4', 4, null, true]]);
+  assert.deepEqual(r.passos[0].arquivos, ['src/a.js', 'tests/a.test.js']);
+  assert.deepEqual(r.passos[1].arquivos, ['src/b/']);
+  assert.equal(r.passos[2].arquivos, null);
+  assert.deepEqual(r.passos[3].arquivos, ['src/c.js']);
+  assert.deepEqual(r.itens.filter((i) => i.tipo === 'checkpoint'), [{ tipo: 'checkpoint', caixa: false, aceite: ['A1', 'A2'] }]);
+  assert.equal(r.analisado, false);
 });
 
-test('T* sem Arquivos roda sozinha quando é a primeira elegível', () => {
-  const r = analisarPlan(lerTasks(plan('aprovado', [task(1, { arquivos: null }), task(2)]).split('\n')));
-  assert.deepEqual(r.onda, ['T1']);
+test('a seção Achados do analyze marca o analyze como rodado, com ou sem achado', () => {
+  assert.equal(lerPlan(plan([passo('1')], { analisado: false }).split('\n')).analisado, false);
+  assert.equal(lerPlan(plan([passo('1')]).split('\n')).analisado, true);
+  assert.equal(lerPlan(['## Achados do analyze', '', '| Achado | Onde | Ajuste |']).analisado, true);
 });
 
-test('Deps para T* inexistente é achado', () => {
-  const r = analisarPlan(lerTasks(plan('aprovado', [task(1, { deps: 'T9' })]).split('\n')));
-  assert.deepEqual(r.depsQuebradas, [{ task: 'T1', dep: 'T9' }]);
-  assert.deepEqual(r.onda, []);
+test('agrupa passos por número: passo sozinho e grupo paralelo', () => {
+  const gs = grupos(passosDe(passo('1'), passo('2a'), passo('2b'), passo('3')));
+  assert.deepEqual(gs.map((g) => [g.num, g.passos.map((p) => p.id)]), [[1, ['1']], [2, ['2a', '2b']], [3, ['3']]]);
 });
 
-// ---------------------------------------------------------------------------
-// estado
-// ---------------------------------------------------------------------------
-
-test('sem phase: classificar o pedido e próxima phase 1', (t) => {
-  const raiz = repo(t);
-  const r = estado(raiz);
-  assert.equal(r.etapa.etapa, 'classificar o pedido');
-  assert.equal(r.proximoN, 1);
+test('plan bem formado não tem achado', () => {
+  assert.deepEqual(achadosDoPlan(passosDe(passo('1'), passo('2a', { arquivos: '`src/a/`' }), passo('2b', { arquivos: '`src/b/`' }), passo('3'))), []);
 });
 
-test('spec em rascunho vence plan ausente', (t) => {
-  const raiz = repo(t);
-  escrever(raiz, `${PH}/spec.md`, spec('rascunho'));
-  commit(raiz, 'docs: spec');
-  const r = estado(raiz);
-  assert.equal(r.etapa.etapa, 'spec');
-  assert.equal(r.etapa.situacao, 'aguardando ajuste ou aprovação');
-  assert.equal(r.progresso.percentual, 0);
+test('passos irmãos com Arquivos: sobrepostos são achado', () => {
+  const a = achadosDoPlan(passosDe(passo('1a', { arquivos: '`src/`' }), passo('1b', { arquivos: '`src/x.js`' }), passo('1c', { arquivos: '`lib/`' })));
+  assert.deepEqual(a, ['passos irmãos 1a e 1b com Arquivos: sobrepostos']);
+  // Curinga e raiz valem como prefixo de diretório e como a raiz inteira.
+  assert.equal(achadosDoPlan(passosDe(passo('1a', { arquivos: '`src/*.js`' }), passo('1b', { arquivos: '`src/x/y.js`' }))).length, 1);
+  assert.equal(achadosDoPlan(passosDe(passo('1a', { arquivos: '`.`' }), passo('1b', { arquivos: '`qualquer.js`' }))).length, 1);
 });
 
-test('plan em rascunho: 25% na rota high', (t) => {
-  const raiz = repo(t);
-  escrever(raiz, `${PH}/spec.md`, spec('aprovado'));
-  escrever(raiz, `${PH}/plan.md`, plan('rascunho', [task(1)]));
-  commit(raiz, 'docs: plan');
-  const r = estado(raiz);
-  assert.equal(r.etapa.etapa, 'plan');
-  assert.equal(r.progresso.percentual, 25);
+test('passo sem Arquivos ou com path incomparável não divide número', () => {
+  assert.deepEqual(achadosDoPlan(passosDe(passo('1a', { arquivos: null }), passo('1b'))), ['passo 1a divide o número 1 sem Arquivos: comparáveis (campo ausente)']);
+  assert.deepEqual(achadosDoPlan(passosDe(passo('1a'), passo('1b', { arquivos: '`docs/relatório.md`' }))), ['passo 1b divide o número 1 sem Arquivos: comparáveis (path incomparável)']);
+  // Sozinho, o mesmo passo é válido.
+  assert.deepEqual(achadosDoPlan(passosDe(passo('1', { arquivos: null }), passo('2', { arquivos: '`docs/relatório.md`' }))), []);
 });
 
-test('design conta quando o Handoff da spec aponta para design', (t) => {
-  const raiz = repo(t);
-  escrever(raiz, `${PH}/spec.md`, spec('aprovado', 'design'));
-  commit(raiz, 'docs: spec');
-  const r = estado(raiz);
-  assert.equal(r.etapa.etapa, 'design');
-  assert.equal(r.progresso.percentual, 20);
-});
-
-test('implement: próxima onda e progresso com fração de T*', (t) => {
-  const raiz = repo(t);
-  escrever(raiz, `${PH}/spec.md`, spec('aprovado'));
-  escrever(raiz, `${PH}/plan.md`, plan('aprovado', [task(1, { caixa: true, estado: 'concluída' }), task(2)]));
-  commit(raiz, 'task(phase-1:T1): entrega 1');
-  const r = estado(raiz);
-  assert.equal(r.etapa.situacao, 'implementar a próxima onda');
-  assert.deepEqual(r.etapa.onda, ['T2']);
-  assert.equal(r.progresso.percentual, 62);
-  assert.deepEqual(r.inconsistencias, []);
-});
-
-test('commit de outra phase não confirma a T* com o mesmo ID', (t) => {
-  const raiz = repo(t);
-  escrever(raiz, `${PH}/spec.md`, spec('aprovado'));
-  escrever(raiz, `${PH}/plan.md`, plan('aprovado', [task(1, { caixa: true, estado: 'concluída' })]));
-  commit(raiz, 'task(phase-2:T1): outra phase');
-  const r = estado(raiz);
-  assert.ok(r.inconsistencias.some((i) => i.includes('T1 marcada sem commit')));
-});
-
-test('código não commitado nos Arquivos de T* aberta: retomar a onda', (t) => {
-  const raiz = repo(t);
-  escrever(raiz, `${PH}/spec.md`, spec('aprovado'));
-  escrever(raiz, `${PH}/plan.md`, plan('aprovado', [task(1)]));
-  commit(raiz, 'docs: plan');
-  escrever(raiz, 'src/t1.js', 'x');
-  const r = estado(raiz);
-  assert.equal(r.etapa.situacao, 'retomar a onda');
-});
-
-test('task(medium) sem review: review da entrega medium', (t) => {
-  const raiz = repo(t);
-  escrever(raiz, 'src/x.js', 'x');
-  commit(raiz, 'task(medium): entrega');
-  assert.equal(estado(raiz).etapa.etapa, 'review da entrega medium');
-});
-
-test('phase fechada sem upstream: push pendente', (t) => {
-  const raiz = repo(t);
-  escrever(raiz, `${PH}/review.md`, '# Review: x\n# Status: aprovado\n# Rota: medium\n');
-  commit(raiz, 'chore(phase-1): finalize review');
-  const r = estado(raiz);
-  assert.equal(r.etapa.etapa, 'push pendente');
-  assert.equal(r.etapa.situacao, 'phase-1');
-});
-
-test('ajuste de phase fechada: progresso por R* de ajuste e etapa corrigir', (t) => {
-  const raiz = repo(t);
-  escrever(raiz, `${PH}/review.md`, '# Review: x\n# Status: aprovado\n# Rota: medium\n\n## Checklist de correções\n\n- [x] R1: **Required** - `a` - x\n- [ ] R2: **Required** - `src/y.js` - ajuste\n\n## Etapas\n\n### Ajuste 1 - troca\n\n- Abriu: R2\n');
-  commit(raiz, 'chore(phase-1): finalize review');
-  const r = estado(raiz);
-  assert.equal(r.progresso.ajuste, '0/1');
-  assert.equal(r.etapa.situacao, 'corrigir R*');
-});
-
-test('phase sem # Rota: é inconsistência', (t) => {
-  const raiz = repo(t);
-  escrever(raiz, `${PH}/spec.md`, '# Spec: x\n# Status: rascunho\n');
-  commit(raiz, 'docs: spec');
-  assert.ok(estado(raiz).inconsistencias.some((i) => i.includes('sem # Rota:')));
+test('numeração fora de sequência e letras fora do padrão são achado', () => {
+  assert.deepEqual(achadosDoPlan(passosDe(passo('1'), passo('3'))), ['numeração fora de sequência no passo 3 (esperado 2)']);
+  assert.deepEqual(achadosDoPlan(passosDe(passo('2'))), ['numeração fora de sequência no passo 2 (esperado 1)']);
+  assert.match(achadosDoPlan(passosDe(passo('1a')))[0], /IDs do passo 1 fora do padrão: 1a \(esperado 1\)/);
+  assert.match(achadosDoPlan(passosDe(passo('1a'), passo('1c')))[0], /fora do padrão: 1a, 1c \(esperado 1a, 1b\)/);
+  assert.match(achadosDoPlan(passosDe(passo('1', { arquivos: '`a/`' }), passo('1', { arquivos: '`b/`' })))[0], /fora do padrão: 1, 1 \(esperado 1a, 1b\)/);
+  // Mesmo número em dois trechos do arquivo.
+  assert.ok(achadosDoPlan(passosDe(passo('1a'), passo('2'), passo('1b'))).length > 0);
 });
 
 // ---------------------------------------------------------------------------
-// Rodada de correção R1 a R5 e cenários de R4
+// Review: R* e veredito
 // ---------------------------------------------------------------------------
 
-const SCRIPTS = resolve(dirname(fileURLToPath(import.meta.url)), '../../skills/vibeflow/scripts');
-const review = (status, corpo = '') => `# Review: x\n# Alvo: phase-1-agenda\n# Status: ${status}\n# Rota: medium\n\n${corpo}`;
-const checklist = (...linhas) => `## Checklist de correções\n\n${linhas.join('\n')}\n\n`;
-
-function cli(script, args) {
-  try {
-    const out = execFileSync(process.execPath, [join(SCRIPTS, script), ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
-    return { codigo: 0, out };
-  } catch (e) {
-    return { codigo: e.status, out: e.stdout || '' };
-  }
-}
-
-test('R1: Design: N/A no Handoff da spec ou no plan tira o design da rota', (t) => {
-  const raiz = repo(t);
-  escrever(raiz, `${PH}/spec.md`, spec('aprovado', 'Design: N/A, sem UI nova'));
-  commit(raiz, 'docs: spec');
-  assert.equal(estado(raiz).etapa.etapa, 'plan');
-  escrever(raiz, `${PH}/spec.md`, spec('aprovado', 'design'));
-  escrever(raiz, `${PH}/plan.md`, `# Plan: x\n# Status: rascunho\n\n## Overview\n\n- **Design:** N/A, ajuste sem tela nova\n`);
-  commit(raiz, 'docs: plan');
-  const r = estado(raiz);
-  assert.equal(r.etapa.etapa, 'plan');
-  assert.equal(r.progresso.percentual, 25);
+test('lê os R* com marcação e o path citado', () => {
+  const rs = lerRs(['- [x] R1: **Critical** - `src/a.js` - x', '- [ ] R2: **Nit** - sem path', '- [ ] Checkpoint: A1']);
+  assert.deepEqual(rs, [{ id: 'R1', num: 1, feito: true, path: 'src/a.js' }, { id: 'R2', num: 2, feito: false, path: null }]);
 });
 
-test('R2: path alterado não ASCII dentro de Arquivos: tem dono', (t) => {
-  const raiz = repo(t);
-  escrever(raiz, `${PH}/spec.md`, spec('aprovado'));
-  escrever(raiz, `${PH}/plan.md`, plan('aprovado', [task(1, { arquivos: '`docs/`' })]));
-  commit(raiz, 'docs: plan');
-  escrever(raiz, 'docs/relatório.md', 'x');
-  assert.equal(estado(raiz).etapa.situacao, 'retomar a onda');
+test('o veredito marcado é lido do review.md inteiro', () => {
+  assert.equal(vereditoReview(review('rascunho', veredito(true)).split('\n')), 'approve');
+  assert.equal(vereditoReview(review('rascunho', veredito(false)).split('\n')), 'request-changes');
+  assert.equal(vereditoReview(review('rascunho', achados('- [ ] R1: **Required** - `a` - x')).split('\n')), null);
 });
 
-test('R3: T* sem Arquivos é pulada quando a onda já começou', () => {
-  const r = analisarPlan(lerTasks(plan('aprovado', [
-    task(1, { arquivos: '`a/`' }), task(2, { arquivos: null }), task(3, { arquivos: '`b/`' }),
-  ]).split('\n')));
-  assert.deepEqual(r.onda, ['T1', 'T3']);
+// ---------------------------------------------------------------------------
+// Commits (disco.md, Commits)
+// ---------------------------------------------------------------------------
+
+test('classifica os formatos de commit do contrato', () => {
+  assert.deepEqual(classificarCommit('task(phase-4:2a,2b): x'), { tipo: 'task', alvo: 'phase-4', ids: ['2a', '2b'] });
+  assert.deepEqual(classificarCommit('task(mvp:R1, R2): x'), { tipo: 'task', alvo: 'mvp', ids: ['R1', 'R2'] });
+  assert.deepEqual(classificarCommit('task(medium): x'), { tipo: 'medium', alvo: null, ids: [] });
+  assert.deepEqual(classificarCommit('task(low): x'), { tipo: 'low', alvo: null, ids: [] });
+  assert.deepEqual(classificarCommit('chore(phase-2): finalize review'), { tipo: 'finalize', alvo: 'phase-2', ids: [] });
+  assert.deepEqual(classificarCommit('chore(mvp): push adiado'), { tipo: 'push-adiado', alvo: 'mvp', ids: [] });
+  // Fora do contrato de alvo: commit de governança do init não pertence a nenhuma phase,
+  // e task(express) deixou de existir.
+  for (const fora of ['chore(init): governança do init', 'task(express): x', 'task(phase-4): sem ids', 'docs: x', 'task(phase-0:1): zero']) assert.equal(classificarCommit(fora), null, fora);
 });
 
-test('R5: artefato que é link é inconsistência', (t) => {
+// ---------------------------------------------------------------------------
+// Alvos: ordem das phases e formato antigo (disco.md, Compatibilidade)
+// ---------------------------------------------------------------------------
+
+test('phases em ordem numérica e próximo n; pasta fora do padrão não conta', (t) => {
   const raiz = repo(t);
-  escrever(raiz, 'fora/spec.md', spec('rascunho'));
-  mkdirSync(join(raiz, PH), { recursive: true });
-  try { symlinkSync(join(raiz, 'fora/spec.md'), join(raiz, PH, 'spec.md')); } catch { t.skip('sistema sem permissão de symlink'); return; }
-  assert.ok(estado(raiz).inconsistencias.some((i) => i.includes('é link')));
+  for (const nome of ['phase-9-aa', 'phase-10-bb', 'phase-2-cc', 'phase-03-zero', 'phase-4-x', 'rascunho']) mkdirSync(join(raiz, '.vibeflow/phases', nome), { recursive: true });
+  const phases = listarPhases(raiz);
+  assert.deepEqual(phases.map((p) => p.n), [2, 9, 10]);
+  assert.equal(proximoN(phases), 11);
+  assert.equal(proximoN([]), 1);
 });
 
-test('CRLF e BOM são lidos como LF', (t) => {
+test('reconhece o formato antigo por T*, por artefato antigo e por rota xhigh ou max', (t) => {
   const raiz = repo(t);
-  escrever(raiz, `${PH}/spec.md`, `﻿${spec('aprovado')}`.replace(/\n/g, '\r\n'));
-  escrever(raiz, `${PH}/plan.md`, plan('rascunho', [task(1)]).replace(/\n/g, '\r\n'));
-  commit(raiz, 'docs: plan');
-  const r = estado(raiz);
-  assert.equal(r.alvo.rota, 'high');
-  assert.equal(r.etapa.etapa, 'plan');
+  const antigo = '.vibeflow/phases/phase-%-xx';
+  const em = (n, arq, conteudo) => escrever(raiz, `${antigo.replace('%', n)}/${arq}`, conteudo);
+  em(1, 'plan.md', '# Plan: x\n\n## Tasks\n\n### T1: entrega\n- [ ] T1 concluída\n');
+  em(2, 'interview.md', '# Interview: x\n# Status: aprovado\n');
+  em(3, 'analyze.md', '# Analyze: x\n');
+  em(4, 'spec.md', spec('aprovado', { rota: 'max' }));
+  em(5, 'design.md', '# Design: x\n');
+  em(6, 'spec.md', spec('aprovado', { rota: 'xhigh' }));
+  em(7, 'spec.md', spec('aprovado'));
+  em(7, 'plan.md', plan([passo('1')]));
+  em(8, 'review.md', review('aprovado', '', 'medium'));
+  const alvos = carregarAlvos(raiz);
+  assert.deepEqual(alvos.map((a) => [a.alvo, a.antigo]), [['phase-1', true], ['phase-2', true], ['phase-3', true], ['phase-4', true], ['phase-5', true], ['phase-6', true], ['phase-7', false], ['phase-8', false]]);
+  assert.equal(alvos[6].rota, 'high');
+  assert.equal(alvos[7].fechado, true);
 });
 
-test('alteração fora de qualquer recorte: sem dono', (t) => {
+test('lê rota e risco da spec e a rota do review.md em medium', (t) => {
   const raiz = repo(t);
-  escrever(raiz, 'solto.js', 'x');
-  const r = estado(raiz);
-  assert.equal(r.etapa.etapa, 'alteração sem dono');
-  assert.equal(r.etapa.situacao, 'solto.js');
+  escrever(raiz, '.vibeflow/phases/phase-1-aa/spec.md', spec('rascunho', { risco: 'pagamento' }));
+  escrever(raiz, '.vibeflow/phases/phase-2-bb/review.md', review('rascunho', '', 'medium'));
+  escrever(raiz, '.vibeflow/mvp/spec.md', spec('rascunho', { rota: 'mvp', risco: 'dados' }));
+  const [mvp, a, b] = carregarAlvos(raiz);
+  assert.deepEqual([mvp.alvo, mvp.rota, mvp.risco], ['mvp', 'mvp', 'dados']);
+  assert.deepEqual([a.rota, a.risco], ['high', 'pagamento']);
+  assert.deepEqual([b.rota, b.risco], ['medium', null]);
 });
 
-test('push adiado vale até um commit posterior da phase', (t) => {
-  const raiz = repo(t);
-  escrever(raiz, `${PH}/review.md`, review('aprovado', '## Finalização Git da phase\n\n- Push adiado pelo humano: 2026-10-17\n'));
-  commit(raiz, 'chore(phase-1): finalize review');
-  commit(raiz, 'chore(phase-1): push adiado');
-  assert.equal(estado(raiz).etapa.etapa, 'classificar o pedido');
-  commit(raiz, 'task(phase-1:R2): ajuste depois do adiamento');
-  assert.equal(estado(raiz).etapa.etapa, 'push pendente');
-});
+// ---------------------------------------------------------------------------
+// CRLF e BOM
+// ---------------------------------------------------------------------------
 
-test('request-changes: commitar a correção e depois re-review', (t) => {
+test('CRLF e BOM são lidos como LF no cabeçalho e no plan', (t) => {
   const raiz = repo(t);
-  escrever(raiz, `${PH}/review.md`, review('request-changes', checklist('- [x] R1: **Required** - `src/a.js` - x')));
-  commit(raiz, 'docs: review');
-  assert.equal(estado(raiz).etapa.situacao, 'commitar a correção (R1)');
-  commit(raiz, 'task(phase-1:R1): corrige a');
-  assert.equal(estado(raiz).etapa.situacao, 're-review');
-});
-
-test('rascunho com Approve proposto: confirmar', (t) => {
-  const raiz = repo(t);
-  escrever(raiz, `${PH}/review.md`, review('rascunho', '## Veredito vigente\n\n- [x] **Approve**: ok\n- [ ] **Request changes**: x\n'));
-  commit(raiz, 'docs: review');
-  assert.equal(estado(raiz).etapa.situacao, 'confirmar');
-});
-
-test('CLI: códigos 0, 1 e 2 e --json só com ASCII', (t) => {
-  const raiz = repo(t);
-  const ok = cli('estado.mjs', ['--raiz', raiz, '--json']);
-  assert.equal(ok.codigo, 0);
-  assert.match(ok.out, /^[\x00-\x7F]*$/);
-  assert.equal(JSON.parse(ok.out).etapa.etapa, 'classificar o pedido');
-  assert.equal(cli('estado.mjs', ['--invalido']).codigo, 2);
-  escrever(raiz, `${PH}/spec.md`, '# Spec: x\n# Status: rascunho\n');
-  commit(raiz, 'docs: spec');
-  assert.equal(cli('estado.mjs', ['--raiz', raiz]).codigo, 1);
-  escrever(raiz, `${PH}/plan.md`, plan('aprovado', [task(1, { arquivos: '`a/`' }), task(2, { arquivos: '`a/b`' })]));
-  assert.equal(cli('ondas.mjs', ['--plan', join(raiz, PH, 'plan.md')]).codigo, 1);
-  assert.equal(cli('ondas.mjs', ['--plan', join(raiz, 'nao-existe.md')]).codigo, 2);
+  escrever(raiz, '.vibeflow/phases/phase-1-aa/spec.md', `\uFEFF${spec('aprovado', { risco: 'dados' })}`.replace(/\n/g, '\r\n'));
+  escrever(raiz, '.vibeflow/phases/phase-1-aa/plan.md', `\uFEFF${plan([passo('1', { caixa: true }), passo('2a'), passo('2b'), checkpoint('A1, A2')])}`.replace(/\n/g, '\r\n'));
+  const [a] = carregarAlvos(raiz);
+  assert.deepEqual([a.rota, a.risco], ['high', 'dados']);
+  const p = lerPlan(a.art.plan);
+  assert.equal(p.analisado, true);
+  assert.deepEqual(p.passos.map((x) => x.id), ['1', '2a', '2b']);
+  assert.deepEqual(p.passos[0].arquivos, ['src/p1.js', 'tests/p1.test.js']);
+  assert.deepEqual(p.itens[3].aceite, ['A1', 'A2']);
+  assert.ok(lerLinhas(join(raiz, 'nao-existe.md')) === null);
 });

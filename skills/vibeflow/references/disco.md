@@ -110,6 +110,8 @@ Sem achado, a seção traz a linha `Nenhum achado.`. A presença da seção indi
 | Passo ou grupo paralelo, inclusive correção devolvida pelo checkpoint | `task(<alvo>:2a,2b): <resultado>`, IDs na ordem do plan |
 | Correção de R* | `task(<alvo>:R1,R2): <resultado>` |
 | Entrega medium, antes de a phase existir | `task(medium): <resultado>` |
+| Entrega low, sem phase | `task(low): <resultado>` |
+| Governança do init | `chore(init): <resultado>` |
 | Finalização da review | `chore(<alvo>): finalize review` |
 | Push adiado pelo humano | `chore(<alvo>): push adiado` |
 
@@ -129,7 +131,7 @@ Leia a etapa atual na primeira linha da tabela que se aplica. As linhas de spec 
 |---|---|---|
 | Commit `task(medium): ...` mais recente no `git log` sem `review.md` com `# Rota: medium` criado depois dele (`review.md` não commitado conta pela existência; commitado, pela ordem no `git log`) | review da entrega medium | Revisor |
 | Nenhuma phase aberta e algum alvo fechado (phase ou MVP) está com push pendente (o último commit dela não está no upstream ou o branch não tem upstream), salvo se o `review.md` dela registra push adiado pelo humano e nenhum commit da phase é posterior ao `chore(<alvo>): push adiado` | Push pendente dessa phase, pelo procedimento de retomada de `references/review.md` (Finalizar) | Líder, com a confirmação humana |
-| Alteração não commitada fora de `.vibeflow/` sem dono no disco: fora dos `Arquivos:` de passos abertos, de passo aberto sem `Arquivos:` comparáveis e dos paths de R* abertos ou marcados `[x]` ainda sem commit | Entrega low ou medium interrompida, ou trabalho alheio | Líder pergunta ao humano, com recomendação, se retoma a entrega ou isola o trabalho |
+| Alteração não commitada fora de `.vibeflow/` e de `.erros-encontrados/` sem dono no disco: fora dos `Arquivos:` de passos abertos, de passo aberto sem `Arquivos:` comparáveis e dos paths de R* abertos ou marcados `[x]` ainda sem commit | Entrega low ou medium interrompida, ou trabalho alheio | Líder pergunta ao humano, com recomendação, se retoma a entrega ou isola o trabalho |
 | Sem phase aberta | Classificar o pedido (`SKILL.md`, seção 2) | Líder |
 | Alvo aberto no formato antigo (Compatibilidade) | Inconsistência | Líder relata ao humano, que fecha a phase com a versão anterior da skill |
 | `spec.md` ausente | interview | Líder conduz; redator grava a `spec.md` |
@@ -171,6 +173,6 @@ Antes de substituir ou remover `AGENTS.md`, a ponte ou um perfil:
 | Grupo paralelo | Passos irmãos, com o mesmo número e letras diferentes, que rodam juntos sem `Arquivos:` sobrepostos |
 | Checkpoint | Linha do plan depois de um grupo de passos; um verificador de contexto limpo roda as provas desses passos e confere o diff contra a spec |
 | Risco | Linha `# Risco:` da spec; não acrescenta etapa, mas obriga a interview a cobrir modelo de ameaça e rollback, o plan a pôr checkpoint depois de cada grupo de risco e a review a abrir segurança e banco |
-| Achado fora do recorte | Defeito que não pertence aos critérios nem ao diff da phase; vai para `.erros-encontrados/`, um arquivo por achado, e não bloqueia |
+| Achado fora do recorte | Defeito que não pertence aos critérios nem ao diff da phase; vai para `.erros-encontrados/`, um arquivo por achado, gravado por quem o encontrou (verificador ou revisor), e não bloqueia. O líder inclui o registro no commit seguinte da phase, inclusive no `chore(<alvo>): finalize review` |
 | Flake | Teste que falha e passa na reexecução; vai para `.erros-encontrados/` e não bloqueia |
 | Regressão completa | A suíte inteira do projeto (lint e tipos, unitários, E2E), executada uma vez na review (`references/review.md`) |

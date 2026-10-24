@@ -1,9 +1,9 @@
-// _disco.mjs: leitura compartilhada do disco do VibeFlow pelos scripts estado e ondas.
+// _disco.mjs: leitura compartilhada do disco do VibeFlow pelo script estado.
 //
 // Responsabilidade: transformar artefatos (.md) e Git em dados, aplicando as regras
-// mecânicas de references/disco.md e references/plan.md. Não decide etapa nem escreve
-// nada: só lê. O contrato continua sendo a prosa; divergência entre este módulo e a
-// prosa é bug deste módulo.
+// mecânicas de references/disco.md (cabeçalho, passo do plan, Arquivos:, checkpoint,
+// achados do analyze, commits). Não decide etapa nem escreve nada: só lê. O contrato
+// continua sendo a prosa; divergência entre este módulo e a prosa é bug deste módulo.
 //
 // Compatibilidade: somente módulos nativos do Node 18+, git chamado com argumentos em
 // lista (sem shell), leitura tolerante a CRLF e BOM, caminhos via node:path.
@@ -20,11 +20,11 @@ import { execFileSync } from 'node:child_process';
 /** Lê um arquivo de texto como linhas, sem BOM e sem \r; devolve null se não existe. */
 export function lerLinhas(caminho) {
   if (!existsSync(caminho)) return null;
-  const texto = readFileSync(caminho, 'utf8').replace(/^﻿/, '');
+  const texto = readFileSync(caminho, 'utf8').replace(/^\uFEFF/, '');
   return texto.split(/\r?\n/);
 }
 
-/** Valor de uma linha de cabeçalho `# Nome: valor` (Status, Rota, Alvo) ou null. */
+/** Valor de uma linha de cabeçalho `# Nome: valor` (Status, Rota, Risco) ou null. */
 export function cabecalho(linhas, nome) {
   if (!linhas) return null;
   const re = new RegExp(`^# ${nome}:\\s*(.+?)\\s*$`);
@@ -35,23 +35,16 @@ export function cabecalho(linhas, nome) {
   return null;
 }
 
-/** Corpo de uma seção `## Titulo` até a próxima `## `, sem comentários HTML de linha. */
-export function secao(linhas, titulo) {
-  if (!linhas) return [];
-  const ini = linhas.findIndex((l) => l.trim() === `## ${titulo}`);
-  if (ini < 0) return [];
-  const corpo = [];
-  for (let i = ini + 1; i < linhas.length && !linhas[i].startsWith('## '); i++) {
-    if (!/^\s*<!--.*-->\s*$/.test(linhas[i])) corpo.push(linhas[i]);
-  }
-  return corpo;
-}
-
 // ---------------------------------------------------------------------------
-// Phases e MVP (references/disco.md, Paths e Abrir phase)
+// Phases e MVP (references/disco.md, Paths, Abrir phase e Compatibilidade)
 // ---------------------------------------------------------------------------
 
-export const ARTEFATOS = ['interview', 'spec', 'design', 'plan', 'analyze', 'review'];
+// Artefatos vivos do contrato 5.0.0, na ordem em que nascem.
+export const ARTEFATOS = ['spec', 'plan', 'review'];
+// Rotas aceitas em `# Rota:`. xhigh e max só existem no formato antigo (Compatibilidade).
+export const ROTAS = ['medium', 'high', 'mvp'];
+const ARTEFATOS_ANTIGOS = ['interview', 'design', 'analyze'];
+const ROTAS_ANTIGAS = ['xhigh', 'max'];
 const RE_PHASE = /^phase-([1-9][0-9]*)-([a-z0-9]+(?:-[a-z0-9]+)*)$/;
 
 /** Slug válido: a-z, 0-9 e hífen simples, sem hífen nas pontas, 2 a 48 caracteres. */
@@ -75,16 +68,30 @@ export function proximoN(phases) {
   return phases.length ? phases[phases.length - 1].n + 1 : 1;
 }
 
-/** Carrega um alvo (phase ou MVP): linhas de cada artefato presente, rota e se está fechado. */
+/**
+ * Formato antigo (disco.md, Compatibilidade): interview.md, design.md ou analyze.md,
+ * `# Rota:` xhigh ou max, ou plan.md com blocos `### T<n>:`. Só serve para reconhecer
+ * phase antiga: a fechada fica intocada e a aberta é inconsistência.
+ */
+function formatoAntigo(pasta, art, rota) {
+  return ARTEFATOS_ANTIGOS.some((a) => existsSync(join(pasta, `${a}.md`)))
+    || ROTAS_ANTIGAS.includes(rota)
+    || (art.plan || []).some((l) => /^### T[1-9][0-9]*:/.test(l));
+}
+
+/**
+ * Carrega um alvo (phase ou MVP): linhas de cada artefato presente, rota, risco, se está
+ * fechado (review aprovada sem R* aberto) e se está no formato antigo.
+ */
 export function carregarAlvo(alvo, pasta, nome) {
   const art = {};
   for (const a of ARTEFATOS) art[a] = lerLinhas(join(pasta, `${a}.md`));
-  // A rota fica no primeiro artefato: interview, spec ou review, conforme a rota.
-  const rota = ['interview', 'spec', 'review'].map((a) => cabecalho(art[a], 'Rota')).find(Boolean) || null;
-  const statusReview = cabecalho(art.review, 'Status');
+  // A rota fica no primeiro artefato: spec.md em high e mvp, review.md em medium.
+  const rota = ['spec', 'review'].map((a) => cabecalho(art[a], 'Rota')).find(Boolean) || null;
+  const risco = cabecalho(art.spec, 'Risco');
   const rAbertos = lerRs(art.review).filter((r) => !r.feito);
-  const fechado = statusReview === 'aprovado' && rAbertos.length === 0;
-  return { alvo, pasta, nome, art, rota, fechado };
+  const fechado = cabecalho(art.review, 'Status') === 'aprovado' && rAbertos.length === 0;
+  return { alvo, pasta, nome, art, rota, risco, fechado, antigo: formatoAntigo(pasta, art, rota) };
 }
 
 /** Todos os alvos do disco: MVP (se existir) e phases em ordem numérica. */
@@ -115,39 +122,66 @@ export function linksNoCaminho(raiz, pasta) {
 }
 
 // ---------------------------------------------------------------------------
-// Plan: T* (references/plan.md, passo 1, e templates/plan.md)
+// Plan: passos e checkpoints (references/disco.md, Plan)
 // ---------------------------------------------------------------------------
 
+const SEP = ' · ';
+const RE_PASSO = /^- \[([ xX])\] ([1-9][0-9]*)([a-z])?: (.*)$/;
+const RE_CHECKPOINT = /^- \[([ xX])\] Checkpoint:\s*(.*)$/;
+
 /**
- * Lê as T* do plan. Cada bloco começa em `### Tn:` e termina no próximo `### ` ou `## `.
- * Só a primeira linha `- **Arquivos:**` conta, e só o texto entre crases.
+ * Paths do campo `Arquivos:` de uma linha de passo: só o texto entre crases do trecho
+ * entre `Arquivos:` e `· Prova:`. Null quando a linha não tem o campo. Os marcadores
+ * levam o separador ` · ` para não casar com a palavra solta dentro do resultado.
  */
-export function lerTasks(linhasPlan) {
-  if (!linhasPlan) return [];
-  const tasks = [];
-  let atual = null;
-  for (const l of linhasPlan) {
-    const cab = l.match(/^### T([1-9][0-9]*):\s*(.*)$/);
-    if (cab) {
-      atual = { id: `T${cab[1]}`, num: Number(cab[1]), titulo: cab[2].trim(), caixa: false, estado: null, deps: [], arquivos: null };
-      tasks.push(atual);
+function lerArquivos(restoDaLinha) {
+  const marca = `${SEP}Arquivos:`;
+  const i = restoDaLinha.indexOf(marca);
+  if (i < 0) return null;
+  const depois = restoDaLinha.slice(i + marca.length);
+  const j = depois.indexOf(`${SEP}Prova:`);
+  return [...(j < 0 ? depois : depois.slice(0, j)).matchAll(/`([^`]*)`/g)].map((m) => m[1]);
+}
+
+/**
+ * Lê o plan: itens na ordem do arquivo (passos e checkpoints, cada um com a caixa),
+ * passos e se o analyze já rodou (seção `## Achados do analyze` presente).
+ * Passo: { tipo, id, num, letra, caixa, arquivos }. Checkpoint: { tipo, caixa, aceite }.
+ *
+ * ponytail: lê o arquivo inteiro, sem distinguir seção nem bloco de código; restringir à
+ * seção de passos se o template do plan ganhar outra lista com linhas no formato do passo.
+ */
+export function lerPlan(linhasPlan) {
+  const itens = [];
+  for (const l of linhasPlan || []) {
+    let m = l.match(RE_PASSO);
+    if (m) {
+      itens.push({ tipo: 'passo', id: `${m[2]}${m[3] || ''}`, num: Number(m[2]), letra: m[3] || null, caixa: m[1] !== ' ', arquivos: lerArquivos(m[4]) });
       continue;
     }
-    if (/^##+ /.test(l)) { atual = null; continue; }
-    if (!atual) continue;
-    if (new RegExp(`^- \\[[xX]\\] ${atual.id} concluída`).test(l)) atual.caixa = true;
-    const est = l.match(/^- \*\*Estado:\*\*\s*(.+?)\s*$/);
-    if (est && atual.estado === null) atual.estado = est[1].toLowerCase();
-    const deps = l.match(/^- \*\*Deps:\*\*\s*(.*)$/);
-    if (deps) atual.deps = [...deps[1].matchAll(/\bT([1-9][0-9]*)\b/g)].map((d) => `T${d[1]}`);
-    const arq = l.match(/^- \*\*Arquivos:\*\*\s*(.*)$/);
-    if (arq && atual.arquivos === null) atual.arquivos = [...arq[1].matchAll(/`([^`]*)`/g)].map((a) => a[1]);
+    m = l.match(RE_CHECKPOINT);
+    if (m) itens.push({ tipo: 'checkpoint', caixa: m[1] !== ' ', aceite: [...m[2].matchAll(/\bA[1-9][0-9]*\b/g)].map((a) => a[0]) });
   }
-  return tasks;
+  return {
+    itens,
+    passos: itens.filter((i) => i.tipo === 'passo'),
+    analisado: (linhasPlan || []).some((l) => l.trim() === '## Achados do analyze'),
+  };
+}
+
+/** Passos agrupados por número, na ordem do arquivo: passo sozinho e grupo paralelo são ambos grupos. */
+export function grupos(passos) {
+  const saida = [];
+  for (const p of passos) {
+    const ult = saida[saida.length - 1];
+    if (ult && ult.num === p.num) ult.passos.push(p);
+    else saida.push({ num: p.num, passos: [p] });
+  }
+  return saida;
 }
 
 // ---------------------------------------------------------------------------
-// Arquivos: normalização e sobreposição (references/plan.md, passo 1.3)
+// Arquivos: normalização e sobreposição (references/disco.md, Plan > Arquivos)
 // ---------------------------------------------------------------------------
 
 const RAIZ = Object.freeze([]);
@@ -189,10 +223,10 @@ export function segmentos(caminho) {
   return caminho.replace(/\\/g, '/').split('/').filter((s) => s && s !== '.');
 }
 
-/** Recorte de uma T*: lista de paths normalizados, ou null se sem Arquivos ou com path incomparável. */
-export function recorte(task) {
-  if (!task.arquivos || !task.arquivos.length) return null;
-  const norm = task.arquivos.map(normalizarPath);
+/** Recorte de um passo: lista de paths normalizados, ou null se sem Arquivos ou com path incomparável. */
+export function recorte(passo) {
+  if (!passo.arquivos || !passo.arquivos.length) return null;
+  const norm = passo.arquivos.map(normalizarPath);
   return norm.some((n) => n === null) ? null : norm;
 }
 
@@ -208,6 +242,44 @@ export function sobrepoe(a, b) {
 /** Dois recortes se sobrepõem quando algum par de paths se sobrepõe. */
 export function recortesSobrepoem(ra, rb) {
   return ra.some((a) => rb.some((b) => sobrepoe(a, b)));
+}
+
+/**
+ * Achados mecânicos do plan, como texto:
+ *  - numeração: 1, 2, 3 de 1 em 1 na ordem do arquivo; passo sozinho sem letra; grupo
+ *    com letras a, b, c em sequência;
+ *  - grupo paralelo: passos irmãos sem `Arquivos:` sobrepostos, e nenhum com `Arquivos:`
+ *    ausente ou com path incomparável (esse passo não divide número).
+ */
+export function achadosDoPlan(passos) {
+  const achados = [];
+  const gs = grupos(passos);
+  const iForaDeSequencia = gs.findIndex((g, i) => g.num !== i + 1);
+  if (iForaDeSequencia >= 0) {
+    achados.push(`numeração fora de sequência no passo ${gs[iForaDeSequencia].passos[0].id} (esperado ${iForaDeSequencia + 1})`);
+  }
+  for (const g of gs) {
+    const ids = g.passos.map((p) => p.id);
+    const esperado = g.passos.length === 1 ? [String(g.num)] : g.passos.map((_, k) => `${g.num}${String.fromCharCode(97 + k)}`);
+    if (ids.join() !== esperado.join()) achados.push(`IDs do passo ${g.num} fora do padrão: ${ids.join(', ')} (esperado ${esperado.join(', ')})`);
+    if (g.passos.length < 2) continue;
+    const comRecorte = [];
+    for (const p of g.passos) {
+      const r = recorte(p);
+      if (r === null) {
+        const motivo = !p.arquivos || !p.arquivos.length ? 'campo ausente' : 'path incomparável';
+        achados.push(`passo ${p.id} divide o número ${g.num} sem Arquivos: comparáveis (${motivo})`);
+      } else {
+        comRecorte.push({ p, r });
+      }
+    }
+    for (let i = 0; i < comRecorte.length; i++) {
+      for (let j = i + 1; j < comRecorte.length; j++) {
+        if (recortesSobrepoem(comRecorte[i].r, comRecorte[j].r)) achados.push(`passos irmãos ${comRecorte[i].p.id} e ${comRecorte[j].p.id} com Arquivos: sobrepostos`);
+      }
+    }
+  }
+  return achados;
 }
 
 // ---------------------------------------------------------------------------
@@ -227,9 +299,13 @@ export function lerRs(linhasReview) {
   return rs;
 }
 
-/** Proposta marcada no Veredito vigente: 'approve', 'request-changes' ou null. */
+/**
+ * Proposta marcada no veredito: 'approve', 'request-changes' ou null. As duas caixas
+ * `**Approve**` e `**Request changes**` só existem no veredito do review.md, então a
+ * busca no arquivo todo dispensa saber o título da seção.
+ */
 export function vereditoReview(linhasReview) {
-  const corpo = secao(linhasReview, 'Veredito vigente');
+  const corpo = linhasReview || [];
   if (corpo.some((l) => /^- \[[xX]\] \*\*Approve\*\*/.test(l))) return 'approve';
   if (corpo.some((l) => /^- \[[xX]\] \*\*Request changes\*\*/.test(l))) return 'request-changes';
   return null;
@@ -274,12 +350,13 @@ export function commits(raiz) {
 
 /**
  * Classifica o assunto de um commit pelos formatos de references/disco.md (Commits).
- * Devolve { tipo, alvo, ids } ou null para commit fora do contrato.
+ * Devolve { tipo, alvo, ids } ou null para commit fora do contrato. `task` leva os IDs
+ * de passo (`2a`) e de R* (`R1`) do alvo; `medium` e `low` são entregas sem phase.
  */
 export function classificarCommit(assunto) {
   let m = assunto.match(/^task\(((?:phase-[1-9][0-9]*)|mvp):([^)]*)\):/);
   if (m) return { tipo: 'task', alvo: m[1], ids: m[2].split(',').map((s) => s.trim()).filter(Boolean) };
-  m = assunto.match(/^task\((medium|express)\):/);
+  m = assunto.match(/^task\((medium|low)\):/);
   if (m) return { tipo: m[1], alvo: null, ids: [] };
   m = assunto.match(/^chore\(((?:phase-[1-9][0-9]*)|mvp)\): (finalize review|push adiado)/);
   if (m) return { tipo: m[2] === 'push adiado' ? 'push-adiado' : 'finalize', alvo: m[1], ids: [] };
@@ -333,5 +410,5 @@ export function executadoDireto(importMetaUrl) {
 
 /** JSON com não-ASCII escapado, legível em qualquer codepage de console (Windows incluso). */
 export function jsonAscii(valor) {
-  return JSON.stringify(valor, null, 2).replace(/[\u007F-￿]/g, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`);
+  return JSON.stringify(valor, null, 2).replace(/[\u007F-\uFFFF]/g, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`);
 }

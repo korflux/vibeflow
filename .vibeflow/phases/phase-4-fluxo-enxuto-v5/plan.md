@@ -38,9 +38,9 @@ Reescreve o pacote `skills/vibeflow/` para o contrato 5.0.0 descrito na spec: ap
 - **Prova afetada:** `git diff --check`; verificador confere que cada regra mecânica citada nas decisões 1 a 3 e 8 e na suposição 12 tem casa no `disco.md` e que nenhum path citado inexiste
 
 ### T2: scripts leem o contrato 5.0.0
-- [ ] T2 concluída
-- **Estado:** pendente
-- **Resumo:** nenhum
+- [x] T2 concluída
+- **Estado:** concluída
+- **Resumo:** estado.mjs lê passos, checkpoint e achados do analyze, progresso em cinco etapas, filtra .erros-encontrados/; ondas.mjs removido; 60 testes verdes; checkpoint da onda verde
 - **Spec:** A3, A11, C1
 - **Deps:** T1
 - **O quê:** `_disco.mjs` e `estado.mjs` leem os passos numerados do plan novo (caixa, número, letra, `Arquivos:`), calculam etapa e progresso sobre spec, plan e review, informam o próximo passo ou grupo paralelo e acusam sobreposição de `Arquivos:` entre passos irmãos. `ondas.mjs` é removido, porque a ordem e os grupos passam a estar no próprio plan. Phase fechada no formato antigo é reconhecida como fechada; phase aberta no formato antigo é relatada como inconsistência. Os testes de comportamento cobrem o plan novo, a phase antiga fechada, a antiga aberta e a sobreposição entre irmãos.
@@ -49,9 +49,9 @@ Reescreve o pacote `skills/vibeflow/` para o contrato 5.0.0 descrito na spec: ap
 - **Prova afetada:** `node --test`
 
 ### T3: líder, delegação e chamada explícita
-- [ ] T3 concluída
-- **Estado:** pendente
-- **Resumo:** nenhum
+- [x] T3 concluída
+- **Estado:** concluída
+- **Resumo:** SKILL.md com chamada explícita, aprovação única e cinco papéis; delegation.md; agents/openai.yaml; checkpoint da onda verde
 - **Spec:** A1, A4, A5, A9, A10, decisões 1, 4, 5, 8, 9, suposições 11 e 13
 - **Deps:** T1
 - **O quê:** Resultado principal: prosa (redator), mais um arquivo de configuração. `SKILL.md` com frontmatter `disable-model-invocation: true` e `description` sem gatilhos de comportamento; abertura, classificação nas três rotas, gates com a aprovação única, roteamento sem design e com analyze em toda rota com plan; líder que não coda nem roda teste e que marca, commita e finaliza; Modo B, interrupção e progresso ajustados. `references/delegation.md` com os cinco papéis (explorador, implementador, redator, verificador só no checkpoint, revisor), sem corretor nem finalizador, e conferência do líder sem execução de prova. `skills/vibeflow/agents/openai.yaml` com `policy.allow_implicit_invocation: false`.
@@ -60,9 +60,9 @@ Reescreve o pacote `skills/vibeflow/` para o contrato 5.0.0 descrito na spec: ap
 - **Prova afetada:** `git diff --check`; verificador confere o frontmatter, o YAML e que todo path citado existe ou é criado por outra T* deste plan
 
 ### T4: interview que explora o código e escreve a spec
-- [ ] T4 concluída
-- **Estado:** pendente
-- **Resumo:** nenhum
+- [x] T4 concluída
+- **Estado:** concluída
+- **Resumo:** interview explora o código e grava a spec de cinco seções; templates/interview.md removido; checkpoint da onda verde
 - **Spec:** A2, decisões 2 e 8, suposição 10
 - **Deps:** T1
 - **O quê:** Resultado principal: prosa (redator). `references/interview.md` começa pela exploração do código que o pedido toca, pergunta a partir dos pontos encontrados, inclui as decisões visuais do humano, cobre modelo de ameaça e rollback quando há `risco`, tem tamanho proporcional à clareza do pedido e grava direto na `spec.md`. `references/spec.md` e `templates/spec.md` com as cinco seções da decisão 2. `templates/interview.md` é removido. Os catálogos de `references/interview/` e `references/spec/ui-visual-direction.md` perdem as menções a `interview.md` e ao design como etapa.
@@ -71,9 +71,9 @@ Reescreve o pacote `skills/vibeflow/` para o contrato 5.0.0 descrito na spec: ap
 - **Prova afetada:** `git diff --check`; verificador confere as cinco seções no template e que todo path citado existe
 
 ### T5: plan como checklist e analyze silencioso
-- [ ] T5 concluída
-- **Estado:** pendente
-- **Resumo:** nenhum
+- [x] T5 concluída
+- **Estado:** concluída
+- **Resumo:** plan como checklist sem aprovação; analyze silencioso com achados no plan; templates/analyze.md removido; checkpoint da onda verde
 - **Spec:** A3, A4, decisões 3, 4 e 5
 - **Deps:** T1
 - **O quê:** Resultado principal: prosa (redator). `references/plan.md` e `templates/plan.md` com o checklist na ordem de execução, paralelos por letra, checkpoints marcados, sem aprovação humana e sem `Estado:`, `Resumo:`, IDs T* nem seções de risco e cobertura. `references/analyze.md` e `references/analyze/coverage.md` com o analyze em contexto limpo em toda phase com plan, correção direta do plan, seção de achados no fim do `plan.md` e parada só quando um achado muda decisão da spec. `templates/analyze.md` é removido.
@@ -82,9 +82,9 @@ Reescreve o pacote `skills/vibeflow/` para o contrato 5.0.0 descrito na spec: ap
 - **Prova afetada:** `git diff --check`; verificador confere que o formato do passo bate com o `disco.md` do T1 e com o que o `estado.mjs` do T2 lê
 
 ### T6: implement, testes e review
-- [ ] T6 concluída
-- **Estado:** pendente
-- **Resumo:** nenhum
+- [x] T6 concluída
+- **Estado:** concluída
+- **Resumo:** implement com checkpoints e política de testes; review focada em produto com regressão única; checkpoint da onda verde
 - **Spec:** A5 a A8, decisões 5, 6 e 7
 - **Deps:** T1
 - **O quê:** Resultado principal: prosa (redator). `references/implement.md` com implementador que coda e prova o passo, falha que volta a ele, líder que confere, marca e commita, checkpoints com verificador de contexto limpo e a política de testes (teste por critério, reaproveitar antes de criar, testes afetados pelo grafo de imports, sem E2E no passo). `references/review.md` e `templates/review.md` com a review focada em produto, regressão única em segundo plano e do mais barato ao mais caro, re-review só para Critical e Required, Nit fechado com testes afetados, flake e achado fora do recorte em `.erros-encontrados/`, auditoria de processo como nota, duas rodadas no máximo e resumo no chat para a confirmação do push. `references/definition-of-done.md`, `references/chrome-devtools.md` e `references/review/` ajustados ao que essas regras tocam.
@@ -93,9 +93,9 @@ Reescreve o pacote `skills/vibeflow/` para o contrato 5.0.0 descrito na spec: ap
 - **Prova afetada:** `git diff --check`; verificador confere que nenhum trecho manda o líder rodar teste e que a review cita a regressão uma única vez fora da re-review com código compartilhado
 
 ### T7: design removido, perfis e init com cinco papéis
-- [ ] T7 concluída
-- **Estado:** pendente
-- **Resumo:** nenhum
+- [x] T7 concluída
+- **Estado:** concluída
+- **Resumo:** design removido; cinco perfis idênticos nos dois hosts; init com redator e commit do líder; checkpoint da onda verde
 - **Spec:** A5, suposições 10 e 11
 - **Deps:** T1
 - **O quê:** Remove `references/design.md`, `references/design/` e `templates/design.md`. Remove os perfis `corretor` dos dois hosts e ajusta implementador (corrige falha de passo e achado de código, política de testes), verificador (só checkpoint), redator (achado de prosa), revisor (analyze silencioso e review nova) e explorador. `references/init.md` instala e confere cinco perfis.
