@@ -17,7 +17,7 @@ Casa única das regras de teste do projeto consumidor: o que testar, onde rodar,
 - Prefira serviços nativos (instalação oficial do sistema) ou embutidos no processo de teste (binário como dependência de desenvolvimento, como `embedded-postgres`) a containers. Docker fica para o CI.
 - Banco limpo vem de banco por arquivo, por worker ou por template, de reset de schema ou de transação com rollback, nunca de recriar container.
 - Quando o projeto já usa Docker nos testes (comando de teste que chama `docker`, `docker compose` no setup de teste, arquivo de compose do projeto como `docker-compose.yml`, `compose.yaml` e variantes, ou documentação que o prefere) e o `AGENTS.md` do projeto não registra a decisão, o líder pergunta ao humano uma vez, com recomendação, se prefere migrar para uma forma mais leve, e registra a resposta na seção Ambiente do `AGENTS.md` do projeto. Com a decisão registrada, não pergunte de novo.
-- A pergunta acontece no init, em projeto novo, e no plan, em projeto já inicializado sem a decisão registrada.
+- A pergunta acontece no init e no plan, quando a decisão não está registrada. No init, o registro entra no commit de governança; no plan, vira o primeiro passo do plan, conforme `references/plan.md` (passo 2).
 
 ## Pirâmide
 

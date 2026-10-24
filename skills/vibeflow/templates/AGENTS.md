@@ -30,8 +30,7 @@ Um único chat conduz a phase por padrão. Em host de contexto curto, use dois: 
 
 ## Comandos do projeto
 <!-- SLOT:comandos -->
-<!-- Registrar só comandos existentes, cada um com onde roda (local, CI ou host): instalar, executar, lintar, validar tipos, teste por recorte (arquivo, módulo ou filtro), suíte completa, E2E, varredura de segredos e CI obrigatório. Registrar também o orçamento da regressão completa em minutos; sem declaração, vale o padrão de `references/testes.md` da skill `vibeflow`. -->
-Orçamento da regressão completa: <minutos>
+<!-- Registrar só comandos existentes, cada um com onde roda (local, CI ou host): instalar, executar, lintar, validar tipos, teste por recorte (arquivo, módulo ou filtro), suíte completa, E2E, varredura de segredos e CI obrigatório. Com orçamento declarado, registrar a linha `Orçamento da regressão completa: <minutos>`; sem declaração, não registrar a linha, e vale o padrão de `references/testes.md` da skill `vibeflow`. -->
 
 ## Ambiente
 <!-- SLOT:ambiente -->
