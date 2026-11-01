@@ -79,6 +79,7 @@ Uma linha física por passo, com os campos nesta ordem, separados por ` · `:
 - Dois paths se sobrepõem quando são iguais ou um é prefixo de diretório do outro (`a` e `a/b`, nunca `a` e `ab`), comparando sem distinção de maiúsculas em A-Z.
 - Path incomparável torna o passo inteiro sem arquivos comparáveis: caractere fora do ASCII, path absoluto, `:`, `<`, `>`, `"` ou `|`, ou segmento terminado em ponto ou espaço (exceto `.` e `..`). Passo sem `Arquivos:` ou com path incomparável não divide número com outro passo.
 - Passos irmãos (mesmo número) não têm `Arquivos:` sobrepostos. Declare o recorte mais estreito que o passo escreve.
+- Teto: 12 entradas de código por passo. Pasta conta como uma entrada. Entrada de teste não conta: path dentro de `tests/`, `test/` ou `__tests__/`, ou nome `*.test.*` ou `*.spec.*`. Passo acima do teto se divide pelo resultado verificável.
 
 ### Checkpoint
 
@@ -88,7 +89,14 @@ Uma linha física por passo, com os campos nesta ordem, separados por ` · `:
 
 - Linha própria, logo depois do último passo do grupo que fecha os critérios listados. Cobre os passos entre o checkpoint anterior, ou o início do checklist, e ela.
 - O líder marca a caixa quando o verificador devolve verde; a marcação entra no commit seguinte da phase, sem commit próprio.
-- Phase pequena não tem checkpoint. Com `# Risco:`, há um checkpoint depois de cada grupo de risco.
+- No máximo dois checkpoints por phase, nesta tabela. Phase com até 5 passos não tem checkpoint.
+
+| Checkpoint | Posição |
+|---|---|
+| Caminho fino | Depois do primeiro grupo de risco; em `high` sem `# Risco:`, depois do caminho fino do critério central |
+| Tela | Só se a phase tem tela: depois do primeiro grupo que entrega tela |
+
+- O verificador não reroda a prova dos passos: roda o E2E dos critérios com tela do grupo e confere o diff do grupo contra os critérios. O E2E das demais telas fica para a regressão completa da review.
 
 ### Achados do analyze
 
@@ -175,8 +183,8 @@ Antes de substituir ou remover `AGENTS.md`, a ponte ou um perfil:
 |---|---|
 | Passo | Linha do checklist do `plan.md`; unidade de delegação ao implementador e de commit |
 | Grupo paralelo | Passos irmãos, com o mesmo número e letras diferentes, que rodam juntos sem `Arquivos:` sobrepostos |
-| Checkpoint | Linha do plan depois de um grupo de passos; um verificador de contexto limpo roda as provas desses passos e confere o diff contra a spec |
-| Risco | Linha `# Risco:` da spec; não acrescenta etapa, mas obriga a interview a cobrir modelo de ameaça e rollback, o plan a pôr checkpoint depois de cada grupo de risco e a review a abrir segurança e banco |
+| Checkpoint | Linha do plan depois de um grupo de passos, nas posições de Plan (Checkpoint); um verificador de contexto limpo roda o E2E dos critérios com tela do grupo e confere o diff do grupo contra os critérios |
+| Risco | Linha `# Risco:` da spec; não acrescenta etapa, mas obriga a interview a cobrir modelo de ameaça e rollback, o plan a pôr checkpoint depois do primeiro grupo de risco e a review a abrir segurança e banco |
 | Achado fora do recorte | Defeito que não pertence aos critérios nem ao diff da phase; vai para `.erros-encontrados/`, um arquivo por achado, gravado por quem o encontrou (verificador ou revisor), e não bloqueia. O líder inclui o registro no commit seguinte da phase, inclusive no `chore(<alvo>): finalize review` |
 | Flake | Teste que falha e passa na reexecução; vai para `.erros-encontrados/` e não bloqueia |
 | Regressão completa | A suíte inteira do projeto (lint e tipos, unitários, E2E), executada uma vez na review (`references/review.md`) |
