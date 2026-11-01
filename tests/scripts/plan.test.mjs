@@ -188,7 +188,7 @@ test('--spec: texto entre aspas não é vago; palavra sem acento, em NFD ou com 
 // ---------------------------------------------------------------------------
 
 // Dica que o achado de valor sem origem traz: o marcador explícito, não a palavra solta.
-const DICA = 'marque na linha (origem: humano), (origem: assumida) ou (origem: verificado (<fonte>))';
+const DICA = 'marque na linha (origem: humano), (origem: assumida) ou (origem: verificado <fonte>)';
 
 test('--spec: valor sem origem em decisão e em critério de spec em rascunho é achado (A1)', (t) => {
   const texto = specCompleta({

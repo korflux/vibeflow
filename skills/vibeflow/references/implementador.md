@@ -21,7 +21,7 @@
 ## Testes e prova
 
 - Escreva os testes conforme `references/testes.md`, Política de testes e Desenho de casos.
-- Rode a `Prova:` do passo, ou os testes afetados da correção, com saída resumida: reporter de resumo ou filtro que mostre só falhas e totais, sem log completo.
+- Rode a `Prova:` do passo, os testes afetados da correção ou, em low ou medium, a prova do brief, conforme `references/testes.md` (Política de testes), com saída resumida: reporter de resumo ou filtro que mostre só falhas e totais, sem log completo.
 - Prova vermelha: corrija pela causa raiz e rode de novo, até verde ou impedimento real.
 
 ## Captura

@@ -96,7 +96,7 @@ Uma linha física por passo, com os campos nesta ordem, separados por ` · `:
 | Caminho fino | Depois do primeiro grupo de risco; em `high` sem `# Risco:`, depois do caminho fino do critério central |
 | Tela | Só se a phase tem tela: depois do primeiro grupo que entrega tela |
 
-- O verificador não reroda a prova dos passos: roda o E2E dos critérios com tela do grupo e confere o diff do grupo contra os critérios. O E2E das demais telas fica para a regressão completa da review.
+- O que o verificador executa segue `references/implement.md` (Checkpoint).
 
 ### Achados do analyze
 
@@ -183,7 +183,7 @@ Antes de substituir ou remover `AGENTS.md`, a ponte ou um perfil:
 |---|---|
 | Passo | Linha do checklist do `plan.md`; unidade de delegação ao implementador e de commit |
 | Grupo paralelo | Passos irmãos, com o mesmo número e letras diferentes, que rodam juntos sem `Arquivos:` sobrepostos |
-| Checkpoint | Linha do plan depois de um grupo de passos, nas posições de Plan (Checkpoint); um verificador de contexto limpo roda o E2E dos critérios com tela do grupo e confere o diff do grupo contra os critérios |
+| Checkpoint | Linha do plan depois de um grupo de passos, nas posições de Plan (Checkpoint), conferida por um verificador de contexto limpo conforme `references/implement.md` (Checkpoint) |
 | Risco | Linha `# Risco:` da spec; não acrescenta etapa, mas obriga a interview a cobrir modelo de ameaça e rollback, o plan a pôr checkpoint depois do primeiro grupo de risco e a review a abrir segurança e banco |
 | Achado fora do recorte | Defeito que não pertence aos critérios nem ao diff da phase; vai para `.erros-encontrados/`, um arquivo por achado, gravado por quem o encontrou (verificador ou revisor), e não bloqueia. O líder inclui o registro no commit seguinte da phase, inclusive no `chore(<alvo>): finalize review` |
 | Flake | Teste que falha e passa na reexecução; vai para `.erros-encontrados/` e não bloqueia |

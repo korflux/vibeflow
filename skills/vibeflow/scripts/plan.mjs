@@ -16,7 +16,7 @@
 // obrigatórias, decisão sem Pergunta: ou Motivo:, critério repetido, adjetivo vago no
 // critério, valor sem origem em Decisões e Critérios de aceite (só em spec com
 // `# Status: rascunho`; a origem é o marcador `(origem: humano | assumida | verificado
-// (<fonte>))` na mesma linha) e placeholder esquecido. Não exige plan.md.
+// <fonte>)` na mesma linha) e placeholder esquecido. Não exige plan.md.
 //
 // Uso:
 //   node plan.mjs [--spec] [--alvo phase-N|mvp] [--raiz <dir>] [--json]
@@ -224,10 +224,11 @@ const RE_VALOR = new RegExp(
   'giu',
 );
 // Origem: só o marcador explícito na mesma linha da decisão ou do critério, `(origem: humano)`,
-// `(origem: assumida)` ou `(origem: verificado (<fonte>))`, com a fonte também aceita sem os
-// parênteses internos (`(origem: verificado docs do gateway)`). A fonte não pode ser vazia nem
-// começar por `<` (o `<fonte>` copiado do modelo). Palavra solta na linha, como "pedido do
-// humano" no Motivo, não vale: zeraria o achado de qualquer valor da linha.
+// `(origem: assumida)` ou `(origem: verificado <fonte>)`, a forma canônica de references/spec.md
+// (`(origem: verificado docs do gateway)`); a fonte entre parênteses internos, `(origem: verificado
+// (docs do gateway))`, também é aceita. A fonte não pode ser vazia nem começar por `<` (o `<fonte>`
+// copiado do modelo). Palavra solta na linha, como "pedido do humano" no Motivo, não vale: zeraria
+// o achado de qualquer valor da linha.
 // ponytail: a marca vale para a linha inteira; linha com dois valores e uma marca passa mesmo
 // quando só um deles tem origem, e fonte com parênteses aninhados não é reconhecida. Separar
 // os valores em linhas próprias quando um valor sem origem escapar assim.
@@ -239,7 +240,7 @@ function valoresSemOrigem(texto) {
   return [...new Set([...texto.normalize('NFC').matchAll(RE_VALOR)].map((v) => v[0]))];
 }
 
-const DICA_ORIGEM = 'marque na linha (origem: humano), (origem: assumida) ou (origem: verificado (<fonte>))';
+const DICA_ORIGEM = 'marque na linha (origem: humano), (origem: assumida) ou (origem: verificado <fonte>)';
 
 /**
  * Achados de forma da spec: seções, decisões sem pergunta ou motivo, critérios, valores sem
