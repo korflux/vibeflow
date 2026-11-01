@@ -9,11 +9,11 @@ A cadeia da skill `vibeflow` vale só quando o humano a chama com `/vibeflow` (`
 |---|---|---|
 | low | implement, sem init, `.vibeflow/`, phase nem artefato | mudança clara e localizada de código de software sem comportamento novo, como cor, texto ou layout de página estática |
 | medium | implement → review | pedido claro e direto, com comportamento novo pequeno, sem banco nem risco de regressão de backend, ou página visual cujo aceite dependa de validação renderizada |
-| high | interview → spec → plan → analyze → implement com checkpoints → review | pedido ambíguo ou de execução difícil, mudança que altera banco ou painel admin, risco de regressão de backend, ou tela que o design system e as telas existentes não cobrem |
+| high | interview → spec → plan → analyze → implement com até dois checkpoints → review | pedido ambíguo ou de execução difícil, mudança que altera banco ou painel admin, risco de regressão de backend, ou tela que o design system e as telas existentes não cobrem |
 
 Saem do low, seguindo a rota aplicável: comportamento, rota, interação, critério de aceite ou acessibilidade alterados, e mudanças que toquem privacidade, dado pessoal, consentimento, retenção, direitos, obrigação jurídica, autenticação, autorização, pagamento, segredo, persistência ou risco de perda de dados.
 
-Na high, a linha `# Risco:` da spec marca mudança que toca autenticação, autorização, pagamento, segredo, perda de dados ou produção. O risco não acrescenta etapa: a interview cobre modelo de ameaça e rollback, o plan põe checkpoint depois de cada grupo de risco e a review abre segurança e banco. Produto de software novo com escopo a descobrir é o MVP: rota high com risco, em `.vibeflow/mvp/`.
+Na high, a linha `# Risco:` da spec marca mudança que toca autenticação, autorização, pagamento, segredo, perda de dados ou produção. O risco não acrescenta etapa: a interview cobre modelo de ameaça e rollback, o plan põe o primeiro checkpoint depois do primeiro grupo de risco, com no máximo dois por phase e nenhum em phase de até 5 passos, conforme `references/disco.md` da skill `vibeflow`, e a review abre segurança e banco. Produto de software novo com escopo a descobrir é o MVP: rota high com risco, em `.vibeflow/mvp/`.
 
 A interview tem tamanho proporcional à clareza do pedido e grava direto a `spec.md`. A aprovação da `spec.md` é a única aprovação humana antes do código e encadeia plan, analyze, implement e review até a confirmação final. Aprovar a review, publicar decisões vigentes e fazer push exigem confirmação humana explícita. Ajuste low ou medium ao que uma phase entregou ou está entregando, inclusive registro de `.erros-encontrados/`, volta à phase de origem, mesmo fechada, sem abrir phase nova. Medium abre a phase na review.
 
@@ -27,6 +27,10 @@ Um único chat conduz a phase por padrão. Em host de contexto curto, use dois: 
 ## Projeto
 <!-- SLOT:paragrafo -->
 <!-- evidência: <path ou vazio> -->
+
+## Núcleo do projeto
+<!-- SLOT:nucleo -->
+<!-- Uma linha por item, só path que existe: - `<path>`: <o que é>; ler <quando ler>. O init monta a seção com o explorador, e só entra o item que o humano confirma. -->
 
 ## Comandos do projeto
 <!-- SLOT:comandos -->

@@ -66,7 +66,7 @@ A skill não entra sozinha. No Claude Code, chame `/vibeflow`; no Codex, `$vibef
 | `/vibeflow <etapa> [pedido]` | Vai direto a `init`, `interview`, `spec`, `plan`, `analyze`, `implement` ou `review`, se o pré-requisito estiver satisfeito; o resto do texto é o pedido |
 | `/vibeflow <pedido>` | Texto que não começa por uma etapa é tratado como pedido e classificado |
 
-Primeira vez num repo: a etapa `init` roda antes da primeira rota com phase. Ela grava `AGENTS.md`, a ponte `.agents/rules/vibeflow.md` e guarda cópia conferida de arquivo substituído em `.vibeflow/old/`, com um commit local. Na primeira vez na máquina, instala também os cinco perfis de subagente (explorador, implementador, redator, verificador e revisor) em nível global, em `~/.claude/agents/` e `~/.codex/agents/`; perfil customizado nunca é sobrescrito sem a sua decisão, e um perfil no projeto prevalece sobre o global. Um `CLAUDE.md` existente não é removido. Quando os perfis mudam, recarregue o host antes de continuar.
+Primeira vez num repo: a etapa `init` roda antes da primeira rota com phase. Ela grava `AGENTS.md`, a ponte `.agents/rules/vibeflow.md` e guarda cópia conferida de arquivo substituído em `.vibeflow/old/`, com um commit local. Também monta, com o explorador e a sua confirmação, a seção `## Núcleo do projeto` do `AGENTS.md`: as referências centrais do projeto, cada uma com path, o que é e quando ler, que o líder abre ele mesmo quando o pedido as toca; em projeto já inicializado sem essa seção, o init a monta como reparo na primeira rota com phase. Na primeira vez na máquina, instala também os cinco perfis de subagente (explorador, implementador, redator, verificador e revisor) em nível global, em `~/.claude/agents/` e `~/.codex/agents/`; perfil customizado nunca é sobrescrito sem a sua decisão, e um perfil no projeto prevalece sobre o global. Um `CLAUDE.md` existente não é removido. Quando os perfis mudam, recarregue o host antes de continuar.
 
 A rota é proporcional ao pedido:
 
@@ -74,7 +74,7 @@ A rota é proporcional ao pedido:
 |---|---|
 | `low` | implement direto, com prova proporcional, sem criar `.vibeflow/` |
 | `medium` | implement e review |
-| `high` | interview, spec, plan, analyze, implement com checkpoints e review |
+| `high` | interview, spec, plan, analyze, implement com até dois checkpoints e review |
 
 Na `high`, a linha `# Risco:` marca mudanças que tocam autenticação, autorização, pagamento, segredo, perda de dados ou produção; ela não acrescenta etapa, mas aprofunda a interview, os checkpoints e a review. A aprovação da `spec.md` é a única antes do código: com ela, o líder segue até a review sem pedir outras aprovações. A tabela de rotas fica no `AGENTS.md` que a etapa `init` grava no projeto, a partir de [`skills/vibeflow/templates/AGENTS.md`](skills/vibeflow/templates/AGENTS.md).
 
@@ -91,9 +91,9 @@ Com Node 18 ou superior, a skill usa os scripts da pasta `scripts/`, sempre na r
 | `estado.mjs [--alvo phase-N\|mvp] [--slug "<frase>"] [--linha]` | Líder, ao abrir e retomar | Alvo padrão, rota, risco, status dos artefatos, etapa atual, progresso, próximo passo ou grupo paralelo, R* abertos, push pendente, inconsistências e o path da próxima phase; `--slug` normaliza a frase do slug e `--linha` imprime só a linha de progresso |
 | `conferir.mjs --passo <IDs>` | Líder, ao receber um passo ou um R* | Alterações não commitadas fora dos `Arquivos:` do passo ou do path do R* |
 | `conferir.mjs --commit "<mensagem>"` | Líder, depois do staging e antes de cada commit | Formato da mensagem, ausência de `Co-Authored-By`, critérios de aceite no corpo do `task(medium): ...`, caixas e R* marcados no índice contra os IDs, paths em staging contra o recorte e `git diff --cached --check` |
-| `plan.mjs [--alvo phase-N\|mvp]` | Líder depois de gravar o plan; revisor no analyze | Forma dos passos e checkpoints, critérios inexistentes ou sem passo, seções obrigatórias e placeholder de template esquecido |
-| `plan.mjs --spec [--alvo phase-N\|mvp]` | Líder antes de apresentar a spec para aprovação | Seções obrigatórias da spec, decisão sem pergunta ou motivo, critério repetido, adjetivo vago no critério e placeholder esquecido |
-| `governanca.mjs` e `governanca.mjs --backup <original> <cópia>` | Líder no init | `AGENTS.md` e bloco da cadeia, ponte, `.gitkeep`, perfis globais contra a fonte, perfil `corretor` obsoleto, perfis de projeto customizados; no modo `--backup`, tamanho e SHA-256 da cópia |
+| `plan.mjs [--alvo phase-N\|mvp]` | Líder depois de gravar o plan; revisor no analyze | Forma dos passos e checkpoints, passo acima de 12 entradas de código, mais de dois checkpoints ou checkpoint em plan de até 5 passos, critérios inexistentes ou sem passo, seções obrigatórias e placeholder de template esquecido |
+| `plan.mjs --spec [--alvo phase-N\|mvp]` | Líder antes de apresentar a spec para aprovação | Seções obrigatórias da spec, decisão sem pergunta ou motivo, critério repetido, adjetivo vago no critério, valor sem origem em Decisões e Critérios de aceite de spec em rascunho e placeholder esquecido |
+| `governanca.mjs` e `governanca.mjs --backup <original> <cópia>` | Líder no init | `AGENTS.md` e bloco da cadeia, ponte, `.gitkeep`, perfis globais contra a fonte, perfil `corretor` obsoleto, perfis de projeto customizados e, como aviso sem falha, `AGENTS.md` sem a seção `## Núcleo do projeto`; no modo `--backup`, tamanho e SHA-256 da cópia |
 
 ### Apoios opcionais do host
 
@@ -129,6 +129,18 @@ node "<pasta da skill>/scripts/conferir.mjs" --commit-arquivo "$1"
 ```
 
 Aprovar a review, publicar decisões vigentes e fazer push sempre exigem a sua confirmação.
+
+## Novidades da 5.4.0
+
+A 5.4.0 é uma versão minor, sem migração. Rode `/vibeflow init` para atualizar os perfis globais de subagente e montar a seção `## Núcleo do projeto` do `AGENTS.md`.
+
+- Cada phase tem no máximo dois checkpoints: um depois do primeiro grupo de risco e, se a phase tem tela, um depois do primeiro grupo que entrega tela. Phase com até 5 passos não tem checkpoint.
+- O verificador não reroda a prova dos passos: roda o E2E dos critérios com tela do grupo e confere o diff do grupo contra os critérios. O E2E das demais telas fica para a regressão completa da review.
+- Um passo tem no máximo 12 entradas de código em `Arquivos:`, sem contar testes; acima disso, o plan divide o passo. `plan.mjs` aponta o passo acima do teto e o excesso de checkpoints.
+- Fato verificável é conferido pelo explorador antes da spec, e todo valor em Decisões e Critérios de aceite traz a origem (`humano`, `assumida` ou `verificado`). O fechamento da spec lista as assumidas, e `plan.mjs --spec` aponta valor sem origem em spec nova.
+- Na interview, tela nova, site ou fluxo novo cobre navegação, páginas e jornada; o limite de duas perguntas vale só para ajuste de tela.
+- O implementador lê só a referência própria, `references/implementador.md`, e recebe no brief o mapa do explorador e os itens do núcleo que abre. O líder escolhe o esforço de raciocínio do implementador a cada despacho, até `xhigh`.
+- O `AGENTS.md` ganha a seção `## Núcleo do projeto`, que o líder abre ele mesmo quando o pedido a toca e usa para conferir a direção das entregas; `governanca.mjs` avisa quando ela falta.
 
 ## Novidades da 5.3.0
 

@@ -9,11 +9,11 @@ A cadeia da skill `vibeflow` vale só quando o humano a chama com `/vibeflow` (`
 |---|---|---|
 | low | implement, sem init, `.vibeflow/`, phase nem artefato | mudança clara e localizada de código de software sem comportamento novo, como cor, texto ou layout de página estática |
 | medium | implement → review | pedido claro e direto, com comportamento novo pequeno, sem banco nem risco de regressão de backend, ou página visual cujo aceite dependa de validação renderizada |
-| high | interview → spec → plan → analyze → implement com checkpoints → review | pedido ambíguo ou de execução difícil, mudança que altera banco ou painel admin, risco de regressão de backend, ou tela que o design system e as telas existentes não cobrem |
+| high | interview → spec → plan → analyze → implement com até dois checkpoints → review | pedido ambíguo ou de execução difícil, mudança que altera banco ou painel admin, risco de regressão de backend, ou tela que o design system e as telas existentes não cobrem |
 
 Saem do low, seguindo a rota aplicável: comportamento, rota, interação, critério de aceite ou acessibilidade alterados, e mudanças que toquem privacidade, dado pessoal, consentimento, retenção, direitos, obrigação jurídica, autenticação, autorização, pagamento, segredo, persistência ou risco de perda de dados.
 
-Na high, a linha `# Risco:` da spec marca mudança que toca autenticação, autorização, pagamento, segredo, perda de dados ou produção. O risco não acrescenta etapa: a interview cobre modelo de ameaça e rollback, o plan põe checkpoint depois de cada grupo de risco e a review abre segurança e banco. Produto de software novo com escopo a descobrir é o MVP: rota high com risco, em `.vibeflow/mvp/`.
+Na high, a linha `# Risco:` da spec marca mudança que toca autenticação, autorização, pagamento, segredo, perda de dados ou produção. O risco não acrescenta etapa: a interview cobre modelo de ameaça e rollback, o plan põe o primeiro checkpoint depois do primeiro grupo de risco, com no máximo dois por phase e nenhum em phase de até 5 passos, conforme `references/disco.md` da skill `vibeflow`, e a review abre segurança e banco. Produto de software novo com escopo a descobrir é o MVP: rota high com risco, em `.vibeflow/mvp/`.
 
 A interview tem tamanho proporcional à clareza do pedido e grava direto a `spec.md`. A aprovação da `spec.md` é a única aprovação humana antes do código e encadeia plan, analyze, implement e review até a confirmação final. Aprovar a review, publicar decisões vigentes e fazer push exigem confirmação humana explícita. Ajuste low ou medium ao que uma phase entregou ou está entregando, inclusive registro de `.erros-encontrados/`, volta à phase de origem, mesmo fechada, sem abrir phase nova. Medium abre a phase na review.
 
@@ -30,10 +30,17 @@ A skill `vibeflow` é texto mais scripts de leitura em `skills/vibeflow/scripts/
 
 Skill única `vibeflow`, conduzida por um coordenador-líder, para inicializar e conduzir o trabalho de agentes num repo. Este repositório é a fonte canônica do pacote `skills/vibeflow/` e do contrato `.vibeflow/`. Não é um app de produção.
 
+## Núcleo do projeto
+
+- `skills/vibeflow/references/disco.md`: contrato de disco (paths, artefatos, forma de passo e checkpoint, commits e estado); ler em toda mudança de artefato ou de regra mecânica.
+- `skills/vibeflow/SKILL.md`: manual operacional do líder (invariantes, rota, roteamento por etapa, delegação, retomada e fechamento); ler em toda mudança de comportamento do líder ou de etapa.
+- `skills/vibeflow/references/delegation.md`: papéis, brief, conferência do líder e relatório fixo; ler em toda mudança de papel, perfil ou despacho.
+- `skills/vibeflow/scripts/` com `tests/scripts/`: scripts de leitura e seus testes de comportamento; ler em toda mudança de regra mecânica que um script aplica.
+
 ## Comandos do projeto
 
 - Este repositório não usa CI no GitHub, por decisão de custo. Não envie branch só para disparar CI. A regressão completa e a varredura de segredos rodam localmente antes do push.
-- Regressão completa local: revisão de consistência de todos os arquivos alterados. Todo path deste repo citado em `skills/vibeflow/`, `README.md` e `AGENTS.md` existe (paths do projeto consumidor, como `.agents/rules/`, `.claude/agents/`, `.codex/agents/` e `.vibeflow/mvp/`, ficam fora); nenhum arquivo cita a v1 do VibeFlow ou registro estruturado de execução; nenhum arquivo cita como vigente o contrato anterior à 5.0.0 (`interview.md`, `design.md` ou `analyze.md` como artefato, as rotas Express, `xhigh` ou `max`, `ondas.mjs`, os papéis corretor e finalizador), salvo como compatibilidade ou perfil obsoleto; `node --test` passa; `git diff --check` não acusa achado.
+- Regressão completa local: revisão de consistência de todos os arquivos alterados. Todo path deste repo citado em `skills/vibeflow/`, `README.md` e `AGENTS.md` existe (paths do projeto consumidor, como `.agents/rules/`, `.claude/agents/`, `.codex/agents/` e `.vibeflow/mvp/`, ficam fora); nenhum arquivo cita a v1 do VibeFlow ou registro estruturado de execução; nenhum arquivo cita como vigente o contrato anterior à 5.0.0 (`interview.md`, `design.md` ou `analyze.md` como artefato, as rotas Express e as rotas `xhigh` ou `max`, `ondas.mjs`, os papéis corretor e finalizador), salvo como compatibilidade ou perfil obsoleto; `node --test` passa; `git diff --check` não acusa achado.
 - Testes dos scripts: `node --test` na raiz (Node 18+), que descobre `tests/**/*.test.mjs`.
 - Varredura de segredos local: `gitleaks detect --source . --redact --no-banner`.
 
@@ -54,7 +61,7 @@ Este repo não tem banco, migration nem tráfego de usuário. Skills aqui mudam 
 - **Major:** quebra contrato (path ou nome de artefato, linha de cabeçalho como `# Status:` ou `# Rota:`, comportamento do líder que o humano já usa).
 - **Minor:** adiciona sem quebrar (nova seção opcional no artefato, nova referência de etapa).
 - **Patch:** correção sem mudança de contrato.
-- Versão atual: 5.3.0 (critérios de aceite estruturados com `plan.mjs --spec`, vermelho antes do verde, desenho de casos, critérios do medium no corpo do commit, plan começando pelo risco e revisor em esforço alto).
+- Versão atual: 5.4.0 (no máximo dois checkpoints sem reexecução de prova, teto de passo, origem obrigatória dos valores da spec, referência própria do implementador, esforço de raciocínio escolhido pelo líder e núcleo do projeto no `AGENTS.md`).
 - Produção: migration só com plano de rollback; não rodar migration destrutiva sem o humano pedir.
 
 ## Git
@@ -88,6 +95,7 @@ skills/vibeflow/
   references/<etapa>.md        uma referência por etapa, com catálogos em references/<etapa>/
   references/disco.md          regras mecânicas do disco
   references/delegation.md     papéis, brief e relatório fixo
+  references/implementador.md  única leitura do implementador: recorte, provas, captura e relatório fixo
   references/testes.md         casa única das regras de teste: política, ambiente local, pirâmide, desenho do E2E e orçamento
   references/<tema>.md         apoio do implementador e do revisor (banco, navegador, definição de pronto)
   templates/<artefato>.md      esqueleto de spec.md, plan.md e review.md
@@ -96,8 +104,8 @@ skills/vibeflow/
   scripts/_disco.mjs           leitura compartilhada do disco e do Git
   scripts/estado.mjs           estado, etapa atual, progresso, próximo passo, sobreposição de Arquivos:, slug e linha de statusline
   scripts/conferir.mjs         recorte do passo ou do R* e conferência do commit antes de criá-lo
-  scripts/plan.mjs             forma do plan, cobertura dos critérios da spec, forma da spec (--spec) e placeholder esquecido
-  scripts/governanca.mjs       resultado do init (AGENTS.md, ponte, perfis globais) e backup por tamanho e SHA-256
+  scripts/plan.mjs             forma do plan, cobertura dos critérios da spec, teto de passo, excesso de checkpoints, forma da spec e valor sem origem (--spec) e placeholder esquecido
+  scripts/governanca.mjs       resultado do init (AGENTS.md, ponte, perfis globais, aviso de núcleo ausente) e backup por tamanho e SHA-256
 ```
 
 ### Adaptadores por host
