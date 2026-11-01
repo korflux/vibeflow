@@ -2,8 +2,9 @@
 //
 // Confere AGENTS.md e o bloco da cadeia, a ponte, o .gitkeep, os perfis globais por host
 // (com CLAUDE_CONFIG_DIR e CODEX_HOME apontando para pastas temporárias), o perfil
-// corretor obsoleto, o perfil de projeto customizado e o backup por tamanho e SHA-256
-// (references/init.md e references/disco.md, Backup). Rodar com: node --test
+// corretor obsoleto, o perfil de projeto customizado, o aviso (sem falha) de AGENTS.md sem a
+// seção `## Núcleo do projeto` e o backup por tamanho e SHA-256 (references/init.md e
+// references/disco.md, Backup). Rodar com: node --test
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -41,10 +42,29 @@ function instalar({ claude, codex }) {
   }
 }
 
-/** Repo com AGENTS.md no template, ponte e .gitkeep: governança completa. */
-function completo(t) {
+const TITULO_NUCLEO = '## Núcleo do projeto';
+
+/**
+ * AGENTS.md do template com a seção de núcleo declarada pelo teste, sem depender de o
+ * template tê-la: tira a seção que o template tiver (do título até o próximo `## `) e, com
+ * `nucleo: true`, acrescenta uma ao fim, depois do bloco da cadeia.
+ */
+function agentsDoTemplate({ nucleo }) {
+  const linhas = readFileSync(join(TEMPLATES, 'AGENTS.md'), 'utf8').split(/\r?\n/);
+  const i = linhas.findIndex((l) => l.trim() === TITULO_NUCLEO);
+  if (i >= 0) {
+    const fim = linhas.findIndex((l, j) => j > i && /^## /.test(l));
+    linhas.splice(i, fim < 0 ? linhas.length - i : fim - i);
+  }
+  const base = linhas.join('\n').trimEnd();
+  const secao = `${TITULO_NUCLEO}\n\n- \`identidade/\`: marca e tom; ler em toda entrega com tela pública`;
+  return nucleo ? `${base}\n\n${secao}\n` : `${base}\n`;
+}
+
+/** Repo com AGENTS.md no template, ponte e .gitkeep: governança completa; `nucleo` declara a seção de núcleo. */
+function completo(t, { nucleo = true } = {}) {
   const raiz = repo(t);
-  escrever(raiz, 'AGENTS.md', readFileSync(join(TEMPLATES, 'AGENTS.md'), 'utf8'));
+  escrever(raiz, 'AGENTS.md', agentsDoTemplate({ nucleo }));
   escrever(raiz, '.agents/rules/vibeflow.md', '@../../AGENTS.md\r\n');
   return raiz;
 }
@@ -109,4 +129,49 @@ test('CLI: 2 em erro de uso e no backup sem original', (t) => {
   assert.equal(cli('governanca.mjs', ['--invalido']).codigo, 2);
   assert.equal(cli('governanca.mjs', ['--backup', join(raiz, 'nao-existe'), join(raiz, 'x')]).codigo, 2);
   assert.equal(cli('governanca.mjs', ['--backup', join(raiz, 'AGENTS.md'), join(raiz, 'AGENTS.md'), '--json']).codigo, 0);
+});
+
+// ---------------------------------------------------------------------------
+// Núcleo do projeto: aviso, nunca falha (decisão 19 da phase-6; critérios A15 e A16)
+// ---------------------------------------------------------------------------
+
+const avisosDeNucleo = (r) => r.avisos.filter((a) => /Núcleo do projeto/.test(a));
+
+test('AGENTS.md sem a seção Núcleo do projeto é aviso e não muda os achados (A15)', (t) => {
+  instalar(hosts(t));
+  const r = conferirGovernanca(completo(t, { nucleo: false }));
+  assert.equal(avisosDeNucleo(r).length, 1);
+  assert.deepEqual(r.achados, []);
+  assert.equal(r.avisos.length, 1);
+});
+
+test('CLI: AGENTS.md sem a seção de núcleo sai com 0 e mostra o aviso (A15)', (t) => {
+  instalar(hosts(t));
+  const raiz = completo(t, { nucleo: false });
+  const texto = cli('governanca.mjs', ['--raiz', raiz]);
+  assert.equal(texto.codigo, 0);
+  assert.match(texto.out, /aviso: AGENTS\.md sem a seção ## Núcleo do projeto/);
+  const json = cli('governanca.mjs', ['--raiz', raiz, '--json']);
+  assert.equal(json.codigo, 0);
+  assert.deepEqual(JSON.parse(json.out).achados, []);
+  // Com outro achado, o código é 1 por causa dele, não do aviso.
+  rmSync(join(raiz, '.vibeflow', 'phases', '.gitkeep'));
+  assert.equal(cli('governanca.mjs', ['--raiz', raiz]).codigo, 1);
+});
+
+test('AGENTS.md com a seção Núcleo do projeto não tem aviso de núcleo (A16)', (t) => {
+  instalar(hosts(t));
+  const r = conferirGovernanca(completo(t, { nucleo: true }));
+  assert.deepEqual(avisosDeNucleo(r), []);
+  assert.deepEqual(r.achados, []);
+  assert.deepEqual(r.avisos, []);
+});
+
+test('AGENTS.md vazio é achado e não soma aviso de núcleo', (t) => {
+  instalar(hosts(t));
+  const raiz = completo(t);
+  escrever(raiz, 'AGENTS.md', '');
+  const r = conferirGovernanca(raiz);
+  assert.equal(r.achados[0], 'AGENTS.md vazio');
+  assert.deepEqual(avisosDeNucleo(r), []);
 });

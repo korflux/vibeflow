@@ -6,7 +6,10 @@
 // delimitadores `VIBEFLOW:CADEIA` pareados e bloco igual ao de templates/AGENTS.md, ponte
 // `.agents/rules/vibeflow.md` com o conteúdo exato, `.vibeflow/phases/.gitkeep`, cada
 // perfil global (ausente, idêntico ou diferente da fonte), perfil `corretor` obsoleto e
-// perfil de projeto que difere da fonte.
+// perfil de projeto que difere da fonte. `AGENTS.md` regular e não vazio sem uma linha de
+// título `## Núcleo do projeto` gera só aviso: o projeto existente ainda sem a seção segue
+// funcionando, o init a monta com o explorador e o humano a confirma. Aviso nunca muda o
+// código de saída (só `achados` muda).
 // Modo --backup (references/disco.md, Backup de arquivo de regra, passo 2): cópia regular
 // com o mesmo tamanho e o mesmo SHA-256 do original.
 // Só lê: não cria, copia, substitui nem remove nada. Perfil presente no disco não prova
@@ -30,6 +33,7 @@ const PAPEIS = ['explorador', 'implementador', 'verificador', 'revisor', 'redato
 const PONTE = '@../../AGENTS.md\n';
 const INICIO = '<!-- VIBEFLOW:CADEIA start -->';
 const FIM = '<!-- VIBEFLOW:CADEIA end -->';
+const TITULO_NUCLEO = '## Núcleo do projeto';
 
 /**
  * Hosts com perfis globais (references/init.md, Entrada): a pasta vem da variável do host
@@ -81,10 +85,13 @@ export function conferirGovernanca(raiz) {
   else if (!readFileSync(agents, 'utf8').trim()) agentsEstado = 'vazio';
   if (agentsEstado !== 'ok') achados.push(`AGENTS.md ${agentsEstado}`);
   else {
-    const b = blocoCadeia(linhasSemCr(readFileSync(agents)));
+    const linhas = linhasSemCr(readFileSync(agents));
+    const b = blocoCadeia(linhas);
     const modelo = blocoCadeia(linhasSemCr(readFileSync(join(TEMPLATES, 'AGENTS.md'))));
     if (b.achado) { achados.push(b.achado); agentsEstado = 'sem bloco válido'; }
     else if (b.bloco.join('\n') !== modelo.bloco.join('\n')) { achados.push('bloco VIBEFLOW:CADEIA diferente de templates/AGENTS.md'); agentsEstado = 'bloco desatualizado'; }
+    // Núcleo do projeto: aviso, nunca achado, porque o projeto sem a seção ainda funciona.
+    if (!linhas.some((l) => l.trim() === TITULO_NUCLEO)) avisos.push(`AGENTS.md sem a seção ${TITULO_NUCLEO}: o init monta a seção com o explorador e o humano a confirma`);
   }
 
   // Ponte Antigravity (init, passo 4)

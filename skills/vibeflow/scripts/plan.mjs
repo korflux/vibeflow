@@ -5,14 +5,17 @@
 // references/analyze/coverage.md: forma da linha de passo e de checkpoint, numeração e
 // grupos paralelos, critérios de `Aceite:` e de checkpoint que existem na spec, critério
 // da spec sem passo, seção `## Regressão completa` presente, `## Achados do analyze` como
-// última seção e placeholder de template esquecido na spec ou no plan. O julgamento do
+// última seção e placeholder de template esquecido na spec ou no plan. Também aplica os
+// limites de tamanho de Plan > Arquivos e Plan > Checkpoint: passo acima de 12 entradas de
+// código, mais de dois checkpoints e checkpoint em plan de até 5 passos. O julgamento do
 // analyze (prova que exercita o critério, arquivo ou consumidor esquecido, ordem,
 // contradição com a spec) continua do revisor. Só lê; divergência entre este script e a
 // prosa é bug do script.
 //
 // Com --spec, confere só a spec, antes da aprovação (references/spec.md, Fechar): seções
 // obrigatórias, decisão sem Pergunta: ou Motivo:, critério repetido, adjetivo vago no
-// critério e placeholder esquecido. Não exige plan.md.
+// critério, valor sem origem em Decisões e Critérios de aceite (só em spec com
+// `# Status: rascunho`) e placeholder esquecido. Não exige plan.md.
 //
 // Uso:
 //   node plan.mjs [--spec] [--alvo phase-N|mvp] [--raiz <dir>] [--json]
@@ -22,7 +25,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   carregarAlvos, alvoPadrao, alvoNomeado, lerLinhas, lerPlan, achadosDoPlan, RE_PASSO, RE_CHECKPOINT, SEP,
-  jsonAscii, executadoDireto,
+  cabecalho, ehEntradaDeTeste, jsonAscii, executadoDireto,
 } from './_disco.mjs';
 
 const TEMPLATES = join(dirname(fileURLToPath(import.meta.url)), '..', 'templates');
@@ -117,7 +120,17 @@ function criteriosDaSpec(linhasSpec) {
   return { ids, repetidos };
 }
 
-/** Achados de forma de uma linha de passo: campos na ordem `Aceite:`, `Arquivos:` opcional e `Prova:`. */
+// Limites de tamanho do plan (references/disco.md, Plan > Arquivos e Plan > Checkpoint).
+const TETO_CODIGO = 12;
+const MAX_CHECKPOINTS = 2;
+const PASSOS_SEM_CHECKPOINT = 5;
+
+/**
+ * Achados de forma de uma linha de passo: campos na ordem `Aceite:`, `Arquivos:` opcional e
+ * `Prova:`, e o teto de entradas de código em `Arquivos:`. A entrada de teste não conta
+ * (`ehEntradaDeTeste`) e a pasta conta uma; o passo acima do teto se divide pelo resultado
+ * verificável. Passo sem `Arquivos:` não tem o que contar.
+ */
 function formaDoPasso(p, criterios) {
   const achados = [];
   const r = p.resto;
@@ -129,6 +142,8 @@ function formaDoPasso(p, criterios) {
   else if (!r.slice(iP + `${SEP}Prova:`.length).trim()) achados.push(`passo ${p.id}: Prova: vazia`);
   if (iA > 0 && iP > 0 && (iP < iA || (iArq >= 0 && (iArq < iA || iArq > iP)))) achados.push(`passo ${p.id}: campos fora da ordem Aceite:, Arquivos:, Prova:`);
   if (iArq >= 0 && (!p.arquivos || !p.arquivos.length)) achados.push(`passo ${p.id}: Arquivos: sem path entre crases`);
+  const codigo = (p.arquivos || []).filter((a) => !ehEntradaDeTeste(a)).length;
+  if (codigo > TETO_CODIGO) achados.push(`passo ${p.id}: ${codigo} entradas de código em Arquivos:, acima do teto de ${TETO_CODIGO}; divida o passo pelo resultado verificável`);
   if (p.aceite) {
     const sobra = p.aceite.bruto.replace(/\bA[1-9][0-9]*\b/g, '').replace(/[\s,]/g, '');
     if (p.aceite.bruto !== 'nenhum' && (sobra || !p.aceite.ids.length)) achados.push(`passo ${p.id}: Aceite: deve listar A* da spec ou dizer nenhum`);
@@ -139,7 +154,10 @@ function formaDoPasso(p, criterios) {
 
 /**
  * Checkpoints: linha depois de passo (nunca no início nem logo após outro checkpoint),
- * com critérios que existem na spec e que algum passo do trecho coberto entrega.
+ * com critérios que existem na spec e que algum passo do trecho coberto entrega. Depois da
+ * forma, a contagem: no máximo dois checkpoints por phase e nenhum em plan de até 5 passos
+ * (passo de grupo paralelo, como `2a` e `2b`, conta um a um). Onde cada checkpoint cai
+ * (caminho fino, tela) é julgamento do analyze, não deste script.
  */
 function formaDosCheckpoints(itens, criterios) {
   const achados = [];
@@ -156,6 +174,10 @@ function formaDosCheckpoints(itens, criterios) {
     }
     trecho = [];
   });
+  const passos = itens.filter((it) => it.tipo === 'passo').length;
+  const checkpoints = itens.length - passos;
+  if (checkpoints > MAX_CHECKPOINTS) achados.push(`${checkpoints} checkpoints; o máximo é ${MAX_CHECKPOINTS} por phase`);
+  if (checkpoints && passos <= PASSOS_SEM_CHECKPOINT) achados.push(`checkpoint em plan de ${passos} ${passos === 1 ? 'passo' : 'passos'}; phase com até ${PASSOS_SEM_CHECKPOINT} passos não tem checkpoint`);
   return achados;
 }
 
@@ -180,9 +202,46 @@ const SECOES_SPEC = ['Objetivo', 'Pontos do projeto', 'Decisões', 'Critérios d
 const RE_VAGO = /(?<!\p{L})(r[aá]pid[oa]s?|rapidamente|bonit[oa]s?|modern[oa]s?|intuitiv[oa]s?|amig[aá]ve(?:l|is)|f[aá]c(?:il|eis)|facilmente|adequad[oa]s?|adequadamente|corretamente|eficientes?|eficientemente|robust[oa]s?|elegantes?|agrad[aá]ve(?:l|is))(?!\p{L})/giu;
 const RE_CITACAO = /`[^`]*`|"[^"]*"|“[^”]*”|'[^']*'/g;
 
-/** Achados de forma da spec: seções, decisões sem pergunta ou motivo, critérios e placeholders. */
+// Valor que pede origem (decisão 3 da phase-6): número com unidade de prazo, tamanho ou
+// contagem, percentual ou quantia em dinheiro, como `48 horas`, `30s`, `64 KiB`, `95%`,
+// `R$ 19,90` e `8 a 128 caracteres` (aqui vale `128 caracteres`). O número não pode vir
+// colado a letra, dígito ou `_`, nem a `letra-`, o que deixa de fora IDs (`A1`, `R2`,
+// `AUTH-01`) e versões (`v5.4`). Número sem unidade da lista (`decisão 3`, `5 e 6`) não é
+// valor, e a unidade tem de terminar na palavra (`10 horas`, não `10 hoje`). Texto entre
+// crases ou aspas conta, porque é como a spec cita o valor do limite ou da mensagem.
+// ponytail: lista fixa de unidades; valor com unidade fora dela (por exemplo, "3 mesas")
+// passa, e só a conferência do líder e o analyze o pegam; acrescentar a unidade quando um
+// valor real escapar. Horário do dia ("10h") conta como valor: a spec marca `humano`.
+const NUMERO = String.raw`\d+(?:[.,]\d+)*`;
+const UNIDADES = [
+  'milissegundos?', 'ms', 'segundos?', 'seg', 's', 'minutos?', 'min', 'horas?', 'h', 'dias?', 'semanas?', 'm[eê]s(?:es)?', 'anos?', // prazo
+  'bytes?', '[kmgt]i?b', // tamanho
+  '%', 'caracteres?', 'tentativas?', 'requisi[cç][oõ]es', 'itens?', 'registros?', 'vez(?:es)?', 'usu[aá]rios?', 'resultados?', 'p[aá]ginas?', 'reais', // contagem e limite
+].join('|');
+const RE_VALOR = new RegExp(
+  String.raw`(?<![\p{L}\p{N}_])(?<!\p{L}-)(?:(?:R\$|US\$|€)\s?${NUMERO}|${NUMERO}\s?(?:${UNIDADES})(?![\p{L}\p{N}]))`,
+  'giu',
+);
+// Origem marcada na mesma linha da decisão ou do critério: `verificado (<fonte>)`, `humano` ou `assumida`.
+const RE_ORIGEM = /verificado\s*\([^)]+\)|(?<!\p{L})(?:humano|assumida)(?!\p{L})/iu;
+
+/** Valores de uma linha de decisão ou critério, sem repetidos; vazio quando a linha marca a origem. */
+function valoresSemOrigem(texto) {
+  if (RE_ORIGEM.test(texto)) return [];
+  return [...new Set([...texto.normalize('NFC').matchAll(RE_VALOR)].map((v) => v[0]))];
+}
+
+const DICA_ORIGEM = 'marque na linha verificado (<fonte>), humano ou assumida';
+
+/**
+ * Achados de forma da spec: seções, decisões sem pergunta ou motivo, critérios, valores sem
+ * origem e placeholders. O valor sem origem só vale para spec em `# Status: rascunho`: spec
+ * aprovada não é revalidada (decisão 3). Linha de tabela de exemplos nunca é decisão nem
+ * critério, então o valor dela não gera achado.
+ */
 function formaDaSpec(linhasSpec) {
   const achados = [];
+  const rascunho = cabecalho(linhasSpec, 'Status') === 'rascunho';
   for (const s of SECOES_SPEC) if (!secao(linhasSpec, s)) achados.push(`spec sem a seção ## ${s}`);
 
   for (const l of semComentarios(secao(linhasSpec, 'Decisões') || [])) {
@@ -190,6 +249,8 @@ function formaDaSpec(linhasSpec) {
     if (!m) continue;
     if (!/Pergunta:/.test(l)) achados.push(`decisão ${m[1]}: sem Pergunta:`);
     if (!/Motivo:/.test(l)) achados.push(`decisão ${m[1]}: sem Motivo:`);
+    const valores = rascunho ? valoresSemOrigem(l.slice(m[0].length)) : [];
+    if (valores.length) achados.push(`decisão ${m[1]}: valor sem origem (${valores.join(', ')}); ${DICA_ORIGEM}`);
   }
 
   const { ids, repetidos } = criteriosDaSpec(linhasSpec);
@@ -200,6 +261,8 @@ function formaDaSpec(linhasSpec) {
     if (!m) continue;
     const vagos = [...m[2].normalize('NFC').replace(RE_CITACAO, '').matchAll(RE_VAGO)].map((v) => v[1].toLowerCase());
     if (vagos.length) achados.push(`critério ${m[1]}: adjetivo vago (${[...new Set(vagos)].join(', ')}); diga o resultado observável`);
+    const valores = rascunho ? valoresSemOrigem(m[2]) : [];
+    if (valores.length) achados.push(`critério ${m[1]}: valor sem origem (${valores.join(', ')}); ${DICA_ORIGEM}`);
   }
 
   achados.push(...placeholdersEsquecidos(linhasSpec, 'spec.md', 'spec.md'));

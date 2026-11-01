@@ -209,7 +209,7 @@ export function grupos(passos) {
 }
 
 // ---------------------------------------------------------------------------
-// Arquivos: normalização e sobreposição (references/disco.md, Plan > Arquivos)
+// Arquivos: normalização, sobreposição e entrada de teste (references/disco.md, Plan > Arquivos)
 // ---------------------------------------------------------------------------
 
 const RAIZ = Object.freeze([]);
@@ -259,6 +259,19 @@ export function recorte(passo) {
 }
 
 const minusculaAscii = (s) => s.replace(/[A-Z]/g, (c) => c.toLowerCase());
+
+/**
+ * Entrada de `Arquivos:` que é teste e por isso não conta no teto de 12 entradas de código
+ * (references/disco.md, Plan > Arquivos): algum segmento do path é `tests`, `test` ou
+ * `__tests__`, ou o nome (último segmento) tem `.test.` ou `.spec.`. Vale para arquivo,
+ * pasta e curinga (`tests/scripts/`, `src/*.spec.ts`), sem distinguir A-Z de a-z, como a
+ * sobreposição de recortes.
+ */
+export function ehEntradaDeTeste(entrada) {
+  const segs = minusculaAscii(entrada.replace(/\\/g, '/')).split('/').filter(Boolean);
+  const nome = segs[segs.length - 1] || '';
+  return segs.some((s) => s === 'tests' || s === 'test' || s === '__tests__') || /\.(?:test|spec)\./.test(nome);
+}
 
 /** Dois paths se sobrepõem quando são iguais ou um é prefixo de diretório do outro. */
 export function sobrepoe(a, b) {
