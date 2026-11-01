@@ -6,7 +6,7 @@ A interview abre a phase `high` e o MVP e termina com a `spec.md` em rascunho. E
 
 - Gate: rota `high` ou `mvp` e `spec.md` ausente no alvo (`references/disco.md`, Estado da phase). A interview abre a phase ou o MVP (`references/disco.md`, Abrir phase ou MVP). Com `spec.md` em rascunho, siga `references/spec.md`.
 - O líder fixa no brief o alvo, a rota e, quando houver, o motivo de `# Risco:` (`references/disco.md`, Cabeçalho).
-- Leia só o necessário para a próxima pergunta. Leitura ampla do código vai ao explorador.
+- Leia só o necessário para a próxima pergunta. Leitura ampla do código vai ao explorador; a exceção são os itens de `## Núcleo do projeto` que o pedido toca (passo 1).
 
 | Sinal | Modo |
 |---|---|
@@ -20,8 +20,8 @@ A interview abre a phase `high` e o MVP e termina com a `spec.md` em rascunho. E
 
 | Quem | Faz |
 |---|---|
-| Explorador | Mapeia o que o pedido toca no código, antes da primeira pergunta |
-| Líder | Conduz as perguntas, uma por vez, e decide o que assumir |
+| Explorador | Mapeia o que o pedido toca no código e verifica os fatos por sondagem, antes da primeira pergunta |
+| Líder | Abre os itens do núcleo que o pedido toca, conduz as perguntas, uma por vez, e decide o que assumir |
 | Redator | Grava a `spec.md` com os pontos e as decisões entregues |
 
 ## Passos
@@ -29,6 +29,10 @@ A interview abre a phase `high` e o MVP e termina com a `spec.md` em rascunho. E
 ### 1. Explorar
 
 O líder delega ao explorador o mapa do que o pedido toca: fluxos, consumidores, comportamento atual, bordas e testes existentes, cada um com path e evidência. No MVP sem código, o mapa registra o estado do repositório e o que já existe de stack, design system e infraestrutura. Cada ponto relevante vira linha de Pontos do projeto, com o que implica.
+
+Fato verificável (valor, limite de API, prazo, comportamento de biblioteca ou serviço, formato de dado) não é assumido nem perguntado: o explorador o verifica por sondagem, com shell só de leitura e consulta, e a evidência (comando ou fonte e resultado) entra em Pontos do projeto. Fato que só se prova implementando entra na spec com `(origem: assumida)` e vira o passo de verificação do plan (`references/plan.md`, Fatiar e ordenar); "verifico depois" sem esse passo é proibido.
+
+Ao mesmo tempo, o líder abre ele mesmo, sem resumo e inclusive as imagens, os itens da seção `## Núcleo do projeto` do `AGENTS.md` que o pedido toca, e pergunta a partir deles. Leitura delegada não substitui essa abertura.
 
 ### 2. Perguntar
 
@@ -44,13 +48,14 @@ Opções: <duas ou três, cada uma com o impacto em uma linha>
 ```
 
 - Sem base para recomendar, diga isso. Várias respostas de uma vez são válidas: registre tudo e siga só com o que falta. "Tanto faz" crava a recomendação.
-- Lacuna reversível e de baixo risco: o líder assume a recomendação, avisa e a registra como decisão assumida. Decisão cara, sensível, irreversível ou que altera a lógica central é perguntada; recomendação não é autorização.
+- Lacuna reversível e de baixo risco: o líder assume a recomendação, avisa e a registra como decisão assumida. Valor numérico, prazo, limite ou comportamento externo leva a origem de `references/spec.md` (Origem dos valores); fato verificável não é lacuna (passo 1). Decisão cara, sensível, irreversível ou que altera a lógica central é perguntada; recomendação não é autorização.
 
 ### 3. Cobrir o que o pedido aciona
 
 | Quando | Feche | Leia |
 |---|---|---|
-| Tela nova ou alterada | Decisões visuais do humano: modo, tom, o que evitar, copy e as telas e estados a ver renderizados, em no máximo duas perguntas | `references/spec/ui-visual-direction.md` |
+| Ajuste de tela existente | Decisões visuais do humano: modo, tom, o que evitar, copy e as telas e estados a ver renderizados, em no máximo duas perguntas | `references/spec/ui-visual-direction.md` |
+| Tela nova, site ou fluxo novo | As mesmas decisões visuais e também navegação, páginas e jornada da entrada à conclusão, com quantas perguntas forem necessárias | `references/spec/ui-visual-direction.md` |
 | Intenção clara e forma em aberto | Uma lente, opções e a direção recomendada | `references/interview/frameworks.md`, `references/interview/refinement-criteria.md` e, se necessário, `references/interview/examples.md` |
 | Banco, persistência, valor monetário ou cálculo exato | Invariantes de dados, precisão e os exemplos concretos, com bordas, da tabela do critério (`references/spec.md`, Critérios de aceite) | `references/database-and-migrations.md` |
 | Entrada externa (request, query, headers, arquivo) | Allowlist de campos e valores, tamanho máximo por entrada e o que o usuário vê quando a entrada é recusada | |
@@ -63,7 +68,7 @@ Proteção exigida sem decisão bloqueia a aprovação da spec.
 
 ### 4. Gravar
 
-Com as perguntas fechadas, o líder entrega ao redator o alvo, a rota, o motivo de `# Risco:` quando houver, os pontos do explorador e as decisões com a pergunta que originou cada uma. O redator grava a `spec.md` conforme `references/spec.md`, Gravação.
+Com as perguntas fechadas, o líder entrega ao redator o alvo, a rota, o motivo de `# Risco:` quando houver, os pontos do explorador com a evidência das sondagens e as decisões com a pergunta que originou cada uma e a origem de cada valor. O redator grava a `spec.md` conforme `references/spec.md`, Gravação.
 
 ## Modo documento
 

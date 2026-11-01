@@ -36,4 +36,4 @@ Investigue integrações, uploads, notificações, importação e auditoria quan
 
 ## Registro
 
-Na `spec.md`, decisão que o humano não fechou diz `assumida`, e nenhuma fica pendente. IDs estáveis por domínio ficam apenas para decisões que mudam arquitetura, acesso, dados, operação, custo, segurança ou escopo central. Detalhes cosméticos reversíveis não recebem ID.
+Na `spec.md`, decisão que o humano não fechou diz `assumida`, e nenhuma fica pendente. Valor numérico, prazo, limite ou comportamento externo leva o marcador de origem de `references/spec.md` (Origem dos valores), e fato verificável é sondado pelo explorador antes da spec (`references/interview.md`, Explorar). IDs estáveis por domínio ficam apenas para decisões que mudam arquitetura, acesso, dados, operação, custo, segurança ou escopo central. Detalhes cosméticos reversíveis não recebem ID.

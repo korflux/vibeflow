@@ -44,7 +44,7 @@ A execução registrada vale para o Approve enquanto as correções posteriores 
 ### 2. Julgar o produto
 
 1. **Critérios de aceite:** cada critério da spec, ou do corpo do commit em medium, está atendido e provado por ao menos um teste. Preencha a tabela de critérios com o teste e o resultado. Critério não atendido ou sem teste que o prove abre R* Required; só o humano retira um critério, com a decisão citada.
-2. **Defeitos no código alterado:** correção, bordas e erros das superfícies tocadas; teste falso, enfraquecido, pulado ou apagado (`references/testes.md`, Política de testes); caso que o Desenho de casos de `references/testes.md` exige para um critério e que falta; barra de `references/definition-of-done.md`.
+2. **Defeitos no código alterado:** correção, bordas e erros das superfícies tocadas; teste falso, enfraquecido, pulado ou apagado (`references/testes.md`, Política de testes); caso do Desenho de casos de `references/testes.md` ausente para um critério, Required quando a spec traz explicitamente o limite ou a tabela de exemplos que o exige e Nit nos demais; barra de `references/definition-of-done.md`.
 3. **Segurança:** só quando o diff toca input, auth, sessão, permissão, segredo, upload, integração externa ou dado pessoal, conforme `references/review/security-and-hardening.md`.
 4. **Banco e precisão:** só quando o diff toca persistência ou valor monetário, conforme `references/database-and-migrations.md`.
 5. **Visual:** quando um critério depende da interface renderizada, conforme `references/review/ui-visual-quality.md`, reaproveitando a evidência válida.

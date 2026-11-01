@@ -19,7 +19,7 @@ Um passo só é concluído com prova verde e commit real. O plan define a ordem 
 
 | Trabalho | Responsável |
 |---|---|
-| Codar, escrever os testes e rodar a `Prova:` do passo | Implementador; redator nos passos de prosa |
+| Codar, escrever os testes e rodar a `Prova:` do passo | Implementador, conforme `references/implementador.md`; redator nos passos de prosa |
 | Conferir o relatório, marcar a caixa e commitar | Líder |
 | Checkpoint | Verificador de contexto limpo |
 | Review | Revisor de contexto limpo (`references/review.md`) |
@@ -32,15 +32,15 @@ O líder nunca edita código nem executa teste. Antes do primeiro passo, confira
 ### 1. Executar o passo
 
 1. Pegue o primeiro número com caixa aberta. Passo sozinho vai a um implementador; grupo paralelo (`2a`, `2b`) vai num único despacho, em chamadas paralelas, um implementador por passo, cada um com ownership exclusivo dos `Arquivos:` do seu passo. Passo que precise de path fora do recorte volta ao líder antes de editar.
-2. O implementador coda, escreve os testes e roda a `Prova:` do passo (Trabalho de quem implementa). Prova vermelha volta ao mesmo implementador, que tem o contexto, até ficar verde ou virar impedimento real.
+2. O implementador coda, escreve os testes e roda a `Prova:` do passo (`references/implementador.md`). Prova vermelha volta ao mesmo implementador, que tem o contexto, até ficar verde ou virar impedimento real.
 3. O líder lê o relatório e confere que os arquivos alterados batem com o `Arquivos:` do passo (`references/delegation.md`, Conferência do líder). Divergência volta ao implementador.
 4. Com o passo verde, ou com todos os passos do grupo verdes, o líder marca as caixas e faz um commit para o passo ou para o grupo, com staging explícito dos paths conferidos e `git diff --cached --check` limpo. Falha de commit mantém a caixa aberta.
 
 ### 2. Checkpoint
 
-Com todos os passos anteriores a uma linha `Checkpoint:` marcados, um verificador de contexto limpo:
+Com todos os passos anteriores a uma linha `Checkpoint:` marcados, o líder despacha um verificador de contexto limpo com brief que traz só o diff do grupo e os critérios listados. A posição e o número de checkpoints seguem `references/disco.md` (Checkpoint). O verificador não reroda a prova dos passos, que já voltou verde:
 
-- roda os testes dos passos do grupo e o E2E só dos critérios listados que têm tela;
+- roda o E2E só dos critérios listados que têm tela;
 - confere o diff do grupo contra os critérios listados na spec.
 
 Falha volta ao implementador do passo que a causou; a correção entra no commit seguinte do grupo, no formato de passo. Verde, o líder marca a caixa do checkpoint, que entra no próximo commit da phase. Flake ou achado fora do recorte que o verificador registra em `.erros-encontrados/` também entra no commit seguinte da phase (`references/disco.md`, Glossário). Phase sem checkpoint segue direto para a review.
@@ -55,7 +55,7 @@ Roteie cada R* aberto pelo `papel:`: `implementador` para código e testes, `red
 
 ## Modo B
 
-Informe a limitação em uma linha. Cada run executa um passo, o primeiro aberto ou o que o humano nomeou: o chat assume o papel do implementador, roda a `Prova:`, marca a caixa e commita, sem push. Grupo paralelo roda em sequência. O checkpoint roda num chat novo com `/vibeflow implement`, que pela tabela de estados cai no checkpoint e o executa como verificador. A review roda num chat novo com `/vibeflow review`. Correção de R* segue o passo 4 inline, numa rodada por run; medium segue a Rota medium inline.
+Informe a limitação em uma linha. Cada run executa um passo, o primeiro aberto ou o que o humano nomeou: o chat assume o papel do implementador conforme `references/implementador.md`, roda a `Prova:`, marca a caixa e commita, sem push. Grupo paralelo roda em sequência. O checkpoint roda num chat novo com `/vibeflow implement`, que pela tabela de estados cai no checkpoint e o executa como verificador. A review roda num chat novo com `/vibeflow review`. Correção de R* segue o passo 4 inline, numa rodada por run; medium segue a Rota medium inline.
 
 ## Rota medium
 
@@ -84,20 +84,6 @@ R* de ajuste:
 Entrega medium ainda sem `review.md`: antes do commit `task(medium): ...`, o ajuste entra no recorte da entrega e, quando muda o aceite, nos critérios do brief; depois dele, o revisor o registra como R* na review que abre a phase. Sem phase de origem, o ajuste segue a linha low da Entrada.
 
 Registro de `.erros-encontrados/` corrigido é apagado no mesmo commit da correção; o Git guarda o histórico.
-
-## Trabalho de quem implementa
-
-1. **Reconhecer:** trace entrada, chamadas, consumidores e padrões compartilhados antes de editar, sem varredura cega. Edite só os `Arquivos:` do passo ou o recorte do brief.
-2. **Codar:** reutilize o que existe no projeto, na standard library, na plataforma e nas dependências instaladas. Sem abstração especulativa nem limpeza fora do recorte. Documente semanticamente responsabilidades e decisões. Barra de acabamento em `references/definition-of-done.md`; banco ou dinheiro exige `references/database-and-migrations.md`.
-3. **Testar e provar:** siga `references/testes.md` e rode a `Prova:` do passo.
-4. **Visual:** quando um critério depende da interface renderizada, capture e cite a evidência conforme `references/chrome-devtools.md`.
-5. **Entregar:** relatório fixo de `references/delegation.md`, com paths, comando e resultado da prova e pendências.
-
-Credencial, conta, pagamento, elevação administrativa ou integração persistente são impedimentos reais: relate a tentativa, o impedimento e a recomendação.
-
-### Política de testes
-
-A política, o ambiente local, a pirâmide, o desenho do E2E e o orçamento de duração moram em `references/testes.md`.
 
 ## Saída
 

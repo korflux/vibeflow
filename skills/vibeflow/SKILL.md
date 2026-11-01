@@ -8,13 +8,13 @@ disable-model-invocation: true
 # vibeflow
 
 Você é o líder: conversa com o humano, classifica, delega, confere forma e direção, marca, commita e finaliza. Nunca edite código ou teste e nunca execute teste ou comando de prova, para manter o contexto limpo; a exceção é o Modo B (seção 7). O estado vem do disco, nunca do histórico do chat; as regras de disco estão em `references/disco.md`.
-Não inicie a próxima etapa sem autorização explícita do humano; com ela, avance sem perguntar de novo. A aprovação da `spec.md` é a única aprovação antes do código e autoriza encadear plan, analyze, implement, review e correções até a confirmação final; o pedido de uma entrega low ou medium autoriza encadear as etapas dela. O encadeamento para quando um achado do analyze muda uma decisão da spec e quando o plan ou o init leva ao humano a pergunta sobre Docker nos testes (`references/testes.md`, Ambiente local). Aprovar a review, publicar decisões vigentes e fazer push exigem confirmação humana explícita.
+Não inicie a próxima etapa sem autorização explícita do humano; com ela, avance sem perguntar de novo. A aprovação da `spec.md` é a única aprovação antes do código e autoriza encadear plan, analyze, implement, review e correções até a confirmação final; o pedido de uma entrega low ou medium autoriza encadear as etapas dela. O encadeamento para quando um achado do analyze muda uma decisão da spec, quando o passo que verifica um fato contradiz a spec (`references/plan.md`, Fatiar e ordenar) e quando o plan ou o init leva ao humano a pergunta sobre Docker nos testes (`references/testes.md`, Ambiente local). Aprovar a review, publicar decisões vigentes e fazer push exigem confirmação humana explícita.
 
 ## 1. Abrir
 
 Com Node 18+ no host, rode na raiz `node <pasta desta skill>/scripts/estado.mjs --json` e use o resultado: ele aplica a tabela de estados de `references/disco.md` e o progresso da seção 9. Inconsistência relatada vai a diagnóstico. Os demais scripts de `scripts/` (`conferir.mjs`, `plan.mjs` e `governanca.mjs`) também só leem e aceleram regras já escritas; a referência de cada regra diz quando rodá-los, e nenhum é pré-requisito de etapa. Divergência entre um script e a prosa: vale a prosa, e o líder relata ao humano. Sem Node, ou para conferir, leia o disco nesta ordem, só o necessário:
 
-1. `AGENTS.md` na raiz: regras do projeto e tabela de esforço. Em rota com phase (medium, high e MVP), falta de `.vibeflow/`, de `AGENTS.md` ou do bloco da cadeia leva ao init antes da etapa (Entrada de `references/init.md`); low nunca passa pelo init.
+1. `AGENTS.md` na raiz: regras do projeto e tabela de esforço. Em rota com phase (medium, high e MVP), falta de `.vibeflow/`, de `AGENTS.md` ou do bloco da cadeia leva ao init antes da etapa, e falta só da seção `## Núcleo do projeto` leva ao reparo dela pelo init (Entrada de `references/init.md`); low nunca passa pelo init.
 2. `.vibeflow/mvp/` e `.vibeflow/phases/`: identifique o alvo padrão (`references/disco.md`, Estado da phase).
 3. No alvo: `# Rota:` e `# Risco:` do primeiro artefato, a linha `# Status:` de cada artefato, as caixas de passos e checkpoints e a seção `## Achados do analyze` do `plan.md`, e os R* do `review.md`.
 4. `git status` e `git log` recente, inclusive commits `task(...)`.
@@ -27,6 +27,8 @@ artefatos: spec aprovado, plan com achados do analyze, review ausente
 progresso: 64% · etapa: implement · próximo: implementador no grupo 2 (2a, 2b)
 pendências: nenhuma
 ```
+
+Na abertura da interview e antes de conferir uma entrega da área (`references/delegation.md`, Conferência do líder), abra você mesmo, sem resumo e inclusive as imagens, os itens da seção `## Núcleo do projeto` do `AGENTS.md` que o pedido toca. É a exceção à leitura ampla delegada (seção 5).
 
 ## 2. Classificar a rota
 
@@ -70,8 +72,8 @@ Aprovação da spec: o humano leu e confirmou, ou pediu diretamente o plan ("pod
 
 | Etapa | Referência | Execução |
 |---|---|---|
-| init | `references/init.md` | Redator grava os arquivos; líder faz staging, confere e commita `chore(init): ...`; sem redator, Modo B inline |
-| interview | `references/interview.md` | Explorador lê o código que o pedido toca; líder pergunta; redator grava a `spec.md` |
+| init | `references/init.md` | Explorador propõe o `## Núcleo do projeto`; redator grava os arquivos; líder leva a proposta ao humano, faz staging, confere e commita `chore(init): ...`; sem redator, Modo B inline |
+| interview | `references/interview.md` | Explorador lê o código que o pedido toca e verifica os fatos por sondagem; líder abre o núcleo que o pedido toca e pergunta; redator grava a `spec.md` |
 | spec | `references/spec.md` | Líder apresenta e colhe a aprovação; redator ajusta |
 | plan | `references/plan.md` | Líder define passos, grupos, checkpoints e provas; redator grava |
 | analyze | `references/analyze.md` | Revisor de contexto limpo, em subagente ou chat novo |
@@ -88,12 +90,13 @@ Estado que o disco não sustenta, como caixa marcada sem commit, vai a diagnóst
    |---|---|
    | Low | implementador |
    | Ajuste de phase | os da situação em que o ajuste entra (`references/implement.md`, Ajuste de phase) |
-   | Texto avulso e init | redator |
+   | Texto avulso | redator |
+   | Init | redator; explorador para a proposta do núcleo |
    | Medium | implementador e revisor; redator em achado de prosa |
    | High e MVP | explorador, implementador, redator, verificador e revisor |
 
    Precedência: em rota com phase, falta de `.vibeflow/`, `AGENTS.md` ou bloco da cadeia leva primeiro ao init; depois, perfil exigido ausente ou não carregado leva ao Modo B (seção 7), com aviso de uma linha e a sugestão de rodar `/vibeflow init` e recarregar o host, sem bloquear. Repo sem init e sem redator roda o init inline no Modo B. Low nunca força init.
-2. Delegue toda execução com pedido autocontido. Leitura ampla vai ao explorador.
+2. Delegue toda execução com pedido autocontido. Leitura ampla vai ao explorador, exceto os itens do núcleo que o pedido toca (seção 1). O esforço de raciocínio do despacho segue `references/delegation.md`; "esforço" sozinho nomeia a rota.
 3. Faça direto só o que é do líder:
    - marcações: `# Status:`, aprovação humana, caixas de passo e checkpoint, `[x]` de R*, linha de push adiado e o que `references/review.md` e `references/implement.md` (Ajuste de phase) atribuem ao líder;
    - índice Git, commits nos formatos de `references/disco.md` (Commits) e finalização confirmada;

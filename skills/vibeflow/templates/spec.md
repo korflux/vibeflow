@@ -16,6 +16,7 @@
 ## Decisões
 
 1. <decisão fechada>. Pergunta: <pergunta que a originou>. Motivo: <1 linha>
+<!-- Valor numérico, prazo, limite ou comportamento externo em Decisões e Critérios de aceite traz na mesma linha (origem: humano), (origem: assumida) ou (origem: verificado <fonte>): references/spec.md (Origem dos valores). Decisão assumida pelo líder diz assumida no Motivo. -->
 
 ## Critérios de aceite
 

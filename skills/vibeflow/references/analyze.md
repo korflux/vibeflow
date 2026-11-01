@@ -18,10 +18,12 @@ Conferência independente do plan contra a spec e o código, antes do implement.
 ## Passos
 
 1. O líder delega ao revisor o path do alvo e esta referência (`references/delegation.md`).
-2. Com Node, o revisor roda primeiro `scripts/plan.mjs` no alvo, que aponta a parte mecânica (forma, critério sem passo, critério inexistente, checkpoint, seções e placeholder), e julga o resto. O revisor confere, com `references/analyze/coverage.md`:
+2. Com Node, o revisor roda primeiro `scripts/plan.mjs` no alvo, que aponta a parte mecânica (forma, critério sem passo, critério inexistente, checkpoint, passo acima do teto, seções e placeholder), e julga o resto. O revisor confere, com `references/analyze/coverage.md`:
    - critério de aceite da spec sem passo ou sem prova;
    - arquivo ou consumidor esquecido em `Arquivos:`;
-   - teste que a mudança quebra fora do recorte;
+   - teste que a mudança quebra fora do recorte, inclusive por snapshot, schema ou seletor;
+   - passo acima do teto de `references/disco.md` (Plan > Arquivos), que o revisor divide pelo resultado verificável em vez de engordar;
+   - fato da spec que só se prova implementando sem o passo de verificação de `references/plan.md` (Fatiar e ordenar);
    - contradição entre passo e spec;
    - contrato errado: formato do passo, `Arquivos:`, checkpoint ou Regressão completa fora de `references/disco.md` (Plan) e de `references/plan.md`.
 3. O revisor corrige o `plan.md` direto e anota cada correção na seção `## Achados do analyze`, como última seção do arquivo. Sem achado, a seção traz `Nenhum achado.`.

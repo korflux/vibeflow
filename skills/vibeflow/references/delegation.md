@@ -4,21 +4,21 @@ Leia antes da primeira delegação da run. O `SKILL.md` e a referência da etapa
 
 ## Papéis
 
-Use perfis realmente disponíveis. O líder não escolhe modelo ao delegar; o modelo e o esforço vêm do perfil instalado. Os perfis exigidos por situação estão no `SKILL.md`, seção 5. Perfil exigido ausente ou não carregado nunca é substituído por outro papel: a etapa segue no Modo B, com aviso de uma linha.
+Use perfis realmente disponíveis. O modelo vem do perfil instalado; o líder não escolhe modelo ao delegar. O líder escolhe o esforço de raciocínio do implementador a cada despacho, conforme o passo, com teto `xhigh`; quando o host não aceita esforço no despacho, vale o esforço padrão do perfil, que também é o dos demais papéis. Os perfis exigidos por situação estão no `SKILL.md`, seção 5. Perfil exigido ausente ou não carregado nunca é substituído por outro papel: a etapa segue no Modo B, com aviso de uma linha.
 
 | Papel | Entrega | Escrita autorizada |
 |---|---|---|
-| explorador | Fluxo, consumidores, paths e evidências para a interview, o plan, o passo ou um diagnóstico | Nenhuma |
+| explorador | Fluxo, consumidores, paths e evidências para a interview, o plan, o passo ou um diagnóstico; no init, a proposta da seção `## Núcleo do projeto` | Nenhuma; shell só para leitura e consulta, sem escrita fora das saídas normais dos comandos |
 | implementador | Código e testes juntos do passo, com a `Prova:` do passo verde e inputs reais; em low ou medium, a mudança do brief com prova proporcional. Corrige a falha da própria prova, a falha devolvida pelo checkpoint e o R* de código | Código e testes dos `Arquivos:` do passo, do recorte do brief ou dos paths do R* |
 | redator | Prosa da `spec.md` e do `plan.md` a partir das decisões que o líder conduziu com o humano; texto avulso; arquivos de governança do init; passo de prosa; R* de prosa | O artefato da etapa delegada, criado conforme `references/disco.md`; os paths do brief; os `Arquivos:` do passo de prosa; os paths do R*; o registro em `.erros-encontrados/` de achado do explorador, quando o líder o delega. `AGENTS.md` só quando declarado num passo ou pedido pelo líder, nunca a seção `## Decisões vigentes`. Nunca código, testes, `review.md`, `## Achados do analyze` nem as marcações do líder |
-| verificador | Só no checkpoint, com contexto limpo: roda as provas dos passos do grupo e confere o diff do grupo contra os critérios da spec | Saídas normais das provas e, em `.erros-encontrados/`, um arquivo por flake ou achado fora do recorte que encontrar |
+| verificador | Só no checkpoint, com contexto limpo: sem rerodar a prova dos passos, roda o E2E dos critérios com tela do grupo e confere o diff do grupo contra os critérios da spec | Saídas normais das provas e, em `.erros-encontrados/`, um arquivo por flake ou achado fora do recorte que encontrar |
 | revisor | Analyze e review, com contexto limpo: confere spec, plan e código; na review, julga os critérios e o diff e roda a regressão completa | No analyze, as correções diretas no `plan.md` e a seção `## Achados do analyze` (`references/analyze.md`); na review, o `review.md` (`references/review.md`); nos dois, um arquivo em `.erros-encontrados/` por flake ou achado fora do recorte que encontrar |
 
 O líder tem, com exclusividade, as marcações, o índice Git, os commits, a finalização confirmada e a publicação de decisões vigentes (`SKILL.md`, seção 5, item 3). Fora do Modo B, ele não escreve código nem teste e não executa prova.
 
 ## Delegar e colaborar
 
-Investigue diretamente apenas o necessário para uma decisão do líder; leitura ampla vai ao explorador.
+Investigue diretamente apenas o necessário para uma decisão do líder; leitura ampla vai ao explorador. Exceção: os itens de `## Núcleo do projeto` do `AGENTS.md` que o pedido toca, que o líder abre ele mesmo, sem resumo e inclusive as imagens.
 
 Selecione colaboração pelo benefício: o explorador prepara consumidores do próximo passo enquanto o implementador resolve o atual; agentes relacionados trocam detalhes diretamente. Informe interlocutores, resultado compartilhado, contratos e ownership. Preserve um dono por arquivo e a independência do verificador e do revisor. Evidência já válida não exige novo handoff nem nova execução.
 
@@ -28,12 +28,14 @@ Escrita paralela de código só ocorre num grupo paralelo, com ownership exclusi
 
 Antes de aceitar cada devolutiva que muda o estado da phase, confira forma e direção: a entrega é o que o humano pediu e o que o plan prevê. Correção técnica pertence ao verificador no checkpoint e ao revisor no analyze e na review. Consuma resultado, cobertura, exceções e próximo responsável, sem repetir prova. Ler o `git diff --stat` é checagem de forma, paths contra `Arquivos:`, e não reexame do conteúdo; com Node, `scripts/conferir.mjs --passo <IDs>` faz essa comparação para passos e R*, e path fora do recorte volta ao dono.
 
+Entrega que toca o núcleo do projeto tem conferência de direção contra a referência: antes de conferir, o líder abre o item do núcleo daquela área e compara com ele a evidência anexada (capturas, resposta da API, texto renderizado). Divergência volta ao dono com apontamento concreto: o item, o trecho da evidência e o que diverge. A conferência de direção não revisa código linha a linha; a correção técnica segue com o verificador e o revisor.
+
 | Entrega | Leia | Confronte com |
 |---|---|---|
 | Prosa de spec, plan, init ou texto avulso | O arquivo gravado | As decisões e respostas do humano entregues no brief: cada uma presente e nada decidido além delas; não reescreva o artefato |
 | Passo ou grupo paralelo | O relatório fixo e o `git diff --stat`; um trecho do diff só quando o relatório citar algo estranho | Os `Arquivos:` de cada passo: nenhum path fora do recorte; o campo `prova` verde, com a execução vermelha anterior do teste do critério ou o motivo da isenção (`references/testes.md`, Política de testes) |
 | Checkpoint | O relatório fixo do verificador | Os critérios listados na linha do checkpoint, todos cobertos |
-| Aceite visual | As imagens citadas no campo `prova` | O aceite visual da spec ou do brief; `prova` sem paths de imagem reprova |
+| Aceite visual | As imagens finais citadas no campo `prova`, uma por critério com tela | O aceite visual da spec ou do brief; `prova` sem a imagem final de cada critério com tela reprova; imagens de iterações intermediárias não são exigidas |
 | API ou CLI | A evidência anexada: chamada real com resposta ou saída de comando | O critério do plan ou do brief; evidência ausente reprova |
 | Low e medium | O diff, como no passo, e, com aceite visual, as imagens anexadas | O brief |
 
@@ -45,7 +47,7 @@ Conferência aprovada aparece só na linha de progresso (`SKILL.md`, seção 9);
 
 ## Pedido autocontido
 
-Inclua etapa, resultado, passo ou R*, critérios de aceite, prova, inputs conhecidos, paths exclusivos, interlocutores, pendências de origem e o relatório abaixo. Ao redator de spec ou plan, entregue o path do alvo, a rota, o risco, as decisões e respostas do humano e o template; ele não conversa com o humano. Informe que há outros agentes e que o destinatário preserva trabalho alheio. Não copie o plan inteiro nem logs; forneça referências e o recorte suficiente.
+Inclua etapa, resultado, passo ou R*, critérios de aceite, prova, inputs conhecidos, paths exclusivos, interlocutores, pendências de origem e o relatório abaixo. Ao implementador, inclua também o mapa do explorador para o recorte (consumidores, testes afetados e padrão a seguir) e os itens de `## Núcleo do projeto` que ele abre. Ao verificador, entregue só o diff do grupo e os critérios do checkpoint. Ao redator de spec ou plan, entregue o path do alvo, a rota, o risco, as decisões e respostas do humano e o template; ele não conversa com o humano. Informe que há outros agentes e que o destinatário preserva trabalho alheio. Não copie o plan inteiro nem logs; forneça referências e o recorte suficiente.
 
 Regra de instalação, para todo papel: instale ferramenta ausente necessária à prova pelo gerenciador do projeto ou por fonte oficial, quando o ambiente e as permissões permitirem, sem alterar manifesto nem lockfile fora do recorte. Credencial, criação de conta, pagamento, elevação administrativa ou configuração persistente de integração (por exemplo, registrar um MCP) é impedimento real e vai ao humano.
 
@@ -55,7 +57,7 @@ Regra de instalação, para todo papel: instale ferramenta ausente necessária �
 estado: verde | bloqueado | pergunta
 etapa: init | interview | spec | plan | analyze | passo | checkpoint | correcao | review | exploracao | texto
 paths: <alterados, um por linha, ou nenhum>
-prova: <comando e resultado; teste do critério vermelho antes da mudança e verde depois, ou motivo da isenção; inputs reais; com aceite visual, paths das imagens conforme references/chrome-devtools.md>
+prova: <comando e resumo do resultado, só com as falhas, sem log completo; teste do critério vermelho antes da mudança e verde depois, ou motivo da isenção; inputs reais; com aceite visual, paths das imagens finais conforme references/chrome-devtools.md>
 cobertura: <critérios certificados e limites do recorte>
 pendencias: <nenhuma ou falha/impedimento concreto>
 proximo: <ação e responsável>
@@ -69,7 +71,7 @@ Verde certifica somente o recorte. Bloqueado é impedimento real; pergunta é de
 | Nível | Responsável | Executa |
 |---|---|---|
 | Passo | Implementador; redator no passo de prosa | A `Prova:` do passo |
-| Checkpoint | Verificador | As provas dos passos do grupo, uma vez sobre os inputs finais (`references/implement.md`, Checkpoint) |
+| Checkpoint | Verificador | O E2E dos critérios com tela do grupo e a conferência do diff contra os critérios, sem rerodar a prova dos passos (`references/implement.md`, Checkpoint) |
 | Review | Revisor | A regressão completa (`references/review.md`) |
 
 O que cada nível testa, inclusive onde roda o E2E, segue `references/testes.md` (Política de testes). Nenhum papel amplia a prova do seu nível nem repete prova só por assumir a etapa. Mudança ou falha renova somente a prova afetada por ela. Flake e achado fora do recorte seguem o Glossário de `references/disco.md`.

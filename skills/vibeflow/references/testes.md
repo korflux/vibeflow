@@ -8,18 +8,18 @@ Casa única das regras de teste do projeto consumidor: o que testar, como desenh
 - Teste novo só para critério não coberto ou risco concreto: erro, borda, segurança ou dinheiro. Antes de criar, procure um teste existente do fluxo e estenda-o.
 - Vermelho antes do verde: o teste que prova um critério, ou que reproduz um bug, roda antes da mudança e falha pelo motivo esperado; depois da mudança, passa. O relatório traz as duas execuções no campo `prova`. Ficam isentos refatoração sem mudança de comportamento, critério de preservação (que passa antes e depois), passo de infraestrutura e passo de prosa, com o motivo no relatório. Teste que já passa antes da mudança não prova o critério.
 - No passo, rode só os testes afetados, pelo grafo de imports da ferramenta do projeto (por exemplo, `vitest run --changed <base>` ou `playwright test --only-changed=<ref>`), sem E2E. Sem esse recurso, rode a `Prova:` do passo; sem plan, os testes do módulo tocado e dos consumidores diretos.
-- O E2E dos critérios com tela roda no checkpoint; a regressão completa roda uma vez, na review.
+- No checkpoint, o verificador roda o E2E dos critérios com tela do grupo, sem rerodar os testes dos passos. O E2E das demais telas, inclusive em phase sem checkpoint, entra na regressão completa, que roda uma vez, na review.
 - Nunca enfraqueça, pule ou apague teste para obter verde. Mudança de asserção exige justificativa pelo critério de aceite.
 - Teste falso, sem asserção real ou que só exercita mock, não prova critério nem passo.
 - Passo só de prosa prova com uma checagem mecânica do que o texto alimenta, nunca com teste de presença de palavras.
 
 ## Desenho de casos
 
-Os casos saem do critério de aceite, não do código. Para cada critério, escolha só as técnicas que a regra aciona:
+Os casos saem do critério de aceite, não do código. Para cada critério, escolha só as técnicas que a regra aciona. A tabela é teto, não piso: não acrescente casos além dela. A severidade de caso ausente segue `references/review.md` (Julgar o produto).
 
 | Quando a regra tem | Casos |
 |---|---|
-| Faixa ou limite (valor, tamanho, data, quantidade) | O limite, um abaixo e um acima; zero e vazio |
+| Faixa ou limite (valor, tamanho, data, quantidade) | O próprio limite e o primeiro valor recusado |
 | Classes de entrada com o mesmo tratamento | Um caso por classe, válida e inválida, sem repetir a classe |
 | Estados e transições (pedido, reserva, assinatura) | Cada transição permitida e a principal proibida |
 | Autorização | O dono, outro usuário (anti-IDOR) e quem não está autenticado |

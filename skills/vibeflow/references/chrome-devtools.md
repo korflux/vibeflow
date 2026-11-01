@@ -16,9 +16,9 @@ Se a prova visual for necessária e nenhuma capacidade estiver disponível, apli
 
 | Papel | Faz |
 |---|---|
-| Implementador | Dono da captura: captura screenshots nos viewports e estados do critério ou do brief, inclusive quando uma correção altera a UI renderizada, grava as imagens na pasta temporária do sistema, fora do repositório, e cita os paths no campo `prova` do relatório fixo (`references/delegation.md`) |
+| Implementador | Dono da captura: captura uma vez por critério com tela, ao fechar o passo, sobre a interface final, nos viewports e estados do critério ou do brief, sem captura a cada iteração; correção que altera a UI renderizada recaptura os critérios afetados ao fechar. Grava as imagens na pasta temporária do sistema, fora do repositório, e cita os paths no campo `prova` do relatório fixo (`references/delegation.md`) |
 | Verificador | No checkpoint, reaproveita essa evidência, sem nova captura |
-| Líder | Só abre as imagens citadas e nunca captura |
+| Líder | Só abre as imagens finais citadas, que a conferência exige (`references/delegation.md`, Conferência do líder), e nunca captura |
 | Revisor | Recaptura somente quando a evidência citada não existe mais (por exemplo, em chat novo) ou os inputs renderizados mudaram; senão, reaproveita |
 
 Evidência verde vale enquanto os inputs renderizados não mudarem; não repita a captura apenas para produzir outra. Imagem capturada nunca entra em commit.
