@@ -187,14 +187,17 @@ test('--spec: texto entre aspas não é vago; palavra sem acento, em NFD ou com 
 // --spec: valor sem origem (decisão 3 da phase-6; critérios A1 a A3)
 // ---------------------------------------------------------------------------
 
+// Dica que o achado de valor sem origem traz: o marcador explícito, não a palavra solta.
+const DICA = 'marque na linha (origem: humano), (origem: assumida) ou (origem: verificado (<fonte>))';
+
 test('--spec: valor sem origem em decisão e em critério de spec em rascunho é achado (A1)', (t) => {
   const texto = specCompleta({
     decisoes: '1. Retenção de 48 horas. Pergunta: por quanto tempo guardar? Motivo: reduz custo.\n2. Reserva sem login. Pergunta: exige conta? Motivo: reduz atrito.',
     criterios: '- A1: com 10 tentativas erradas; quando tenta de novo, a conta bloqueia\n- A2: com a senha válida; quando entra, vê a agenda',
   });
   assert.deepEqual(conferirSpec(faseSpec(t, texto)).achados, [
-    'decisão 1: valor sem origem (48 horas); marque na linha verificado (<fonte>), humano ou assumida',
-    'critério A1: valor sem origem (10 tentativas); marque na linha verificado (<fonte>), humano ou assumida',
+    `decisão 1: valor sem origem (48 horas); ${DICA}`,
+    `critério A1: valor sem origem (10 tentativas); ${DICA}`,
   ]);
 });
 
@@ -212,21 +215,51 @@ test('--spec: valor é número com unidade, prazo ou limite; ID, número de deci
   assert.deepEqual(conferirSpec(faseSpec(t, semValor)).achados, []);
 });
 
-test('--spec: origem verificado (fonte), humano ou assumida na mesma linha tira o achado (A2)', (t) => {
+test('--spec: marcador (origem: verificado (fonte), humano ou assumida) na mesma linha tira o achado (A2)', (t) => {
   const texto = specCompleta({
-    decisoes: '1. Retenção de 48 horas (origem: verificado (docs do gateway)). Pergunta: por quanto tempo guardar? Motivo: reduz custo.\n2. Convite expira em 7 dias. Pergunta: quando expira? Motivo: decisão do humano.\n3. Fila de 500 itens. Pergunta: qual o tamanho? Motivo: assumida.',
+    decisoes: '1. Retenção de 48 horas (origem: verificado (docs do gateway)). Pergunta: por quanto tempo guardar? Motivo: reduz custo.\n2. Convite expira em 7 dias (origem: humano). Pergunta: quando expira? Motivo: preferência.\n3. Fila de 500 itens (origem: assumida). Pergunta: qual o tamanho? Motivo: tamanho típico.',
     criterios: '- A1: com 10 tentativas erradas; quando tenta de novo, a conta bloqueia (origem: humano)\n- A2: com a fila cheia; quando entra o 501o item, vê o limite de 500 itens (origem: assumida)',
   });
   assert.deepEqual(conferirSpec(faseSpec(t, texto)).achados, []);
-  // O mesmo texto sem nenhuma marca de origem acusa as cinco linhas, o que prova que a marca é o que tira o achado.
+  // O mesmo texto sem nenhum marcador acusa as cinco linhas, o que prova que o marcador é o que tira o achado.
   const semMarcas = texto
     .replace(' (origem: verificado (docs do gateway))', '')
-    .replace('decisão do humano', 'conveniência')
-    .replace('Motivo: assumida.', 'Motivo: tamanho típico.')
     .replace(/ \(origem: (?:humano|assumida)\)/g, '');
   assert.equal(conferirSpec(faseSpec(t, semMarcas)).achados.length, 5);
-  const vazia = specCompleta({ criterios: '- A1: a retenção dura 48 horas (origem: verificado ())' });
-  assert.equal(conferirSpec(faseSpec(t, vazia)).achados.length, 1);
+});
+
+// A marca explícita é o único reconhecimento de origem: palavra solta na linha (como "pedido do
+// humano" no Motivo) não vale, porque zerava o achado de qualquer valor da linha.
+test('--spec: palavra solta humano, assumida ou verificado não é origem; só o marcador explícito com fonte (A2)', (t) => {
+  const invalidos = [
+    'Motivo: pedido do humano',
+    'Motivo: assumida',
+    'Motivo: verificado (docs do gateway)',
+    'origem: humano',
+    '(origem: verificado ())',
+    '(origem: verificado)',
+    '(origem: verificado (<fonte>))',
+    '(origem: talvez)',
+  ];
+  for (const marca of invalidos) {
+    const r = conferirSpec(faseSpec(t, specCompleta({ criterios: `- A1: a retenção dura 48 horas; ${marca}` })));
+    assert.equal(r.achados.length, 1, `${marca} não deveria valer como origem`);
+    assert.match(r.achados[0], /^critério A1: valor sem origem \(48 horas\)/);
+  }
+  const validos = ['(origem: humano)', '(origem: assumida)', '(origem: verificado (docs do gateway))', '(origem: verificado docs do gateway)', '(Origem: Humano)'];
+  for (const marca of validos) {
+    const r = conferirSpec(faseSpec(t, specCompleta({ criterios: `- A1: a retenção dura 48 horas ${marca}` })));
+    assert.deepEqual(r.achados, [], `${marca} deveria valer como origem`);
+  }
+  // Mesma regra na decisão: "Motivo: pedido do humano" com valor sem marcador gera achado.
+  const decisao = specCompleta({ decisoes: '1. Retenção de 48 horas. Pergunta: por quanto tempo guardar? Motivo: pedido do humano.' });
+  assert.deepEqual(conferirSpec(faseSpec(t, decisao)).achados, [`decisão 1: valor sem origem (48 horas); ${DICA}`]);
+});
+
+// A marca vale para a linha inteira; a limitação está documentada em `ponytail:` no script.
+test('--spec: linha com dois valores e um marcador não tem achado (a marca vale para a linha)', (t) => {
+  const r = conferirSpec(faseSpec(t, specCompleta({ criterios: '- A1: com 10 tentativas e 48 horas de bloqueio (origem: humano)' })));
+  assert.deepEqual(r.achados, []);
 });
 
 test('--spec: valor sem origem em linha de tabela de exemplos ou em spec aprovada não é achado (A3)', (t) => {
@@ -255,7 +288,8 @@ test('CLI --spec: valor sem origem sai com 1 e a marca de origem sai com 0 (A1 e
 // ---------------------------------------------------------------------------
 
 test('passo com 13 entradas de código em Arquivos: está acima do teto (A4)', (t) => {
-  // O 13º path parece teste pelo nome da pasta (`latest`), mas não é: pasta e nome têm de ser iguais a `test`.
+  // O 13º path parece teste pelo nome da pasta (`latest`), mas não é: teste é só path com segmento `tests`, `test`
+  // ou `__tests__`, ou com nome `.test.` ou `.spec.`.
   const r = conferirPlan(fase(t, [passo('1', { arquivos: `${arquivosDe(12)}, \`src/latest/atual.js\`` })]));
   assert.deepEqual(r.achados, ['passo 1: 13 entradas de código em Arquivos:, acima do teto de 12; divida o passo pelo resultado verificável']);
 });

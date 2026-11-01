@@ -15,7 +15,8 @@
 // Com --spec, confere só a spec, antes da aprovação (references/spec.md, Fechar): seções
 // obrigatórias, decisão sem Pergunta: ou Motivo:, critério repetido, adjetivo vago no
 // critério, valor sem origem em Decisões e Critérios de aceite (só em spec com
-// `# Status: rascunho`) e placeholder esquecido. Não exige plan.md.
+// `# Status: rascunho`; a origem é o marcador `(origem: humano | assumida | verificado
+// (<fonte>))` na mesma linha) e placeholder esquecido. Não exige plan.md.
 //
 // Uso:
 //   node plan.mjs [--spec] [--alvo phase-N|mvp] [--raiz <dir>] [--json]
@@ -211,7 +212,7 @@ const RE_CITACAO = /`[^`]*`|"[^"]*"|“[^”]*”|'[^']*'/g;
 // crases ou aspas conta, porque é como a spec cita o valor do limite ou da mensagem.
 // ponytail: lista fixa de unidades; valor com unidade fora dela (por exemplo, "3 mesas")
 // passa, e só a conferência do líder e o analyze o pegam; acrescentar a unidade quando um
-// valor real escapar. Horário do dia ("10h") conta como valor: a spec marca `humano`.
+// valor real escapar. Horário do dia ("10h") conta como valor: a spec marca `(origem: humano)`.
 const NUMERO = String.raw`\d+(?:[.,]\d+)*`;
 const UNIDADES = [
   'milissegundos?', 'ms', 'segundos?', 'seg', 's', 'minutos?', 'min', 'horas?', 'h', 'dias?', 'semanas?', 'm[eê]s(?:es)?', 'anos?', // prazo
@@ -222,8 +223,15 @@ const RE_VALOR = new RegExp(
   String.raw`(?<![\p{L}\p{N}_])(?<!\p{L}-)(?:(?:R\$|US\$|€)\s?${NUMERO}|${NUMERO}\s?(?:${UNIDADES})(?![\p{L}\p{N}]))`,
   'giu',
 );
-// Origem marcada na mesma linha da decisão ou do critério: `verificado (<fonte>)`, `humano` ou `assumida`.
-const RE_ORIGEM = /verificado\s*\([^)]+\)|(?<!\p{L})(?:humano|assumida)(?!\p{L})/iu;
+// Origem: só o marcador explícito na mesma linha da decisão ou do critério, `(origem: humano)`,
+// `(origem: assumida)` ou `(origem: verificado (<fonte>))`, com a fonte também aceita sem os
+// parênteses internos (`(origem: verificado docs do gateway)`). A fonte não pode ser vazia nem
+// começar por `<` (o `<fonte>` copiado do modelo). Palavra solta na linha, como "pedido do
+// humano" no Motivo, não vale: zeraria o achado de qualquer valor da linha.
+// ponytail: a marca vale para a linha inteira; linha com dois valores e uma marca passa mesmo
+// quando só um deles tem origem, e fonte com parênteses aninhados não é reconhecida. Separar
+// os valores em linhas próprias quando um valor sem origem escapar assim.
+const RE_ORIGEM = /\(origem:\s*(?:humano|assumida|verificado(?:\s*\(\s*[^()<\s][^()]*\)|\s+[^()<\s][^()]*))\s*\)/iu;
 
 /** Valores de uma linha de decisão ou critério, sem repetidos; vazio quando a linha marca a origem. */
 function valoresSemOrigem(texto) {
@@ -231,7 +239,7 @@ function valoresSemOrigem(texto) {
   return [...new Set([...texto.normalize('NFC').matchAll(RE_VALOR)].map((v) => v[0]))];
 }
 
-const DICA_ORIGEM = 'marque na linha verificado (<fonte>), humano ou assumida';
+const DICA_ORIGEM = 'marque na linha (origem: humano), (origem: assumida) ou (origem: verificado (<fonte>))';
 
 /**
  * Achados de forma da spec: seções, decisões sem pergunta ou motivo, critérios, valores sem
