@@ -3,8 +3,8 @@
 // Confere AGENTS.md e o bloco da cadeia, a ponte, o .gitkeep, os perfis globais por host
 // (com CLAUDE_CONFIG_DIR e CODEX_HOME apontando para pastas temporárias), o perfil
 // corretor obsoleto, o perfil de projeto customizado, o aviso (sem falha) de AGENTS.md sem a
-// seção `## Núcleo do projeto` e o backup por tamanho e SHA-256 (references/init.md e
-// references/disco.md, Backup). Rodar com: node --test
+// seção `## Núcleo do projeto` e o backup por tamanho e SHA-256 (references/init.md, passos
+// e Backup de arquivo de regra). Rodar com: node --test
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

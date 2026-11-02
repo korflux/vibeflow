@@ -1,6 +1,6 @@
 # Testes
 
-Casa única das regras de teste do projeto consumidor: o que testar, como desenhar os casos, onde rodar, como desenhar o E2E e quanto a suíte pode durar. A mecânica de cada etapa fica na referência dela: passo e checkpoint em `references/implement.md`, regressão completa em `references/review.md`.
+Casa única das regras de teste do projeto consumidor: o que testar, como desenhar os casos, como desenhar o E2E e quanto a suíte pode durar. Ambiente local e Docker nos testes ficam em `references/init.md` (Ambiente local). A mecânica de cada etapa fica na referência dela: passo e checkpoint em `references/implement.md`, regressão completa em `references/review.md`.
 
 ## Política de testes
 
@@ -30,13 +30,6 @@ Os casos saem do critério de aceite, não do código. Para cada critério, esco
 - Mock só na fronteira do sistema: rede externa, relógio, aleatoriedade e serviço pago. Código do próprio projeto e banco de teste rodam reais.
 - Teste determinístico: relógio e semente fixos, sem depender da ordem de execução nem de dado deixado por outro teste.
 - Dados de teste montados pelo próprio teste, ou por fábrica do projeto, com só os campos que o caso exige.
-
-## Ambiente local
-
-- Prefira serviços nativos (instalação oficial do sistema) ou embutidos no processo de teste (binário como dependência de desenvolvimento, como `embedded-postgres`) a containers. Docker fica para o CI.
-- Banco limpo vem de banco por arquivo, por worker ou por template, de reset de schema ou de transação com rollback, nunca de recriar container.
-- Quando o projeto já usa Docker nos testes (comando de teste que chama `docker`, `docker compose` no setup de teste, arquivo de compose do projeto como `docker-compose.yml`, `compose.yaml` e variantes, ou documentação que o prefere) e o `AGENTS.md` do projeto não registra a decisão, o líder pergunta ao humano uma vez, com recomendação, se prefere migrar para uma forma mais leve, e registra a resposta na seção Ambiente do `AGENTS.md` do projeto. Com a decisão registrada, não pergunte de novo.
-- A pergunta acontece no init e no plan, quando a decisão não está registrada. No init, o registro entra no commit de governança; no plan, vira o primeiro passo do plan, conforme `references/plan.md` (passo 2).
 
 ## Pirâmide
 

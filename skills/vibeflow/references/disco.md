@@ -74,12 +74,11 @@ Uma linha física por passo, com os campos nesta ordem, separados por ` · `:
 
 ### Arquivos
 
-- Só o texto entre crases do trecho entre `Arquivos:` e `· Prova:` conta, sempre na linha do passo.
-- Paths relativos ao repo, testes incluídos. Diretório ou curinga (`*`, `?`, `[`) vale como prefixo do diretório anterior ao curinga. `.`, `./`, path vazio após normalizar, curinga na raiz e `..` que escapa da raiz valem como a raiz inteira. Barra invertida vale como barra.
-- Dois paths se sobrepõem quando são iguais ou um é prefixo de diretório do outro (`a` e `a/b`, nunca `a` e `ab`), comparando sem distinção de maiúsculas em A-Z.
-- Path incomparável torna o passo inteiro sem arquivos comparáveis: caractere fora do ASCII, path absoluto, `:`, `<`, `>`, `"` ou `|`, ou segmento terminado em ponto ou espaço (exceto `.` e `..`). Passo sem `Arquivos:` ou com path incomparável não divide número com outro passo.
-- Passos irmãos (mesmo número) não têm `Arquivos:` sobrepostos. Declare o recorte mais estreito que o passo escreve.
-- Teto: 12 entradas de código por passo. Pasta conta como uma entrada. Entrada de teste não conta: path dentro de `tests/`, `test/` ou `__tests__/`, ou nome `*.test.*` ou `*.spec.*`. Passo acima do teto se divide pelo resultado verificável.
+- Contam só os paths entre crases do trecho entre `Arquivos:` e `· Prova:`, na linha do passo, relativos ao repo e com os testes. Declare o recorte mais estreito que o passo escreve.
+- Barra invertida vale como barra. Diretório vale como prefixo; curinga (`*`, `?`, `[`) vale como o diretório anterior a ele. `.`, `./`, path vazio após normalizar, curinga na raiz e `..` que escapa da raiz valem como a raiz inteira.
+- Incomparável: caractere fora do ASCII, path absoluto, `:`, `<`, `>`, `"` ou `|`, ou segmento terminado em ponto ou espaço (exceto `.` e `..`). Passo sem `Arquivos:` ou com path incomparável não tem arquivos comparáveis e não divide número com outro passo.
+- Dois paths se sobrepõem quando são iguais ou um é prefixo de diretório do outro (`a` e `a/b`, nunca `a` e `ab`), sem distinção de maiúsculas em A-Z. Passos irmãos (mesmo número) não têm `Arquivos:` sobrepostos.
+- Teto: 12 entradas de código por passo, com pasta contando uma. Entrada de teste não conta: path dentro de `tests/`, `test/` ou `__tests__/`, ou nome `*.test.*` ou `*.spec.*`. Passo acima do teto se divide pelo resultado verificável.
 
 ### Checkpoint
 
@@ -88,7 +87,7 @@ Uma linha física por passo, com os campos nesta ordem, separados por ` · `:
 ```
 
 - Linha própria, logo depois do último passo do grupo que fecha os critérios listados. Cobre os passos entre o checkpoint anterior, ou o início do checklist, e ela.
-- O líder marca a caixa quando o verificador devolve verde; a marcação entra no commit seguinte da phase, sem commit próprio.
+- O líder marca a caixa quando o verificador devolve verde; a marcação entra no commit seguinte da phase, sem commit próprio. Checkpoint concluído é o de caixa marcada com a marcação já commitada.
 - No máximo dois checkpoints por phase, nesta tabela. Phase com até 5 passos não tem checkpoint.
 
 | Checkpoint | Posição |
@@ -111,7 +110,7 @@ Sem achado, a seção traz a linha `Nenhum achado.`. A presença da seção indi
 
 ## Commits
 
-Única casa dos formatos de mensagem. `<alvo>` é `phase-<n>` ou `mvp`. O líder faz todos os commits.
+Única casa dos formatos de mensagem e da regra de staging. `<alvo>` é `phase-<n>` ou `mvp`. O líder faz todos os commits: staging explícito só dos paths conferidos, com trabalho alheio fora, e `git diff --cached --check` limpo antes de commitar. O commit fica local; push só na finalização da review (`references/review.md`, Finalizar).
 
 | Commit | Mensagem |
 |---|---|
@@ -166,16 +165,6 @@ Formato antigo: alvo com `interview.md`, `design.md` ou `analyze.md`, `# Rota:` 
 
 - Alvo antigo fechado (`review.md` com `# Status: aprovado` e sem R* aberto) conta como fechado e fica intocado.
 - Alvo antigo aberto é inconsistência: não o conduza com esta versão.
-
-## Backup de arquivo de regra
-
-Antes de substituir ou remover `AGENTS.md`, a ponte ou um perfil:
-
-1. Se o arquivo está commitado sem alteração local, o commit é o backup. Senão, copie para `.vibeflow/old/` com o mesmo nome (a ponte vira `antigravity-vibeflow.md`).
-   Perfil global substituído por decisão humana recebe a cópia em `~/.vibeflow/old/`, com o mesmo nome e as mesmas conferências.
-2. Confira tamanho e SHA-256 da cópia contra o original (com Node, `scripts/governanca.mjs --backup <original> <cópia>`); divergência apaga a cópia e interrompe a substituição.
-3. Destino em `old/` com o mesmo conteúdo é reutilizado; com conteúdo diferente, acrescente o sufixo UTC `.<AAAAMMDDTHHMMSSZ>`.
-4. Só então substitua ou remova o original.
 
 ## Glossário
 

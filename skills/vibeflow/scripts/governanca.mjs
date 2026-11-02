@@ -10,7 +10,7 @@
 // título `## Núcleo do projeto` gera só aviso: o projeto existente ainda sem a seção segue
 // funcionando, o init a monta com o explorador e o humano a confirma. Aviso nunca muda o
 // código de saída (só `achados` muda).
-// Modo --backup (references/disco.md, Backup de arquivo de regra, passo 2): cópia regular
+// Modo --backup (references/init.md, Backup de arquivo de regra): cópia regular
 // com o mesmo tamanho e o mesmo SHA-256 do original.
 // Só lê: não cria, copia, substitui nem remove nada. Perfil presente no disco não prova
 // que o host o carregou; essa conferência continua nas ferramentas do host. Divergência

@@ -20,12 +20,13 @@ Sem redator carregado, como na primeira instalação, o líder executa os passos
 
 ## Passos
 
-1. **Estrutura.** Crie `.vibeflow/phases/.gitkeep` quando ausente. Siga `references/disco.md`: nada é escrito através de link, e todo arquivo de regra recebe backup antes de ser substituído ou removido (seção Backup de arquivo de regra).
+1. **Estrutura.** Crie `.vibeflow/phases/.gitkeep` quando ausente. Nada é escrito através de link (`references/disco.md`, Escrever artefato), e todo arquivo de regra recebe backup antes de ser substituído ou removido (Backup de arquivo de regra, abaixo).
 2. **AGENTS.md.**
    - Ausente: nasce de `templates/AGENTS.md` (`AGENTS.md` vazio conta como ausente).
    - Existente: mantenha as regras do projeto. Atualize só o aviso de escopo do topo e o bloco entre `<!-- VIBEFLOW:CADEIA start -->` e `<!-- VIBEFLOW:CADEIA end -->`, copiados de `templates/AGENTS.md`, e monte a seção `## Núcleo do projeto` quando ausente (abaixo). Sem nenhum dos delimitadores, insira o aviso e o bloco completo logo após o primeiro título. Delimitador sem par: pare e relate.
    - Preencha os SLOTs do template somente com evidência do projeto: comandos reais de setup e teste, mapa curto da estrutura, fluxos de ponta a ponta, invariantes e validações. Não copie stack, paths ou regras de outro projeto.
-   - Orçamento e Docker nos testes, conforme `references/testes.md` (Ambiente local e Orçamento de duração): registre em Comandos do projeto a linha do orçamento da regressão completa quando o humano ou o projeto o declarar; sem declaração, não escreva a linha e deixe o comentário que cita o padrão. Procure Docker nos testes pelos sinais de `references/testes.md` (Ambiente local). Registre em Ambiente os serviços de teste locais encontrados. Com Docker detectado e sem decisão registrada em Ambiente, devolva a evidência ao líder, que leva ao humano a pergunta de `references/testes.md`, com recomendação; a resposta e a data são gravadas em Ambiente.
+   - Orçamento: registre em Comandos do projeto a linha do orçamento da regressão completa quando o humano ou o projeto o declarar (`references/testes.md`, Orçamento de duração); sem declaração, não escreva a linha e deixe o comentário que cita o padrão.
+   - Ambiente: registre em Ambiente os serviços de teste locais encontrados e procure Docker nos testes pelos sinais de Ambiente local, abaixo. Com Docker detectado e sem decisão registrada, devolva a evidência ao líder, que conduz a pergunta dessa seção.
    - Núcleo do projeto: com a seção `## Núcleo do projeto` ausente ou sem item preenchido, o líder pede ao explorador a proposta e a leva ao humano; o redator grava a versão confirmada, uma linha por item com path, o que é e quando ler, fora do bloco da cadeia. Item que o humano não confirma não entra. Seção existente é mantida.
    - Em re-init, compare as seções Git e Padrões de Código e Engenharia com o template e devolva ao líder o patch proposto; aplique só o que o humano aprovar. Nunca altere `## Decisões vigentes`.
 3. **Outras regras do host.** `CLAUDE.md` existente é do usuário: não é removido nem reescrito. Devolva ao líder as regras dele que duplicam ou contradizem o `AGENTS.md`; o humano decide se algo é incorporado.
@@ -38,12 +39,29 @@ Sem redator carregado, como na primeira instalação, o líder executa os passos
    | Idêntico à fonte, sem contar diferença só de quebra de linha (CRLF ou LF) ou BOM | Mantenha |
    | Diferente | Conflito: não sobrescreva; classifique abaixo |
 
-   Perfil global não tem histórico Git que prove a origem: todo conflito é tratado como possível customização. Preserve os bytes e relate host, papel, path e o diff contra a fonte; substituir exige decisão humana e backup em `~/.vibeflow/old/` (`references/disco.md`, Backup de arquivo de regra), e o perfil passa a contar como alterado.
+   Perfil global não tem histórico Git que prove a origem: todo conflito é tratado como possível customização. Preserve os bytes e relate host, papel, path e o diff contra a fonte; substituir exige decisão humana e backup em `~/.vibeflow/old/` (Backup de arquivo de regra, abaixo), e o perfil passa a contar como alterado.
 
    Perfil global `corretor` de uma versão anterior (`~/.claude/agents/corretor.md` ou `~/.codex/agents/corretor.toml`) é obsoleto: relate host e path ao humano e preserve o arquivo. Removê-lo exige decisão humana e o mesmo backup em `~/.vibeflow/old/`.
 
    Perfil do projeto em `.claude/agents/` ou `.codex/agents/` prevalece no host sobre o global. O init não cria nem remove perfil de projeto; quando um existe e difere da fonte, relate-o como customização do projeto. Fora dos perfis do VibeFlow, não altere configurações globais, permissões gerais nem modelos pessoais.
-6. **Commit, pelo líder.** Confira que `AGENTS.md` é arquivo regular na raiz, a cadeia está atualizada e a ponte aponta para ele; com Node, `scripts/governanca.mjs` confere isso, o `.gitkeep` e o estado de cada perfil global contra a fonte, e o relatório do redator é comparado com a saída dele. O `AGENTS.md` sem `## Núcleo do projeto` aparece como aviso, sem falha; o reparo segue o passo 2. Faça staging explícito dos paths produzidos no repositório e dos backups necessários em `.vibeflow/old/`; perfis globais ficam fora do repositório e do commit, e trabalho alheio fica fora do staging. Confira o diff e crie commit local `chore(init): <resultado>`, sem push. Sem path produzido no repositório, como numa máquina nova com o repositório já inicializado, não há commit vazio e o relatório registra `hash: nenhum`.
+6. **Commit, pelo líder.** Confira que `AGENTS.md` é arquivo regular na raiz, a cadeia está atualizada e a ponte aponta para ele; com Node, `scripts/governanca.mjs` confere isso, o `.gitkeep` e o estado de cada perfil global contra a fonte, e o relatório do redator é comparado com a saída dele. O `AGENTS.md` sem `## Núcleo do projeto` aparece como aviso, sem falha; o reparo segue o passo 2. Commite `chore(init): <resultado>` conforme `references/disco.md` (Commits), com os paths produzidos no repositório e os backups necessários em `.vibeflow/old/`; perfis globais ficam fora do repositório e do commit. Sem path produzido no repositório, como numa máquina nova com o repositório já inicializado, não há commit vazio e o relatório registra `hash: nenhum`.
+
+## Backup de arquivo de regra
+
+Antes de substituir ou remover `AGENTS.md`, a ponte ou um perfil:
+
+- Arquivo commitado sem alteração local tem o commit como backup. Senão, copie-o para `.vibeflow/old/` com o mesmo nome (a ponte vira `antigravity-vibeflow.md`); perfil global substituído por decisão humana vai para `~/.vibeflow/old/`, com o mesmo nome e as mesmas conferências.
+- Confira tamanho e SHA-256 da cópia contra o original (com Node, `scripts/governanca.mjs --backup <original> <cópia>`); divergência apaga a cópia e interrompe a substituição.
+- Destino em `old/` com o mesmo conteúdo é reutilizado; com conteúdo diferente, acrescente o sufixo UTC `.<AAAAMMDDTHHMMSSZ>`.
+- Só depois da cópia conferida substitua ou remova o original.
+
+## Ambiente local
+
+- Testes locais preferem serviços nativos (instalação oficial do sistema) ou embutidos no processo de teste (binário como dependência de desenvolvimento, como `embedded-postgres`) a containers. Docker fica para o CI.
+- Banco limpo vem de banco por arquivo, por worker ou por template, de reset de schema ou de transação com rollback, nunca de recriar container.
+- Sinais de Docker nos testes: comando de teste que chama `docker`, `docker compose` no setup de teste, arquivo de compose do projeto (`docker-compose.yml`, `compose.yaml` e variantes) ou documentação que o prefere.
+- Com Docker nos testes e sem decisão registrada na seção Ambiente do `AGENTS.md` do projeto, o líder pergunta ao humano uma vez, com recomendação, se prefere migrar para uma forma mais leve, e a resposta e a data são gravadas em Ambiente. Com a decisão registrada, não pergunte de novo.
+- A pergunta acontece no init (passo 2), com o registro no commit de governança, e no plan, onde vira o primeiro passo (`references/plan.md`, passo 2).
 
 ## Saída
 

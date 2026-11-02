@@ -14,7 +14,7 @@ Só inicie a próxima etapa com autorização explícita do humano; com ela, ava
 | Pausa | Gatilho |
 |---|---|
 | Decisão da spec | Achado do analyze muda decisão da spec, ou o passo que verifica um fato a contradiz (`references/plan.md`, Fatiar e ordenar) |
-| Docker nos testes | Plan ou init leva a pergunta (`references/testes.md`, Ambiente local) |
+| Docker nos testes | Plan ou init leva a pergunta (`references/init.md`, Ambiente local) |
 | Confirmação final | Aprovar a review, publicar decisões vigentes e fazer push |
 
 ## 1. Abrir
@@ -64,7 +64,7 @@ Em `/vibeflow <argumento>`, primeira palavra `init`, `interview`, `spec`, `plan`
 | plan | Spec aprovada |
 | analyze | `plan.md` presente |
 | implement | `high` e MVP: `## Achados do analyze` no `plan.md`. Low e medium: nenhum |
-| review | Todos os passos marcados com commit e todos os checkpoints marcados, com a marcação do checkpoint no commit seguinte da phase (`references/disco.md`, Checkpoint); em medium, o commit `task(medium): ...` |
+| review | Todos os passos e checkpoints concluídos (`references/disco.md`, Estado da phase e Plan > Checkpoint); em medium, o commit `task(medium): ...` |
 
 Aprovação da spec: o humano leu e confirmou, ou pediu o plan ("pode ir pro plan", `/vibeflow plan`) com ela completa em `rascunho`; "ok" isolado não aprova. O líder marca `# Status: aprovado` e a aprovação humana com o texto dela.
 
