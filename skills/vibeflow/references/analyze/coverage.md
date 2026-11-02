@@ -13,6 +13,7 @@ Abrir só na etapa analyze. Ache a instância concreta, não o padrão genérico
 | Paralelo inseguro | Passos irmãos com `Arquivos:` sobrepostos ou path incomparável | Separar em números diferentes |
 | Ordem quebrada | Passo que usa o resultado de outro posterior a ele | Reordenar |
 | Risco no fim | Suposição mais arriscada ou caminho de ponta a ponta do critério central deixado para depois de passos que dependem dele (`references/plan.md`, Fatiar e ordenar) | Antecipar o passo |
+| Formato fora do contrato | Linha de passo, `Arquivos:` ou checkpoint fora de `references/disco.md` (Plan) | Reescrever a linha na forma do contrato |
 | Prova fora do contrato | Comando que o repo não tem, E2E ou suíte inteira no passo | Trocar pelos testes afetados do passo |
 | Passo acima do teto | Mais entradas de código em `Arquivos:` que o teto de `references/disco.md` (Plan > Arquivos) | Dividir pelo resultado verificável, sem engordar outro passo |
 | Fato sem verificação | Fato da spec que só se prova implementando, sem passo de verificação antes dos passos de entrega | Acrescentar o passo de verificação (`references/plan.md`, Fatiar e ordenar) |

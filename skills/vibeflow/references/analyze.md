@@ -1,35 +1,20 @@
 # Etapa analyze
 
-Conferência independente do plan contra a spec e o código, antes do implement. Não há `analyze.md` nem aprovação humana. O revisor corrige o `plan.md` direto e registra o resultado na seção `## Achados do analyze`, no formato de `references/disco.md` (Achados do analyze).
+Conferência independente do plan contra a spec e o código, antes do implement, sem `analyze.md` e sem aprovação humana. O revisor corrige o `plan.md` direto e grava `## Achados do analyze`, última seção do arquivo, no formato de `references/disco.md` (Achados do analyze).
 
 ## Entrada
 
 - Gate: rota `high` ou `mvp`, `spec.md` aprovada e `plan.md` sem `## Achados do analyze`.
-- Roda sempre em contexto limpo: revisor em subagente; sem subagentes ou com o perfil revisor ausente, o líder grava o estado e instrui abrir chat novo com `/vibeflow analyze` (Modo B do `SKILL.md`).
-- O revisor lê `spec.md`, `plan.md`, `AGENTS.md` e o código que os passos citam, com os consumidores e testes dele.
+- Contexto limpo: revisor em subagente. Sem subagentes ou com o revisor ausente, o líder grava o estado e instrui abrir chat novo com `/vibeflow analyze` (`references/retomada.md`, Modo B).
+- O revisor lê `spec.md`, `plan.md`, `AGENTS.md` e o código que os passos citam, com consumidores e testes.
 
-## Quem faz
-
-| Quem | Faz |
-|---|---|
-| Revisor de contexto limpo | Confere spec, plan e código, corrige o plan e grava a seção de achados |
-| Líder | Delega, confere a seção gravada e o diff do plan, e leva ao humano o achado que muda a spec |
+Quem faz: o líder delega ao revisor o path do alvo, confere a seção gravada e o diff do plan e leva ao humano o achado que muda a spec; o revisor confere e corrige.
 
 ## Passos
 
-1. O líder delega ao revisor o path do alvo e esta referência (`references/delegation.md`).
-2. Com Node, o revisor roda primeiro `scripts/plan.mjs` no alvo, que aponta a parte mecânica (forma, critério sem passo, critério inexistente, checkpoint, passo acima do teto, seções e placeholder), e julga o resto. O revisor confere, com `references/analyze/coverage.md`:
-   - critério de aceite da spec sem passo ou sem prova;
-   - arquivo ou consumidor esquecido em `Arquivos:`;
-   - teste que a mudança quebra fora do recorte, inclusive por snapshot, schema ou seletor;
-   - passo acima do teto de `references/disco.md` (Plan > Arquivos), que o revisor divide pelo resultado verificável em vez de engordar;
-   - fato da spec que só se prova implementando sem o passo de verificação de `references/plan.md` (Fatiar e ordenar);
-   - contradição entre passo e spec;
-   - contrato errado: formato do passo, `Arquivos:`, checkpoint ou Regressão completa fora de `references/disco.md` (Plan) e de `references/plan.md`.
-3. O revisor corrige o `plan.md` direto e anota cada correção na seção `## Achados do analyze`, como última seção do arquivo. Sem achado, a seção traz `Nenhum achado.`.
-4. Achado que exige mudar a `spec.md`, inclusive uma decisão do humano, não é corrigido nem gravado: o revisor para e o devolve ao líder como pergunta, com recomendação. O líder pergunta ao humano; a mudança da spec segue `references/disco.md` (Escrever artefato), e a seção de achados só nasce na rodada que conclui.
-
-O revisor não implementa código, não commita, não edita `spec.md` nem `AGENTS.md` e não pergunta ao humano.
+1. Com Node, o revisor roda primeiro `scripts/plan.mjs` no alvo, que aponta a parte mecânica, e julga o resto pelas conferências de `references/analyze/coverage.md`.
+2. O revisor corrige o `plan.md` e anota cada correção em `## Achados do analyze`; sem achado, a seção traz `Nenhum achado.`.
+3. Achado que exige mudar a `spec.md`, inclusive uma decisão do humano, não é corrigido nem gravado: o revisor o devolve ao líder como pergunta, com recomendação. O líder pergunta ao humano, a spec muda por `references/disco.md` (Escrever artefato) e a seção de achados só nasce na rodada que conclui.
 
 ## Saída
 
@@ -37,4 +22,4 @@ O relatório fixo de `references/delegation.md`, com a quantidade de achados cor
 
 ## Fechar e próxima etapa
 
-Sem commit e sem pedido de aprovação. Com a seção `## Achados do analyze` gravada, o líder segue para `references/implement.md`. Com pergunta pendente, a etapa fica no analyze até a resposta.
+Sem commit. Com a seção gravada, o líder segue para `references/implement.md` pelo encadeamento do topo do `SKILL.md`; com pergunta pendente, a etapa espera a resposta.

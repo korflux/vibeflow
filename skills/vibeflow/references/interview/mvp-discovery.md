@@ -9,7 +9,7 @@ Este arquivo orienta a entrevista de produto novo. Não é um questionário para
 3. Para toda interface, identifique páginas/telas, objetivo de cada uma e como o usuário chega, avança e volta. Registre menu, links e CTA quando fizerem parte da solução. Uma página única pode dispensar menu, com decisão explícita.
 4. Antes de encerrar, confira se a solução descrita permite realizar o objetivo central de ponta a ponta. Separe o que o usuário pediu dos fluxos de sustentação necessários para isso funcionar.
 
-Faça uma pergunta principal por turno, no formato de `references/interview.md`. Não repita o que já foi respondido. Recomende e assuma lacunas reversíveis de baixo risco com motivo e impacto. Pergunte decisões caras, sensíveis, irreversíveis ou que alterem a lógica central, sem tratar recomendação como decisão. Não encerre com decisão pendente.
+Pergunte no formato e com as regras de `references/interview.md` (Perguntar). Não encerre com decisão pendente.
 
 ## Módulos de completude
 
@@ -36,4 +36,4 @@ Investigue integrações, uploads, notificações, importação e auditoria quan
 
 ## Registro
 
-Na `spec.md`, decisão que o humano não fechou diz `assumida`, e nenhuma fica pendente. Valor numérico, prazo, limite ou comportamento externo leva o marcador de origem de `references/spec.md` (Origem dos valores), e fato verificável é sondado pelo explorador antes da spec (`references/interview.md`, Explorar). IDs estáveis por domínio ficam apenas para decisões que mudam arquitetura, acesso, dados, operação, custo, segurança ou escopo central. Detalhes cosméticos reversíveis não recebem ID.
+Na `spec.md`, decisão que o humano não fechou diz `assumida`, e nenhuma fica pendente. Valores seguem `references/spec.md` (Origem dos valores), e fato verificável segue `references/interview.md` (Explorar). IDs estáveis por domínio ficam apenas para decisões que mudam arquitetura, acesso, dados, operação, custo, segurança ou escopo central. Detalhes cosméticos reversíveis não recebem ID.
