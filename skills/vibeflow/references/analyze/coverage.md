@@ -18,7 +18,7 @@ Abrir só na etapa analyze. Ache a instância concreta, não o padrão genérico
 | Fato sem verificação | Fato da spec que só se prova implementando, sem passo de verificação antes dos passos de entrega | Acrescentar o passo de verificação (`references/plan.md`, Fatiar e ordenar) |
 | Checkpoint fora da regra | Checkpoint ausente numa posição de `references/disco.md` (Plan > Checkpoint), em outra posição, acima do máximo ou em phase sem checkpoint | Acrescentar, mover ou remover a linha de checkpoint |
 | Regressão completa | Seção ausente ou com comando que o repo não tem | Corrigir com os comandos reais |
-| Isolamento do E2E | Critério de tela sem a escolha do isolamento registrada em `## Regressão completa` (`references/plan.md`, Ambiente de teste) | Registrar a escolha do líder; sem ela, parar e perguntar ao líder |
+| Isolamento do E2E | Critério de tela sem a escolha do isolamento registrada em `## Regressão completa` (`references/plan.md`, Ambiente de teste; opções em `references/verificador.md`, Desenho do E2E) | Registrar a escolha do líder; sem ela, parar e perguntar ao líder |
 | `AGENTS.md` | Passo que viola regra mandatória do projeto | Ajustar o passo à regra |
 
 Formato do passo, `Arquivos:` e checkpoint: `references/disco.md` (Plan). Prova do passo e Regressão completa: `references/plan.md`. Regras de teste: `references/testes.md`.

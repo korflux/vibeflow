@@ -13,7 +13,7 @@ Ao abrir a review final, o revisor dispara a regressão completa uma vez, em seg
 - Árvore suja em path de código ou teste (tudo fora de `.vibeflow/` e `.erros-encontrados/`) impede a execução: devolva `estado: bloqueado` pedindo o isolamento.
 - Falha que passa ao reexecutar o mesmo comando é flake: o revisor grava o registro em `.erros-encontrados/`, cita-o em Notas e segue, sem bloquear. Falha reproduzível abre R* Required com o comando.
 - Registre na etapa os comandos, o resultado, o `HEAD` e a duração de cada nível que rodou (lint e tipos, unitários, E2E) e o total, lidos da saída dos comandos ou do relógio da execução.
-- Compare o total com o orçamento declarado no `AGENTS.md` do projeto ou, sem declaração, com o padrão de `references/testes.md` (Orçamento de duração). Acima dele, grave em `.erros-encontrados/` o tempo total, o nível mais lento e a causa provável (`references/testes.md`, Orçamento de duração), cite o registro em Notas e siga; o orçamento não entra no veredito.
+- Compare o total com o orçamento (Orçamento de duração, abaixo).
 
 A execução registrada vale para o Approve enquanto as correções posteriores não tocarem código compartilhado. Esta é a única execução da regressão completa na review; a re-review só a repete na exceção do passo 4.
 
@@ -46,6 +46,11 @@ Quais achados passam por re-review e o limite de rodadas seguem `references/revi
 2. Julgue só o diff da correção contra os R* que ela fecha.
 3. Se a regressão falhou na etapa anterior, rerode primeiro só o comando que falhou e, verde, os níveis que não chegaram a rodar.
 4. Rerode a regressão completa só quando a correção tocou código compartilhado: módulo, contrato, componente ou configuração usado fora dos paths dos R*. Ela repete a duração e o orçamento do passo 1.
+
+## Orçamento de duração
+
+- O `AGENTS.md` do projeto declara em Comandos do projeto o orçamento da regressão completa; sem declaração, o orçamento é de 10 minutos.
+- Total acima do orçamento: o revisor grava em `.erros-encontrados/` o tempo total, o nível mais lento e a causa provável, cita o registro em Notas e segue, sem bloquear; o orçamento não entra no veredito.
 
 ## Saída
 

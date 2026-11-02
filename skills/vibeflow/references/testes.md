@@ -1,21 +1,21 @@
 # Testes
 
-Casa única das regras de teste do projeto consumidor: o que testar, como desenhar os casos, como desenhar o E2E e quanto a suíte pode durar. Ambiente local e Docker nos testes ficam em `references/init.md` (Ambiente local). A mecânica de cada etapa fica na referência dela: passo e checkpoint em `references/implement.md`, regressão completa em `references/review.md`.
+Regras de teste do projeto consumidor: o que testar e como desenhar os casos. Fora daqui: ambiente local em `references/init.md`; checkpoint e Desenho do E2E em `references/verificador.md`; regressão completa e Orçamento de duração em `references/review/passos.md`.
 
 ## Política de testes
 
 - Cada critério de aceite tem ao menos um teste que o prova, de preferência percorrendo o fluxo com resultado observável.
-- Teste novo só para critério não coberto ou risco concreto: erro, borda, segurança ou dinheiro. Antes de criar, procure um teste existente do fluxo e estenda-o.
-- Vermelho antes do verde: o teste que prova um critério, ou que reproduz um bug, roda antes da mudança e falha pelo motivo esperado; depois da mudança, passa. O relatório traz as duas execuções no campo `prova`. Ficam isentos refatoração sem mudança de comportamento, critério de preservação (que passa antes e depois), passo de infraestrutura e passo de prosa, com o motivo no relatório. Teste que já passa antes da mudança não prova o critério.
-- No passo, rode só os testes afetados, pelo grafo de imports da ferramenta do projeto (por exemplo, `vitest run --changed <base>` ou `playwright test --only-changed=<ref>`), sem E2E. Sem esse recurso, rode a `Prova:` do passo; sem plan, os testes do módulo tocado e dos consumidores diretos.
+- Regra de negócio, validação, autorização e cálculo se provam sem navegador, em teste unitário ou de integração (API ou serviço com banco real de teste); o E2E só confirma a jornada do critério com tela.
+- Teste novo só para critério não coberto ou risco concreto (erro, borda, segurança, dinheiro); antes, estenda o teste existente do fluxo, se houver.
+- Vermelho antes do verde: o teste que prova um critério, ou reproduz um bug, falha antes da mudança pelo motivo esperado e passa depois; o campo `prova` traz as duas execuções. Teste que já passa antes não prova o critério. Isentos, com o motivo no relatório: refatoração sem mudança de comportamento, critério de preservação (passa antes e depois), passo de infraestrutura e passo de prosa.
+- No passo, rode só os testes afetados pelo grafo de imports da ferramenta (por exemplo, `vitest run --changed <base>` ou `playwright test --only-changed=<ref>`), sem E2E; sem esse recurso, a `Prova:` do passo; sem plan, os testes do módulo tocado e dos consumidores diretos.
 - No checkpoint, o verificador roda o E2E dos critérios com tela do grupo, sem rerodar os testes dos passos. O E2E das demais telas, inclusive em phase sem checkpoint, entra na regressão completa, que roda uma vez, na review.
-- Nunca enfraqueça, pule ou apague teste para obter verde. Mudança de asserção exige justificativa pelo critério de aceite.
-- Teste falso, sem asserção real ou que só exercita mock, não prova critério nem passo.
-- Passo só de prosa prova com uma checagem mecânica do que o texto alimenta, nunca com teste de presença de palavras.
+- Nunca enfraqueça, pule ou apague teste para obter verde; mudar asserção exige justificativa pelo critério. Teste falso, sem asserção real ou que só exercita mock, não prova critério nem passo.
+- Passo só de prosa prova com checagem mecânica do que o texto alimenta, nunca com teste de presença de palavras.
 
 ## Desenho de casos
 
-Os casos saem do critério de aceite, não do código. Para cada critério, escolha só as técnicas que a regra aciona. A tabela é teto, não piso: não acrescente casos além dela. A severidade de caso ausente segue `references/review.md` (Julgar o produto).
+Os casos saem do critério de aceite, não do código: para cada critério, só as técnicas que a regra aciona. A tabela é teto, não piso. A severidade de caso ausente segue `references/review/passos.md` (Julgar o produto).
 
 | Quando a regra tem | Casos |
 |---|---|
@@ -27,31 +27,6 @@ Os casos saem do critério de aceite, não do código. Para cada critério, esco
 | Critério de preservação | Um teste do comportamento existente, rodado antes e depois da mudança |
 
 - O nome do teste descreve o comportamento do critério ("recusa horário ocupado"), não a função chamada.
-- Mock só na fronteira do sistema: rede externa, relógio, aleatoriedade e serviço pago. Código do próprio projeto e banco de teste rodam reais.
-- Teste determinístico: relógio e semente fixos, sem depender da ordem de execução nem de dado deixado por outro teste.
-- Dados de teste montados pelo próprio teste, ou por fábrica do projeto, com só os campos que o caso exige.
-
-## Pirâmide
-
-- Prove regra de negócio, validação, autorização e cálculo em teste unitário ou de integração sem navegador: API ou serviço com banco real de teste.
-- O E2E só confirma a jornada do critério com tela.
-
-## Desenho do E2E
-
-O E2E é leve e roda em paralelo.
-
-| Regra | Motivo |
-|---|---|
-| Só jornadas de critério com tela | Regra sem tela já tem prova mais barata na Pirâmide |
-| Isolamento por worker, escolhido no plan entre (a) dados ou banco por worker, (b) a pilha inteira por worker quando o app tem estado global, ou (c) descer a regra para integração | Sem isolamento, os workers disputam o mesmo estado e a suíte vira serial |
-| Nenhuma cadeia de dependência de estado global entre arquivos | Arquivo encadeado não roda sozinho nem em paralelo, e uma falha derruba os seguintes |
-| Autenticação feita uma vez por worker e reaproveitada (estado de sessão salvo), sem login pela interface em cada teste, exceto no teste do próprio login | Login pela interface repete o mesmo custo em todo teste |
-| Nenhuma espera fixa, só esperas por condição | Espera fixa é lenta quando sobra e instável quando falta |
-| Build feito uma vez e reaproveitado enquanto os inputs não mudam, com build de produção só na regressão completa | Rebuild a cada execução domina o tempo do passo e do checkpoint |
-| Poucos workers quando a máquina é limitada, sem compensar com esperas | Espera mascara a falta de recurso e torna a suíte lenta e instável |
-
-## Orçamento de duração
-
-- O `AGENTS.md` do projeto declara o orçamento da regressão completa; sem declaração, o orçamento é de 10 minutos.
-- A review mede a duração por nível: lint e tipos, unitários, E2E.
-- Acima do orçamento, o revisor grava em `.erros-encontrados/` o tempo total, o nível mais lento e a causa provável, sem bloquear. A mecânica da medição fica em `references/review.md`.
+- Mock só na fronteira: rede externa, relógio, aleatoriedade e serviço pago. Código do projeto e banco de teste rodam reais.
+- Teste determinístico: relógio e semente fixos, sem depender da ordem de execução nem de dado de outro teste.
+- Dados montados pelo próprio teste ou por fábrica do projeto, só com os campos que o caso exige.
