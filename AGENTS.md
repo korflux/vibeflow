@@ -49,7 +49,7 @@ Sem banco, migration nem tráfego de usuário: mudança aqui altera contrato de 
 - **Major:** quebra contrato (path ou nome de artefato, linha de cabeçalho como `# Status:` ou `# Rota:`, comportamento do líder que o humano já usa).
 - **Minor:** adiciona sem quebrar (nova seção opcional no artefato, nova referência de etapa).
 - **Patch:** correção sem mudança de contrato.
-- Versão atual: 5.4.0 (no máximo dois checkpoints sem reexecução de prova, teto de passo, origem obrigatória dos valores da spec, referência própria do implementador, esforço de raciocínio escolhido pelo líder e núcleo do projeto no `AGENTS.md`).
+- Versão atual: 5.5.0 (referência própria por papel, `SKILL.md` e bloco CADEIA enxutos, cada regra com uma casa).
 
 ## Git
 

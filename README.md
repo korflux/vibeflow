@@ -8,7 +8,7 @@ Skill única `vibeflow`, com um coordenador-líder que conduz o trabalho de agen
 
 O vibeflow é uma skill para quem programa com agentes (Grok Build, Claude Code, Codex, OpenCode, Pi, Antigravity e qualquer cliente que leia `SKILL.md`). Ela roda só quando você a chama. O líder conversa com você, entende o projeto, escolhe uma rota proporcional ao pedido, planeja e delega a execução a subagentes: redação de artefatos, código, testes e provas. O líder confere cada entrega, marca o progresso e faz os commits; código e teste ficam sempre com os subagentes. Analyze, checkpoints e review são feitos em contexto limpo. O pedido vira trilha no disco, não recap no chat.
 
-O pacote é `SKILL.md`, referências por etapa, templates, perfis de subagente e um script de leitura em Node (`estado`), sem dependências. No repo do consumidor, o trabalho vive em disco:
+O pacote é `SKILL.md`, referências por etapa, templates, perfis de subagente e scripts de leitura em Node (`estado`, `conferir`, `plan` e `governanca`), sem dependências. No repo do consumidor, o trabalho vive em disco:
 
 ```text
 AGENTS.md                                  fonte única de regras do projeto
@@ -130,6 +130,16 @@ node "<pasta da skill>/scripts/conferir.mjs" --commit-arquivo "$1"
 
 Aprovar a review, publicar decisões vigentes e fazer push sempre exigem a sua confirmação.
 
+## Novidades da 5.5.0
+
+A 5.5.0 é uma versão minor, sem migração de artefato. Rode `/vibeflow init` em cada projeto consumidor para receber o bloco `VIBEFLOW:CADEIA` novo do `AGENTS.md`: o init acusa o bloco diferente do template e o substitui, com backup. O mesmo comando entrega os perfis novos de subagente: o init mostra os perfis globais instalados como diferentes da fonte e pede a sua decisão, com backup em `~/.vibeflow/old/`. Depois de atualizar os perfis, recarregue o host.
+
+- Explorador, redator, verificador e revisor leem só a referência do próprio papel (`references/<papel>.md`), como o implementador, em vez do `SKILL.md` inteiro.
+- O `SKILL.md` fica enxuto para o líder: Interromper, retomada e Modo B passam para `references/retomada.md`, e Ajuste de phase para `references/ajuste.md`.
+- O bloco `VIBEFLOW:CADEIA` fica com a tabela de esforço, os sinais que tiram do low e um ponteiro para a skill.
+- Cada regra tem uma casa só: commits, staging, posição e marcação do checkpoint em `references/disco.md`; ambiente local, Docker nos testes e backup de arquivo de regra em `references/init.md`; execução do checkpoint e Desenho do E2E em `references/verificador.md`; regressão completa e Orçamento de duração em `references/review/passos.md`; checklist do analyze em `references/analyze/coverage.md`.
+- Gates, regras de commit, encadeamento, checkpoint e Modo B não mudam de comportamento, e o contrato de disco segue igual.
+
 ## Novidades da 5.4.0
 
 A 5.4.0 é uma versão minor, sem migração. Rode `/vibeflow init` para atualizar os perfis globais de subagente e montar a seção `## Núcleo do projeto` do `AGENTS.md`.
@@ -168,7 +178,7 @@ A 5.2.0 é uma versão minor, sem migração.
 A 5.1.0 é uma versão minor, sem migração.
 
 - As regras de teste ficam numa referência única, `skills/vibeflow/references/testes.md`.
-- Os testes locais preferem serviços nativos ou embutidos a containers; em projeto que já usa Docker nos testes, o líder pergunta uma vez se você prefere migrar para uma forma mais leve.
+- Os testes locais preferem serviços nativos ou embutidos a containers; em projeto que já usa Docker nos testes, o líder pergunta uma vez se você prefere migrar para uma forma mais leve. Desde a 5.5.0, essa regra vive em `skills/vibeflow/references/init.md` (Ambiente local).
 - O E2E é leve e roda em paralelo.
 - A regressão completa tem orçamento de duração, de 10 minutos por padrão; acima dele, o revisor registra um alarme sem bloquear a entrega.
 
