@@ -19,7 +19,7 @@ Quem faz: o explorador confirma o mapa no código, o líder decide passos, ordem
 5. **Prova do passo.** Os testes do passo, ou a checagem do passo de prosa, por `references/testes.md` (Política de testes); quando a ferramenta filtra, a `Prova:` nomeia o arquivo e os casos dos critérios. Comando que o repo não tem não vira prova: ferramenta instalável no projeto, sem credencial nem elevação, entra no passo que depende dela; credencial, conta, pagamento ou privilégio do SO vai ao humano pelo líder.
 6. **Checkpoints.** Nas posições de `references/disco.md` (Plan > Checkpoint).
 7. **Regressão completa.** Os comandos reais da suíte inteira, do mais barato ao mais caro (lint e tipos, unitários, E2E), por `references/testes.md` (Política de testes).
-8. **Gravar.** O redator cria o `plan.md` de `templates/plan.md` ou edita o vivo, sem hashes, logs nem histórico de comandos. Com Node, o líder roda `scripts/plan.mjs` no alvo depois da gravação; achado de forma ou critério sem passo volta ao redator, e passo acima do teto ou checkpoint fora da regra volta ao líder, que refaz o fatiamento.
+8. **Gravar.** Com o brief de `references/delegation.md` (Pedido autocontido), que inclui `references/testes.md`, o redator cria o `plan.md` de `templates/plan.md` ou edita o vivo, sem hashes, logs nem histórico de comandos. Com Node, o líder roda `scripts/plan.mjs` no alvo depois da gravação; achado de forma ou critério sem passo volta ao redator, e passo acima do teto ou checkpoint fora da regra volta ao líder, que refaz o fatiamento.
 
 ## Saída
 

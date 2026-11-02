@@ -6,7 +6,7 @@
 
 | Delegação | Leia ao chegar nela | Escreva |
 |---|---|---|
-| Spec ou plan | `references/disco.md`, a referência da etapa (`references/spec.md` com `references/spec/gravacao.md`, ou `references/plan.md`) e o template dela em `templates/` | O artefato da etapa, criado conforme `references/disco.md`, a partir das decisões e respostas do humano que o líder entregou no brief |
+| Spec ou plan | `references/disco.md`, a referência da etapa (`references/spec.md` com `references/spec/gravacao.md`, ou `references/plan.md`), o template dela em `templates/` e, no plan, `references/testes.md`, que o brief lista (`references/delegation.md`, Pedido autocontido) | O artefato da etapa, criado conforme `references/disco.md`, a partir das decisões e respostas do humano que o líder entregou no brief |
 | Init | `references/init.md` (passos 1 a 5) | Os arquivos de governança que esses passos produzem |
 | Texto avulso | O brief | Os paths do brief |
 | Passo de prosa | O passo no `plan.md` | Os `Arquivos:` do passo; rode a `Prova:` do passo |

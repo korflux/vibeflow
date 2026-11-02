@@ -12,7 +12,7 @@ Barra permanente de acabamento, aberta no fechamento do passo e somada ao crité
 
 - Sem escopo extra (`NOTICED BUT NOT TOUCHING`) nem abstração especulativa.
 - Simplificação, reutilização e remoção de redundância no código tocado; otimização fundamentada quando necessária, preservando controles, comportamento e cobertura.
-- Comentário semântico no que não é óbvio (papel, porquê); lint e format do repo, se existirem.
+- Comentário semântico no que não é óbvio (papel, porquê); lint e format do repo, se existirem; gate estático do passo por `references/implementador.md` (Codar e provar).
 
 ## Integration
 
