@@ -174,7 +174,8 @@ function lerAceite(restoDaLinha) {
 
 /**
  * Lê o plan: itens na ordem do arquivo (passos e checkpoints, cada um com a caixa),
- * passos e se o analyze já rodou (seção `## Achados do analyze` presente).
+ * passos, trabalho alheio declarado (`alheios`, ver lerAlheios) e se o analyze já rodou
+ * (seção `## Achados do analyze` presente).
  * Passo: { tipo, id, num, letra, caixa, arquivos, aceite, resto }, com `resto` sendo a
  * linha depois de `<ID>: `. Checkpoint: { tipo, caixa, aceite, motivo }, com `aceite` lido só
  * antes de ` · Motivo:` (um `A<n>` no texto do motivo não é critério) e `motivo` null quando a
@@ -202,8 +203,38 @@ export function lerPlan(linhasPlan) {
   return {
     itens,
     passos: itens.filter((i) => i.tipo === 'passo'),
+    alheios: lerAlheios(linhasPlan),
     analisado: (linhasPlan || []).some((l) => l.trim() === '## Achados do analyze'),
   };
+}
+
+/**
+ * Paths da seção opcional `## Trabalho alheio` do plan (references/disco.md, Plan >
+ * Trabalho alheio), normalizados como os de `Arquivos:`: o primeiro trecho entre crases de
+ * cada linha, fora de comentário HTML, até o próximo `## `. Path incomparável e path que vale
+ * a raiz inteira não declaram nada, para uma linha errada não calar a conferência do repo.
+ */
+function lerAlheios(linhasPlan) {
+  const i = (linhasPlan || []).findIndex((l) => l.trim() === '## Trabalho alheio');
+  if (i < 0) return [];
+  const fim = linhasPlan.findIndex((l, j) => j > i && /^## /.test(l));
+  const corpo = linhasPlan.slice(i + 1, fim < 0 ? linhasPlan.length : fim).join('\n')
+    .replace(/<!--[\s\S]*?-->/g, '').replace(/<!--[\s\S]*$/, '');
+  return corpo.split('\n')
+    .map((l) => (l.match(/`([^`]+)`/) || [])[1])
+    .filter(Boolean)
+    .map(normalizarPath)
+    .filter((n) => n && n.length);
+}
+
+/** Paths reais (do git status) fora do trabalho alheio declarado; `alheios` vem de lerPlan. */
+export function semTrabalhoAlheio(paths, alheios) {
+  return paths.filter((p) => !dentroDoRecorte(segmentos(p), alheios));
+}
+
+/** Trabalho alheio declarado nos plans dos alvos abertos; alvo fechado ou antigo não declara. */
+export function alheiosAbertos(alvos) {
+  return alvos.filter((a) => !a.antigo && !a.fechado).flatMap((a) => lerPlan(a.art.plan).alheios);
 }
 
 /** Passos agrupados por número, na ordem do arquivo: passo sozinho e grupo paralelo são ambos grupos. */

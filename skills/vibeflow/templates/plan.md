@@ -14,4 +14,9 @@ Isolamento do E2E: <a, b ou c, conforme references/verificador.md (Desenho do E2
 - [ ] Checkpoint: <A* fechados pelo grupo> · Motivo: <motivo da tabela>
 <!-- Formato do passo, regras de Arquivos: e do checkpoint: references/disco.md (Plan). Passos paralelos dividem o número com letras (2a, 2b). Apague a linha de checkpoint quando nenhum motivo da tabela de references/disco.md (Plan > Checkpoint) se aplica; o motivo é um nome dessa tabela. -->
 
+## Trabalho alheio
+
+- <path do trabalho alheio, entre crases>
+<!-- Seção opcional, gravada pelo líder só com a declaração do humano de que a alteração fora do recorte não é da phase (references/disco.md, Plan > Trabalho alheio): um path por linha. Sem declaração, apague a seção inteira. -->
+
 <!-- ## Achados do analyze é a última seção deste arquivo e é criada pelo analyze ao concluir; não a crie no plan. -->

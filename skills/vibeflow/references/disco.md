@@ -100,6 +100,21 @@ Uma linha física por passo, com os campos nesta ordem, separados por ` · `:
 
 - O que o verificador executa segue `references/verificador.md` (Checkpoint).
 
+### Trabalho alheio
+
+Seção opcional `## Trabalho alheio`, depois de `## Passos` e antes de `## Achados do analyze`, que continua a última. O líder a grava a partir da declaração do humano de que uma alteração fora do recorte não é da phase (`SKILL.md`, seção 5, item 3): um path por linha, entre crases, com as regras de path de `Arquivos:` (path incomparável e path que vale a raiz inteira não declaram nada). Sem declaração, a seção não existe.
+
+```text
+## Trabalho alheio
+
+- `docs/humano.md`
+```
+
+- `scripts/estado.mjs` tira o path de "sem dono" e da retomada do passo, e `scripts/conferir.mjs --passo` não o acusa.
+- O staging continua sem ele: `scripts/conferir.mjs --commit` o acusa, com a marca da declaração, e a finalização da review o deixa fora do commit.
+- A regressão da review roda com o path presente e o cita em Notas (`references/review/passos.md`, Disparar a regressão completa).
+- Vale só na phase aberta e só onde há `plan.md`. Em entrega low ou medium e sem phase, vale a linha "sem dono" da tabela de Estado da phase: o líder pergunta e o humano isola.
+
 ### Achados do analyze
 
 Seção `## Achados do analyze`, a última do `plan.md`, gravada pelo analyze ao concluir:
@@ -113,7 +128,7 @@ Sem achado, a seção traz a linha `Nenhum achado.`; a presença dela indica que
 
 ## Commits
 
-Única casa dos formatos de mensagem e da regra de staging. `<alvo>` é `phase-<n>` ou `mvp`. O líder faz todos os commits: staging explícito só dos paths conferidos, com trabalho alheio fora, e `git diff --cached --check` limpo antes de commitar. O commit fica local; push só na finalização da review (`references/review.md`, Finalizar).
+Única casa dos formatos de mensagem e da regra de staging. `<alvo>` é `phase-<n>` ou `mvp`. O líder faz todos os commits: staging explícito só dos paths conferidos, com trabalho alheio fora (Plan > Trabalho alheio), e `git diff --cached --check` limpo antes de commitar. O commit fica local; push só na finalização da review (`references/review.md`, Finalizar).
 
 | Commit | Mensagem |
 |---|---|
@@ -145,7 +160,7 @@ Leia a etapa atual na primeira linha da tabela que se aplica. As linhas de spec 
 |---|---|---|
 | Commit `task(medium): ...` mais recente no `git log` sem `review.md` com `# Rota: medium` criado depois dele (`review.md` não commitado conta pela existência; commitado, pela ordem no `git log`) | review da entrega medium | Revisor |
 | Nenhuma phase aberta e algum alvo fechado (phase ou MVP) está com push pendente (o último commit dela não está no upstream ou o branch não tem upstream), salvo se o `review.md` dela registra push adiado pelo humano e nenhum commit da phase é posterior ao `chore(<alvo>): push adiado` | Push pendente dessa phase, pelo procedimento de retomada de `references/review.md` (Finalizar) | Líder, com a confirmação humana |
-| Alteração não commitada fora de `.vibeflow/` e de `.erros-encontrados/` sem dono no disco: fora dos `Arquivos:` de passos abertos, de passo aberto sem `Arquivos:` comparáveis e dos paths de R* abertos ou marcados `[x]` ainda sem commit | Entrega low ou medium interrompida, ou trabalho alheio | Líder pergunta ao humano, com recomendação, se retoma a entrega ou isola o trabalho |
+| Alteração não commitada fora de `.vibeflow/`, de `.erros-encontrados/` e do `## Trabalho alheio` do plan sem dono no disco: fora dos `Arquivos:` de passos abertos, de passo aberto sem `Arquivos:` comparáveis e dos paths de R* abertos ou marcados `[x]` ainda sem commit | Entrega low ou medium interrompida, ou trabalho alheio | Líder pergunta ao humano, com recomendação, se retoma a entrega ou isola o trabalho |
 | Sem phase aberta | Classificar o pedido (`SKILL.md`, seção 2) | Líder |
 | Alvo aberto no formato antigo (Compatibilidade) | Inconsistência | Líder relata ao humano, que fecha a phase com a versão anterior da skill |
 | `spec.md` ausente | interview | Líder conduz; redator grava a `spec.md` |

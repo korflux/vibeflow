@@ -5,6 +5,8 @@
 //   --passo <ids>     compara as alterações não commitadas com os `Arquivos:` dos passos
 //                     (ou os paths dos R*) indicados: Conferência do líder de
 //                     references/delegation.md e passo 3 de references/implement.md.
+//                     Path de `## Trabalho alheio` do plan não é acusado, mas o staging
+//                     dele continua acusado no --commit (references/disco.md, Plan).
 //   --commit <msg>    confere a mensagem e o índice antes do commit: formatos de
 //                     references/disco.md (Commits), critérios no corpo do task(medium),
 //                     caixas e R* marcados no índice,
@@ -23,7 +25,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { resolve, relative } from 'node:path';
 import {
   carregarAlvos, alvoPadrao, alvoNomeado, lerPlan, lerRs, recorte, normalizarPath, segmentos, dentroDoRecorte,
-  classificarCommit, naoCommitados, emStaging, linhasNoGit, gitComCodigo, jsonAscii, executadoDireto,
+  classificarCommit, naoCommitados, emStaging, linhasNoGit, gitComCodigo, jsonAscii, executadoDireto, semTrabalhoAlheio,
 } from './_disco.mjs';
 
 // Pastas que nunca são código do passo: artefatos da cadeia e registros de achado fora do
@@ -70,7 +72,10 @@ function recorteDosIds(ids, passos, rs) {
 // Modo --passo
 // ---------------------------------------------------------------------------
 
-/** Alterações não commitadas fora de .vibeflow/ e .erros-encontrados/ comparadas ao recorte dos IDs. */
+/**
+ * Alterações não commitadas fora de .vibeflow/, .erros-encontrados/ e do `## Trabalho alheio`
+ * do plan do alvo, comparadas ao recorte dos IDs.
+ */
 export function conferirPasso(raiz, ids, nomeAlvo = null) {
   const alvos = carregarAlvos(raiz);
   const alvo = nomeAlvo ? alvoNomeado(alvos, nomeAlvo) : alvoPadrao(alvos);
@@ -78,8 +83,9 @@ export function conferirPasso(raiz, ids, nomeAlvo = null) {
   const alterados = naoCommitados(raiz);
   if (alterados === null) return { erro: 'git indisponível na raiz' };
 
-  const { recortes, achados, avisos } = recorteDosIds(ids, lerPlan(alvo.art.plan).passos, lerRs(alvo.art.review));
-  const codigo = alterados.filter((p) => !dentroDePrefixo(p, FORA_DO_CODIGO));
+  const plan = lerPlan(alvo.art.plan);
+  const { recortes, achados, avisos } = recorteDosIds(ids, plan.passos, lerRs(alvo.art.review));
+  const codigo = semTrabalhoAlheio(alterados.filter((p) => !dentroDePrefixo(p, FORA_DO_CODIGO)), plan.alheios);
   // Sem nenhum recorte comparável, não há contra o que julgar: só os avisos valem.
   const fora = recortes.length ? codigo.filter((p) => !dentroDoRecorte(segmentos(p), recortes)) : [];
   for (const p of fora) achados.push(`path fora do recorte: ${p}`);
@@ -127,6 +133,7 @@ export function conferirCommit(raiz, mensagem) {
 
   let permitidos = null; // null: sem recorte no disco para conferir os paths
   let recortes = [];
+  let alheios = []; // trabalho alheio declarado no plan: continua fora do staging
   if (tipo && (tipo.tipo === 'task' || tipo.tipo === 'finalize' || tipo.tipo === 'push-adiado')) {
     const alvo = alvoNomeado(carregarAlvos(raiz), tipo.alvo);
     if (!alvo) {
@@ -134,6 +141,7 @@ export function conferirCommit(raiz, mensagem) {
     } else {
       const pasta = relPasta(raiz, alvo);
       permitidos = [`${pasta}/`, '.erros-encontrados/'];
+      alheios = lerPlan(alvo.art.plan).alheios;
       if (tipo.tipo === 'task') {
         // O recorte vem do artefato na árvore de trabalho (a definição do passo); as
         // marcações vêm do índice e do HEAD, porque é o índice que vira commit. Artefato
@@ -177,7 +185,7 @@ export function conferirCommit(raiz, mensagem) {
 
   if (permitidos) {
     for (const p of staging) {
-      if (!dentroDePrefixo(p, permitidos) && !dentroDoRecorte(segmentos(p), recortes)) achados.push(`path em staging fora do recorte: ${p}`);
+      if (!dentroDePrefixo(p, permitidos) && !dentroDoRecorte(segmentos(p), recortes)) achados.push(`path em staging fora do recorte: ${p}${dentroDoRecorte(segmentos(p), alheios) ? ' (declarado em ## Trabalho alheio)' : ''}`);
     }
   }
   return { modo: 'commit', assunto, tipo: tipo ? tipo.tipo : null, staging, achados, avisos };

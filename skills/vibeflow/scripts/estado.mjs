@@ -20,6 +20,7 @@ import {
   lerLinhas, cabecalho, carregarAlvos, alvoPadrao, alvoNomeado, listarPhases, proximoN, normalizarSlug, slugValido, ROTAS,
   linksNoCaminho, lerPlan, achadosDoPlan, grupos, recorte, segmentos, sobrepoe, lerRs, vereditoReview, ultimoAjuste,
   commits, classificarCommit, naoCommitados, naoEnviados, commitQueAdicionou, jsonAscii, executadoDireto,
+  semTrabalhoAlheio, alheiosAbertos,
 } from './_disco.mjs';
 
 // ---------------------------------------------------------------------------
@@ -127,8 +128,8 @@ function pushPendente(alvos, porAlvo, enviar) {
 }
 
 /**
- * Linha 3: alteração não commitada fora de .vibeflow/ e de .erros-encontrados/ (o
- * chamador já os filtrou de `fora`) sem dono. Donos: os `Arquivos:` de
+ * Linha 3: alteração não commitada fora de .vibeflow/, de .erros-encontrados/ e do trabalho
+ * alheio declarado no plan (o chamador já os filtrou de `fora`) sem dono. Donos: os `Arquivos:` de
  * passos abertos (passo aberto sem Arquivos comparáveis é dono de qualquer path) e os
  * paths de R* abertos ou marcados [x] ainda sem commit. Alvo antigo fechado não conta;
  * alvo antigo aberto tem passos ilegíveis para esta versão e, por isso, também é dono
@@ -309,9 +310,14 @@ export function estado(raiz, nomeAlvo = null) {
   const porAlvo = commitsPorAlvo(lista);
   const alterados = temGit ? naoCommitados(raiz) : null;
   const enviar = temGit ? naoEnviados(raiz) : null;
-  // Código e teste: tudo fora de .vibeflow/ (artefatos da cadeia) e de .erros-encontrados/
-  // (registros de achado fora do recorte), como na linha 3 de references/disco.md.
-  const fora = (alterados || []).filter((p) => !p.startsWith('.vibeflow/') && !p.startsWith('.erros-encontrados/'));
+  // Código e teste: tudo fora de .vibeflow/ (artefatos da cadeia), de .erros-encontrados/
+  // (registros de achado fora do recorte) e do `## Trabalho alheio` declarado nos plans
+  // abertos, como na linha 3 de references/disco.md. Trabalho alheio sai também da retomada
+  // do passo, porque não é código da phase.
+  const fora = semTrabalhoAlheio(
+    (alterados || []).filter((p) => !p.startsWith('.vibeflow/') && !p.startsWith('.erros-encontrados/')),
+    alheiosAbertos(alvos),
+  );
 
   const rel = {
     raiz,

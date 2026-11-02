@@ -181,6 +181,59 @@ test('passo aberto sem Arquivos comparáveis é dono de qualquer path', (t) => {
 });
 
 // ---------------------------------------------------------------------------
+// Trabalho alheio declarado (disco.md, Plan > Trabalho alheio)
+// ---------------------------------------------------------------------------
+
+/** Phase com plan que traz `## Trabalho alheio` (antes dos Achados do analyze) com as linhas dadas. */
+function faseComAlheio(t, linhasPlan, linhasAlheio) {
+  const raiz = fase(t, linhasPlan);
+  const secao = `\n## Trabalho alheio\n\n${linhasAlheio.join('\n')}\n\n## Achados do analyze`;
+  escrever(raiz, `${PH}/plan.md`, plan(linhasPlan).replace('\n## Achados do analyze', secao));
+  commit(raiz, 'docs: trabalho alheio');
+  return raiz;
+}
+
+test('path declarado em ## Trabalho alheio não para a phase: segue o passo aberto', (t) => {
+  const raiz = faseComAlheio(t, [passo('1')], ['- `docs/humano.md`']);
+  escrever(raiz, 'docs/humano.md', 'x');
+  const r = estado(raiz);
+  assert.equal(r.etapa.etapa, 'implement');
+  assert.equal(r.etapa.situacao, 'implementar o passo 1');
+  assert.deepEqual(r.inconsistencias, []);
+});
+
+test('trabalho alheio declarado por pasta cobre o que está dentro; o resto continua sem dono', (t) => {
+  const raiz = faseComAlheio(t, [passo('1')], ['- `humano/`']);
+  escrever(raiz, 'humano/a/b.js', 'x');
+  assert.equal(estado(raiz).etapa.situacao, 'implementar o passo 1');
+  escrever(raiz, 'outro.js', 'x');
+  const r = estado(raiz);
+  assert.equal(r.etapa.etapa, 'alteração sem dono');
+  assert.equal(r.etapa.situacao, 'outro.js');
+});
+
+test('trabalho alheio não é dono do passo: o código do passo ainda manda retomar', (t) => {
+  const raiz = faseComAlheio(t, [passo('1', { arquivos: '`src/p1.js`' })], ['- `docs/humano.md`']);
+  escrever(raiz, 'docs/humano.md', 'x');
+  escrever(raiz, 'src/p1.js', 'x');
+  const r = estado(raiz);
+  assert.equal(r.etapa.situacao, 'retomar o passo');
+  assert.deepEqual(r.etapa.passos, ['1']);
+});
+
+test('comentário, raiz e path incomparável em ## Trabalho alheio não declaram nada', (t) => {
+  const raiz = faseComAlheio(t, [passo('1')], ['<!-- exemplo: `solto.js` -->', '- `.`', '- `/abs/solto.js`', '- sem crase solto.js']);
+  escrever(raiz, 'solto.js', 'x');
+  assert.equal(estado(raiz).etapa.etapa, 'alteração sem dono');
+});
+
+test('plan sem ## Trabalho alheio mantém a linha sem dono', (t) => {
+  const raiz = fase(t, [passo('1')]);
+  escrever(raiz, 'docs/humano.md', 'x');
+  assert.equal(estado(raiz).etapa.etapa, 'alteração sem dono');
+});
+
+// ---------------------------------------------------------------------------
 // Inconsistências do plan e da rota
 // ---------------------------------------------------------------------------
 

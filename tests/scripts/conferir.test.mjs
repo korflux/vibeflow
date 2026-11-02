@@ -56,6 +56,33 @@ test('passo sem Arquivos: comparáveis vira aviso, sem julgar paths', (t) => {
   assert.match(r.avisos[0], /sem Arquivos: comparáveis/);
 });
 
+/** Plan com `## Trabalho alheio` (antes dos Achados do analyze) com os paths dados, um por linha. */
+const planComAlheio = (linhas, paths) => plan(linhas)
+  .replace('\n## Achados do analyze', `\n## Trabalho alheio\n\n${paths.map((p) => `- \`${p}\``).join('\n')}\n\n## Achados do analyze`);
+
+test('passo: path declarado em ## Trabalho alheio não é acusado nem entra nos alterados', (t) => {
+  const raiz = fase(t, [passo('1')]);
+  escrever(raiz, `${PH}/plan.md`, planComAlheio([passo('1')], ['docs/humano.md', 'humano/']));
+  commit(raiz, 'docs: trabalho alheio');
+  escrever(raiz, 'src/p1.js', 'x\n');
+  escrever(raiz, 'docs/humano.md', 'x\n');
+  escrever(raiz, 'humano/a.js', 'x\n');
+  escrever(raiz, 'src/outro.js', 'x\n');
+  const r = conferirPasso(raiz, ['1']);
+  assert.deepEqual(r.achados, ['path fora do recorte: src/outro.js']);
+  assert.deepEqual([...r.alterados].sort(), ['src/outro.js', 'src/p1.js']);
+});
+
+test('passo: só trabalho alheio alterado vira o aviso de nenhuma alteração, sem achado', (t) => {
+  const raiz = fase(t, [passo('1')]);
+  escrever(raiz, `${PH}/plan.md`, planComAlheio([passo('1')], ['docs/humano.md']));
+  commit(raiz, 'docs: trabalho alheio');
+  escrever(raiz, 'docs/humano.md', 'x\n');
+  const r = conferirPasso(raiz, ['1']);
+  assert.deepEqual(r.achados, []);
+  assert.match(r.avisos[0], /^nenhuma alteração de código ou teste/);
+});
+
 test('R* usa o path citado como recorte', (t) => {
   const raiz = fase(t, [passo('1', { caixa: true })]);
   escrever(raiz, `${PH}/review.md`, review('request-changes', veredito(false) + achados('- [ ] R1: `src/r.js` corrigir. papel: implementador')));
@@ -95,6 +122,19 @@ test('caixa marcada no índice sem o ID na mensagem e path fora do recorte são 
   assert.deepEqual(conferirCommit(raiz, 'task(phase-1:1): entrega 1').achados, [
     '2 marcado no índice e ausente da mensagem',
     'path em staging fora do recorte: src/estranho.js',
+  ]);
+});
+
+test('commit: o staging de trabalho alheio declarado continua acusado, com a marca da declaração', (t) => {
+  const raiz = fase(t, [passo('1')]);
+  escrever(raiz, `${PH}/plan.md`, planComAlheio([passo('1')], ['docs/humano.md']));
+  commit(raiz, 'docs: trabalho alheio');
+  escrever(raiz, 'src/p1.js', 'x\n');
+  escrever(raiz, 'docs/humano.md', 'x\n');
+  escrever(raiz, `${PH}/plan.md`, planComAlheio([passo('1', { caixa: true })], ['docs/humano.md']));
+  stage(raiz, 'src/p1.js', 'docs/humano.md', `${PH}/plan.md`);
+  assert.deepEqual(conferirCommit(raiz, 'task(phase-1:1): entrega 1').achados, [
+    'path em staging fora do recorte: docs/humano.md (declarado em ## Trabalho alheio)',
   ]);
 });
 

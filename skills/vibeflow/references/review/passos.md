@@ -35,7 +35,7 @@ Ao abrir a review final, o revisor dispara a regressão completa uma vez, em seg
 
 - Comandos: os de regressão registrados no plan ou, sem eles, os Comandos do projeto no `AGENTS.md`. Sem nenhum, devolva ao líder sem aprovar.
 - Ordem: do mais barato ao mais caro (lint e tipos, unitários, E2E), parando na primeira falha.
-- Árvore suja em path de código ou teste (tudo fora de `.vibeflow/` e `.erros-encontrados/`) impede a execução: devolva `estado: bloqueado` pedindo o isolamento.
+- Árvore suja em path de código ou teste (tudo fora de `.vibeflow/`, `.erros-encontrados/` e do `## Trabalho alheio` do plan) impede a execução: devolva `estado: bloqueado` pedindo o isolamento. Path declarado em `## Trabalho alheio` não bloqueia: rode a regressão com ele presente e cite-o em Notas, junto de qualquer falha que ele possa ter causado.
 - Falha que passa ao reexecutar o mesmo comando é flake: o revisor grava o registro em `.erros-encontrados/`, cita-o em Notas e segue, sem bloquear. Falha reproduzível abre R* Required com o comando.
 - Registre na etapa os comandos, o resultado, o `HEAD` e a duração de cada nível que rodou (lint e tipos, unitários, E2E) e o total, lidos da saída dos comandos ou do relógio da execução.
 - Compare o total com o orçamento (Orçamento de duração, abaixo).
