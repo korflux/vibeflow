@@ -75,7 +75,7 @@ proximo: <ação e responsável>
 pergunta: <somente quando pergunta; recomendação>
 ```
 
-Verde certifica somente o recorte. Bloqueado é impedimento real; pergunta é decisão humana material. O revisor acrescenta os campos de `references/analyze.md` (Saída) ou `references/review/passos.md` (Saída).
+Verde certifica somente o recorte: o relatório distingue etapa implementada de entrega comprovada, e prova do passo verde não é entrega comprovada. Bloqueado é impedimento real; pergunta é decisão humana material. O revisor acrescenta os campos de `references/analyze.md` (Saída) ou `references/review/passos.md` (Saída).
 
 ## Níveis de prova
 

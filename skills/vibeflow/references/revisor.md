@@ -8,6 +8,7 @@
 |---|---|---|
 | Analyze | `references/analyze.md` e `references/analyze/coverage.md` | As correções diretas no `plan.md` e a seção `## Achados do analyze` |
 | Review | `references/review.md` e `references/review/passos.md` | O `review.md` |
+| Ajuste com `review.md` aberto | `references/ajuste.md` | O R* de ajuste na etapa vigente do `review.md`, com `source` e `papel:` |
 
 Nas duas etapas, grave em `.erros-encontrados/` um arquivo por flake ou achado fora do recorte que encontrar.
 

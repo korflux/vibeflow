@@ -22,5 +22,5 @@ Analyze, checkpoint e review exigem contexto limpo.
 
 | Chat atual | Ação |
 |---|---|
-| Já conduziu interview, spec, plan ou implement da phase | Não é contexto limpo: grave o estado e instrua abrir chat novo com `/vibeflow analyze`, `/vibeflow implement` ou `/vibeflow review`; o checkpoint chega por `/vibeflow implement`, que pela tabela de estados cai nele |
+| Já conduziu qualquer etapa da phase, inclusive analyze ou review | Não é contexto limpo: grave o estado e instrua abrir chat novo com `/vibeflow analyze`, `/vibeflow implement` ou `/vibeflow review`; o checkpoint chega por `/vibeflow implement`, que pela tabela de estados cai nele |
 | Aberto com `/vibeflow analyze`, `/vibeflow implement` (checkpoint) ou `/vibeflow review`, sem trabalho anterior da phase | É o contexto limpo: atue primeiro como revisor ou verificador e grave o resultado; depois conduza como líder em Modo B as perguntas ao humano, as marcações e, na review, a finalização confirmada, sem alterar o veredito que escreveu |

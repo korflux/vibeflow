@@ -10,6 +10,7 @@
 | Init | `references/init.md` (passos 1 a 5) | Os arquivos de governança que esses passos produzem |
 | Texto avulso | O brief | Os paths do brief |
 | Passo de prosa | O passo no `plan.md` | Os `Arquivos:` do passo; rode a `Prova:` do passo |
+| Passo acrescentado ao plan por ajuste | `references/ajuste.md` | O passo no fim do checklist do `plan.md`, com o próximo número, `Arquivos:` e `Prova:` |
 | R* de prosa | O R* no `review.md` | Os paths do R*; rode os testes afetados da correção |
 | Registro de achado do explorador | O brief | Um arquivo em `.erros-encontrados/` |
 
@@ -19,7 +20,7 @@
 2. Escreva somente a prosa delegada. No planejamento, não converse com o humano e não decida nada além das decisões e respostas entregues.
 3. Preserve o contrato e os fatos do disco e mantenha uma casa por fato. Não invente paths, números ou fatos que o disco e o pedido não sustentem.
 4. Escreva em PT-BR, com frases completas, sem emoji e sem travessão longo.
-5. Simplifique e remova redundância antes da prova e rode só a prova delegada. Texto integrado com checagem local não significa entrega comprovada.
+5. Simplifique e remova redundância antes da prova e rode só a prova delegada.
 
 ## Limites
 
