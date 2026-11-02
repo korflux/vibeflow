@@ -102,12 +102,13 @@ Uma linha física por passo, com os campos nesta ordem, separados por ` · `:
 
 ### Trabalho alheio
 
-Seção opcional `## Trabalho alheio`, depois de `## Passos` e antes de `## Achados do analyze`, que continua a última. O líder a grava a partir da declaração do humano de que uma alteração fora do recorte não é da phase (`SKILL.md`, seção 5, item 3): um ou mais paths por linha, cada um entre crases, com as regras de path de `Arquivos:` (path incomparável e path que vale a raiz inteira não declaram nada). Declaração que se sobrepõe ao recorte de passo aberto ou ao path de R* aberto do mesmo plan não vale: o path continua sendo código da phase. Sem declaração, a seção não existe.
+Seção opcional `## Trabalho alheio`, depois de `## Passos` e antes de `## Achados do analyze`, que continua a última. O líder a grava a partir da declaração do humano de que uma alteração fora do recorte não é da phase (`SKILL.md`, seção 5, item 3): um ou mais paths por linha, em lista entre crases separados por vírgula logo depois do `- `, com as regras de path de `Arquivos:` (path incomparável e path que vale a raiz inteira não declaram nada); texto depois da lista, com as próprias crases, é comentário e não declara. Declaração que se sobrepõe ao recorte de passo aberto ou ao path de R* aberto do mesmo plan não vale: o path continua sendo código da phase. R* aberto é o não marcado e o marcado `[x]` ainda sem commit `task(<alvo>:Rn,...)`, como em Estado da phase; passo ou R* sem path comparável não tem recorte e não invalida a declaração. Sem declaração, a seção não existe.
 
 ```text
 ## Trabalho alheio
 
 - `docs/humano.md`
+- `docs/a.md`, `docs/b.md`
 ```
 
 - `scripts/estado.mjs` tira o path de "sem dono" e da retomada do passo, e `scripts/conferir.mjs --passo` não o acusa; ambos leem só o plan do alvo em curso, e a declaração sobreposta ao recorte aberto não vale.

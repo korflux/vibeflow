@@ -20,7 +20,7 @@ import {
   lerLinhas, cabecalho, carregarAlvos, alvoPadrao, alvoNomeado, listarPhases, proximoN, normalizarSlug, slugValido, ROTAS,
   linksNoCaminho, lerPlan, achadosDoPlan, grupos, recorte, segmentos, sobrepoe, lerRs, vereditoReview, ultimoAjuste,
   commits, classificarCommit, naoCommitados, naoEnviados, commitQueAdicionou, jsonAscii, executadoDireto,
-  semTrabalhoAlheio, alheiosVigentes,
+  semTrabalhoAlheio, alheiosVigentes, idsCommitados,
 } from './_disco.mjs';
 
 // ---------------------------------------------------------------------------
@@ -52,11 +52,6 @@ function commitsPorAlvo(lista) {
     mapa.get(k.alvo).push({ ...k, hash: c.hash, idx });
   });
   return mapa;
-}
-
-/** IDs (passos como `2a` e R* como `R1`) presentes em commits task do alvo. */
-function idsCommitados(lista) {
-  return new Set((lista || []).filter((c) => c.tipo === 'task').flatMap((c) => c.ids));
 }
 
 // ---------------------------------------------------------------------------
@@ -320,7 +315,7 @@ export function estado(raiz, nomeAlvo = null) {
   const alvo = nomeado || alvoPadrao(alvos);
   const fora = semTrabalhoAlheio(
     (alterados || []).filter((p) => !p.startsWith('.vibeflow/') && !p.startsWith('.erros-encontrados/')),
-    alheiosVigentes(alvo),
+    alheiosVigentes(alvo, idsCommitados(alvo ? porAlvo.get(alvo.alvo) : null)),
   );
 
   const rel = {

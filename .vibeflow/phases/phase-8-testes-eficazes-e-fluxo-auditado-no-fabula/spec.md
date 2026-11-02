@@ -45,7 +45,7 @@ O líder e os analistas da skill `vibeflow` passam a conduzir implementações c
 
 ## Critérios de aceite
 
-- A1: plan de 6 a 10 passos com `# Risco:` em dois grupos e tela; quando o plan é conferido, aceita até 4 checkpoints, cada um com motivo da tabela, e acusa o 5º, o checkpoint sem motivo e o checkpoint de tela antes do passo que fecha o visual (origem: humano).
+- A1: plan de 6 a 10 passos com `# Risco:` em dois grupos e tela; quando o plan é conferido, o script aceita até 4 checkpoints com motivo da tabela, acusa o 5º e o motivo fora da tabela e avisa o checkpoint sem motivo, e o analyze aponta o checkpoint de tela antes do passo que fecha o visual (origem: humano).
 - A2: phase com até 5 passos; quando o plan tem checkpoint, a conferência o acusa (origem: humano).
 - A3: passo que toca código num projeto com gate de segurança; quando o implementador fecha a prova, o relatório traz o gate rodado sobre os arquivos alterados.
 - A4: path não rastreado fora do recorte; quando o humano o declara trabalho alheio e o path entra em `## Trabalho alheio`, `scripts/estado.mjs` deixa de parar a phase por ele e o staging continua sem ele.
@@ -70,4 +70,4 @@ O líder e os analistas da skill `vibeflow` passam a conduzir implementações c
 - Teste de aceite escrito por outro papel antes do implementador: vira phase própria se o padrão do A39 persistir.
 - Teto de tokens: a decisão 5 o recusa.
 
-- [x] Aprovação humana (leu o arquivo e confirmou): 2026-11-02, "Aprovado"; decisão 16 e A16 acrescentadas a pedido do humano em 2026-11-02 ("se puder incluir nessa fase")
+- [x] Aprovação humana (leu o arquivo e confirmou): 2026-11-02, "Aprovado"; decisão 16 e A16 acrescentadas a pedido do humano em 2026-11-02 ("se puder incluir nessa fase"); A1 ajustado ao implementado com aceite do humano em 2026-11-02 ("aceito o recomendado")

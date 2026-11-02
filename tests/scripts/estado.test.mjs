@@ -255,6 +255,16 @@ test('linha de ## Trabalho alheio com dois paths declara os dois', (t) => {
   assert.equal(r.etapa.situacao, 'implementar o passo 1');
 });
 
+test('crase em comentário da linha de ## Trabalho alheio não declara: só a lista inicial vale', (t) => {
+  const raiz = faseComAlheio(t, [passo('1', { arquivos: '`lib/p1.js`' })], ['- `docs/a.md` (ver `src/`)']);
+  escrever(raiz, 'docs/a.md', 'x');
+  assert.equal(estado(raiz).etapa.situacao, 'implementar o passo 1');
+  escrever(raiz, 'src/outro.js', 'x');
+  const r = estado(raiz);
+  assert.equal(r.etapa.etapa, 'alteração sem dono');
+  assert.equal(r.etapa.situacao, 'src/outro.js');
+});
+
 test('comentário, raiz e path incomparável em ## Trabalho alheio não declaram nada', (t) => {
   const raiz = faseComAlheio(t, [passo('1')], ['<!-- exemplo: `solto.js` -->', '- `.`', '- `/abs/solto.js`', '- sem crase solto.js']);
   escrever(raiz, 'solto.js', 'x');

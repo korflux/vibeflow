@@ -172,6 +172,41 @@ test('passo: alheio sobreposto ao path de R* aberto não esconde o código da co
   assert.deepEqual(r.achados, []);
 });
 
+test('passo: alheio sobreposto ao path de R* marcado [x] sem commit não esconde o código da correção', (t) => {
+  const raiz = fase(t, [passo('1', { caixa: true })]);
+  escrever(raiz, `${PH}/plan.md`, planComAlheio([passo('1', { caixa: true })], ['src/r.js']));
+  escrever(raiz, `${PH}/review.md`, review('request-changes', veredito(false) + achados('- [x] R1: `src/r.js` corrigir. papel: implementador')));
+  commit(raiz, 'docs: alheio e R1 marcado');
+  escrever(raiz, 'src/r.js', 'x\n');
+  assert.deepEqual(conferirPasso(raiz, ['R1']).alterados, ['src/r.js']);
+  // Com o commit task(phase-1:R1) o R* deixa de ser aberto e a declaração volta a valer.
+  commit(raiz, 'task(phase-1:R1): corrige r');
+  escrever(raiz, 'src/r.js', 'y\n');
+  assert.deepEqual(conferirPasso(raiz, ['R1']).alterados, []);
+});
+
+test('passo com path incomparável e comparável não tem recorte: o alheio sobreposto vale', (t) => {
+  const linhas = [passo('1', { arquivos: '`src/a.js`, `/abs/solto.js`' })];
+  const raiz = fase(t, linhas);
+  escrever(raiz, `${PH}/plan.md`, planComAlheio(linhas, ['src/a.js']));
+  commit(raiz, 'docs: trabalho alheio');
+  escrever(raiz, 'src/a.js', 'x\n');
+  const r = conferirPasso(raiz, ['1']);
+  assert.deepEqual(r.alterados, []);
+  assert.deepEqual(r.achados, []);
+});
+
+test('alheio com crase em comentário da linha declara só a lista inicial', (t) => {
+  const raiz = fase(t, [passo('1', { arquivos: '`lib/p1.js`' })]);
+  escrever(raiz, `${PH}/plan.md`, plan([passo('1', { arquivos: '`lib/p1.js`' })]).replace('\n## Achados do analyze', '\n## Trabalho alheio\n\n- `docs/a.md` (ver `src/`)\n\n## Achados do analyze'));
+  commit(raiz, 'docs: trabalho alheio');
+  escrever(raiz, 'lib/p1.js', 'x\n');
+  escrever(raiz, 'docs/a.md', 'x\n');
+  escrever(raiz, 'src/outro.js', 'x\n');
+  const r = conferirPasso(raiz, ['1']);
+  assert.deepEqual(r.alterados, ['lib/p1.js', 'src/outro.js']);
+});
+
 test('commit do passo com o path alheio declarado em staging, mesmo dentro do recorte, é acusado', (t) => {
   const raiz = fase(t, [passo('1')]);
   escrever(raiz, `${PH}/plan.md`, planComAlheio([passo('1')], ['src/p1.js']));

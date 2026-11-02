@@ -6,8 +6,9 @@
 //                     (ou os paths dos R*, um ou mais) indicados: Conferência do líder de
 //                     references/delegation.md e passo 3 de references/implement.md.
 //                     Path de `## Trabalho alheio` do plan não é acusado, salvo declaração
-//                     sobreposta ao recorte de passo ou R* aberto, que não vale; o staging
-//                     de path declarado alheio é sempre acusado no --commit
+//                     sobreposta ao recorte de passo ou R* aberto (inclusive R* [x] sem
+//                     commit), que não vale; o staging de path declarado alheio é
+//                     sempre acusado no --commit
 //                     (references/disco.md, Plan > Trabalho alheio).
 //   --commit <msg>    confere a mensagem e o índice antes do commit: formatos de
 //                     references/disco.md (Commits), critérios no corpo do task(medium),
@@ -27,7 +28,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { resolve, relative } from 'node:path';
 import {
   carregarAlvos, alvoPadrao, alvoNomeado, lerPlan, lerRs, recorte, normalizarPath, segmentos, dentroDoRecorte,
-  classificarCommit, naoCommitados, emStaging, linhasNoGit, gitComCodigo, jsonAscii, executadoDireto, semTrabalhoAlheio, alheiosVigentes,
+  classificarCommit, naoCommitados, emStaging, linhasNoGit, gitComCodigo, jsonAscii, executadoDireto, semTrabalhoAlheio, alheiosVigentes, idsCommitados, commits,
 } from './_disco.mjs';
 
 // Pastas que nunca são código do passo: artefatos da cadeia e registros de achado fora do
@@ -75,6 +76,11 @@ function recorteDosIds(ids, passos, rs) {
 // Modo --passo
 // ---------------------------------------------------------------------------
 
+/** Commits do contrato do alvo (classificarCommit), para saber quais R* já têm commit task. */
+function classificadosDoAlvo(raiz, alvo) {
+  return (commits(raiz) || []).map((c) => classificarCommit(c.assunto)).filter((k) => k && k.alvo === alvo.alvo);
+}
+
 /**
  * Alterações não commitadas fora de .vibeflow/, .erros-encontrados/ e do `## Trabalho alheio`
  * vigente do plan do alvo (alheiosVigentes), comparadas ao recorte dos IDs.
@@ -88,7 +94,7 @@ export function conferirPasso(raiz, ids, nomeAlvo = null) {
 
   const plan = lerPlan(alvo.art.plan);
   const { recortes, achados, avisos } = recorteDosIds(ids, plan.passos, lerRs(alvo.art.review));
-  const codigo = semTrabalhoAlheio(alterados.filter((p) => !dentroDePrefixo(p, FORA_DO_CODIGO)), alheiosVigentes(alvo));
+  const codigo = semTrabalhoAlheio(alterados.filter((p) => !dentroDePrefixo(p, FORA_DO_CODIGO)), alheiosVigentes(alvo, idsCommitados(classificadosDoAlvo(raiz, alvo))));
   // Sem nenhum recorte comparável, não há contra o que julgar: só os avisos valem.
   const fora = recortes.length ? codigo.filter((p) => !dentroDoRecorte(segmentos(p), recortes)) : [];
   for (const p of fora) achados.push(`path fora do recorte: ${p}`);

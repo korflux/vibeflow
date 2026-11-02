@@ -210,9 +210,11 @@ export function lerPlan(linhasPlan) {
 
 /**
  * Paths da seção opcional `## Trabalho alheio` do plan (references/disco.md, Plan >
- * Trabalho alheio), normalizados como os de `Arquivos:`: todo trecho entre crases de cada
- * linha, fora de comentário HTML, até o próximo `## `. Path incomparável e path que vale
- * a raiz inteira não declaram nada, para uma linha errada não calar a conferência do repo.
+ * Trabalho alheio), normalizados como os de `Arquivos:`: só a lista de trechos entre crases
+ * logo depois do marcador `- ` de cada linha, separados por vírgula (como a de paths do R*); o
+ * resto da linha, com as crases de um comentário, não declara. Fora de comentário HTML, até o
+ * próximo `## `. Path incomparável e path que vale a raiz inteira não declaram nada, para uma
+ * linha errada não calar a conferência do repo.
  */
 function lerAlheios(linhasPlan) {
   const i = (linhasPlan || []).findIndex((l) => l.trim() === '## Trabalho alheio');
@@ -220,8 +222,11 @@ function lerAlheios(linhasPlan) {
   const fim = linhasPlan.findIndex((l, j) => j > i && /^## /.test(l));
   const corpo = linhasPlan.slice(i + 1, fim < 0 ? linhasPlan.length : fim).join('\n')
     .replace(/<!--[\s\S]*?-->/g, '').replace(/<!--[\s\S]*$/, '');
-  return [...corpo.matchAll(/`([^`\n]+)`/g)]
-    .map((m) => m[1])
+  return corpo.split('\n')
+    .flatMap((l) => {
+      const lista = l.match(/^\s*-\s+(`[^`]+`(?:\s*,\s*`[^`]+`)*)/);
+      return lista ? [...lista[1].matchAll(/`([^`]+)`/g)].map((m) => m[1]) : [];
+    })
     .map(normalizarPath)
     .filter((n) => n && n.length);
 }
@@ -231,20 +236,30 @@ export function semTrabalhoAlheio(paths, alheios) {
   return paths.filter((p) => !dentroDoRecorte(segmentos(p), alheios));
 }
 
+/** IDs (passos como `2a` e R* como `R1`) presentes em commits task; `classificados` são os do alvo, de classificarCommit. */
+export function idsCommitados(classificados) {
+  return new Set((classificados || []).filter((c) => c.tipo === 'task').flatMap((c) => c.ids));
+}
+
 /**
  * Trabalho alheio declarado no plan de UM alvo que vale hoje: a declaração que se sobrepõe ao
  * recorte de passo aberto ou aos paths de R* aberto do mesmo alvo não vale, porque esconderia
- * trabalho do próprio passo (references/disco.md, Plan > Trabalho alheio). Alvo fechado ou
- * antigo não declara. Passo ou R* sem path comparável não tem recorte contra o que sobrepor.
- * ponytail: a declaração inteira cai, não só o trecho sobreposto; refinar se um path de pasta
- * (`src/`) precisar valer fora do recorte.
+ * trabalho do próprio passo (references/disco.md, Plan > Trabalho alheio). R* aberto é o não
+ * marcado ou o marcado `[x]` cujo ID ainda não está em commit task do alvo (`idsFeitos`, de
+ * idsCommitados): a mesma definição de dono de references/disco.md (Estado da phase). Alvo
+ * fechado ou antigo não declara.
+ * O recorte é tudo ou nada, como em recorte(): passo ou R* sem path ou com algum path
+ * incomparável não tem recorte, nem para os paths comparáveis dele, e o alheio sobreposto vale.
+ * ponytail: a declaração cai por path inteiro, não só no trecho sobreposto, e o passo com path
+ * incomparável misturado a comparáveis não protege os comparáveis; refinar se um path de pasta
+ * (`src/`) precisar valer fora do recorte ou se o plan passar a misturar os dois tipos de path.
  */
-export function alheiosVigentes(alvo) {
+export function alheiosVigentes(alvo, idsFeitos = new Set()) {
   if (!alvo || alvo.antigo || alvo.fechado) return [];
   const plan = lerPlan(alvo.art.plan);
   const abertos = [
     ...plan.passos.filter((p) => !p.caixa).map(recorte),
-    ...lerRs(alvo.art.review).filter((r) => !r.feito).map((r) => (r.paths.length ? r.paths.map(normalizarPath) : null)),
+    ...lerRs(alvo.art.review).filter((r) => !r.feito || !idsFeitos.has(r.id)).map((r) => (r.paths.length ? r.paths.map(normalizarPath) : null)),
   ].filter((r) => r && !r.some((n) => n === null)).flat();
   return plan.alheios.filter((a) => !abertos.some((r) => sobrepoe(a, r)));
 }
