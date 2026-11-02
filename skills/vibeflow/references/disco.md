@@ -51,7 +51,9 @@ Artefatos de uma phase ou do MVP, sempre com estes nomes: `spec.md`, `plan.md` e
 | `# Status:` | `spec.md` e `review.md`, depois do título e de `# Alvo:` quando houver | `rascunho` ou `aprovado`; no `review.md`, também `request-changes` |
 
 - A única aprovação humana antes do código é a da `spec.md`. O `plan.md` não tem `# Status:` nem aprovação humana.
-- Só o líder muda `# Status:` para `aprovado`, depois da confirmação humana.
+- No `review.md`, o revisor grava `rascunho` ou `request-changes` junto com o veredito (`references/review/passos.md`, Gravar).
+- Só o líder grava `aprovado`, na `spec.md` e no `review.md`, depois da confirmação humana.
+- Exceção única: no ajuste medium de phase fechada, o líder grava `request-changes` no `review.md` ao abrir o ajuste (`references/ajuste.md`).
 - Phase ou MVP cujo primeiro artefato não tem `# Rota:`, ou MVP sem `# Risco:`, é inconsistência a diagnosticar antes de seguir.
 
 ## Plan
@@ -152,6 +154,7 @@ Com Node, depois do staging e antes de cada commit, o líder roda `scripts/confe
 - Phase ou MVP fechado: `review.md` com `# Status: aprovado` e nenhuma linha `- [ ] R<n>:` aberta. Os demais estão abertos.
 - Alvo padrão: a phase aberta de maior `n`; sem phase aberta, o MVP aberto. Outro alvo só quando o humano o nomeia ou quando o líder anuncia a phase de origem de um ajuste. Na retomada com mais de uma phase aberta, pergunte qual retomar, recomendando a de maior `n`.
 - Passo concluído: caixa marcada, confirmada por commit `task(<alvo>:...)` com o ID no `git log`. Caixa marcada sem commit, commit sem caixa ou passos irmãos com `Arquivos:` sobrepostos são inconsistência a diagnosticar antes de seguir.
+- Inconsistência a diagnosticar: o líder despacha o explorador com o pedido de comparar o disco e o Git com a tabela de estados abaixo e relatar a divergência encontrada. Antes do relatório, o líder não marca, desmarca, reabre nem commita nada; só depois dele decide a correção.
 - R* corrigido: o líder marca `[x]` no commit `task(<alvo>:Rn,...)`.
 - Push adiado: o líder grava a recusa ou o adiamento do push pelo humano na seção Finalização Git do `review.md`, na linha `- Push adiado pelo humano: <AAAA-MM-DD>`.
 

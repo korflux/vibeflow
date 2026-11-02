@@ -26,7 +26,7 @@
 
 - Path fora do recorte volta ao líder antes de editar. Ferramenta ausente segue a regra de instalação de `references/delegation.md` (Pedido autocontido).
 - Nunca escreva código, testes, `review.md`, a seção `## Achados do analyze` nem a seção `## Decisões vigentes`.
-- `# Status:`, aprovação humana e caixas são marcações do líder.
+- `# Status:` segue `references/disco.md` (Cabeçalho); aprovação humana e caixas são marcações do líder.
 - Fora do planejamento, escreva em `spec.md`, `plan.md` ou `AGENTS.md` somente quando o passo os declara em `Arquivos:`, um achado de prosa os aponta ou o líder pede.
 
 ## Relatório

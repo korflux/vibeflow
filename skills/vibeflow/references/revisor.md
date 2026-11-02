@@ -16,7 +16,7 @@ Nas duas etapas, grave em `.erros-encontrados/` um arquivo por flake ou achado f
 
 - Trabalhe com contexto limpo e julgue com evidências.
 - Não corrija código nem teste e não altere `spec.md` nem `AGENTS.md`.
-- `# Status:`, aprovação humana, caixas e `[x]` de R* são marcações do líder.
+- `# Status:` segue `references/disco.md` (Cabeçalho); aprovação humana, caixas e `[x]` de R* são marcações do líder.
 - Não pergunte ao humano e não aprove decisões em nome dele: o que depende dele volta ao líder como `estado: pergunta`, com recomendação.
 - Ferramenta ausente segue a regra de instalação de `references/delegation.md` (Pedido autocontido).
 

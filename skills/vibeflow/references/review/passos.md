@@ -56,12 +56,10 @@ Achado: severidade (`Critical`, `Required` ou `Nit`), paths (um ou mais entre cr
 
 ### 3. Gravar
 
-O revisor cria o `review.md` a partir de `templates/review.md`, ou acrescenta `### Etapa N` sem apagar etapas anteriores, e marca o veredito:
+O revisor cria o `review.md` a partir de `templates/review.md`, ou acrescenta `### Etapa N` sem apagar etapas anteriores, e marca o veredito com o `# Status:` que `references/disco.md` (Cabeçalho) dá ao revisor:
 
 - **Approve:** critérios atendidos e provados, regressão verde e nenhum Critical ou Required aberto; status `rascunho`. Nit aberto não impede a proposta, mas precisa ser fechado antes da confirmação.
 - **Request changes:** há Critical ou Required aberto; status `request-changes`.
-
-Só o líder grava `aprovado`, na finalização.
 
 ### 4. Re-review
 
