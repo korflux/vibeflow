@@ -52,7 +52,7 @@ O líder e os analistas da skill `vibeflow` passam a conduzir implementações c
 - A5: plan sem a seção `## Trabalho alheio` e phases 1 a 7 deste repo (origem: verificado `.vibeflow/phases/`); quando os scripts os leem, o comportamento é igual ao da 5.5.0.
 - A6: R* com vários paths; quando o líder confere o commit da correção, o script aceita todos os paths do R*.
 - A7: R* antigo, de um path; quando o líder confere o commit da correção, o script o aceita como na 5.5.0.
-- A8: a política de testes tem uma casa, com prova por critério com ID no título, asserção contra o texto do critério, casos adversariais obrigatórios, E2E só para tela ou jornada, modo de execução, pilha e sessão reaproveitadas, remoção de duplicata e lista de "não teste".
+- A8: a política de testes tem uma casa, com prova por critério com ID no título quando o brief ou a spec o tem, asserção contra o texto do critério, casos adversariais obrigatórios, E2E só para tela ou jornada, modo de execução, pilha e sessão reaproveitadas, remoção de duplicata e lista de "não teste".
 - A9: verificador e revisor; quando conferem um teste de critério, comparam a asserção com o texto do critério.
 - A10: interview e `interview/mvp-discovery.md`; quando a decisão é de autenticação, autorização, segurança ou dados, ela é perguntada, nunca assumida.
 - A11: a `review.md` traz a reclassificação da suíte do fabula com a contagem de fica, funde e sai, o tempo estimado e, para cada defeito real listado, o teste ou gate da política nova que o pegaria.
@@ -70,4 +70,4 @@ O líder e os analistas da skill `vibeflow` passam a conduzir implementações c
 - Teste de aceite escrito por outro papel antes do implementador: vira phase própria se o padrão do A39 persistir.
 - Teto de tokens: a decisão 5 o recusa.
 
-- [x] Aprovação humana (leu o arquivo e confirmou): 2026-11-02, "Aprovado"; decisão 16 e A16 acrescentadas a pedido do humano em 2026-11-02 ("se puder incluir nessa fase"); A1 ajustado ao implementado com aceite do humano em 2026-11-02 ("aceito o recomendado")
+- [x] Aprovação humana (leu o arquivo e confirmou): 2026-11-02, "Aprovado"; decisão 16 e A16 acrescentadas a pedido do humano em 2026-11-02 ("se puder incluir nessa fase"); A1 ajustado ao implementado com aceite do humano em 2026-11-02 ("aceito o recomendado"); A8 com ID condicional seguindo a recomendação do líder, a pedido do humano para continuar ("não vai continuar?")
