@@ -1,21 +1,21 @@
 # Review: Skill enxuta validada com Haiku
 # Alvo: phase-7-skill-enxuta-validada-com-haiku
-# Status: request-changes
+# Status: aprovado
 
 ## Veredito
 
-- [ ] **Approve**: critérios atendidos e provados, regressão verde e nenhum Critical ou Required aberto
-- [x] **Request changes**: há Critical ou Required aberto
+- [x] **Approve**: critérios atendidos e provados, regressão verde e nenhum Critical ou Required aberto
+- [ ] **Request changes**: há Critical ou Required aberto
 
 ## Critérios de aceite
 
 | Critério | Evidência (teste e resultado) | Situação |
 |---|---|---|
-| A1 | `medir.mjs` reproduzido nesta review: base `base-5.4.0/` (igual a `f3fce47` por `diff -r --strip-trailing-cr`) com `papeis-5.4.0.json`, 5.5.0 sobre `skills/vibeflow` com `papeis-5.5.0.json`; valores idênticos aos de `comparacao.md` (tabela em Medição, abaixo); todos os papéis e a soma do líder ao menos 30% abaixo da base. Listas conferidas contra perfis e referências: cada papel conta toda leitura incondicional, e leitura condicional fica fora nas duas versões; a sensibilidade está em Notas | atendido |
-| A2 | Busca por cópias das redundâncias de Pontos do projeto (commits e staging, checkpoint, origem dos valores, Docker, encadeamento, checklist do analyze, Ajuste de phase, identidade dos perfis, bloco CADEIA): cada regra tem casa única no pacote (`disco.md` Commits e Plan > Checkpoint, `spec.md` Origem dos valores, `init.md` Ambiente local, topo do `SKILL.md`, `analyze/coverage.md`, `ajuste.md`); o que sobra são ponteiros, o resumo operativo do Docker em `implementador.md:20` e o comentário de `templates/spec.md:19` (Notas) | atendido |
+| A1 | `medir.mjs` reproduzido nesta review: base `base-5.4.0/` (igual a `f3fce47` por `diff -r --strip-trailing-cr`) com `papeis-5.4.0.json`, 5.5.0 sobre `skills/vibeflow` com `papeis-5.5.0.json`; valores idênticos aos de `comparacao.md`, e remedidos na Etapa 2 sobre o `HEAD` `73044b2` (tabela em Medição, abaixo); todos os papéis e a soma do líder ao menos 30% abaixo da base. Listas conferidas contra perfis e referências: cada papel conta toda leitura incondicional, e leitura condicional fica fora nas duas versões; a sensibilidade está em Notas | atendido |
+| A2 | Busca por cópias das redundâncias de Pontos do projeto (commits e staging, checkpoint, origem dos valores, Docker, encadeamento, checklist do analyze, Ajuste de phase, identidade dos perfis, bloco CADEIA): cada regra tem casa única no pacote (`disco.md` Commits e Plan > Checkpoint, `spec.md` Origem dos valores, `ambiente.md` (desde R3; antes, `init.md` Ambiente local), topo do `SKILL.md`, `analyze/coverage.md`, `ajuste.md`); o que sobra são ponteiros, o resumo operativo do Docker em `implementador.md:20` e o comentário de `templates/spec.md:19` (Notas) | atendido |
 | A3 | Leitura dos 10 perfis de `templates/agents/`: os quatro papéis mandam ler somente `references/<papel>.md`, nenhum manda ler o `SKILL.md`, e o corpo claude e codex de cada papel é o mesmo | atendido |
 | A4 | `medir.mjs`: bloco CADEIA com 341 tokens no template e neste repo, idênticos; contém a tabela de esforço, os sinais que tiram do low e o ponteiro para a skill | atendido |
-| A5 | `medir.mjs`: `AGENTS.md` com 2.110 tokens (teto 2.200). Repetição remanescente em `AGENTS.md:57` (R1) | parcial |
+| A5 | `medir.mjs` no `HEAD` `73044b2`: `AGENTS.md` com 2.096 tokens (teto 2.200). Com R1, `AGENTS.md:57` deixa só o ponteiro para `disco.md` (Commits) e a confirmação do push, que vale também fora da cadeia; aprovar a review e publicar decisões ficam só no topo do `SKILL.md` e em `references/review.md` (Confirmar) | atendido |
 | A6 | `comparacao.md`, `placar-5.4.0.md` e `resultado-5.5.0.md`; respostas brutas de S2 e S7 conferidas contra o gabarito; cópia `final-5.5.0/` igual ao `HEAD` por `diff -r --strip-trailing-cr`. Os oito cenários passam nas duas versões (tabela em Cenários, abaixo) | atendido |
 | A7 | `node --test`: 114 de 114; `estado.mjs --json`: phases 1 a 7 lidas, `inconsistencias: []`; scripts mudaram só em comentário | atendido |
 | A8 | Consumidor temporário com o `templates/AGENTS.md` de `f3fce47`: `governanca.mjs` acusa `bloco VIBEFLOW:CADEIA diferente de templates/AGENTS.md` (código 1); com o bloco da 5.5.0, `AGENTS.md: ok`. `init.md` passo 2 substitui o bloco, e o passo 1 e a seção Backup de arquivo de regra exigem o backup antes | atendido |
@@ -41,35 +41,41 @@
   | Caso | 5.5.0 | Base | Queda |
   |---|---|---|---|
   | Implementador em passo com E2E (+ `verificador.md`) | 2.545 | 2.705 | 5,9% |
-  | Implementador em passo com banco ou serviço (+ `init.md`, Ambiente local) | 4.137 | 2.705 | -52,9% |
-  | Líder numa phase high com tela (+ `verificador.md`, Desenho do E2E, citado em `plan.md` passo 2) | 15.139 | 20.998 | 27,9% |
-  | Líder numa phase high com retomada ou interrupção (+ `retomada.md`) | 15.072 | 20.998 | 28,2% |
-  | Líder numa phase high com Docker no plan (+ `init.md`) | 16.731 | 20.998 | 20,3% |
+  | Implementador em passo com banco ou serviço (+ `init.md`, Ambiente local; Etapa 1) | 4.137 | 2.705 | -52,9% |
+  | Implementador em passo com banco ou serviço (+ `ambiente.md`; Etapa 2, depois de R3) | 2.177 | 2.705 | 19,5% |
+  | Líder numa phase high com tela (+ `verificador.md`, Desenho do E2E, citado em `plan.md` passo 2; Etapa 2) | 15.134 | 20.998 | 27,9% |
+  | Líder numa phase high com retomada ou interrupção (+ `retomada.md`; Etapa 2, depois de R2) | 15.096 | 20.998 | 28,1% |
+  | Líder numa phase high com Docker no plan (+ `init.md`; Etapa 1) | 16.731 | 20.998 | 20,3% |
+  | Líder numa phase high com Docker no plan (+ `ambiente.md`; Etapa 2, depois de R3) | 14.768 | 20.998 | 29,7% |
 
-  O implementador tem margem de 5 tokens sobre o teto e a soma do líder, de 216; `implementador.md:20` já traz em linha a regra operativa do ambiente local, e abrir `init.md` (2.249 tokens) por uma seção de cinco linhas custa mais que a base.
+  Na Etapa 1, o implementador tinha margem de 5 tokens sobre o teto e a soma do líder, de 216; `implementador.md:20` já trazia em linha a regra operativa do ambiente local, e abrir `init.md` (2.249 tokens) por uma seção de cinco linhas custava mais que a base. Na Etapa 2, `ambiente.md` tem 291 tokens, o implementador mais ele fica 528 abaixo da base e `init.md` cai para 1.990; as linhas de tela e de retomada foram remedidas sobre a soma atual do líder (14.477), com `verificador.md` em 657 e `retomada.md` em 619 tokens depois do ponteiro de R2.
 - `AGENTS.md:56` repete a proibição de staging de `references/delegation.md` (Ownership e proibições) e a ausência de `Co-Authored-By` de `references/disco.md` (Commits), mas vale também para o trabalho neste repo fora da cadeia, quando a skill não é carregada; por isso não entrou em R1.
 - `skills/vibeflow/templates/spec.md:19` resume os três marcadores de origem e aponta para `references/spec.md` (Origem dos valores); é orientação do template no ponto de escrita e ficou fora dos `Arquivos:` da phase.
 - Cenário S7: nas duas versões, a resposta lista hipóteses do analyze antes de mandar abrir o chat novo, sem gravar nem corrigir o `plan.md`; comportamento igual ao da base, sem regressão.
 - Paths fora dos `Arquivos:`: o commit `01347d2` (passo 5) apaga os dois registros de `.erros-encontrados/` criados pelo verificador no `3c385aa`, como manda a regra de registro corrigido. Commits coerentes com os passos; `3c385aa` leva a correção do checkpoint no formato de passo.
+- Commit `73044b2` (`task(phase-7:R1,R2,R3)`): IDs iguais aos R* marcados `[x]` desde a Etapa 1; leva o `review.md` da Etapa 1 e só paths que os remédios nomeiam (`AGENTS.md` por R1; `review/passos.md` e `retomada.md` por R2; `ambiente.md`, `init.md`, `plan.md`, `implementador.md`, `SKILL.md`, `testes.md` e `README.md` por R3). `conferir.mjs --commit` acusou fora do recorte os paths de R2 e R3 além do primeiro, porque `lerRs` (`scripts/_disco.mjs`) lê só o primeiro path entre crases da linha, como o campo único `path` de `templates/review.md`. O commit pela prosa do remédio é aceitável aqui. Não é defeito do script, que segue o template; a divergência está no contrato: `templates/review.md` tem um só `path` por R*, enquanto `implementador.md`, `redator.md`, `ajuste.md` e `disco.md` (Estado da phase) falam em "paths do R*". Fechar isso pede decisão de formato numa phase futura: ou o campo do R* lista todos os paths que o remédio toca e o script lê a lista, ou o remédio fica restrito ao path do campo e a correção que precisa de mais paths abre um R* por path.
+- `references/retomada.md` (Contexto limpo, depois de R2) escreve "na analyze"; o resto do pacote trata a etapa no masculino ("o analyze", "no analyze"). Só texto, sem efeito de regra; cabe em ajuste pontual de prosa do líder.
+- Registro fora do recorte desta re-review: `.erros-encontrados/status-do-review-revisor-ou-lider.md` (dono da linha `# Status:` do `review.md` ambíguo entre `review/passos.md` passo 3 e `revisor.md` Limites, preexistente na 5.4.0). Nesta etapa o revisor marcou o veredito e deixou `# Status:` ao líder.
 - Ponteiros: todo path de `references/`, `templates/` e `scripts/` citado no pacote, nos scripts, nos testes, no `README.md` e no `AGENTS.md` existe, e os ponteiros por seção resolvem; os avisos do conferidor do scratchpad são falsos positivos (títulos com " e " e comentários de `_disco.mjs` sem mudança na phase). Nenhum arquivo cita a v1, registro estruturado de execução ou o contrato anterior à 5.0.0 como vigente.
 
 ## Medição
 
-chars/4, CRLF normalizado para LF, mesma regra de lista por papel; reproduzida nesta review com `medir.mjs`.
+chars/4, CRLF normalizado para LF, mesma regra de lista por papel; reproduzida com `medir.mjs` na Etapa 1 (`ccd2ecc`) e remedida na Etapa 2 sobre o `HEAD` `73044b2`, com `papeis-5.4.0.json` na base e `papeis-5.5.0.json` na árvore de trabalho. A tabela traz os valores da Etapa 2; os da Etapa 1 estão em `comparacao.md`.
 
 | Papel ou arquivo | Base 5.4.0 | 5.5.0 | Queda | Teto de 70% da base |
 |---|---|---|---|---|
-| líder sempre | 3.249 | 2.220 | 31,7% | 2.274 |
+| líder sempre | 3.249 | 2.217 | 31,8% | 2.274 |
 | explorador | 5.973 | 671 | 88,8% | 4.181 |
-| implementador | 2.705 | 1.888 | 30,2% | 1.893 |
-| verificador | 9.528 | 1.729 | 81,9% | 6.669 |
+| implementador | 2.705 | 1.886 | 30,3% | 1.893 |
+| verificador | 9.528 | 1.730 | 81,8% | 6.669 |
 | redator de spec | 11.599 | 6.204 | 46,5% | 8.119 |
-| redator de plan | 12.929 | 6.627 | 48,7% | 9.050 |
-| revisor de analyze | 12.877 | 6.300 | 51,1% | 9.013 |
-| revisor de review | 14.969 | 8.619 | 42,4% | 10.478 |
-| soma do líder numa phase high completa | 20.998 | 14.482 | 31,0% | 14.698 |
+| redator de plan | 12.929 | 6.625 | 48,8% | 9.050 |
+| revisor de analyze | 12.877 | 6.301 | 51,1% | 9.013 |
+| revisor de review | 14.969 | 8.625 | 42,4% | 10.478 |
+| soma do líder numa phase high completa | 20.998 | 14.477 | 31,1% | 14.698 |
 | bloco CADEIA (template e repo) | 861 | 341 | 60,4% | 400 pela A4 |
-| `AGENTS.md` deste repo | 5.270 | 2.110 | 60,0% | 2.200 pela A5 |
+| `AGENTS.md` deste repo | 5.270 | 2.096 | 60,2% | 2.200 pela A5 |
+| implementador + `references/ambiente.md` (R3) | 2.705 | 2.177 | 19,5% | abaixo de 2.705 pela prova de R3 |
 
 ## Cenários
 
@@ -90,7 +96,7 @@ A v1 de S7 falhou na base por ambiguidade da skill e foi corrigida em `reference
 
 ## Aprovação humana
 
-- [ ] Aprovação humana (confirmou no chat o resumo do líder)
+- [x] Aprovação humana (confirmou no chat o resumo do líder): 2026-11-02, "Confirmo"
 
 ## Etapas
 
@@ -100,3 +106,13 @@ A v1 de S7 falhou na base por ambiguidade da skill e foi corrigida em `reference
 - Duração: `git diff --check` 0,27 s, `node --test` 41,49 s, `estado.mjs` e `governanca.mjs` 0,53 s, gitleaks 1,75 s, sem E2E; total 44,04 s · orçamento: 10 minutos (padrão, o `AGENTS.md` não declara)
 - Abriu: R1, R2, R3 (R3 por pedido humano, a partir da nota de sensibilidade de A1)
 - Veredito: Request changes
+
+### Etapa 2 - re-review - ccd2ecc..73044b2
+
+- Regressão: a correção só toca prosa da skill e o `AGENTS.md`, sem script, teste nem configuração usada fora dos paths dos R*; a regressão completa da Etapa 1 não foi repetida. No `HEAD` `73044b2eb39ca2c9ed931d0ba8be14474d1b2f7f`, árvore limpa: `git diff --check` e `git diff --check ccd2ecc..73044b2` limpos; `node --test` 114 de 114. Revisão de consistência do diff: todo ponteiro para o ambiente local resolve em `references/ambiente.md` (`SKILL.md`, `init.md`, `plan.md`, `implementador.md`, `testes.md`, `README.md`), nenhum aponta mais para `init.md` (Ambiente local), e o conteúdo de `ambiente.md` é o da seção removida, com o ponteiro do init qualificado e uma linha de quando ler. Sem flake.
+- Duração: `git diff --check` 0,09 s, `node --test` 51,05 s, sem E2E; total 51,14 s · orçamento: 10 minutos (padrão, o `AGENTS.md` não declara)
+- R1 fechado: `AGENTS.md:57` mantém o ponteiro e só a confirmação do push, como o remédio admite; seção Git relida contra o topo do `SKILL.md` (Confirmação final) e `references/review.md` (Confirmar); `AGENTS.md` com 2.096 tokens.
+- R3 fechado: seção movida sem mudar regra; implementador mais `ambiente.md` com 2.177 tokens, abaixo dos 2.705 da base; nenhum papel de A1 acima de 70% da base (tabela em Medição).
+- R2 fechado: `review/passos.md` diz que o líder só o lê no Modo B, ao atuar como revisor, e `retomada.md` (Contexto limpo) aponta `references/revisor.md` e `references/verificador.md`; o líder confere o `[x]` pelo relatório da correção.
+- Abriu: nenhum
+- Veredito: Approve
