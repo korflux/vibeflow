@@ -24,15 +24,15 @@
 
 ### Critical
 
-- [ ] R1: **Critical** - `path` - <o que está errado> - remédio: <movimento> - prova: <comando> - papel: <implementador | redator>
+- [ ] R1: **Critical** - `<paths>` - <o que está errado> - remédio: <movimento> - prova: <comando> - papel: <implementador | redator>
 
 ### Required
 
-- [ ] R2: **Required** - `path` - <...> - remédio: <...> - prova: <...> - papel: <implementador | redator>
+- [ ] R2: **Required** - `<paths>` - <...> - remédio: <...> - prova: <...> - papel: <implementador | redator>
 
 ### Nit
 
-- [ ] R3: **Nit** - `path` - <...> - remédio: <...> - prova: <...> - papel: <implementador | redator>
+- [ ] R3: **Nit** - `<paths>` - <...> - remédio: <...> - prova: <...> - papel: <implementador | redator>
 
 ## Notas
 

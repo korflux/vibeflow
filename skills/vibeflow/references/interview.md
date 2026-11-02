@@ -41,7 +41,7 @@ Opções: <duas ou três, cada uma com o impacto em uma linha>
 ```
 
 - Sem base para recomendar, diga isso. Várias respostas de uma vez valem: registre tudo e siga com o que falta. "Tanto faz" crava a recomendação.
-- Lacuna reversível e de baixo risco: o líder assume a recomendação, avisa e a registra como decisão assumida. Decisão cara, irreversível ou que altera a lógica central é perguntada; recomendação não é autorização.
+- Lacuna reversível e de baixo risco: o líder assume a recomendação, avisa e a registra como decisão assumida. Decisão cara, sensível, irreversível ou que altera a lógica central é perguntada; recomendação não é autorização.
 - Decisão de autenticação, autorização, segurança ou dados, inclusive privacidade e dado pessoal, é sempre perguntada ao humano e nunca assumida, na phase e no MVP. N/A nesses temas exige fundamento e confirmação do humano.
 
 ### 3. Cobrir o que o pedido aciona
