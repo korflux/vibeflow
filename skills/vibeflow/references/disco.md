@@ -31,8 +31,8 @@ Artefatos de uma phase ou do MVP, sempre com estes nomes: `spec.md`, `plan.md` e
 - `n` é o maior número existente entre as pastas `phase-<n>-<slug>` mais um, comparado em ordem numérica (`phase-10` vem depois de `phase-9`). Sem phases, `n` é 1. Pastas fora do padrão `phase-<n>-<slug>` não contam.
 - Slug: frase curta da phase em minúsculas, sem acento, com `a-z`, `0-9` e hífen; hífens repetidos viram um e hífens das pontas saem; de 2 a 48 caracteres. Fora disso, escolha outro slug antes de criar. Com Node, `scripts/estado.mjs --slug "<frase>"` aplica esta regra e devolve o path da próxima phase.
 - O líder fixa o path do alvo (`n` e slug) no brief; quem grava o primeiro artefato cria a pasta.
-- Pasta que já existe não é recriada nem renomeada. Pedido novo vai para a próxima pasta; ajuste volta à phase de origem (`references/implement.md`, Ajuste de phase).
-- O MVP usa `.vibeflow/mvp/` uma única vez por repositório. Baseline concluído não é sobrescrito, movido nem versionado; mudança posterior que altera decisão ou comportamento abre phase `high` com `# Risco:` e substituição explícita, e ajuste segue `references/implement.md` (Ajuste de phase).
+- Pasta que já existe não é recriada nem renomeada. Pedido novo vai para a próxima pasta; ajuste volta à phase de origem (`references/ajuste.md`).
+- O MVP usa `.vibeflow/mvp/` uma única vez por repositório. Baseline concluído não é sobrescrito, movido nem versionado; mudança posterior que altera decisão ou comportamento abre phase `high` com `# Risco:` e substituição explícita, e ajuste segue `references/ajuste.md`.
 
 ## Escrever artefato
 
@@ -96,7 +96,7 @@ Uma linha física por passo, com os campos nesta ordem, separados por ` · `:
 | Caminho fino | Depois do primeiro grupo de risco; em `high` sem `# Risco:`, depois do caminho fino do critério central |
 | Tela | Só se a phase tem tela: depois do primeiro grupo que entrega tela |
 
-- O que o verificador executa segue `references/implement.md` (Checkpoint).
+- O que o verificador executa segue `references/verificador.md` (Checkpoint).
 
 ### Achados do analyze
 
@@ -183,7 +183,7 @@ Antes de substituir ou remover `AGENTS.md`, a ponte ou um perfil:
 |---|---|
 | Passo | Linha do checklist do `plan.md`; unidade de delegação ao implementador e de commit |
 | Grupo paralelo | Passos irmãos, com o mesmo número e letras diferentes, que rodam juntos sem `Arquivos:` sobrepostos |
-| Checkpoint | Linha do plan depois de um grupo de passos, nas posições de Plan (Checkpoint), conferida por um verificador de contexto limpo conforme `references/implement.md` (Checkpoint) |
+| Checkpoint | Linha do plan depois de um grupo de passos, nas posições de Plan (Checkpoint), conferida por um verificador de contexto limpo conforme `references/verificador.md` (Checkpoint) |
 | Risco | Linha `# Risco:` da spec; não acrescenta etapa, mas obriga a interview a cobrir modelo de ameaça e rollback, o plan a pôr checkpoint depois do primeiro grupo de risco e a review a abrir segurança e banco |
 | Achado fora do recorte | Defeito que não pertence aos critérios nem ao diff da phase; vai para `.erros-encontrados/`, um arquivo por achado, gravado por quem o encontrou (verificador ou revisor), e não bloqueia. O líder inclui o registro no commit seguinte da phase, inclusive no `chore(<alvo>): finalize review` |
 | Flake | Teste que falha e passa na reexecução; vai para `.erros-encontrados/` e não bloqueia |

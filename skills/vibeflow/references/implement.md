@@ -10,10 +10,10 @@ Um passo só é concluído com prova verde e commit real. O plan define a ordem 
 | Situação | Como conduzir |
 |---|---|
 | Low sem phase de origem | Brief curto ao implementador, prova proporcional por `references/testes.md`; o líder confere o relatório e commita com staging explícito dos paths entregues, sem push, sem phase nem artefato |
-| Ajuste de uma phase ou do MVP | Ajuste de phase, abaixo |
+| Ajuste de uma phase ou do MVP | `references/ajuste.md` |
 | Medium | Rota medium |
 | `high` ou `mvp` com os perfis carregados | Passos 1 a 4 |
-| Sem subagentes ou perfil exigido ausente | Modo B |
+| Sem subagentes ou perfil exigido ausente | Modo B (`references/retomada.md`) |
 
 ## Quem faz
 
@@ -38,10 +38,7 @@ O líder nunca edita código nem executa teste. Antes do primeiro passo, confira
 
 ### 2. Checkpoint
 
-Com todos os passos anteriores a uma linha `Checkpoint:` marcados, o líder despacha um verificador de contexto limpo com brief que traz só o diff do grupo e os critérios listados. A posição e o número de checkpoints seguem `references/disco.md` (Checkpoint). O verificador não reroda a prova dos passos, que já voltou verde:
-
-- roda o E2E só dos critérios listados que têm tela;
-- confere o diff do grupo contra os critérios listados na spec.
+Com todos os passos anteriores a uma linha `Checkpoint:` marcados, o líder despacha um verificador de contexto limpo com brief que traz só o diff do grupo e os critérios listados; ele segue `references/verificador.md`. A posição e o número de checkpoints seguem `references/disco.md` (Checkpoint).
 
 Falha volta ao implementador do passo que a causou; a correção entra no commit seguinte do grupo, no formato de passo. Verde, o líder marca a caixa do checkpoint, que entra no próximo commit da phase. Flake ou achado fora do recorte que o verificador registra em `.erros-encontrados/` também entra no commit seguinte da phase (`references/disco.md`, Glossário). Phase sem checkpoint segue direto para a review.
 
@@ -53,37 +50,12 @@ Com todos os passos e checkpoints marcados, o revisor de contexto limpo executa 
 
 Roteie cada R* aberto pelo `papel:`: `implementador` para código e testes, `redator` para prosa; remédio em `review.md` volta ao revisor. Quem corrige roda os testes afetados da correção e devolve o relatório. O líder confere, marca `[x]` nos R* comprovados e commita `task(<alvo>:Rn,...)`. A re-review, o limite de rodadas e a confirmação final seguem `references/review.md`.
 
-## Modo B
-
-Informe a limitação em uma linha. Cada run executa um passo, o primeiro aberto ou o que o humano nomeou: o chat assume o papel do implementador conforme `references/implementador.md`, roda a `Prova:`, marca a caixa e commita, sem push. Grupo paralelo roda em sequência. O checkpoint roda num chat novo com `/vibeflow implement`, que pela tabela de estados cai no checkpoint e o executa como verificador. A review roda num chat novo com `/vibeflow review`. Correção de R* segue o passo 4 inline, numa rodada por run; medium segue a Rota medium inline.
-
 ## Rota medium
 
 1. O líder escreve no brief os critérios de aceite `A1`, `A2` em diante, na forma de `references/spec.md` (Critérios de aceite). O implementador entrega a mudança com a prova por `references/testes.md`, e o líder confere o relatório.
 2. Prova verde, o líder faz staging explícito dos paths entregues, confere `git diff --cached --check` e commita `task(medium): <resultado>` com os critérios do brief no corpo (`references/disco.md`, Commits).
 3. A review abre a phase: o líder fixa o alvo e o revisor cria o `review.md` com `# Rota: medium`, registra o commit `task(medium): ...` como base e julga o diff contra os critérios do corpo desse commit.
 4. Achados seguem o passo 4, com commit `task(<alvo>:Rn,...)`.
-
-## Ajuste de phase
-
-Ajuste é o pedido low ou medium que corrige, completa ou alinha o que uma phase ou o MVP entregou ou está entregando, sem mudar decisão, banco, autenticação ou autorização da spec. Inclui corrigir um registro de `.erros-encontrados/` nesse escopo. Ajuste volta à phase de origem, aberta ou fechada, e nunca abre phase nova; pedido `high`, ou que muda o que a spec decidiu, abre phase nova com substituição explícita. O líder identifica a origem pelo assunto e pelos paths e a anuncia em uma linha; na dúvida entre duas phases, pergunte.
-
-| Situação da phase de origem | Como o ajuste entra |
-|---|---|
-| Antes do implement | Insumo da spec ou do plan, gravado pelo redator; nenhum código antes do plan |
-| Plan com passos e sem `review.md` | O redator acrescenta ao fim do checklist um passo com o próximo número, `Arquivos:` e `Prova:`, sem nova rodada do analyze; o passo segue os passos 1 e 2 |
-| `review.md` aberto | O revisor registra o ajuste como R* na etapa vigente, com `papel:`; segue o passo 4 |
-| Fechada | O líder acrescenta ao `review.md` uma etapa `### Ajuste N - <pedido>`, com o pedido e `Abriu: Rn`, e um R* Required por item. Low: o `# Status: aprovado` é mantido e não há re-review; o líder marca o `[x]` no commit `task(<alvo>:Rn,...)`, que inclui o `review.md`, os paths do R* e o registro apagado. Medium: o líder muda o status para `request-changes` e desmarca o Approve e a aprovação humana; o ajuste segue o passo 4, a re-review de ajuste e a confirmação de `references/review.md` |
-
-R* de ajuste:
-
-```text
-- [ ] Rn: **Required** - `path` - <pedido do humano> - remédio: <o pedido> - prova: <testes afetados> - source: <pedido humano | path do registro de .erros-encontrados/> - papel: <implementador | redator>
-```
-
-Entrega medium ainda sem `review.md`: antes do commit `task(medium): ...`, o ajuste entra no recorte da entrega e, quando muda o aceite, nos critérios do brief; depois dele, o revisor o registra como R* na review que abre a phase. Sem phase de origem, o ajuste segue a linha low da Entrada.
-
-Registro de `.erros-encontrados/` corrigido é apagado no mesmo commit da correção; o Git guarda o histórico.
 
 ## Saída
 

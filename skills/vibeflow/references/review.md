@@ -1,6 +1,6 @@
 # Etapa review
 
-O revisor de contexto limpo julga o produto e grava o `review.md`; ele não edita código, teste nem lockfile. O líder não escreve `review.md`, salvo a etapa de ajuste de phase fechada (`references/implement.md`, Ajuste de phase), as marcações e a finalização. Aprovar, publicar decisões vigentes e fazer push exigem confirmação humana.
+O revisor de contexto limpo julga o produto e grava o `review.md`; ele não edita código, teste nem lockfile. O líder não escreve `review.md`, salvo a etapa de ajuste de phase fechada (`references/ajuste.md`), as marcações e a finalização. Aprovar, publicar decisões vigentes e fazer push exigem confirmação humana.
 
 ## Entrada
 

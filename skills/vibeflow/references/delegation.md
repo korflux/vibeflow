@@ -4,7 +4,16 @@ Leia antes da primeira delegação da run. O `SKILL.md` e a referência da etapa
 
 ## Papéis
 
-Use perfis realmente disponíveis. O modelo vem do perfil instalado; o líder não escolhe modelo ao delegar. O líder escolhe o esforço de raciocínio do implementador a cada despacho, conforme o passo, com teto `xhigh`; quando o host não aceita esforço no despacho, vale o esforço padrão do perfil, que também é o dos demais papéis. Os perfis exigidos por situação estão no `SKILL.md`, seção 5. Perfil exigido ausente ou não carregado nunca é substituído por outro papel: a etapa segue no Modo B, com aviso de uma linha.
+Use perfis realmente disponíveis. O modelo vem do perfil instalado; o líder não escolhe modelo ao delegar. O líder escolhe o esforço de raciocínio do implementador a cada despacho, conforme o passo, com teto `xhigh`; quando o host não aceita esforço no despacho, vale o esforço padrão do perfil, que também é o dos demais papéis. Perfil exigido ausente ou não carregado nunca é substituído por outro papel: a etapa segue no Modo B, com aviso de uma linha (`SKILL.md`, seção 5).
+
+| Situação | Perfis exigidos |
+|---|---|
+| Low | implementador |
+| Ajuste de phase | os da situação em que o ajuste entra (`references/ajuste.md`) |
+| Texto avulso | redator |
+| Init | redator; explorador para a proposta do núcleo |
+| Medium | implementador e revisor; redator em achado de prosa |
+| High e MVP | explorador, implementador, redator, verificador e revisor |
 
 | Papel | Despacho | Única leitura do papel |
 |---|---|---|
@@ -73,7 +82,7 @@ Verde certifica somente o recorte. Bloqueado é impedimento real; pergunta é de
 | Nível | Responsável | Executa |
 |---|---|---|
 | Passo | Implementador; redator no passo de prosa | A `Prova:` do passo |
-| Checkpoint | Verificador | O E2E dos critérios com tela do grupo e a conferência do diff contra os critérios, sem rerodar a prova dos passos (`references/implement.md`, Checkpoint) |
+| Checkpoint | Verificador | O E2E dos critérios com tela do grupo e a conferência do diff contra os critérios, sem rerodar a prova dos passos (`references/verificador.md`, Checkpoint) |
 | Review | Revisor | A regressão completa (`references/review/passos.md`, Disparar a regressão completa) |
 
 O que cada nível testa, inclusive onde roda o E2E, segue `references/testes.md` (Política de testes). Nenhum papel amplia a prova do seu nível nem repete prova só por assumir a etapa. Mudança ou falha renova somente a prova afetada por ela. Flake e achado fora do recorte seguem o Glossário de `references/disco.md`.
@@ -96,4 +105,4 @@ Flake ou achado fora do recorte vai para `.erros-encontrados/`, um arquivo por a
 
 ## Host limitado
 
-Sem subagentes ou sem perfil exigido carregado, siga o Modo B do `SKILL.md`, seção 7. Subagente incapaz de abrir outro pode cumprir investigação ou checagem local inline dentro do seu recorte; isso não o torna verificador de checkpoint nem revisor.
+Sem subagentes ou sem perfil exigido carregado, siga o Modo B (`references/retomada.md`). Subagente incapaz de abrir outro pode cumprir investigação ou checagem local inline dentro do seu recorte; isso não o torna verificador de checkpoint nem revisor.

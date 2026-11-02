@@ -61,4 +61,4 @@
 - Veredito: <Approve | Request changes>
 
 <!-- Re-review: ### Etapa N - re-review - <R* julgados>, com Diff da correção, Regressão (só o que falhou, ou completa se a correção tocou código compartilhado), Duração quando completa, Fechou, Abriu e Veredito. Não apague etapas anteriores. -->
-<!-- Ajuste de phase fechada: o líder acrescenta ### Ajuste N - <pedido> com o pedido e Abriu: Rn (references/implement.md, Ajuste de phase). -->
+<!-- Ajuste de phase fechada: o líder acrescenta ### Ajuste N - <pedido> com o pedido e Abriu: Rn (references/ajuste.md). -->
