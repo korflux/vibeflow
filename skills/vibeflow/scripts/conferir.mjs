@@ -7,9 +7,10 @@
 //                     references/delegation.md e passo 3 de references/implement.md.
 //                     Path de `## Trabalho alheio` do plan não é acusado, salvo declaração
 //                     sobreposta ao recorte de passo ou R* aberto (inclusive R* [x] sem
-//                     commit), que não vale; o staging de path declarado alheio é
-//                     sempre acusado no --commit
-//                     (references/disco.md, Plan > Trabalho alheio).
+//                     commit), que não vale e deixa o path como comum. No --commit o
+//                     staging de path de declaração vigente é acusado, mesmo dentro do
+//                     recorte; o de declaração sem vigência é comum: aceito no recorte e
+//                     acusado fora dele (references/disco.md, Plan > Trabalho alheio).
 //   --commit <msg>    confere a mensagem e o índice antes do commit: formatos de
 //                     references/disco.md (Commits), critérios no corpo do task(medium),
 //                     caixas e R* marcados no índice,
@@ -142,7 +143,7 @@ export function conferirCommit(raiz, mensagem) {
 
   let permitidos = null; // null: sem recorte no disco para conferir os paths
   let recortes = [];
-  let alheios = []; // trabalho alheio declarado no plan: fora do staging, mesmo dentro do recorte
+  let alheios = []; // trabalho alheio vigente do plan (alheiosVigentes): fora do staging, mesmo dentro do recorte
   if (tipo && (tipo.tipo === 'task' || tipo.tipo === 'finalize' || tipo.tipo === 'push-adiado')) {
     const alvo = alvoNomeado(carregarAlvos(raiz), tipo.alvo);
     if (!alvo) {
@@ -150,7 +151,9 @@ export function conferirCommit(raiz, mensagem) {
     } else {
       const pasta = relPasta(raiz, alvo);
       permitidos = [`${pasta}/`, '.erros-encontrados/'];
-      alheios = lerPlan(alvo.art.plan).alheios;
+      // Mesma vigência do --passo e do estado: declaração sobreposta ao recorte de passo ou R*
+      // aberto não vale, e o path dela segue a regra comum (ids commitados definem o R* aberto).
+      alheios = alheiosVigentes(alvo, idsCommitados(classificadosDoAlvo(raiz, alvo)));
       if (tipo.tipo === 'task') {
         // O recorte vem do artefato na árvore de trabalho (a definição do passo); as
         // marcações vêm do índice e do HEAD, porque é o índice que vira commit. Artefato
@@ -192,8 +195,9 @@ export function conferirCommit(raiz, mensagem) {
     avisos.push(`entrega ${tipo.tipo} sem recorte no disco: confira o staging contra o brief`);
   }
 
-  // O path declarado alheio é acusado mesmo dentro do recorte (a declaração sobreposta ao
-  // recorte não vale para esconder o código do passo, mas o staging dela exige decisão).
+  // O path de declaração vigente é acusado mesmo dentro do recorte: trabalho alheio não entra no
+  // commit e o staging dele exige decisão. Declaração sem vigência já saiu de `alheios`, e o
+  // path dela segue a regra comum (aceito no recorte, acusado fora dele, sem a marca).
   const MARCA = ' (declarado em ## Trabalho alheio)';
   for (const p of staging) {
     const alheio = dentroDoRecorte(segmentos(p), alheios);

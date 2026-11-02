@@ -219,6 +219,22 @@ test('commit do passo com o path alheio declarado em staging, mesmo dentro do re
   assert.match(achadosDoCommit[0], /src\/p1\.js.*declarado em ## Trabalho alheio/);
 });
 
+test('commit: declaração sem vigência (sobreposta ao passo aberto) vale como path comum, aceito no recorte e acusado fora dele, sem a marca', (t) => {
+  const linhas = (c1) => [passo('1', { caixa: c1, arquivos: '`src/a.js`' }), passo('2', { arquivos: '`src/a.js`, `src/b.js`' })];
+  const raiz = fase(t, linhas(false));
+  escrever(raiz, `${PH}/plan.md`, planComAlheio(linhas(false), ['src/a.js', 'src/b.js']));
+  commit(raiz, 'docs: trabalho alheio sobreposto ao passo 2');
+  escrever(raiz, 'src/a.js', 'x\n');
+  escrever(raiz, `${PH}/plan.md`, planComAlheio(linhas(true), ['src/a.js', 'src/b.js']));
+  stage(raiz, 'src/a.js', `${PH}/plan.md`);
+  // O passo 2 segue aberto e cobre src/a.js: a declaração não vale, o path é código do passo 1.
+  assert.deepEqual(conferirCommit(raiz, 'task(phase-1:1): entrega 1').achados, []);
+  // Fora do recorte do commit (src/b.js é do passo 2), o path declarado sem vigência é acusado como comum, sem a marca.
+  escrever(raiz, 'src/b.js', 'x\n');
+  stage(raiz, 'src/b.js');
+  assert.deepEqual(conferirCommit(raiz, 'task(phase-1:1): entrega 1').achados, ['path em staging fora do recorte: src/b.js']);
+});
+
 test('duas phases abertas: o alheio de uma não esconde o recorte da outra', (t) => {
   const raiz = fase(t, [passo('1')]);
   escrever(raiz, `${PH}/plan.md`, planComAlheio([passo('1')], ['src/p2.js']));
