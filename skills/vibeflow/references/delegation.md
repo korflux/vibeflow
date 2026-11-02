@@ -66,7 +66,7 @@ Regra de instalação, para todo papel: instale ferramenta ausente necessária �
 estado: verde | bloqueado | pergunta
 etapa: init | interview | spec | plan | analyze | passo | checkpoint | correcao | review | exploracao | texto
 paths: <alterados, um por linha, ou nenhum>
-prova: <comando e resumo do resultado, só com as falhas, sem log completo; saída do teste do critério vermelho antes da mudança e verde depois, ou motivo da isenção; inputs reais; gates estáticos rodados sobre os arquivos alterados, conforme references/implementador.md (Codar e provar); quando o papel captura, paths das imagens finais conforme references/chrome-devtools.md>
+prova: <comando e resumo do resultado, só com as falhas, sem log completo; saída do teste do critério vermelho antes da mudança e verde depois, ou motivo da isenção; inputs reais; gates estáticos rodados sobre os arquivos alterados, conforme references/implementador.md (Codar e provar); quando o papel captura ou cita capturas, paths das imagens finais conforme references/chrome-devtools.md>
 cobertura: <critérios certificados e limites do recorte>
 pendencias: <nenhuma ou falha/impedimento concreto>
 proximo: <ação e responsável>

@@ -9,10 +9,10 @@ Leia quando o pedido é um ajuste (`SKILL.md`, seção 2). Ajuste é o pedido lo
 | `review.md` aberto | O revisor registra o ajuste como R* na etapa vigente, com `papel:`; segue o passo 4 de `references/implement.md` |
 | Fechada | O líder acrescenta ao `review.md` uma etapa `### Ajuste N - <pedido>`, com o pedido e `Abriu: Rn`, e um R* Required por item. Low: o `# Status: aprovado` é mantido e não há re-review; o líder marca o `[x]` no commit `task(<alvo>:Rn,...)`, que inclui o `review.md`, os paths do R* e o registro apagado. Medium: o líder muda o `# Status:` para `request-changes`, a exceção de `references/disco.md` (Cabeçalho), e desmarca o Approve e a aprovação humana; o ajuste segue o passo 4 de `references/implement.md`, a re-review de ajuste e a confirmação de `references/review.md` |
 
-R* de ajuste (`path` é um ou mais paths entre crases, separados por `, `, logo depois da severidade):
+R* de ajuste (`<paths>` é um ou mais paths entre crases, separados por `, `, logo depois da severidade):
 
 ```text
-- [ ] Rn: **Required** - `path` - <pedido do humano> - remédio: <o pedido> - prova: <testes afetados> - source: <pedido humano | path do registro de .erros-encontrados/> - papel: <implementador | redator>
+- [ ] Rn: **Required** - `<paths>` - <pedido do humano> - remédio: <o pedido> - prova: <testes afetados> - source: <pedido humano | path do registro de .erros-encontrados/> - papel: <implementador | redator>
 ```
 
 Entrega medium ainda sem `review.md`: antes do commit `task(medium): ...`, o ajuste entra no recorte da entrega e, quando muda o aceite, nos critérios do brief; depois dele, o revisor o registra como R* na review que abre a phase. Sem phase de origem, o ajuste segue a linha low da Entrada de `references/implement.md`.

@@ -7,7 +7,7 @@
 Trabalhe com contexto limpo, sobre o diff do grupo e os critérios do checkpoint que o brief entrega.
 
 1. Não rerode a prova dos passos: ela já voltou verde.
-2. Rode o E2E só dos critérios listados que têm tela, pelo Desenho do E2E, abaixo, no modo de `references/testes.md` (Execução), com a checagem de console em dev quando o critério toca o cliente. Cite no campo `prova` as capturas que a execução gravou (`references/chrome-devtools.md`, Captura e reaproveitamento).
+2. Rode o E2E só dos critérios com tela do grupo, pelo Desenho do E2E, abaixo, no modo de `references/testes.md` (Execução), com a checagem de console em dev quando o critério toca o cliente. Cite no campo `prova` as capturas que a execução gravou (`references/chrome-devtools.md`, Captura e reaproveitamento).
 3. Confira o diff do grupo contra os critérios listados na spec e, em cada teste que prova um deles, a asserção contra o texto do critério (`references/testes.md`, Política de testes). Asserção que afirma algo diferente do texto é falha do critério, mesmo com o teste verde.
 4. Relate cada critério com comando ou trecho do diff, resultado e evidência. Falha é relatada, não corrigida; o retorno dela segue `references/implement.md` (Checkpoint).
 
