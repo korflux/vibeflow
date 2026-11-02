@@ -137,7 +137,7 @@ A 5.5.0 é uma versão minor, sem migração de artefato. Rode `/vibeflow init` 
 - Explorador, redator, verificador e revisor leem só a referência do próprio papel (`references/<papel>.md`), como o implementador, em vez do `SKILL.md` inteiro.
 - O `SKILL.md` fica enxuto para o líder: Interromper, retomada e Modo B passam para `references/retomada.md`, e Ajuste de phase para `references/ajuste.md`.
 - O bloco `VIBEFLOW:CADEIA` fica com a tabela de esforço, os sinais que tiram do low e um ponteiro para a skill.
-- Cada regra tem uma casa só: commits, staging, posição e marcação do checkpoint em `references/disco.md`; ambiente local, Docker nos testes e backup de arquivo de regra em `references/init.md`; execução do checkpoint e Desenho do E2E em `references/verificador.md`; regressão completa e Orçamento de duração em `references/review/passos.md`; checklist do analyze em `references/analyze/coverage.md`.
+- Cada regra tem uma casa só: commits, staging, posição e marcação do checkpoint em `references/disco.md`; ambiente local e Docker nos testes em `references/ambiente.md`; backup de arquivo de regra em `references/init.md`; execução do checkpoint e Desenho do E2E em `references/verificador.md`; regressão completa e Orçamento de duração em `references/review/passos.md`; checklist do analyze em `references/analyze/coverage.md`.
 - Gates, regras de commit, encadeamento, checkpoint e Modo B não mudam de comportamento, e o contrato de disco segue igual.
 
 ## Novidades da 5.4.0
@@ -178,7 +178,7 @@ A 5.2.0 é uma versão minor, sem migração.
 A 5.1.0 é uma versão minor, sem migração.
 
 - As regras de teste ficam numa referência única, `skills/vibeflow/references/testes.md`.
-- Os testes locais preferem serviços nativos ou embutidos a containers; em projeto que já usa Docker nos testes, o líder pergunta uma vez se você prefere migrar para uma forma mais leve. Desde a 5.5.0, essa regra vive em `skills/vibeflow/references/init.md` (Ambiente local).
+- Os testes locais preferem serviços nativos ou embutidos a containers; em projeto que já usa Docker nos testes, o líder pergunta uma vez se você prefere migrar para uma forma mais leve. Desde a 5.5.0, essa regra vive em `skills/vibeflow/references/ambiente.md`.
 - O E2E é leve e roda em paralelo.
 - A regressão completa tem orçamento de duração, de 10 minutos por padrão; acima dele, o revisor registra um alarme sem bloquear a entrega.
 

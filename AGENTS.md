@@ -54,7 +54,7 @@ Sem banco, migration nem tráfego de usuário: mudança aqui altera contrato de 
 ## Git
 
 - Sem `Co-Authored-By` de ferramenta. Staging só de paths autorizados; nunca `git add -A`, `git add .`, amend, squash ou force push.
-- Commits, staging e finalização: `skills/vibeflow/references/disco.md` (Commits). Aprovar a review, publicar decisões vigentes e fazer push exigem confirmação humana explícita.
+- Commits, staging e finalização: `skills/vibeflow/references/disco.md` (Commits). Push exige confirmação humana explícita.
 - Commitável: `AGENTS.md`, `.vibeflow/old/` se existir, `.vibeflow/phases/`, `.vibeflow/mvp/` e o pacote da skill.
 
 ## Estrutura

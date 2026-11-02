@@ -14,7 +14,7 @@ Só inicie a próxima etapa com autorização explícita do humano; com ela, ava
 | Pausa | Gatilho |
 |---|---|
 | Decisão da spec | Achado do analyze muda decisão da spec, ou o passo que verifica um fato a contradiz (`references/plan.md`, Fatiar e ordenar) |
-| Docker nos testes | Plan ou init leva a pergunta (`references/init.md`, Ambiente local) |
+| Docker nos testes | Plan ou init leva a pergunta (`references/ambiente.md`) |
 | Confirmação final | Aprovar a review, publicar decisões vigentes e fazer push |
 
 ## 1. Abrir

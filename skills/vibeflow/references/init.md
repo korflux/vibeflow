@@ -26,7 +26,7 @@ Sem redator carregado, como na primeira instalação, o líder executa os passos
    - Existente: mantenha as regras do projeto. Atualize só o aviso de escopo do topo e o bloco entre `<!-- VIBEFLOW:CADEIA start -->` e `<!-- VIBEFLOW:CADEIA end -->`, copiados de `templates/AGENTS.md`, e monte a seção `## Núcleo do projeto` quando ausente (abaixo). Sem nenhum dos delimitadores, insira o aviso e o bloco completo logo após o primeiro título. Delimitador sem par: pare e relate.
    - Preencha os SLOTs do template somente com evidência do projeto: comandos reais de setup e teste, mapa curto da estrutura, fluxos de ponta a ponta, invariantes e validações. Não copie stack, paths ou regras de outro projeto.
    - Orçamento: registre em Comandos do projeto a linha do orçamento da regressão completa quando o humano ou o projeto o declarar (`references/review/passos.md`, Orçamento de duração); sem declaração, não escreva a linha e deixe o comentário que cita o padrão.
-   - Ambiente: registre em Ambiente os serviços de teste locais encontrados e procure Docker nos testes pelos sinais de Ambiente local, abaixo. Com Docker detectado e sem decisão registrada, devolva a evidência ao líder, que conduz a pergunta dessa seção.
+   - Ambiente: registre em Ambiente os serviços de teste locais encontrados e procure Docker nos testes pelos sinais de `references/ambiente.md`. Com Docker detectado e sem decisão registrada, devolva a evidência ao líder, que conduz a pergunta desse arquivo.
    - Núcleo do projeto: com a seção `## Núcleo do projeto` ausente ou sem item preenchido, o líder pede ao explorador a proposta e a leva ao humano; o redator grava a versão confirmada, uma linha por item com path, o que é e quando ler, fora do bloco da cadeia. Item que o humano não confirma não entra. Seção existente é mantida.
    - Em re-init, compare as seções Git e Padrões de Código e Engenharia com o template e devolva ao líder o patch proposto; aplique só o que o humano aprovar. Nunca altere `## Decisões vigentes`.
 3. **Outras regras do host.** `CLAUDE.md` existente é do usuário: não é removido nem reescrito. Devolva ao líder as regras dele que duplicam ou contradizem o `AGENTS.md`; o humano decide se algo é incorporado.
@@ -54,14 +54,6 @@ Antes de substituir ou remover `AGENTS.md`, a ponte ou um perfil:
 - Confira tamanho e SHA-256 da cópia contra o original (com Node, `scripts/governanca.mjs --backup <original> <cópia>`); divergência apaga a cópia e interrompe a substituição.
 - Destino em `old/` com o mesmo conteúdo é reutilizado; com conteúdo diferente, acrescente o sufixo UTC `.<AAAAMMDDTHHMMSSZ>`.
 - Só depois da cópia conferida substitua ou remova o original.
-
-## Ambiente local
-
-- Testes locais preferem serviços nativos (instalação oficial do sistema) ou embutidos no processo de teste (binário como dependência de desenvolvimento, como `embedded-postgres`) a containers. Docker fica para o CI.
-- Banco limpo vem de banco por arquivo, por worker ou por template, de reset de schema ou de transação com rollback, nunca de recriar container.
-- Sinais de Docker nos testes: comando de teste que chama `docker`, `docker compose` no setup de teste, arquivo de compose do projeto (`docker-compose.yml`, `compose.yaml` e variantes) ou documentação que o prefere.
-- Com Docker nos testes e sem decisão registrada na seção Ambiente do `AGENTS.md` do projeto, o líder pergunta ao humano uma vez, com recomendação, se prefere migrar para uma forma mais leve, e a resposta e a data são gravadas em Ambiente. Com a decisão registrada, não pergunte de novo.
-- A pergunta acontece no init (passo 2), com o registro no commit de governança, e no plan, onde vira o primeiro passo (`references/plan.md`, passo 2).
 
 ## Saída
 

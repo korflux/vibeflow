@@ -1,6 +1,6 @@
 # Passos do revisor na review
 
-Leitura do revisor na etapa review, depois de `references/review.md` (Entrada e Rodadas de correção). O líder não lê este arquivo.
+Leitura do revisor na etapa review, depois de `references/review.md` (Entrada e Rodadas de correção). O líder só o lê no Modo B, ao atuar como revisor.
 
 ## Fontes
 

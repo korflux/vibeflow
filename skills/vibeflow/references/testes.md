@@ -1,6 +1,6 @@
 # Testes
 
-Regras de teste do projeto consumidor: o que testar e como desenhar os casos. Fora daqui: ambiente local em `references/init.md`; checkpoint e Desenho do E2E em `references/verificador.md`; regressão completa e Orçamento de duração em `references/review/passos.md`.
+Regras de teste do projeto consumidor: o que testar e como desenhar os casos. Fora daqui: ambiente local em `references/ambiente.md`; checkpoint e Desenho do E2E em `references/verificador.md`; regressão completa e Orçamento de duração em `references/review/passos.md`.
 
 ## Política de testes
 
