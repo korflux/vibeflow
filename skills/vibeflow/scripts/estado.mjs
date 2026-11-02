@@ -152,7 +152,7 @@ function semDono(alvos, porAlvo, fora) {
     }
     const ids = idsCommitados(porAlvo.get(a.alvo));
     for (const r of lerRs(a.art.review)) {
-      if ((!r.feito || !ids.has(r.id)) && r.path) donos.push(segmentos(r.path));
+      if (!r.feito || !ids.has(r.id)) donos.push(...r.paths.map(segmentos));
     }
   }
   return fora.filter((p) => !donos.some((d) => sobrepoe(d, segmentos(p))));

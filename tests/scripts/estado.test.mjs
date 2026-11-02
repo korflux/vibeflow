@@ -328,6 +328,17 @@ test('R* marcado cujo path está não commitado tem dono; outro path não', (t) 
   assert.equal(estado(raiz).etapa.etapa, 'alteração sem dono');
 });
 
+test('R* marcado com vários paths: todos têm dono; path fora da lista não', (t) => {
+  const raiz = entregue(t);
+  escrever(raiz, `${PH}/review.md`, review('request-changes', achados('- [x] R1: **Required** - `src/a.js`, `src/b.js` - x `y` - remédio: z')));
+  commit(raiz, 'docs: review');
+  escrever(raiz, 'src/a.js', 'x');
+  escrever(raiz, 'src/b.js', 'x');
+  assert.equal(estado(raiz).etapa.situacao, 'commitar a correção (R1)');
+  escrever(raiz, 'src/zzz.js', 'x');
+  assert.equal(estado(raiz).etapa.etapa, 'alteração sem dono');
+});
+
 test('registro novo em .erros-encontrados/ não vira alteração sem dono nem código a retomar', (t) => {
   // Review aberta: o registro de achado fora do recorte não muda a etapa.
   const raiz = entregue(t);

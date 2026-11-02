@@ -1,6 +1,6 @@
 // conferir.test.mjs: testes de comportamento do script conferir da skill vibeflow.
 //
-// Modo --passo: alterações não commitadas contra os Arquivos: dos passos e o path dos R*
+// Modo --passo: alterações não commitadas contra os Arquivos: dos passos e os paths dos R*
 // (Conferência do líder de references/delegation.md). Modo --commit: mensagem nos
 // formatos de references/disco.md (Commits), caixas e R* marcados no índice, paths em
 // staging dentro do recorte e `git diff --cached --check` limpo. Rodar com: node --test
@@ -83,10 +83,20 @@ test('passo: só trabalho alheio alterado vira o aviso de nenhuma alteração, s
   assert.match(r.avisos[0], /^nenhuma alteração de código ou teste/);
 });
 
-test('R* usa o path citado como recorte', (t) => {
+test('R* de um path usa o path citado como recorte', (t) => {
   const raiz = fase(t, [passo('1', { caixa: true })]);
   escrever(raiz, `${PH}/review.md`, review('request-changes', veredito(false) + achados('- [ ] R1: `src/r.js` corrigir. papel: implementador')));
   escrever(raiz, 'src/r.js', 'x\n');
+  escrever(raiz, 'src/p1.js', 'x\n');
+  assert.deepEqual(conferirPasso(raiz, ['R1']).achados, ['path fora do recorte: src/p1.js']);
+});
+
+test('R* com vários paths: todos entram no recorte; o que está fora de todos é achado', (t) => {
+  const raiz = fase(t, [passo('1', { caixa: true })]);
+  escrever(raiz, `${PH}/review.md`, review('request-changes', veredito(false) + achados('- [ ] R1: **Required** - `src/r.js`, `src/s.js` - corrigir `x` - remédio: y - papel: implementador')));
+  escrever(raiz, 'src/r.js', 'x\n');
+  escrever(raiz, 'src/s.js', 'x\n');
+  assert.deepEqual(conferirPasso(raiz, ['R1']).achados, []);
   escrever(raiz, 'src/p1.js', 'x\n');
   assert.deepEqual(conferirPasso(raiz, ['R1']).achados, ['path fora do recorte: src/p1.js']);
 });
@@ -160,6 +170,23 @@ test('R* citado precisa estar marcado no review.md do índice', (t) => {
   escrever(raiz, `${PH}/review.md`, corpo(true));
   stage(raiz, `${PH}/review.md`);
   assert.deepEqual(conferirCommit(raiz, 'task(phase-1:R1): corrige').achados, []);
+});
+
+test('commit de R* com vários paths aceita todos; R* antigo de um path segue aceito', (t) => {
+  const raiz = fase(t, [passo('1', { caixa: true })]);
+  const corpo = (marca) => review('request-changes', veredito(false) + achados(
+    `- [${marca}] R1: **Required** - \`src/r.js\`, \`src/s.js\` - x \`y\` - remédio: z - papel: implementador\n- [${marca}] R2: **Nit** - \`src/t.js\` - x \`y\` - remédio: z - papel: implementador`));
+  escrever(raiz, `${PH}/review.md`, corpo(' '));
+  commit(raiz, 'docs: review');
+  escrever(raiz, `${PH}/review.md`, corpo('x'));
+  for (const p of ['src/r.js', 'src/s.js', 'src/t.js']) escrever(raiz, p, 'x\n');
+  stage(raiz, 'src/r.js', 'src/s.js', `${PH}/review.md`);
+  const paths = (msg) => conferirCommit(raiz, msg).achados.filter((a) => /^path/.test(a));
+  assert.deepEqual(paths('task(phase-1:R1,R2): corrige'), []);
+  // R* antigo de um path: o path do R2 só entra no recorte quando R2 está na mensagem.
+  stage(raiz, 'src/t.js');
+  assert.deepEqual(paths('task(phase-1:R1): corrige'), ['path em staging fora do recorte: src/t.js']);
+  assert.deepEqual(paths('task(phase-1:R1,R2): corrige'), []);
 });
 
 test('formato, Co-Authored-By, staging vazio e espaço no fim da linha são achado', (t) => {

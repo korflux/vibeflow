@@ -129,9 +129,26 @@ test('numeração fora de sequência e letras fora do padrão são achado', () =
 // Review: R* e veredito
 // ---------------------------------------------------------------------------
 
-test('lê os R* com marcação e o path citado', () => {
+test('lê os R* com marcação e a lista de paths citados', () => {
   const rs = lerRs(['- [x] R1: **Critical** - `src/a.js` - x', '- [ ] R2: **Nit** - sem path', '- [ ] Checkpoint: A1']);
-  assert.deepEqual(rs, [{ id: 'R1', num: 1, feito: true, path: 'src/a.js' }, { id: 'R2', num: 2, feito: false, path: null }]);
+  assert.deepEqual(rs, [{ id: 'R1', num: 1, feito: true, paths: ['src/a.js'] }, { id: 'R2', num: 2, feito: false, paths: [] }]);
+});
+
+test('R* com vários paths lê todos, na ordem, até o primeiro " - "', () => {
+  const rs = lerRs([
+    '- [ ] R1: **Required** - `src/a.js`, `tests/a.test.mjs` - ajusta `outro.js` - remédio: x',
+    '- [ ] R2: **Nit** - `a.js`,`b.js`, `c.js` - x',
+  ]);
+  assert.deepEqual(rs.map((r) => r.paths), [['src/a.js', 'tests/a.test.mjs'], ['a.js', 'b.js', 'c.js']]);
+});
+
+test('R* antigo de um path: crase da descrição, do remédio e da prova não vira path (linha real da phase-1)', () => {
+  // R1 da phase-1, com código entre crases em toda a linha depois do path.
+  const linha = '- [x] R1: **Required** - `skills/vibeflow/scripts/estado.mjs` - `designConta` (linhas 35-39) ignora o registro `Design: N/A` de `references/disco.md` (Estado da phase): um Handoff de spec que começa com `Design: N/A, sem UI nova` casa `/^design\b/i` e devolve etapa `design, sem artefato` - remédio: design conta só com `design.md` presente - prova: `node --test` - source: diff - gap: contradicts - papel: corretor';
+  assert.deepEqual(lerRs([linha]).map((r) => r.paths), [['skills/vibeflow/scripts/estado.mjs']]);
+  // Sem severidade (formato mais antigo) o path logo depois de "Rn:" ainda vale; crase solta mais adiante não.
+  assert.deepEqual(lerRs(['- [ ] R2: `src/r.js` corrigir `x`. papel: implementador']).map((r) => r.paths), [['src/r.js']]);
+  assert.deepEqual(lerRs(['- [ ] R3: **Nit** - sem path aqui, só `x` na descrição - remédio: y']).map((r) => r.paths), [[]]);
 });
 
 test('o veredito marcado é lido do review.md inteiro', () => {

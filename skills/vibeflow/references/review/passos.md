@@ -52,7 +52,7 @@ A execução registrada vale para o Approve enquanto as correções posteriores 
 
 Notas, nunca achado: path alterado fora dos `Arquivos:` do plan, coerência dos commits com os passos e commits de outro alvo no intervalo. Defeito fora dos critérios e do diff é achado fora do recorte: o revisor grava um arquivo por achado em `.erros-encontrados/`, cita em Notas e não bloqueia.
 
-Achado: path, severidade (`Critical`, `Required` ou `Nit`), remédio, prova e `papel: implementador` (código e testes) ou `papel: redator` (prosa); remédio em `review.md` é do revisor, sem `papel`. Achado novo recebe o próximo R* livre, sem renumerar fechados. Preferência sem fundamento não é achado; informação sem remédio vai para Notas.
+Achado: severidade (`Critical`, `Required` ou `Nit`), paths (um ou mais entre crases, separados por `, `, logo depois da severidade; crase da descrição, do remédio ou da prova não é path), remédio, prova e `papel: implementador` (código e testes) ou `papel: redator` (prosa); remédio em `review.md` é do revisor, sem `papel`. Achado novo recebe o próximo R* livre, sem renumerar fechados. Preferência sem fundamento não é achado; informação sem remédio vai para Notas.
 
 ### 3. Gravar
 

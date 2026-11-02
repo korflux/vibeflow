@@ -372,15 +372,21 @@ export function achadosDoPlan(passos) {
 // Review: R* e veredito (templates/review.md)
 // ---------------------------------------------------------------------------
 
-/** R* do review.md com marcação, path citado e linha de origem. */
+// Paths do R* (templates/review.md): só os trechos entre crases logo depois da severidade,
+// separados por vírgula; o resto da linha (descrição, remédio, prova) traz crases que são
+// código, não path. Sem severidade (formato mais antigo), vale a lista logo depois de `Rn:`.
+const PATHS_DO_R = /^\s*(?:\*\*[^*]+\*\*\s*-\s*)?(`[^`]+`(?:\s*,\s*`[^`]+`)*)/;
+
+/** R* do review.md com marcação e lista de paths citados (vazia sem path), na ordem da linha. */
 export function lerRs(linhasReview) {
   if (!linhasReview) return [];
   const rs = [];
   for (const l of linhasReview) {
     const m = l.match(/^- \[([ xX])\] R([1-9][0-9]*):(.*)$/);
     if (!m) continue;
-    const path = (m[3].match(/`([^`]+)`/) || [])[1] || null;
-    rs.push({ id: `R${m[2]}`, num: Number(m[2]), feito: m[1] !== ' ', path });
+    const lista = m[3].match(PATHS_DO_R);
+    const paths = lista ? [...lista[1].matchAll(/`([^`]+)`/g)].map((p) => p[1]) : [];
+    rs.push({ id: `R${m[2]}`, num: Number(m[2]), feito: m[1] !== ' ', paths });
   }
   return rs;
 }

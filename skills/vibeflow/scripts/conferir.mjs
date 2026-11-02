@@ -3,7 +3,7 @@
 //
 // Dois modos, ambos somente leitura:
 //   --passo <ids>     compara as alterações não commitadas com os `Arquivos:` dos passos
-//                     (ou os paths dos R*) indicados: Conferência do líder de
+//                     (ou os paths dos R*, um ou mais) indicados: Conferência do líder de
 //                     references/delegation.md e passo 3 de references/implement.md.
 //                     Path de `## Trabalho alheio` do plan não é acusado, mas o staging
 //                     dele continua acusado no --commit (references/disco.md, Plan).
@@ -54,9 +54,10 @@ function recorteDosIds(ids, passos, rs) {
     if (/^R[1-9][0-9]*$/.test(id)) {
       const r = rs.find((x) => x.id === id);
       if (!r) { achados.push(`${id} não existe no review.md do alvo`); continue; }
-      const norm = r.path ? normalizarPath(r.path) : null;
-      if (!norm) avisos.push(`${id} sem path comparável: confira o recorte dele pelo relatório`);
-      else recortes.push(norm);
+      // Um path incomparável deixa o R* inteiro sem recorte, como o passo.
+      const norm = r.paths.map(normalizarPath);
+      if (!norm.length || norm.some((n) => n === null)) avisos.push(`${id} sem path comparável: confira o recorte dele pelo relatório`);
+      else recortes.push(...norm);
       continue;
     }
     const p = passos.find((x) => x.id === id);

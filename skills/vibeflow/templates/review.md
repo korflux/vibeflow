@@ -20,7 +20,7 @@
 
 ## Achados
 
-<!-- Sem achado: uma linha "nenhum achado" e apague os grupos. Achado novo recebe o próximo número livre. -->
+<!-- Sem achado: uma linha "nenhum achado" e apague os grupos. Achado novo recebe o próximo número livre. Path: um ou mais entre crases, separados por `, `, logo depois da severidade; crase da descrição, do remédio ou da prova é código, não path. -->
 
 ### Critical
 
