@@ -17,7 +17,7 @@
 - Reutilize o que existe (projeto, standard library, plataforma, dependências instaladas), sem abstração especulativa nem limpeza fora do recorte. Documente semanticamente responsabilidades e decisões não óbvias.
 - Acabamento: `references/definition-of-done.md`; banco ou dinheiro: `references/database-and-migrations.md`.
 - Testes e prova por `references/testes.md` (Política de testes, Desenho de casos, Execução e O que não testar): a `Prova:` do passo, os testes afetados da correção ou, em low ou medium, a prova do brief, com saída resumida (só falhas e totais).
-- Teste com banco ou serviço: `references/ambiente.md`, nativo ou embutido, banco limpo sem recriar container, nunca Docker sem decisão registrada. E2E de critério com tela: `references/verificador.md` (Desenho do E2E). Prova visual e captura por rota: `references/chrome-devtools.md` (Captura e reaproveitamento).
+- Teste com banco ou serviço: `references/ambiente.md`, nativo ou embutido, banco limpo sem recriar container, nunca Docker sem decisão registrada. E2E de critério com tela ou jornada: `references/verificador.md` (Desenho do E2E). Prova visual e captura por rota: `references/chrome-devtools.md` (Captura e reaproveitamento).
 - Gate estático: em passo que toca código, rode também, sobre os arquivos alterados, os gates estáticos que os Comandos do projeto do `AGENTS.md` declaram (lint, tipos, segurança) e cite no campo `prova` cada gate rodado com o resultado. Projeto sem gate declarado não roda nada a mais; a regressão completa da review não muda.
 - Prova vermelha: corrija pela causa raiz e rode de novo, até verde ou impedimento real.
 
