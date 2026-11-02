@@ -41,7 +41,8 @@ Opções: <duas ou três, cada uma com o impacto em uma linha>
 ```
 
 - Sem base para recomendar, diga isso. Várias respostas de uma vez valem: registre tudo e siga com o que falta. "Tanto faz" crava a recomendação.
-- Lacuna reversível e de baixo risco: o líder assume a recomendação, avisa e a registra como decisão assumida. Decisão cara, sensível, irreversível ou que altera a lógica central é perguntada; recomendação não é autorização.
+- Lacuna reversível e de baixo risco: o líder assume a recomendação, avisa e a registra como decisão assumida. Decisão cara, irreversível ou que altera a lógica central é perguntada; recomendação não é autorização.
+- Decisão de autenticação, autorização, segurança ou dados, inclusive privacidade e dado pessoal, é sempre perguntada ao humano e nunca assumida, na phase e no MVP. N/A nesses temas exige fundamento e confirmação do humano.
 
 ### 3. Cobrir o que o pedido aciona
 
@@ -53,7 +54,7 @@ Opções: <duas ou três, cada uma com o impacto em uma linha>
 | Banco, persistência, valor monetário ou cálculo exato | Invariantes de dados, precisão e exemplos concretos com bordas (`references/spec.md`, Critérios de aceite) | `references/database-and-migrations.md` |
 | Entrada externa (request, query, headers, arquivo) | Allowlist de campos e valores, tamanho máximo por entrada e o que o usuário vê na recusa | |
 | Comportamento existente que a mudança arrisca | O que continua igual, como critério de preservação | |
-| API, token, segredo, dado pessoal ou rota autenticada | Validade e invalidação de credenciais, autorização no servidor com anti-IDOR, rate limit, CSRF, CORS com allowlist (nunca `*` com credenciais), headers e CSP, com N/A fundamentado | |
+| API, token, segredo, dado pessoal ou rota autenticada | Validade e invalidação de credenciais, autorização no servidor com anti-IDOR, rate limit, CSRF, CORS com allowlist (nunca `*` com credenciais), headers e CSP, com N/A só pela regra de segurança e dados de Perguntar | |
 | `# Risco:` | Modelo de ameaça (ativo, quem ataca, por onde, controle) e rollback (como desfazer, o que se perde, quem decide) | |
 | MVP | Núcleo, módulos acionados, privacidade e jurídico | `references/interview/mvp-discovery.md` |
 

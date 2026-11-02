@@ -13,7 +13,7 @@ Pergunte no formato e com as regras de `references/interview.md` (Perguntar). N�
 
 ## Módulos de completude
 
-Depois que o núcleo estiver claro, selecione somente os módulos acionados pelo produto. Leia cada referência escolhida sob demanda; não faça uma rodada fixa de perguntas nem despeje os módulos no chat. Cada módulo acionado entra nas Decisões da `spec.md` ou em Fora do escopo, com evidência ou N/A fundamentado.
+Depois que o núcleo estiver claro, selecione somente os módulos acionados pelo produto. Leia cada referência escolhida sob demanda; não faça uma rodada fixa de perguntas nem despeje os módulos no chat. Cada módulo acionado entra nas Decisões da `spec.md` ou em Fora do escopo, com evidência ou N/A fundamentado; em segurança ou dados, o N/A segue `references/interview.md` (Perguntar).
 
 | Módulo | Abrir quando | Referência |
 |---|---|---|
@@ -36,4 +36,4 @@ Investigue integrações, uploads, notificações, importação e auditoria quan
 
 ## Registro
 
-Na `spec.md`, decisão que o humano não fechou diz `assumida`, e nenhuma fica pendente. Valores seguem `references/spec.md` (Origem dos valores), e fato verificável segue `references/interview.md` (Explorar). IDs estáveis por domínio ficam apenas para decisões que mudam arquitetura, acesso, dados, operação, custo, segurança ou escopo central. Detalhes cosméticos reversíveis não recebem ID.
+Na `spec.md`, decisão que o humano não fechou diz `assumida` só quando `references/interview.md` (Perguntar) permite assumi-la; decisão de autenticação, autorização, segurança ou dados é sempre perguntada, e nenhuma fica pendente. Valores seguem `references/spec.md` (Origem dos valores), e fato verificável segue `references/interview.md` (Explorar). IDs estáveis por domínio ficam apenas para decisões que mudam arquitetura, acesso, dados, operação, custo, segurança ou escopo central. Detalhes cosméticos reversíveis não recebem ID.
