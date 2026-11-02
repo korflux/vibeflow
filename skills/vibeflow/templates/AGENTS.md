@@ -3,7 +3,7 @@
 > VibeFlow: documentos e edição apenas de texto ficam fora da cadeia da skill única `vibeflow`, que trata código de software. Um briefing ambíguo de documento pode passar antes pelas perguntas da interview.
 
 <!-- VIBEFLOW:CADEIA start -->
-A cadeia da skill `vibeflow` vale só quando o humano a chama com `/vibeflow` (`$vibeflow` no Codex). Fora disso, o agente trabalha direto pelas demais regras deste arquivo, sem rota, phase nem artefato.
+A cadeia da skill `vibeflow` vale só quando o humano a chama com `/vibeflow` (`$vibeflow` no Codex); fora disso, o agente segue as demais regras deste arquivo, sem rota, phase nem artefato. Risco, MVP, encadeamento, retomada e Modo B seguem a skill `vibeflow`; esta tabela é a única fonte das rotas.
 
 | esforço | etapas | quando |
 |---|---|---|
@@ -12,16 +12,6 @@ A cadeia da skill `vibeflow` vale só quando o humano a chama com `/vibeflow` (`
 | high | interview → spec → plan → analyze → implement com até dois checkpoints → review | pedido ambíguo ou de execução difícil, mudança que altera banco ou painel admin, risco de regressão de backend, ou tela que o design system e as telas existentes não cobrem |
 
 Saem do low, seguindo a rota aplicável: comportamento, rota, interação, critério de aceite ou acessibilidade alterados, e mudanças que toquem privacidade, dado pessoal, consentimento, retenção, direitos, obrigação jurídica, autenticação, autorização, pagamento, segredo, persistência ou risco de perda de dados.
-
-Na high, a linha `# Risco:` da spec marca mudança que toca autenticação, autorização, pagamento, segredo, perda de dados ou produção. O risco não acrescenta etapa: a interview cobre modelo de ameaça e rollback, o plan põe o primeiro checkpoint depois do primeiro grupo de risco, com no máximo dois por phase e nenhum em phase de até 5 passos, conforme `references/disco.md` da skill `vibeflow`, e a review abre segurança e banco. Produto de software novo com escopo a descobrir é o MVP: rota high com risco, em `.vibeflow/mvp/`.
-
-A interview tem tamanho proporcional à clareza do pedido e grava direto a `spec.md`. A aprovação da `spec.md` é a única aprovação humana antes do código e encadeia plan, analyze, implement e review até a confirmação final. Aprovar a review, publicar decisões vigentes e fazer push exigem confirmação humana explícita. Ajuste low ou medium ao que uma phase entregou ou está entregando, inclusive registro de `.erros-encontrados/`, volta à phase de origem, mesmo fechada, sem abrir phase nova. Medium abre a phase na review.
-
-`/vibeflow` conduz todo o fluxo. `/vibeflow <etapa>` vai direto a `init`, `interview`, `spec`, `plan`, `analyze`, `implement` ou `review`, desde que o pré-requisito esteja satisfeito. Argumento cuja primeira palavra não é etapa é tratado como pedido e classificado. O init roda na primeira rota com phase do repo, ou de novo só para reparar o disco.
-
-### Continuidade entre chats
-
-Um único chat conduz a phase por padrão. Em host de contexto curto, use dois: um para o planejamento (interview, spec, plan e analyze) e outro para a implementação (implement e review). Quando o contexto pesar ou o humano pedir para parar, o estado é gravado conforme a seção 6 do `SKILL.md` e o líder recomenda um chat novo. A retomada parte do disco: em chat novo, `/vibeflow` lê as linhas `# Rota:`, `# Risco:` e `# Status:`, as caixas de passos e checkpoints e a seção de achados do analyze do `plan.md`, os R* do `review.md` e o Git, e segue de onde parou. Sem subagentes (Modo B), analyze, checkpoint e review pedem chat novo (`/vibeflow analyze`, `/vibeflow implement`, `/vibeflow review`). Separar chats é recomendação, nunca gate.
 <!-- VIBEFLOW:CADEIA end -->
 
 ## Projeto
@@ -34,7 +24,7 @@ Um único chat conduz a phase por padrão. Em host de contexto curto, use dois: 
 
 ## Comandos do projeto
 <!-- SLOT:comandos -->
-<!-- Registrar só comandos existentes, cada um com onde roda (local, CI ou host): instalar, executar, lintar, validar tipos, teste por recorte (arquivo, módulo ou filtro), suíte completa, E2E, varredura de segredos e CI obrigatório. Com orçamento declarado, registrar a linha `Orçamento da regressão completa: <minutos>`; sem declaração, não registrar a linha, e vale o padrão de `references/testes.md` da skill `vibeflow`. -->
+<!-- Registrar só comandos existentes, cada um com onde roda (local, CI ou host): instalar, executar, lintar, validar tipos, teste por recorte (arquivo, módulo ou filtro), suíte completa, E2E, varredura de segredos e CI obrigatório. Com orçamento declarado, registrar a linha `Orçamento da regressão completa: <minutos>`; sem declaração, não registrar a linha, e vale o padrão de `references/review/passos.md` (Orçamento de duração) da skill `vibeflow`. -->
 
 ## Ambiente
 <!-- SLOT:ambiente -->
