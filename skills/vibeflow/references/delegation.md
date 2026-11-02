@@ -42,9 +42,9 @@ Entrega que toca o núcleo do projeto: antes de conferir, abra o item do núcleo
 | Entrega | Leia | Confronte com |
 |---|---|---|
 | Prosa de spec, plan, init ou texto avulso | O arquivo gravado | As decisões e respostas do humano do brief: cada uma presente e nada além delas; não reescreva o artefato |
-| Passo ou grupo paralelo | O relatório fixo e o `git diff --stat`; um trecho do diff só quando o relatório citar algo estranho | Os `Arquivos:` de cada passo: nenhum path fora do recorte; o campo `prova` verde, com a execução vermelha anterior do teste do critério ou o motivo da isenção (`references/testes.md`, Política de testes) |
-| Checkpoint | O relatório fixo do verificador | Os critérios listados na linha do checkpoint, todos cobertos |
-| Aceite visual | As imagens finais citadas no campo `prova`, uma por critério com tela | O aceite visual da spec ou do brief; falta de imagem final de critério com tela reprova; iterações intermediárias não são exigidas |
+| Passo ou grupo paralelo | O relatório fixo e o `git diff --stat`; um trecho do diff só quando o relatório citar algo estranho | Os `Arquivos:` de cada passo: nenhum path fora do recorte; o campo `prova` verde, com a saída da execução vermelha anterior do teste do critério ou o motivo da isenção (`references/testes.md`, Política de testes) |
+| Checkpoint | O relatório fixo do verificador | Os critérios listados na linha do checkpoint, todos verdes com evidência; falha ou evidência pendente segue `references/implement.md` (Checkpoint) |
+| Aceite visual | As imagens finais citadas no campo `prova` de quem captura (`references/chrome-devtools.md`, Captura e reaproveitamento): em `high` e `mvp`, o relatório do verificador ou do revisor; em low e medium, o do implementador; uma por critério com tela | O aceite visual da spec ou do brief; falta de imagem final de critério com tela reprova; iterações intermediárias não são exigidas |
 | API ou CLI | A evidência anexada: chamada real com resposta ou saída de comando | O critério do plan ou do brief; evidência ausente reprova |
 | Low e medium | O diff, como no passo, e, com aceite visual, as imagens anexadas | O brief |
 
@@ -66,7 +66,7 @@ Regra de instalação, para todo papel: instale ferramenta ausente necessária �
 estado: verde | bloqueado | pergunta
 etapa: init | interview | spec | plan | analyze | passo | checkpoint | correcao | review | exploracao | texto
 paths: <alterados, um por linha, ou nenhum>
-prova: <comando e resumo do resultado, só com as falhas, sem log completo; teste do critério vermelho antes da mudança e verde depois, ou motivo da isenção; inputs reais; com aceite visual, paths das imagens finais conforme references/chrome-devtools.md>
+prova: <comando e resumo do resultado, só com as falhas, sem log completo; saída do teste do critério vermelho antes da mudança e verde depois, ou motivo da isenção; inputs reais; quando o papel captura, paths das imagens finais conforme references/chrome-devtools.md>
 cobertura: <critérios certificados e limites do recorte>
 pendencias: <nenhuma ou falha/impedimento concreto>
 proximo: <ação e responsável>

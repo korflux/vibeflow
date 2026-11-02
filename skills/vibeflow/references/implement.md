@@ -28,7 +28,9 @@ Quem faz: o implementador coda e prova (o redator, na prosa), o verificador conf
 
 ### 2. Checkpoint
 
-Com todos os passos anteriores a uma linha `Checkpoint:` marcados, o líder despacha um verificador de contexto limpo com brief que traz só o diff do grupo e os critérios listados; ele segue `references/verificador.md`. Falha volta ao implementador do passo que a causou, e a correção entra no commit seguinte do grupo, no formato de passo. Verde, o líder marca a caixa conforme `references/disco.md` (Plan > Checkpoint); flake e achado fora do recorte seguem o Glossário dele. Phase sem checkpoint segue direto para a review.
+Com todos os passos anteriores a uma linha `Checkpoint:` marcados, o líder despacha um verificador de contexto limpo com brief que traz só o diff do grupo e os critérios listados; ele segue `references/verificador.md`. Falha volta ao dono do passo que a causou (implementador, ou redator no passo de prosa), e a correção entra no commit seguinte do grupo, no formato de passo; o checkpoint roda de novo sobre a correção. Verde em todos os critérios listados, com evidência, o líder marca a caixa conforme `references/disco.md` (Plan > Checkpoint); flake e achado fora do recorte seguem o Glossário dele. Phase sem checkpoint segue direto para a review.
+
+O líder não move critério entre checkpoints nem marca checkpoint com evidência pendente. Critério mal atribuído no plan, listado num checkpoint anterior ao passo que o entrega, é corrigido no `plan.md` pelo redator, a pedido do líder, antes de o checkpoint rodar de novo.
 
 ### 3. Revisar
 

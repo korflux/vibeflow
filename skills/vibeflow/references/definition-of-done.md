@@ -5,8 +5,8 @@ Barra permanente de acabamento, aberta no fechamento do passo e somada ao crité
 ## Correctness
 
 - Critério do passo, ou do R*, atendido e rodando em runtime, não só no typecheck.
-- Testes e `Prova:` verdes conforme `references/testes.md` (Política de testes e Desenho de casos); passo só manual não conta.
-- Critério de aparência, layout, responsividade ou comportamento renderizado de UI web: prova no navegador, com a captura de `references/chrome-devtools.md` (Captura e reaproveitamento) citada no relatório.
+- Testes e `Prova:` verdes conforme `references/testes.md`; passo só manual não conta.
+- Critério de aparência, layout, responsividade ou comportamento renderizado de UI web: prova no navegador, com a captura citada no relatório de quem a produz (`references/chrome-devtools.md`, Captura e reaproveitamento).
 
 ## Quality
 

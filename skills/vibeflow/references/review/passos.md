@@ -34,7 +34,7 @@ rota: high · final · alvo: .vibeflow/phases/phase-2-agenda-online/ · diff: a1
 Ao abrir a review final, o revisor dispara a regressão completa uma vez, em segundo plano, sobre o `HEAD` da entrega, e lê o diff enquanto ela roda.
 
 - Comandos: os de regressão registrados no plan ou, sem eles, os Comandos do projeto no `AGENTS.md`. Sem nenhum, devolva ao líder sem aprovar.
-- Ordem: do mais barato ao mais caro (lint e tipos, unitários, E2E), parando na primeira falha.
+- Ordem: do mais barato ao mais caro (lint e tipos, unitários, E2E), parando na primeira falha; o E2E roda no modo de `references/testes.md` (Execução).
 - Árvore suja em path de código ou teste (tudo fora de `.vibeflow/`, `.erros-encontrados/` e do `## Trabalho alheio` do plan) impede a execução: devolva `estado: bloqueado` pedindo o isolamento. Path declarado em `## Trabalho alheio` não bloqueia: rode a regressão com ele presente e cite-o em Notas, junto de qualquer falha que ele possa ter causado.
 - Falha que passa ao reexecutar o mesmo comando é flake: o revisor grava o registro em `.erros-encontrados/`, cita-o em Notas e segue, sem bloquear. Falha reproduzível abre R* Required com o comando.
 - Registre na etapa os comandos, o resultado, o `HEAD` e a duração de cada nível que rodou (lint e tipos, unitários, E2E) e o total, lidos da saída dos comandos ou do relógio da execução.
@@ -44,8 +44,8 @@ A execução registrada vale para o Approve enquanto as correções posteriores 
 
 ### 2. Julgar o produto
 
-1. **Critérios de aceite:** cada critério da spec, ou do corpo do commit em medium, está atendido e provado por ao menos um teste. Preencha a tabela de critérios com o teste e o resultado. Critério não atendido ou sem teste que o prove abre R* Required; só o humano retira um critério, com a decisão citada.
-2. **Defeitos no código alterado:** correção, bordas e erros das superfícies tocadas; teste falso, enfraquecido, pulado ou apagado (`references/testes.md`, Política de testes); caso do Desenho de casos de `references/testes.md` ausente para um critério, Required quando a spec traz explicitamente o limite ou a tabela de exemplos que o exige e Nit nos demais; barra de `references/definition-of-done.md`.
+1. **Critérios de aceite:** cada critério da spec, ou do corpo do commit em medium, está atendido e provado por ao menos um teste cuja asserção você comparou com o texto do critério (`references/testes.md`, Política de testes). Preencha a tabela de critérios com o teste e o resultado. Critério não atendido, sem teste que o prove ou provado por asserção que diverge do texto dele abre R* Required; só o humano retira um critério, com a decisão citada.
+2. **Defeitos no código alterado:** correção, bordas e erros das superfícies tocadas; teste enfraquecido, pulado ou apagado, teste da seção O que não testar e duplicata sem ganho (`references/testes.md`, Política de testes e O que não testar); caso ausente do Desenho de casos de `references/testes.md`: Required quando é caso adversarial que o tipo de entrada do critério aciona ou quando a spec traz a tabela de exemplos que o exige, e Nit nos demais; barra de `references/definition-of-done.md`.
 3. **Segurança:** só quando o diff toca input, auth, sessão, permissão, segredo, upload, integração externa ou dado pessoal, conforme `references/review/security-and-hardening.md`.
 4. **Banco e precisão:** só quando o diff toca persistência ou valor monetário, conforme `references/database-and-migrations.md`.
 5. **Visual:** quando um critério depende da interface renderizada, conforme `references/review/ui-visual-quality.md`, reaproveitando a evidência válida.
