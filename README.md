@@ -74,7 +74,7 @@ A rota é proporcional ao pedido:
 |---|---|
 | `low` | implement direto, com prova proporcional, sem criar `.vibeflow/` |
 | `medium` | implement e review |
-| `high` | interview, spec, plan, analyze, implement com até dois checkpoints e review |
+| `high` | interview, spec, plan, analyze, implement com até quatro checkpoints e review |
 
 Na `high`, a linha `# Risco:` marca mudanças que tocam autenticação, autorização, pagamento, segredo, perda de dados ou produção; ela não acrescenta etapa, mas aprofunda a interview, os checkpoints e a review. A aprovação da `spec.md` é a única antes do código: com ela, o líder segue até a review sem pedir outras aprovações. A tabela de rotas fica no `AGENTS.md` que a etapa `init` grava no projeto, a partir de [`skills/vibeflow/templates/AGENTS.md`](skills/vibeflow/templates/AGENTS.md).
 
@@ -91,7 +91,7 @@ Com Node 18 ou superior, a skill usa os scripts da pasta `scripts/`, sempre na r
 | `estado.mjs [--alvo phase-N\|mvp] [--slug "<frase>"] [--linha]` | Líder, ao abrir e retomar | Alvo padrão, rota, risco, status dos artefatos, etapa atual, progresso, próximo passo ou grupo paralelo, R* abertos, push pendente, inconsistências e o path da próxima phase; `--slug` normaliza a frase do slug e `--linha` imprime só a linha de progresso |
 | `conferir.mjs --passo <IDs>` | Líder, ao receber um passo ou um R* | Alterações não commitadas fora dos `Arquivos:` do passo ou dos paths do R* (um ou mais entre crases, logo depois da severidade) |
 | `conferir.mjs --commit "<mensagem>"` | Líder, depois do staging e antes de cada commit | Formato da mensagem, ausência de `Co-Authored-By`, critérios de aceite no corpo do `task(medium): ...`, caixas e R* marcados no índice contra os IDs, paths em staging contra o recorte e `git diff --cached --check` |
-| `plan.mjs [--alvo phase-N\|mvp]` | Líder depois de gravar o plan; revisor no analyze | Forma dos passos e checkpoints, passo acima de 12 entradas de código, mais de dois checkpoints ou checkpoint em plan de até 5 passos, critérios inexistentes ou sem passo, seções obrigatórias e placeholder de template esquecido |
+| `plan.mjs [--alvo phase-N\|mvp]` | Líder depois de gravar o plan; revisor no analyze | Forma dos passos e checkpoints, passo acima de 12 entradas de código, mais de quatro checkpoints, motivo de checkpoint fora da tabela ou checkpoint em plan de até 5 passos, critérios inexistentes ou sem passo, seções obrigatórias e placeholder de template esquecido |
 | `plan.mjs --spec [--alvo phase-N\|mvp]` | Líder antes de apresentar a spec para aprovação | Seções obrigatórias da spec, decisão sem pergunta ou motivo, critério repetido, adjetivo vago no critério, valor sem origem em Decisões e Critérios de aceite de spec em rascunho e placeholder esquecido |
 | `governanca.mjs` e `governanca.mjs --backup <original> <cópia>` | Líder no init | `AGENTS.md` e bloco da cadeia, ponte, `.gitkeep`, perfis globais contra a fonte, perfil `corretor` obsoleto, perfis de projeto customizados e, como aviso sem falha, `AGENTS.md` sem a seção `## Núcleo do projeto`; no modo `--backup`, tamanho e SHA-256 da cópia |
 
@@ -130,6 +130,19 @@ node "<pasta da skill>/scripts/conferir.mjs" --commit-arquivo "$1"
 
 Aprovar a review, publicar decisões vigentes e fazer push sempre exigem a sua confirmação.
 
+## Novidades da 5.6.0
+
+A 5.6.0 é uma versão minor, sem migração de artefato. Rode `/vibeflow init` em cada projeto consumidor para receber o bloco `VIBEFLOW:CADEIA` novo do `AGENTS.md`: o init acusa o bloco diferente do template e o substitui, com backup. O mesmo comando entrega os perfis atualizados de subagente, entre eles o do verificador: o init mostra os perfis globais instalados como diferentes da fonte e pede a sua decisão, com backup em `~/.vibeflow/old/`. Depois de atualizar os perfis, recarregue o host.
+
+- Checkpoint só por um motivo da tabela fechada de `skills/vibeflow/references/disco.md` (Plan > Checkpoint): caminho fino ou primeiro grupo de risco, segundo grupo de risco, tela e integração, no máximo quatro por phase. Phase com até 5 passos continua sem checkpoint. `plan.mjs` acusa o 5º checkpoint, o motivo fora da tabela e o checkpoint em plan de até 5 passos; checkpoint sem motivo, em plan anterior à tabela, é só aviso.
+- Trabalho alheio declarado por você vai para a seção `## Trabalho alheio` do `plan.md`, gravada pelo líder. A phase não para por esses paths, `estado.mjs` e `conferir.mjs --passo` não os acusam, e o staging deles continua acusado.
+- Um R* pode listar vários paths entre crases, separados por vírgula, logo depois da severidade; `conferir.mjs` aceita o commit que traz todos eles. R* antigo, de um path, é lido como antes.
+- A política de testes de `skills/vibeflow/references/testes.md` passa a ser por qualidade: uma prova principal por critério no nível mais barato que observa o resultado, ID do critério no título do teste, asserção conferida contra o texto do critério pelo verificador e pelo revisor, remoção de teste duplicado e a seção O que não testar. O E2E fica para critério com tela ou jornada, roda sobre build de produção com uma pilha por execução, e a captura de tela sai da execução de quem o roda.
+- O analyze aponta critério cujo passo não tem prova que o teste e, ao fechar, o líder mostra o plan como guia, com um tópico por passo e por checkpoint.
+- Cada passo que toca código roda, sobre os arquivos alterados, os gates estáticos declarados nos Comandos do projeto do `AGENTS.md` e os cita no campo `prova`.
+- Decisão de autenticação, autorização, segurança ou dados é sempre perguntada a você na interview e no MVP, nunca assumida.
+- O `# Status:` do `review.md` tem regra única: o revisor grava `rascunho` ou `request-changes`, e só o líder grava `aprovado`.
+
 ## Novidades da 5.5.0
 
 A 5.5.0 é uma versão minor, sem migração de artefato. Rode `/vibeflow init` em cada projeto consumidor para receber o bloco `VIBEFLOW:CADEIA` novo do `AGENTS.md`: o init acusa o bloco diferente do template e o substitui, com backup. O mesmo comando entrega os perfis novos de subagente: o init mostra os perfis globais instalados como diferentes da fonte e pede a sua decisão, com backup em `~/.vibeflow/old/`. Depois de atualizar os perfis, recarregue o host.
@@ -144,8 +157,8 @@ A 5.5.0 é uma versão minor, sem migração de artefato. Rode `/vibeflow init` 
 
 A 5.4.0 é uma versão minor, sem migração. Rode `/vibeflow init` para atualizar os perfis globais de subagente e montar a seção `## Núcleo do projeto` do `AGENTS.md`.
 
-- Cada phase tem no máximo dois checkpoints: um depois do primeiro grupo de risco e, se a phase tem tela, um depois do primeiro grupo que entrega tela. Phase com até 5 passos não tem checkpoint.
-- O verificador não reroda a prova dos passos: roda o E2E dos critérios com tela do grupo e confere o diff do grupo contra os critérios. O E2E das demais telas fica para a regressão completa da review.
+- Cada phase tem no máximo dois checkpoints: um depois do primeiro grupo de risco e, se a phase tem tela, um depois do primeiro grupo que entrega tela. Phase com até 5 passos não tem checkpoint. Desde a 5.6.0, o checkpoint segue a tabela de motivos, até quatro por phase.
+- O verificador não reroda a prova dos passos: roda o E2E dos critérios com tela ou jornada do grupo e confere o diff do grupo contra os critérios. O E2E das demais telas e jornadas fica para a regressão completa da review.
 - Um passo tem no máximo 12 entradas de código em `Arquivos:`, sem contar testes; acima disso, o plan divide o passo. `plan.mjs` aponta o passo acima do teto e o excesso de checkpoints.
 - Fato verificável é conferido pelo explorador antes da spec, e todo valor em Decisões e Critérios de aceite traz a origem (`humano`, `assumida` ou `verificado`). O fechamento da spec lista as assumidas, e `plan.mjs --spec` aponta valor sem origem em spec nova.
 - Na interview, tela nova, site ou fluxo novo cobre navegação, páginas e jornada; o limite de duas perguntas vale só para ajuste de tela.
@@ -159,7 +172,7 @@ A 5.3.0 é uma versão minor, sem migração. Rode `/vibeflow init` para atualiz
 - Critérios de aceite com forma fixa (contexto, ação e resultado observável), critério de falha quando há entrada externa, autorização ou dinheiro, tabela de exemplos para cálculo exato e critério de preservação do que já funciona.
 - `plan.mjs --spec` confere a forma da spec antes da aprovação, inclusive adjetivo vago no critério.
 - Testes com vermelho antes do verde: o teste do critério falha antes da mudança e passa depois, com as duas execuções no relatório.
-- Nova seção Desenho de casos em `references/testes.md`: limites, classes, transições, autorização, mock só na fronteira e determinismo.
+- Nova seção Desenho de casos em `references/testes.md`: limites, classes, transições, autorização e determinismo. Desde a 5.6.0, a regra de mock só na fronteira fica na seção O que não testar.
 - Na rota medium, os critérios do brief vão no corpo do commit `task(medium): ...`, e a review os lê de lá; `conferir.mjs` acusa o commit sem eles.
 - O plan começa pelo caminho mais fino de ponta a ponta ou pela suposição mais arriscada.
 - O perfil revisor sobe para esforço alto nos dois hosts.

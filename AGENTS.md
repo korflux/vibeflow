@@ -9,7 +9,7 @@ A cadeia da skill `vibeflow` vale só quando o humano a chama com `/vibeflow` (`
 |---|---|---|
 | low | implement, sem init, `.vibeflow/`, phase nem artefato | mudança clara e localizada de código de software sem comportamento novo, como cor, texto ou layout de página estática |
 | medium | implement → review | pedido claro e direto, com comportamento novo pequeno, sem banco nem risco de regressão de backend, ou página visual cujo aceite dependa de validação renderizada |
-| high | interview → spec → plan → analyze → implement com até dois checkpoints → review | pedido ambíguo ou de execução difícil, mudança que altera banco ou painel admin, risco de regressão de backend, ou tela que o design system e as telas existentes não cobrem |
+| high | interview → spec → plan → analyze → implement com até quatro checkpoints → review | pedido ambíguo ou de execução difícil, mudança que altera banco ou painel admin, risco de regressão de backend, ou tela que o design system e as telas existentes não cobrem |
 
 Saem do low, seguindo a rota aplicável: comportamento, rota, interação, critério de aceite ou acessibilidade alterados, e mudanças que toquem privacidade, dado pessoal, consentimento, retenção, direitos, obrigação jurídica, autenticação, autorização, pagamento, segredo, persistência ou risco de perda de dados.
 <!-- VIBEFLOW:CADEIA end -->
@@ -49,7 +49,7 @@ Sem banco, migration nem tráfego de usuário: mudança aqui altera contrato de 
 - **Major:** quebra contrato (path ou nome de artefato, linha de cabeçalho como `# Status:` ou `# Rota:`, comportamento do líder que o humano já usa).
 - **Minor:** adiciona sem quebrar (nova seção opcional no artefato, nova referência de etapa).
 - **Patch:** correção sem mudança de contrato.
-- Versão atual: 5.5.0 (referência própria por papel, `SKILL.md` e bloco CADEIA enxutos, cada regra com uma casa).
+- Versão atual: 5.6.0 (checkpoint por motivo, até quatro; trabalho alheio declarado no plan; R* com vários paths; política de testes por qualidade; gate estático na prova do passo; decisão de segurança e dados sempre perguntada).
 
 ## Git
 
