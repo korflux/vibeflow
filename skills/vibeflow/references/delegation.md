@@ -6,13 +6,15 @@ Leia antes da primeira delegação da run. O `SKILL.md` e a referência da etapa
 
 Use perfis realmente disponíveis. O modelo vem do perfil instalado; o líder não escolhe modelo ao delegar. O líder escolhe o esforço de raciocínio do implementador a cada despacho, conforme o passo, com teto `xhigh`; quando o host não aceita esforço no despacho, vale o esforço padrão do perfil, que também é o dos demais papéis. Os perfis exigidos por situação estão no `SKILL.md`, seção 5. Perfil exigido ausente ou não carregado nunca é substituído por outro papel: a etapa segue no Modo B, com aviso de uma linha.
 
-| Papel | Entrega | Escrita autorizada |
+| Papel | Despacho | Única leitura do papel |
 |---|---|---|
-| explorador | Fluxo, consumidores, paths e evidências para a interview, o plan, o passo ou um diagnóstico; no init, a proposta da seção `## Núcleo do projeto` | Nenhuma; shell só para leitura e consulta, sem escrita fora das saídas normais dos comandos |
-| implementador | Código e testes juntos do passo, com a `Prova:` do passo verde e inputs reais; em low ou medium, a mudança do brief com prova proporcional. Corrige a falha da própria prova, a falha devolvida pelo checkpoint e o R* de código | Código e testes dos `Arquivos:` do passo, do recorte do brief ou dos paths do R* |
-| redator | Prosa da `spec.md` e do `plan.md` a partir das decisões que o líder conduziu com o humano; texto avulso; arquivos de governança do init; passo de prosa; R* de prosa | O artefato da etapa delegada, criado conforme `references/disco.md`; os paths do brief; os `Arquivos:` do passo de prosa; os paths do R*; o registro em `.erros-encontrados/` de achado do explorador, quando o líder o delega. `AGENTS.md` só quando declarado num passo ou pedido pelo líder, nunca a seção `## Decisões vigentes`. Nunca código, testes, `review.md`, `## Achados do analyze` nem as marcações do líder |
-| verificador | Só no checkpoint, com contexto limpo: sem rerodar a prova dos passos, roda o E2E dos critérios com tela do grupo e confere o diff do grupo contra os critérios da spec | Saídas normais das provas e, em `.erros-encontrados/`, um arquivo por flake ou achado fora do recorte que encontrar |
-| revisor | Analyze e review, com contexto limpo: confere spec, plan e código; na review, julga os critérios e o diff e roda a regressão completa | No analyze, as correções diretas no `plan.md` e a seção `## Achados do analyze` (`references/analyze.md`); na review, o `review.md` (`references/review.md`); nos dois, um arquivo em `.erros-encontrados/` por flake ou achado fora do recorte que encontrar |
+| explorador | Leitura ampla, sondagem de fato, diagnóstico de estado e proposta do núcleo no init | `references/explorador.md` |
+| implementador | Passo de código, entrega low ou medium e correção de código | `references/implementador.md` |
+| redator | Spec, plan, governança do init, texto avulso, passo de prosa e R* de prosa | `references/redator.md` |
+| verificador | Checkpoint, com contexto limpo | `references/verificador.md` |
+| revisor | Analyze e review, com contexto limpo | `references/revisor.md` |
+
+A entrega, a escrita autorizada e as proibições próprias de cada papel moram na referência dele.
 
 O líder tem, com exclusividade, as marcações, o índice Git, os commits, a finalização confirmada e a publicação de decisões vigentes (`SKILL.md`, seção 5, item 3). Fora do Modo B, ele não escreve código nem teste e não executa prova.
 
@@ -64,7 +66,7 @@ proximo: <ação e responsável>
 pergunta: <somente quando pergunta; recomendação>
 ```
 
-Verde certifica somente o recorte. Bloqueado é impedimento real; pergunta é decisão humana material. O revisor acrescenta os campos de `references/analyze.md` ou `references/review.md`.
+Verde certifica somente o recorte. Bloqueado é impedimento real; pergunta é decisão humana material. O revisor acrescenta os campos de `references/analyze.md` (Saída) ou `references/review/passos.md` (Saída).
 
 ## Níveis de prova
 
@@ -72,7 +74,7 @@ Verde certifica somente o recorte. Bloqueado é impedimento real; pergunta é de
 |---|---|---|
 | Passo | Implementador; redator no passo de prosa | A `Prova:` do passo |
 | Checkpoint | Verificador | O E2E dos critérios com tela do grupo e a conferência do diff contra os critérios, sem rerodar a prova dos passos (`references/implement.md`, Checkpoint) |
-| Review | Revisor | A regressão completa (`references/review.md`) |
+| Review | Revisor | A regressão completa (`references/review/passos.md`, Disparar a regressão completa) |
 
 O que cada nível testa, inclusive onde roda o E2E, segue `references/testes.md` (Política de testes). Nenhum papel amplia a prova do seu nível nem repete prova só por assumir a etapa. Mudança ou falha renova somente a prova afetada por ela. Flake e achado fora do recorte seguem o Glossário de `references/disco.md`.
 
