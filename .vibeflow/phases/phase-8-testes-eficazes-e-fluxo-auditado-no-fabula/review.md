@@ -1,11 +1,11 @@
 # Review: Testes eficazes e fluxo auditado no fabula
 # Alvo: phase-8-testes-eficazes-e-fluxo-auditado-no-fabula
-# Status: request-changes
+# Status: aprovado
 
 ## Veredito
 
-- [ ] **Approve**: critérios atendidos e provados, regressão verde e nenhum Critical ou Required aberto
-- [x] **Request changes**: há Critical ou Required aberto
+- [x] **Approve**: critérios atendidos e provados, regressão verde e nenhum Critical ou Required aberto
+- [ ] **Request changes**: há Critical ou Required aberto
 
 ## Critérios de aceite
 
@@ -18,13 +18,13 @@
 | A5 | Comparação desta review entre os scripts de `eaa2f3d` e do `HEAD` nas phases 1 a 7: `lerRs`, itens de `lerPlan`, `estado.mjs --alvo phase-N --json` e `plan.mjs --alvo phase-N --json` (sem o campo novo `avisos`) idênticos, com os mesmos códigos de saída (2, 2, 2, 2, 1, 0, 0); `plan.test.mjs` "checkpoint sem motivo é aviso..."; `estado.test.mjs` "plan sem ## Trabalho alheio mantém a linha sem dono" | atendido |
 | A6 | `conferir.test.mjs`: "R* com vários paths: todos entram no recorte; o que está fora de todos é achado" e "commit de R* com vários paths aceita todos; R* antigo de um path segue aceito"; `disco.test.mjs`: "R* com vários paths lê todos, na ordem, até o primeiro \" - \"" | atendido |
 | A7 | `disco.test.mjs`: "R* antigo de um path: crase da descrição, do remédio e da prova não vira path (linha real da phase-1)"; comparação desta review: `lerRs` dá os mesmos paths da 5.5.0 nos 26 R* das phases 1 a 7 | atendido |
-| A8 | `testes.md` como casa única (cabeçalho e ponteiros de `verificador.md`, `implementador.md`, `chrome-devtools.md`, `review/passos.md`, `definition-of-done.md`, `analyze/coverage.md`): prova principal por critério com ID no título quando o brief ou a spec o tem, asserção contra o texto, casos adversariais obrigatórios, E2E só para tela ou jornada, seção Execução (build de produção, console em dev, pilha única, sessão reaproveitada), remoção de duplicata e seção O que não testar. Nenhuma regra antiga contradiz (pilha por worker, letras do isolamento, build só na regressão, captura do implementador em `high`, "teto, não piso" ausentes) | atendido |
+| A8 | `testes.md` como casa única (cabeçalho e ponteiros de `verificador.md`, `implementador.md`, `chrome-devtools.md`, `review/passos.md`, `definition-of-done.md`, `analyze/coverage.md`): prova principal por critério com ID no título quando o brief ou a spec o tem, asserção contra o texto, casos adversariais obrigatórios, E2E só para tela ou jornada, seção Execução (build de produção, console em dev, pilha única, sessão reaproveitada) e seção O que não testar, que desde a correção de R2 traz a remoção de duplicata na linha "A mesma propriedade em vários arquivos". Nenhuma regra antiga contradiz (pilha por worker, letras do isolamento, build só na regressão, captura do implementador em `high`, "teto, não piso" ausentes) | atendido |
 | A9 | `verificador.md` (Checkpoint, item 3) e `review/passos.md` (Julgar o produto, item 1) mandam comparar a asserção com o texto do critério; `testes.md` (Política de testes) é a casa | atendido |
 | A10 | `interview.md` (Perguntar) e `interview/mvp-discovery.md` (Módulos de completude e Registro): decisão de autenticação, autorização, segurança ou dados é sempre perguntada; nenhuma outra regra do pacote permite assumi-la | atendido |
-| A11 | Reclassificação e mapa dos defeitos (Reclassificação da suíte do fabula, abaixo). Contagem conferida nesta review sobre `parcial/consolidado.json`: 1.248 + 33 + 52 = 1.333 casos. O defeito 5 (`ui/` do passo 1) não tem regra que o pegue: a regra nova de componente compartilhado exige renderizar "uma tela que o usa", e no passo 1 nenhuma tela usava o `ui/` (R1) | parcial |
+| A11 | Reclassificação e mapa dos defeitos (Reclassificação da suíte do fabula, abaixo). Contagem conferida nesta review sobre `parcial/consolidado.json`: 1.248 + 33 + 52 = 1.333 casos. Etapa 1: o defeito 5 (`ui/` do passo 1) ficava sem regra (R1). Etapa 2: `testes.md` (Política de testes), bullet de componente para uso compartilhado, exige no passo que o cria um teste que renderiza uma página de amostra dele quando ainda não há tela, com vermelho e verde (decisão 17); os sete defeitos têm regra ou gate, o 5 com condição (Notas) | atendido |
 | A12 | Comparação Haiku, abaixo: dos 8 cenários que passam na base pelo gabarito base, 8 passam na 5.6.0, com S4 em fixture v4 (decisão do humano) e S5 em fixture v3; S9 a S12 passam no gabarito 5.6.0 | atendido |
 | A13 | `grep` de `# Status:` no pacote: `disco.md` (Cabeçalho) é a regra única (revisor grava `rascunho` ou `request-changes`, só o líder grava `aprovado`, exceção do ajuste medium em `ajuste.md`); `review/passos.md`, `revisor.md`, `redator.md` e `SKILL.md` apontam para ela; `retomada.md` diz "no analyze"; registro `status-do-review-revisor-ou-lider.md` apagado | atendido |
-| A14 | Medição por papel, abaixo; `medir.mjs` reproduzido nesta review sobre `skills/vibeflow` do `HEAD` com `papeis-5.6.0.json`: valores idênticos a `medicao-5.6.0.txt`; `final-5.6.0/` igual ao `HEAD` por `diff -r` | atendido |
+| A14 | Medição por papel, abaixo; `medir.mjs` reproduzido nesta review sobre `skills/vibeflow` do `HEAD` com `papeis-5.6.0.json`: na etapa 1 (`cff4584`), valores idênticos a `medicao-5.6.0.txt` e `final-5.6.0/` igual ao `HEAD` por `diff -r`; na etapa 2 (`0ccc14d`), medido de novo depois do enxugamento de `testes.md` (8.410 para 7.959 caracteres) | atendido |
 | A15 | `AGENTS.md` (Versão): 5.6.0; `README.md` com Novidades da 5.6.0 e tabela de rotas com até quatro checkpoints; bloco CADEIA igual no template e na raiz | atendido |
 | A16 | `analyze.md` (Saída): ao fechar o analyze, o líder mostra o plan como guia, um tópico curto por passo e por checkpoint, na ordem do plan | atendido |
 
@@ -42,14 +42,17 @@
 ## Notas
 
 - Regressão, item 7 (revisão de consistência): gates (`SKILL.md` seção 3, `review.md` Entrada), commits (`disco.md` Commits e conferência por `conferir.mjs`), encadeamento (topo do `SKILL.md`), checkpoint (`disco.md` Plan > Checkpoint, `implement.md` passo 2, `verificador.md`, `analyze/coverage.md`), Modo B (`retomada.md`) e `# Status:` conferidos entre si sem contradição. Todo path do repo citado em `skills/vibeflow/`, `README.md` e `AGENTS.md` existe (fora o exemplo de consumidor `tests/a.test.ts` em `disco.md`); nenhum arquivo cita v1 do VibeFlow nem contrato anterior à 5.0.0 como vigente.
-- Regras acrescentadas no passo 11 além da lista da decisão 6, vindas da reclassificação: teste de tela no passo que altera componente compartilhado, alvo junto do ID quando há IDs repetidos entre specs, dúvida de equivalência em `pendencias` e a nova redação da remoção de duplicata. A spec não registra decisão humana sobre as duas primeiras; o líder confirma com o humano antes da confirmação final. O passo 11 tinha como recorte corrigir regressão de cenário Haiku, e o commit `cff4584` declara os "ajustes da reclassificação".
-- Crescimento de `testes.md` (3.432 para 8.410 caracteres, a causa do +73% do implementador e do verificador): a maior parte é regra nova da decisão 6. Cópia removível sem perder regra, cerca de 460 caracteres (5,6% do arquivo): o resumo do conteúdo de `verificador.md` no cabeçalho ("(isolamento entre workers, encadeamento, build e workers)") e "As demais referências apontam para cá."; "; ele cobre a jornada no checkpoint e na regressão completa", que repete o bullet do checkpoint; "O E2E de jornada não é prova principal [...]", implicado pelo bullet de critério de tela; a oração do líder (R2); e a linha "A mesma propriedade em vários arquivos" de O que não testar, que repete o bullet Remoção (fica uma das duas). O verificador abre só Política de testes e Execução (cerca de 4.800 de 8.200 caracteres); a medição, pelo método da phase-7, conta o arquivo inteiro.
+- Regras acrescentadas no passo 11 além da lista da decisão 6, vindas da reclassificação: teste de tela no passo que altera componente compartilhado, alvo junto do ID quando há IDs repetidos entre specs, dúvida de equivalência em `pendencias` e a nova redação da remoção de duplicata. A spec não registra decisão humana sobre as duas primeiras; o líder confirma com o humano antes da confirmação final. O passo 11 tinha como recorte corrigir regressão de cenário Haiku, e o commit `cff4584` declara os "ajustes da reclassificação". Etapa 2: resolvido pela decisão 17 da spec, tomada pelo humano na review; as duas outras são redação da decisão 6.
+- Crescimento de `testes.md` (3.432 para 8.410 caracteres, a causa do +73% do implementador e do verificador): a maior parte é regra nova da decisão 6. Cópia removível sem perder regra, cerca de 460 caracteres (5,6% do arquivo): o resumo do conteúdo de `verificador.md` no cabeçalho ("(isolamento entre workers, encadeamento, build e workers)") e "As demais referências apontam para cá."; "; ele cobre a jornada no checkpoint e na regressão completa", que repete o bullet do checkpoint; "O E2E de jornada não é prova principal [...]", implicado pelo bullet de critério de tela; a oração do líder (R2); e a linha "A mesma propriedade em vários arquivos" de O que não testar, que repete o bullet Remoção (fica uma das duas). O verificador abre só Política de testes e Execução (cerca de 4.800 de 8.200 caracteres); a medição, pelo método da phase-7, conta o arquivo inteiro. Etapa 2: a correção tirou o resumo do cabeçalho, as duas orações sobre o E2E de jornada e a oração do líder, e fundiu o bullet Remoção na linha de O que não testar; `testes.md` tem 7.959 caracteres (-451, -5,4%), e nenhuma regra das decisões 6 e 17 se perdeu (conferido item a item contra a spec e A8). A linha nova diz "fica a prova principal" no lugar de "fica a prova no nível mais barato que observa o resultado": equivalentes pela definição de prova principal, e "sai a cópia no mesmo nível ou num nível mais caro" cobre a duplicata entre testes que não são prova principal.
 - "Jornada" não é definida em `testes.md`; "critério com tela ou jornada" admite ler um fluxo só de API com vários passos como jornada e dar E2E a ele, contra o primeiro bullet da Política de testes. Sem achado: a expressão vem da decisão 6 da spec.
 - Haiku: S4 nos fixtures v1 a v3 e S5 no fixture v1 divergem na 5.6.0 (o líder para antes de despachar ou abre os testes vazios e devolve o passo); passam com S4 v4, decisão do humano, e S5 v3, relatório conforme à 5.6.0. Fica o risco de o líder Haiku auditar a base do grupo ou abrir teste, contra a conferência sem microgerência de `SKILL.md` (seção 5, item 4); a frase tentada em `delegation.md` foi revertida sem efeito medido. S12 passa por maioria (2 de 3; a terceira resposta propõe chave exata e normalização como decisão separada).
 - A reclassificação cobriu a suíte atual do fabula, 1.333 casos em 860 itens, e não os 438 da decisão 7: os 438 eram a suíte da phase-1, contida nos 546 do painel; o restante veio da phase-2 do fabula (+108 no painel e 787 do site), conforme `inventario.md`. `git status` do fabula igual antes e depois (`git-status-antes.txt`, `git-status-depois.txt`), com `painel/w.html` e `next-env.d.ts` do humano.
 - Testes de A4, A6 e A7 têm título sem o ID do critério, e os de A1 trazem o ID no fim: foram escritos nos passos 2 a 4, antes da regra do passo 6. Sem achado.
 - Coerência dos commits: todo path dos 19 commits `task(phase-8:...)` está nos `Arquivos:` dos IDs da mensagem (conferido por script desta review). Passos 3, 4, 5, 6 e 8 têm commits posteriores aos checkpoints, no formato de passo, como `implement.md` (Checkpoint) pede para correção. O passo 11 tem `skills/vibeflow/references/` inteiro em `Arquivos:`.
 - Achado fora do recorte: `.erros-encontrados/disco-push-adiado-cita-secao-finalizacao-git-inexistente.md`.
+- Defeito 5, condição (etapa 2): o que o 5a corrigiu no `ui/` (fabula `fb3ab9f`) foi composição entre componentes do passo 1, conferida só em leitura: aviso temporário dentro do popup modal (`toast.tsx` com `dialog.tsx`), região da tabela sem bloco de contenção para o texto oculto das ações de linha, que alargava o documento no celular (`data-table.module.css` com `row-actions`), e densidade da linha (A60). A regra nova põe o teste de renderização no passo 1, mas só veria esses defeitos se a página de amostra montasse os componentes como as telas os combinam e o teste rodasse no navegador, no modo em que o layout aparece; "uma página de amostra dele" não obriga a combinação. Cobertura completa com condição, como a do defeito 7.
+- Fiscalização da regra de componente compartilhado: o redator do plan a aplica ao escrever a `Prova:` (lê `testes.md`), o implementador no passo e a review em Julgar o produto, item 2; `analyze/coverage.md` não tem linha que acuse passo de componente compartilhado sem o teste de renderização, e o verificador confere só os critérios do grupo.
+- Commit da correção `0ccc14d` traz, além de `testes.md` (R1, R2) e `README.md` (R3), a decisão 17 na `spec.md`, este `review.md` e o registro de `.erros-encontrados/`: artefatos do líder, sem path de código.
 
 ## Reclassificação da suíte do fabula
 
@@ -75,7 +78,7 @@ Tempo estimado (`tempo.md`, taxas medidas nas reviews do fabula, nada executado)
 | Nonce da CSP público | `testes.md`, Execução (E2E sobre build de produção no checkpoint), com `verificador.md` (Checkpoint, item 2) | Checkpoint depois do passo 2 |
 | A14 da phase-1, prova só da API | `analyze/coverage.md`, Critério sem prova; `testes.md`, Política de testes (critério de tela se prova na tela) | Analyze, antes do código |
 | A39, asserção da interpretação do implementador | `testes.md`, Política de testes (asserção segue o texto; ambíguo volta como pergunta); `verificador.md` (Checkpoint, item 3); `review/passos.md` (Julgar o produto, item 1) | Passo 5a ou checkpoint seguinte |
-| `ui/` do passo 1 visto só no 5a | Nenhuma: a regra de componente compartilhado pede tela que o use, e não havia (R1) | Continua no 5a |
+| `ui/` do passo 1 visto só no 5a | `testes.md`, Política de testes (componente para uso compartilhado sem tela leva teste que renderiza uma página de amostra dele, com vermelho e verde; decisão 17), com a condição das Notas | No passo 1, pela `Prova:` do plan e pelo implementador; antes era só no 5a |
 | R3 da phase-1, aviso de console só em dev | `testes.md`, Execução (checagem de console em dev); `verificador.md` (Checkpoint, item 2) | Checkpoint depois do 4b |
 | R1 da phase-1, OpenGrep em `editable-cell.tsx` | `implementador.md` (Codar e provar, Gate estático), que aceita a seção Comandos do painel do fabula | No passo 9 |
 
@@ -100,27 +103,27 @@ Fonte: `phase8-haiku/comparacao.md` e `placar-5.5.0.md`, base em `eaa2f3d`, mesm
 
 ## Medição por papel
 
-Tokens estimados (caracteres/4) por `medir.mjs`, método da phase-7, base `eaa2f3d`, sem teto (decisão 5). Valores da 5.6.0 reproduzidos nesta review.
+Tokens estimados (caracteres/4) por `medir.mjs`, método da phase-7, base `eaa2f3d`, sem teto (decisão 5). Valores da 5.6.0 medidos nesta review sobre o `HEAD` `0ccc14d` (etapa 2); os papéis que leem `testes.md` caíram cerca de 110 tokens desde a etapa 1, e os demais não mudaram.
 
 | Papel | 5.5.0 | 5.6.0 | Variação |
 |---|---|---|---|
 | lider-sempre | 2.217 | 2.265 | +48 (2,2%) |
 | lider-com-delegation | 4.439 | 4.628 | +189 (4,3%) |
 | explorador | 671 | 706 | +35 (5,2%) |
-| implementador | 1.886 | 3.264 | +1.378 (73,1%) |
-| verificador | 1.730 | 2.993 | +1.263 (73,0%) |
+| implementador | 1.886 | 3.155 | +1.269 (67,3%) |
+| verificador | 1.730 | 2.883 | +1.153 (66,6%) |
 | redator-spec | 6.204 | 7.091 | +887 (14,3%) |
-| redator-plan | 6.625 | 8.886 | +2.261 (34,1%) |
-| revisor-analyze | 6.301 | 8.650 | +2.349 (37,3%) |
-| revisor-review | 8.625 | 10.937 | +2.312 (26,8%) |
-| lider-high-completa | 14.477 | 16.963 | +2.486 (17,2%) |
+| redator-plan | 6.625 | 8.776 | +2.151 (32,5%) |
+| revisor-analyze | 6.301 | 8.540 | +2.239 (35,5%) |
+| revisor-review | 8.625 | 10.828 | +2.203 (25,5%) |
+| lider-high-completa | 14.477 | 16.854 | +2.377 (16,4%) |
 | templates/AGENTS.md | 1.450 | 1.451 | +1 (0,1%) |
 | bloco CADEIA | 341 | 341 | 0 |
 | AGENTS.md raiz | 2.096 | 2.126 | +30 (1,4%) |
 
 ## Aprovação humana
 
-- [ ] Aprovação humana (confirmou no chat o resumo do líder)
+- [x] Aprovação humana (confirmou no chat o resumo do líder): 2026-11-03, "Confirmo"
 
 ## Etapas
 
@@ -130,3 +133,12 @@ Tokens estimados (caracteres/4) por `medir.mjs`, método da phase-7, base `eaa2f
 - Duração: lint e tipos (`git diff --check`) 0,09 s; unitários (`node --test`) 44,46 s; scripts de leitura (itens 3 a 5) 0,80 s; gitleaks 2,37 s; E2E não há; total 47,73 s pelo relógio da execução (o item 7 é leitura, fora da conta) · orçamento: 10 minutos, padrão (o `AGENTS.md` não declara)
 - Abriu: R1, R2, R3
 - Veredito: Request changes
+
+### Etapa 2 - re-review - R1, R2, R3
+
+- Diff da correção: `cff4584..0ccc14d`, um commit `task(phase-8:R1,R2,R3)`, com os mesmos IDs dos R* marcados `[x]`. R1: o bullet de componente compartilhado de `testes.md` passa a valer para o passo que cria o componente para uso compartilhado e, sem tela que o use, pede página de amostra dele com vermelho e verde, como o remédio e a decisão 17; o defeito 5 de `defeitos.md` passa a ter regra no passo 1, com a condição das Notas. R2: a oração do líder saiu e a frase diz "quem escreve ou nomeia o teste". R3: o `README.md` traz "quando o brief ou a spec o tem". O enxugamento de `testes.md` não perde regra das decisões 6 e 17 (Notas)
+- Regressão: a correção só toca prosa, sem código compartilhado, e não reroda a regressão completa (`references/review/passos.md`, Re-review, item 4). Sobre o `HEAD` `0ccc14d`, árvore limpa: `git diff --check` (intervalo e árvore) sem achado; `node --test` código 0, 146 testes, 0 falhas, nenhum arquivo de teste no diff; `gitleaks detect --source . --redact --no-banner` sem vazamento (154 commits), para o passo 3 de Finalizar. Nenhum flake
+- Duração: `git diff --check` 0,15 s; `node --test` 49,31 s; gitleaks 0,87 s; total 50,33 s pelo relógio da execução · orçamento: 10 minutos, padrão
+- Fechou: R1, R2, R3
+- Abriu: nenhum
+- Veredito: Approve
