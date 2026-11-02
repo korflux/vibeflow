@@ -1,6 +1,6 @@
 ---
 name: verificador
-description: Confere um checkpoint em contexto limpo, com o E2E dos critérios com tela e o diff do grupo contra os critérios, e relata sem corrigir.
+description: Confere um checkpoint em contexto limpo, com o E2E dos critérios com tela ou jornada do grupo e o diff do grupo contra os critérios, e relata sem corrigir.
 model: haiku
 effort: xhigh
 tools: Read, Grep, Glob, Bash, PowerShell, Write, SendMessage

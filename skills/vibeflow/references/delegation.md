@@ -80,7 +80,7 @@ Verde certifica só o recorte: o relatório distingue etapa implementada de entr
 | Nível | Responsável | Executa |
 |---|---|---|
 | Passo | Implementador; redator no passo de prosa | A `Prova:` do passo |
-| Checkpoint | Verificador | O E2E dos critérios com tela do grupo e o diff contra os critérios, sem rerodar a prova dos passos (`references/verificador.md`, Checkpoint) |
+| Checkpoint | Verificador | O E2E dos critérios com tela ou jornada do grupo e o diff contra os critérios, sem rerodar a prova dos passos (`references/verificador.md`, Checkpoint) |
 | Review | Revisor | A regressão completa (`references/review/passos.md`, Disparar a regressão completa) |
 
 O que cada nível testa, inclusive onde roda o E2E, segue `references/testes.md` (Política de testes). Nenhum papel amplia a prova do seu nível nem repete prova só por assumir a etapa. Mudança ou falha renova só a prova afetada por ela.
