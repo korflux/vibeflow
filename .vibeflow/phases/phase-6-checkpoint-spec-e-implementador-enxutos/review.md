@@ -1,6 +1,6 @@
 # Review: checkpoint, spec e implementador enxutos
 # Alvo: phase-6-checkpoint-spec-e-implementador-enxutos
-# Status: rascunho
+# Status: aprovado
 
 ## Veredito
 
@@ -50,7 +50,7 @@
 
 ## Aprovação humana
 
-- [ ] Aprovação humana (confirmou no chat o resumo do líder)
+- [x] Aprovação humana (confirmou no chat o resumo do líder): 2026-11-01, Marco: "Aprovar e push"
 
 ## Etapas
 
