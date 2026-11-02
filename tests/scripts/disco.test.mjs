@@ -1,9 +1,9 @@
 // disco.test.mjs: testes de comportamento da leitura compartilhada (_disco.mjs).
 //
 // Cobre as regras mecânicas de references/disco.md que os scripts aplicam: formato do
-// passo e do campo Aceite:, Arquivos: (normalização, sobreposição, path incomparável,
-// path real dentro do recorte), numeração e grupo paralelo, slug da phase, formato dos
-// commits, reconhecimento do formato antigo e tolerância a CRLF e BOM. Os cenários de cada
+// passo, do campo Aceite: e do checkpoint com motivo, Arquivos: (normalização, sobreposição,
+// path incomparável, path real dentro do recorte), numeração e grupo paralelo, slug da phase,
+// formato dos commits, reconhecimento do formato antigo e tolerância a CRLF e BOM. Os cenários de cada
 // script ficam no teste dele (estado, conferir, plan e governanca). Rodar com: node --test
 
 import { test } from 'node:test';
@@ -61,8 +61,23 @@ test('lê o passo: ID com letra, caixa e só os paths entre Arquivos: e Prova:',
   assert.deepEqual(r.passos[1].arquivos, ['src/b/']);
   assert.equal(r.passos[2].arquivos, null);
   assert.deepEqual(r.passos[3].arquivos, ['src/c.js']);
-  assert.deepEqual(r.itens.filter((i) => i.tipo === 'checkpoint'), [{ tipo: 'checkpoint', caixa: false, aceite: ['A1', 'A2'] }]);
+  assert.deepEqual(r.itens.filter((i) => i.tipo === 'checkpoint'), [{ tipo: 'checkpoint', caixa: false, aceite: ['A1', 'A2'], motivo: null }]);
   assert.equal(r.analisado, false);
+});
+
+test('o aceite do checkpoint é lido só antes do motivo; A<n> no motivo não entra', () => {
+  const cps = (...linhas) => lerPlan(linhas).itens.map(({ aceite, motivo }) => ({ aceite, motivo }));
+  assert.deepEqual(cps(
+    '- [ ] Checkpoint: A1, A2 · Motivo: tela',
+    '- [x] Checkpoint: A3 · Motivo: caminho fino, A4 e A5 vêm depois',
+    '- [ ] Checkpoint: A6',
+    '- [ ] Checkpoint: A7 · Motivo:',
+  ), [
+    { aceite: ['A1', 'A2'], motivo: 'tela' },
+    { aceite: ['A3'], motivo: 'caminho fino, A4 e A5 vêm depois' },
+    { aceite: ['A6'], motivo: null },
+    { aceite: ['A7'], motivo: null },
+  ]);
 });
 
 test('a seção Achados do analyze marca o analyze como rodado, com ou sem achado', () => {

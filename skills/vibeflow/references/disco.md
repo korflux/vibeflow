@@ -83,17 +83,20 @@ Uma linha física por passo, com os campos nesta ordem, separados por ` · `:
 ### Checkpoint
 
 ```text
-- [ ] Checkpoint: A1, A2
+- [ ] Checkpoint: A1, A2 · Motivo: tela
 ```
 
 - Linha própria, logo depois do último passo do grupo que fecha os critérios listados. Cobre os passos entre o checkpoint anterior, ou o início do checklist, e ela.
+- O motivo vem depois dos critérios, em ` · Motivo:`, e começa por um nome da tabela abaixo; o que vier depois dele é explicação livre. O aceite do checkpoint são os `A<n>` antes do motivo, e um `A<n>` no texto do motivo não é critério. Plan anterior a esta tabela, sem motivo, segue válido: `scripts/plan.mjs` só avisa; plan novo grava o motivo.
 - O líder marca a caixa quando o verificador devolve verde; a marcação entra no commit seguinte da phase, sem commit próprio. Checkpoint concluído é o de caixa marcada com a marcação já commitada.
-- No máximo dois checkpoints por phase, nesta tabela. Phase com até 5 passos não tem checkpoint.
+- Checkpoint só por um motivo desta tabela fechada, no máximo 4 por phase, cada um citando o motivo. Phase com até 5 passos não tem checkpoint. `scripts/plan.mjs` acusa o 5º checkpoint, o motivo fora da tabela e o checkpoint em phase de até 5 passos; se a condição do motivo vale é julgamento do analyze (`references/analyze/coverage.md`, Checkpoint fora da regra).
 
-| Checkpoint | Posição |
+| Motivo | Quando cabe e onde fica |
 |---|---|
-| Caminho fino | Depois do primeiro grupo de risco; em `high` sem `# Risco:`, depois do caminho fino do critério central |
-| Tela | Só se a phase tem tela: depois do primeiro grupo que entrega tela |
+| `caminho fino` ou `primeiro grupo de risco` | Depois do primeiro grupo de risco; em `high` sem `# Risco:`, depois do caminho fino do critério central |
+| `segundo grupo de risco` | Só se a spec tem `# Risco:` e mais de um grupo de passos toca a superfície de risco: depois do segundo grupo |
+| `tela` | Só se a phase tem tela: sempre depois do passo que fecha o visual (acabamento incluído) e nunca antes |
+| `integração` | Só se a phase tem mais de 10 passos: depois do grupo que junta as partes |
 
 - O que o verificador executa segue `references/verificador.md` (Checkpoint).
 
@@ -172,7 +175,7 @@ Formato antigo: alvo com `interview.md`, `design.md` ou `analyze.md`, `# Rota:` 
 |---|---|
 | Passo | Linha do checklist do `plan.md`; unidade de delegação ao implementador e de commit |
 | Grupo paralelo | Passos irmãos, com o mesmo número e letras diferentes, que rodam juntos sem `Arquivos:` sobrepostos |
-| Checkpoint | Linha do plan depois de um grupo de passos, nas posições de Plan (Checkpoint), conferida por um verificador de contexto limpo |
+| Checkpoint | Linha do plan depois de um grupo de passos, por um motivo de Plan (Checkpoint), conferida por um verificador de contexto limpo |
 | Risco | Linha `# Risco:` da spec; não acrescenta etapa, mas obriga a interview a cobrir modelo de ameaça e rollback, o plan a pôr checkpoint depois do primeiro grupo de risco e a review a abrir segurança e banco |
 | Achado fora do recorte | Defeito fora dos critérios e do diff da phase; vai para `.erros-encontrados/`, um arquivo por achado, gravado por quem o encontrou (verificador ou revisor), e não bloqueia. O líder inclui o registro no commit seguinte da phase, inclusive no `chore(<alvo>): finalize review` |
 | Flake | Teste que falha e passa na reexecução; vai para `.erros-encontrados/` e não bloqueia |

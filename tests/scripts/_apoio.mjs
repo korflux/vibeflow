@@ -49,7 +49,8 @@ export const passo = (id, { caixa = false, aceite = 'A1', arquivos } = {}) => {
   return `- [${caixa ? 'x' : ' '}] ${id}: entrega ${id} · Aceite: ${aceite}${arq} · Prova: \`node --test\``;
 };
 
-export const checkpoint = (aceite = 'A1', caixa = false) => `- [${caixa ? 'x' : ' '}] Checkpoint: ${aceite}`;
+/** Linha de checkpoint de disco.md; `motivo: null` omite o campo ` · Motivo:`. */
+export const checkpoint = (aceite = 'A1', caixa = false, motivo = null) => `- [${caixa ? 'x' : ' '}] Checkpoint: ${aceite}${motivo === null ? '' : ` · Motivo: ${motivo}`}`;
 
 /** plan.md; `analisado: false` omite a seção `## Achados do analyze`. */
 export const plan = (linhas, { analisado = true } = {}) =>

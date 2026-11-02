@@ -140,6 +140,8 @@ export function linksNoCaminho(raiz, pasta) {
 export const SEP = ' · ';
 export const RE_PASSO = /^- \[([ xX])\] ([1-9][0-9]*)([a-z])?: (.*)$/;
 export const RE_CHECKPOINT = /^- \[([ xX])\] Checkpoint:\s*(.*)$/;
+// Campo ` · Motivo:` do checkpoint, depois dos critérios; o `^` cobre a linha sem critério, em que o `\s*` acima já comeu o espaço.
+const RE_MOTIVO = /(?:^|\s)·\s*Motivo:/;
 
 /**
  * Paths do campo `Arquivos:` de uma linha de passo: só o texto entre crases do trecho
@@ -174,7 +176,9 @@ function lerAceite(restoDaLinha) {
  * Lê o plan: itens na ordem do arquivo (passos e checkpoints, cada um com a caixa),
  * passos e se o analyze já rodou (seção `## Achados do analyze` presente).
  * Passo: { tipo, id, num, letra, caixa, arquivos, aceite, resto }, com `resto` sendo a
- * linha depois de `<ID>: `. Checkpoint: { tipo, caixa, aceite }.
+ * linha depois de `<ID>: `. Checkpoint: { tipo, caixa, aceite, motivo }, com `aceite` lido só
+ * antes de ` · Motivo:` (um `A<n>` no texto do motivo não é critério) e `motivo` null quando a
+ * linha não traz o campo ou o traz vazio.
  *
  * ponytail: lê o arquivo inteiro, sem distinguir seção nem bloco de código; restringir à
  * seção de passos se o template do plan ganhar outra lista com linhas no formato do passo.
@@ -188,7 +192,12 @@ export function lerPlan(linhasPlan) {
       continue;
     }
     m = l.match(RE_CHECKPOINT);
-    if (m) itens.push({ tipo: 'checkpoint', caixa: m[1] !== ' ', aceite: [...m[2].matchAll(/\bA[1-9][0-9]*\b/g)].map((a) => a[0]) });
+    if (m) {
+      const campo = m[2].match(RE_MOTIVO);
+      const criterios = campo ? m[2].slice(0, campo.index) : m[2];
+      const motivo = campo ? m[2].slice(campo.index + campo[0].length).trim() : '';
+      itens.push({ tipo: 'checkpoint', caixa: m[1] !== ' ', aceite: [...criterios.matchAll(/\bA[1-9][0-9]*\b/g)].map((a) => a[0]), motivo: motivo || null });
+    }
   }
   return {
     itens,

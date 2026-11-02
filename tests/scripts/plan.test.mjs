@@ -4,7 +4,8 @@
 // critérios da spec (references/analyze/coverage.md): forma do passo e do checkpoint,
 // critérios inexistentes ou sem passo, seções obrigatórias e placeholder de template
 // esquecido, além dos limites de tamanho do plan (teto de 12 entradas de código por passo,
-// no máximo dois checkpoints e nenhum em plan de até 5 passos). Com --spec, confere a forma
+// no máximo quatro checkpoints, cada um com motivo da tabela fechada de disco.md, e nenhum em
+// plan de até 5 passos; checkpoint sem motivo é aviso, não achado). Com --spec, confere a forma
 // da spec em rascunho, inclusive o valor sem origem em Decisões e Critérios de aceite.
 // Rodar com: node --test
 
@@ -303,17 +304,61 @@ test('passo com 12 entradas de código e testes a mais não tem achado de teto (
   assert.deepEqual(so12.achados, []);
 });
 
-test('mais de dois checkpoints é achado; dois não (A6)', (t) => {
-  const tres = [
-    passo('1', { aceite: 'A1' }), checkpoint('A1'),
-    passo('2', { aceite: 'A2' }), checkpoint('A2'),
-    passo('3', { aceite: 'A3' }), checkpoint('A3'),
-    ...semAceite(4, 6),
-  ];
-  const opcoes = { criterios: ['A1', 'A2', 'A3'] };
-  assert.deepEqual(conferirPlan(fase(t, tres, opcoes)).achados, ['3 checkpoints; o máximo é 2 por phase']);
-  const dois = tres.filter((l) => l !== checkpoint('A3'));
-  assert.deepEqual(conferirPlan(fase(t, dois, opcoes)).achados, []);
+// Plan da spec da phase-8 (A1): 10 passos, o critério A<k> entregue no passo 2k, e o
+// checkpoint k logo depois dele, com o motivo dado (null omite o campo). A condição de cada
+// motivo (tela depois do visual, segundo grupo de risco, integração acima de 10 passos) é
+// julgamento do analyze; aqui só a parte mecânica: contagem e motivo da tabela.
+const planDeDez = (motivos) => {
+  const linhas = [];
+  for (let n = 1; n <= 10; n++) {
+    const k = n / 2;
+    linhas.push(passo(String(n), { aceite: Number.isInteger(k) ? `A${k}` : 'nenhum' }));
+    if (Number.isInteger(k) && k <= motivos.length) linhas.push(checkpoint(`A${k}`, false, motivos[k - 1]));
+  }
+  return linhas;
+};
+const CRITERIOS_DE_DEZ = { criterios: ['A1', 'A2', 'A3', 'A4', 'A5'] };
+const TABELA = 'caminho fino, primeiro grupo de risco, segundo grupo de risco, tela, integração';
+
+test('até 4 checkpoints, cada um com motivo da tabela, são aceitos (A1)', (t) => {
+  const r = conferirPlan(fase(t, planDeDez(['caminho fino', 'segundo grupo de risco', 'tela', 'integração']), CRITERIOS_DE_DEZ));
+  assert.deepEqual([r.achados, r.avisos], [[], []]);
+  assert.deepEqual([r.passos, r.checkpoints], [10, 4]);
+  // O primeiro grupo de risco é o outro nome do primeiro motivo da tabela; maiúscula e acento não importam.
+  const outro = conferirPlan(fase(t, planDeDez(['Primeiro grupo de risco', 'TELA', 'Integracao']), CRITERIOS_DE_DEZ));
+  assert.deepEqual([outro.achados, outro.avisos], [[], []]);
+});
+
+test('o 5º checkpoint é achado, mesmo com motivo da tabela (A1)', (t) => {
+  const r = conferirPlan(fase(t, planDeDez(['caminho fino', 'segundo grupo de risco', 'tela', 'integração', 'tela']), CRITERIOS_DE_DEZ));
+  assert.deepEqual(r.achados, ['5 checkpoints; o máximo é 4 por phase']);
+});
+
+test('motivo fora da tabela é achado (A1)', (t) => {
+  const r = conferirPlan(fase(t, planDeDez(['caminho fino', 'porque sim', 'telas novas']), CRITERIOS_DE_DEZ));
+  assert.deepEqual(r.achados, [
+    `checkpoint 6º item: motivo "porque sim" fora da tabela (${TABELA})`,
+    `checkpoint 9º item: motivo "telas novas" fora da tabela (${TABELA})`,
+  ]);
+});
+
+test('checkpoint sem motivo é aviso e não muda o código de saída (A1, A5)', (t) => {
+  const raiz = fase(t, planDeDez(['caminho fino', null]), CRITERIOS_DE_DEZ);
+  const r = conferirPlan(raiz);
+  assert.deepEqual(r.achados, []);
+  assert.deepEqual(r.avisos, ['checkpoint 6º item: sem motivo; acrescente · Motivo: <motivo da tabela de references/disco.md (Plan > Checkpoint)>']);
+  const texto = cli('plan.mjs', ['--raiz', raiz]);
+  assert.equal(texto.codigo, 0);
+  assert.match(texto.out, /^aviso: checkpoint 6º item: sem motivo/m);
+  const json = cli('plan.mjs', ['--raiz', raiz, '--json']);
+  assert.equal(json.codigo, 0);
+  assert.equal(JSON.parse(json.out).avisos.length, 1);
+});
+
+test('A<n> no texto do motivo não entra no aceite do checkpoint (A1)', (t) => {
+  // O trecho coberto entrega só A1; se o A2 do motivo fosse lido como critério, o checkpoint o acusaria.
+  const r = conferirPlan(fase(t, [passo('1', { aceite: 'A1' }), checkpoint('A1', false, 'caminho fino, A2 vem depois'), passo('2', { aceite: 'A2' }), ...semAceite(3, 6)], { criterios: ['A1', 'A2'] }));
+  assert.deepEqual([r.achados, r.avisos], [[], []]);
 });
 
 test('checkpoint em plan de até 5 passos é achado; com 6 passos não (A7)', (t) => {

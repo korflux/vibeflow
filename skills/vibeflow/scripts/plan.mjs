@@ -7,10 +7,13 @@
 // da spec sem passo, seção `## Regressão completa` presente, `## Achados do analyze` como
 // última seção e placeholder de template esquecido na spec ou no plan. Também aplica os
 // limites de tamanho de Plan > Arquivos e Plan > Checkpoint: passo acima de 12 entradas de
-// código, mais de dois checkpoints e checkpoint em plan de até 5 passos. O julgamento do
-// analyze (prova que exercita o critério, arquivo ou consumidor esquecido, ordem,
-// contradição com a spec) continua do revisor. Só lê; divergência entre este script e a
-// prosa é bug do script.
+// código, mais de quatro checkpoints, motivo de checkpoint fora da tabela fechada e
+// checkpoint em plan de até 5 passos. Checkpoint sem motivo é aviso (campo `avisos`, sem
+// efeito no código de saída), para que plan anterior à tabela de motivos siga com o mesmo
+// resultado. O julgamento do analyze (prova que exercita o critério, arquivo ou consumidor
+// esquecido, ordem, contradição com a spec, e se a condição do motivo vale: tela depois do
+// visual, segundo grupo de risco, integração acima de 10 passos) continua do revisor. Só
+// lê; divergência entre este script e a prosa é bug do script.
 //
 // Com --spec, confere só a spec, antes da aprovação (references/spec.md, Fechar): seções
 // obrigatórias, decisão sem Pergunta: ou Motivo:, critério repetido, adjetivo vago no
@@ -20,7 +23,7 @@
 //
 // Uso:
 //   node plan.mjs [--spec] [--alvo phase-N|mvp] [--raiz <dir>] [--json]
-// Saída: 0 sem achado, 1 com achado, 2 em erro de uso.
+// Saída: 0 sem achado (aviso não conta), 1 com achado, 2 em erro de uso.
 
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -123,8 +126,14 @@ function criteriosDaSpec(linhasSpec) {
 
 // Limites de tamanho do plan (references/disco.md, Plan > Arquivos e Plan > Checkpoint).
 const TETO_CODIGO = 12;
-const MAX_CHECKPOINTS = 2;
+const MAX_CHECKPOINTS = 4;
 const PASSOS_SEM_CHECKPOINT = 5;
+// Tabela fechada de motivos de checkpoint (references/disco.md, Plan > Checkpoint). A primeira
+// linha da tabela tem dois nomes, `caminho fino` e `primeiro grupo de risco`.
+const MOTIVOS = ['caminho fino', 'primeiro grupo de risco', 'segundo grupo de risco', 'tela', 'integração'];
+const semAcento = (t) => t.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+// O motivo começa por um nome da tabela, sem letra colada depois; o que vem depois é explicação livre.
+const RE_MOTIVO_DA_TABELA = new RegExp(`^(?:${MOTIVOS.map(semAcento).join('|')})(?!\\p{L})`, 'u');
 
 /**
  * Achados de forma de uma linha de passo: campos na ordem `Aceite:`, `Arquivos:` opcional e
@@ -155,13 +164,16 @@ function formaDoPasso(p, criterios) {
 
 /**
  * Checkpoints: linha depois de passo (nunca no início nem logo após outro checkpoint),
- * com critérios que existem na spec e que algum passo do trecho coberto entrega. Depois da
- * forma, a contagem: no máximo dois checkpoints por phase e nenhum em plan de até 5 passos
- * (passo de grupo paralelo, como `2a` e `2b`, conta um a um). Onde cada checkpoint cai
- * (caminho fino, tela) é julgamento do analyze, não deste script.
+ * com critérios que existem na spec e que algum passo do trecho coberto entrega, e motivo da
+ * tabela (`MOTIVOS`): fora da tabela é achado, sem motivo é aviso. Depois da forma, a
+ * contagem: no máximo quatro checkpoints por phase e nenhum em plan de até 5 passos (passo
+ * de grupo paralelo, como `2a` e `2b`, conta um a um). Se a condição do motivo vale (tela
+ * depois do visual, segundo grupo de risco, integração acima de 10 passos) é julgamento do
+ * analyze, não deste script. Devolve { achados, avisos }.
  */
 function formaDosCheckpoints(itens, criterios) {
   const achados = [];
+  const avisos = [];
   let trecho = [];
   itens.forEach((it, k) => {
     if (it.tipo === 'passo') { trecho.push(it); return; }
@@ -173,13 +185,15 @@ function formaDosCheckpoints(itens, criterios) {
       if (!criterios.includes(a)) achados.push(`${n}: cita ${a}, que não existe na spec`);
       else if (!entregues.has(a)) achados.push(`${n}: cita ${a}, que nenhum passo do trecho coberto entrega`);
     }
+    if (!it.motivo) avisos.push(`${n}: sem motivo; acrescente · Motivo: <motivo da tabela de references/disco.md (Plan > Checkpoint)>`);
+    else if (!RE_MOTIVO_DA_TABELA.test(semAcento(it.motivo))) achados.push(`${n}: motivo "${it.motivo.slice(0, 80)}" fora da tabela (${MOTIVOS.join(', ')})`);
     trecho = [];
   });
   const passos = itens.filter((it) => it.tipo === 'passo').length;
   const checkpoints = itens.length - passos;
   if (checkpoints > MAX_CHECKPOINTS) achados.push(`${checkpoints} checkpoints; o máximo é ${MAX_CHECKPOINTS} por phase`);
   if (checkpoints && passos <= PASSOS_SEM_CHECKPOINT) achados.push(`checkpoint em plan de ${passos} ${passos === 1 ? 'passo' : 'passos'}; phase com até ${PASSOS_SEM_CHECKPOINT} passos não tem checkpoint`);
-  return achados;
+  return { achados, avisos };
 }
 
 /** Linhas da seção `## Passos` que não são passo nem checkpoint (fora comentário e linha vazia). */
@@ -317,7 +331,8 @@ export function conferirPlan(raiz, nomeAlvo = null) {
   achados.push(...linhasEstranhas(alvo.art.plan));
   achados.push(...achadosDoPlan(plan.passos));
   for (const p of plan.passos) achados.push(...formaDoPasso(p, criterios));
-  achados.push(...formaDosCheckpoints(plan.itens, criterios));
+  const cps = formaDosCheckpoints(plan.itens, criterios);
+  achados.push(...cps.achados);
 
   const cobertos = new Set(plan.passos.flatMap((p) => (p.aceite ? p.aceite.ids : [])));
   for (const a of criterios) if (!cobertos.has(a)) achados.push(`critério ${a} da spec sem passo`);
@@ -333,7 +348,7 @@ export function conferirPlan(raiz, nomeAlvo = null) {
   achados.push(...placeholdersEsquecidos(alvo.art.spec, 'spec.md', 'spec.md'));
   achados.push(...placeholdersEsquecidos(alvo.art.plan, 'plan.md', 'plan.md'));
 
-  return { alvo: alvo.alvo, criterios, passos: plan.passos.length, checkpoints: plan.itens.length - plan.passos.length, achados };
+  return { alvo: alvo.alvo, criterios, passos: plan.passos.length, checkpoints: plan.itens.length - plan.passos.length, achados, avisos: cps.avisos };
 }
 
 // ---------------------------------------------------------------------------
@@ -356,6 +371,7 @@ function texto(r) {
   const contagem = r.passos === undefined ? '' : ` · passos: ${r.passos} · checkpoints: ${r.checkpoints}`;
   const l = [`alvo: ${r.alvo} · critérios: ${r.criterios.join(', ') || 'nenhum'}${contagem}`];
   for (const a of r.achados) l.push(`achado: ${a}`);
+  for (const a of r.avisos || []) l.push(`aviso: ${a}`);
   if (!r.achados.length) l.push('sem achado');
   return `${l.join('\n')}\n`;
 }

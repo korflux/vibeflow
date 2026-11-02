@@ -11,7 +11,7 @@ Isolamento do E2E: <a, b ou c, conforme references/verificador.md (Desenho do E2
 ## Passos
 
 - [ ] 1: <resultado> · Aceite: <A*, ou nenhum> · Arquivos: `<path/do/arquivo.ext>`, `<path/do/teste.ext>` · Prova: <comando ou checagem>
-- [ ] Checkpoint: <A* fechados pelo grupo>
-<!-- Formato do passo, regras de Arquivos: e do checkpoint: references/disco.md (Plan). Passos paralelos dividem o número com letras (2a, 2b). Apague a linha de checkpoint quando references/disco.md (Plan > Checkpoint) não pede uma. -->
+- [ ] Checkpoint: <A* fechados pelo grupo> · Motivo: <motivo da tabela>
+<!-- Formato do passo, regras de Arquivos: e do checkpoint: references/disco.md (Plan). Passos paralelos dividem o número com letras (2a, 2b). Apague a linha de checkpoint quando nenhum motivo da tabela de references/disco.md (Plan > Checkpoint) se aplica; o motivo é um nome dessa tabela. -->
 
 <!-- ## Achados do analyze é a última seção deste arquivo e é criada pelo analyze ao concluir; não a crie no plan. -->
