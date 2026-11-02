@@ -37,7 +37,7 @@ pendências: nenhuma
 
 ## 2. Classificar a rota
 
-Use a tabela de esforço do `AGENTS.md`, única fonte das rotas (sem ele, a de `templates/AGENTS.md`), e escolha a menor rota que entrega com segurança. Só um sinal concreto da tabela no que a mudança toca sobe a rota, nunca tamanho do sistema ou cautela genérica; na dúvida, fique com a menor e diga em uma linha o que a faria subir. Rota pedida pelo humano é aceita, com aviso de uma linha se rebaixa sinal de risco. Em `high`, marque `# Risco:` para um motivo do Glossário de `references/disco.md`.
+Use a tabela de esforço do `AGENTS.md`, única fonte das rotas (sem ele, a de `templates/AGENTS.md`), e escolha a menor rota que entrega com segurança. Só um sinal concreto da tabela no que a mudança toca sobe a rota, nunca tamanho do sistema ou cautela genérica; na dúvida, fique com a menor e diga em uma linha o que a faria subir. Rota pedida pelo humano é aceita, com aviso de uma linha se rebaixa sinal de risco. Em `high`, marque `# Risco:` para um motivo de `references/disco.md` (Cabeçalho).
 
 Aplique a primeira linha que casa:
 

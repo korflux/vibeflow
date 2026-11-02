@@ -1,6 +1,6 @@
 # Contrato de disco
 
-Única casa das regras de disco do VibeFlow. As demais referências apontam para cá em vez de repetir.
+Única casa das regras de disco do VibeFlow; as demais referências apontam para cá.
 
 ## Paths
 
@@ -36,7 +36,7 @@ Artefatos de uma phase ou do MVP, sempre com estes nomes: `spec.md`, `plan.md` e
 
 ## Escrever artefato
 
-- Artefato ausente nasce do template da etapa (`templates/<artefato>.md`), copiando a forma e escrevendo o conteúdo; placeholder não preenchido não fica no arquivo, e seção não aplicável segue a instrução do próprio template.
+- Artefato ausente nasce do template da etapa (`templates/<artefato>.md`), com a forma copiada e o conteúdo escrito; placeholder não preenchido não fica, e seção não aplicável segue a instrução do template.
 - Artefato existente é editado no lugar, nunca recriado nem sobrescrito por inteiro; histórico e trilha são preservados.
 - Não escreva através de symlink, junction ou atalho: se `.vibeflow/`, `phases/`, `mvp/`, a pasta da phase ou o artefato for link, pare e relate ao humano.
 - Texto que o humano ditou para um campo entra como ele ditou.
@@ -69,7 +69,7 @@ Uma linha física por passo, com os campos nesta ordem, separados por ` · `:
 - ID: número inteiro sem zero à esquerda, seguido de uma letra minúscula quando o passo pertence a um grupo paralelo. Números crescem de 1 em 1 na ordem do arquivo. Passo sozinho não leva letra; um grupo usa `a`, `b`, `c` em sequência.
 - `Aceite:` lista os critérios de aceite da spec que o passo entrega, ou `nenhum`.
 - `Prova:` é o comando ou a checagem que o implementador roda no passo.
-- Estado: só a caixa. `- [x]` é marcada pelo líder no commit do passo. Não há `Estado:`, `Resumo:` nem IDs `T*`.
+- Estado: só a caixa, marcada `- [x]` pelo líder no commit do passo, sem `Estado:`, `Resumo:` nem IDs `T*`.
 - Um grupo começa quando todos os passos e checkpoints anteriores a ele estão marcados.
 
 ### Arquivos
@@ -106,7 +106,7 @@ Seção `## Achados do analyze`, a última do `plan.md`, gravada pelo analyze ao
 |---|---|---|
 ```
 
-Sem achado, a seção traz a linha `Nenhum achado.`. A presença da seção indica que o analyze rodou. Achado que muda uma decisão do humano na spec não é gravado: o analyze para, o líder pergunta, e a seção só nasce na rodada que conclui.
+Sem achado, a seção traz a linha `Nenhum achado.`; a presença dela indica que o analyze rodou. Achado que muda decisão do humano na spec não é gravado: o analyze para, o líder pergunta, e a seção só nasce na rodada que conclui.
 
 ## Commits
 
@@ -126,7 +126,7 @@ O commit `task(medium): ...` leva no corpo, depois de uma linha em branco, os cr
 
 Os commits de uma phase são os que levam o seu `<alvo>` e, no medium, o `task(medium): ...` que o `review.md` registra como base. ID de passo ou de R* só vale no commit do mesmo `<alvo>`. Nenhuma mensagem leva `Co-Authored-By`.
 
-Com Node, depois do staging e antes de cada commit, o líder roda `scripts/conferir.mjs --commit "<mensagem>"`: ele confere o formato da mensagem, os critérios no corpo do `task(medium): ...`, as caixas e os R* marcados no índice contra os IDs, os paths em staging contra o recorte e o `git diff --cached --check`. Achado é resolvido no staging, na marcação ou na mensagem antes do commit; aviso indica conferência indisponível pelo disco e segue pelo relatório.
+Com Node, depois do staging e antes de cada commit, o líder roda `scripts/conferir.mjs --commit "<mensagem>"`, que confere a mensagem, os critérios no corpo do `task(medium): ...`, caixas e R* marcados no índice contra os IDs, paths em staging contra o recorte e o `git diff --cached --check`. Achado se resolve no staging, na marcação ou na mensagem antes do commit; aviso indica conferência indisponível pelo disco e segue pelo relatório.
 
 ## Estado da phase
 
@@ -134,7 +134,7 @@ Com Node, depois do staging e antes de cada commit, o líder roda `scripts/confe
 - Alvo padrão: a phase aberta de maior `n`; sem phase aberta, o MVP aberto. Outro alvo só quando o humano o nomeia ou quando o líder anuncia a phase de origem de um ajuste. Na retomada com mais de uma phase aberta, pergunte qual retomar, recomendando a de maior `n`.
 - Passo concluído: caixa marcada, confirmada por commit `task(<alvo>:...)` com o ID no `git log`. Caixa marcada sem commit, commit sem caixa ou passos irmãos com `Arquivos:` sobrepostos são inconsistência a diagnosticar antes de seguir.
 - R* corrigido: o líder marca `[x]` no commit `task(<alvo>:Rn,...)`.
-- Push adiado: o humano que recusa ou adia o push da phase tem a decisão gravada pelo líder na seção Finalização Git do `review.md`, na linha `- Push adiado pelo humano: <AAAA-MM-DD>`.
+- Push adiado: o líder grava a recusa ou o adiamento do push pelo humano na seção Finalização Git do `review.md`, na linha `- Push adiado pelo humano: <AAAA-MM-DD>`.
 
 Leia a etapa atual na primeira linha da tabela que se aplica. As linhas de spec a checkpoint valem só para `high` e `mvp`.
 
@@ -155,7 +155,7 @@ Leia a etapa atual na primeira linha da tabela que se aplica. As linhas de spec 
 | Todos os passos e checkpoints marcados e sem `review.md` | review | Revisor |
 | `review.md` com R* aberto `- [ ]` | implement, corrigir | Implementador ou redator, pelo `papel:` |
 | `review.md` em `request-changes` com todos os R* `[x]` e sem commit `task(<alvo>:Rn,...)` com os R* marcados desde a etapa anterior | implement, commitar a correção | Líder commita se a prova da correção está verde; senão, volta ao implementador ou redator |
-| `review.md` em `request-changes` com todos os R* `[x]` e commit `task(<alvo>:Rn,...)` com os R* marcados desde a etapa anterior | review, re-review | Revisor |
+| `review.md` em `request-changes` com todos os R* `[x]` e com esse commit | review, re-review | Revisor |
 | `review.md` em `rascunho` com Approve proposto e nenhum R* aberto | review, confirmar | Líder resume no chat e pede a confirmação única |
 | `review.md` em `rascunho` sem veredito marcado na etapa vigente | review, retomar | Revisor |
 
@@ -172,8 +172,8 @@ Formato antigo: alvo com `interview.md`, `design.md` ou `analyze.md`, `# Rota:` 
 |---|---|
 | Passo | Linha do checklist do `plan.md`; unidade de delegação ao implementador e de commit |
 | Grupo paralelo | Passos irmãos, com o mesmo número e letras diferentes, que rodam juntos sem `Arquivos:` sobrepostos |
-| Checkpoint | Linha do plan depois de um grupo de passos, nas posições de Plan (Checkpoint), conferida por um verificador de contexto limpo conforme `references/verificador.md` (Checkpoint) |
+| Checkpoint | Linha do plan depois de um grupo de passos, nas posições de Plan (Checkpoint), conferida por um verificador de contexto limpo |
 | Risco | Linha `# Risco:` da spec; não acrescenta etapa, mas obriga a interview a cobrir modelo de ameaça e rollback, o plan a pôr checkpoint depois do primeiro grupo de risco e a review a abrir segurança e banco |
-| Achado fora do recorte | Defeito que não pertence aos critérios nem ao diff da phase; vai para `.erros-encontrados/`, um arquivo por achado, gravado por quem o encontrou (verificador ou revisor), e não bloqueia. O líder inclui o registro no commit seguinte da phase, inclusive no `chore(<alvo>): finalize review` |
+| Achado fora do recorte | Defeito fora dos critérios e do diff da phase; vai para `.erros-encontrados/`, um arquivo por achado, gravado por quem o encontrou (verificador ou revisor), e não bloqueia. O líder inclui o registro no commit seguinte da phase, inclusive no `chore(<alvo>): finalize review` |
 | Flake | Teste que falha e passa na reexecução; vai para `.erros-encontrados/` e não bloqueia |
-| Regressão completa | A suíte inteira do projeto (lint e tipos, unitários, E2E), executada uma vez na review (`references/review.md`) |
+| Regressão completa | A suíte inteira do projeto (lint e tipos, unitários, E2E), executada uma vez na review (`references/review/passos.md`) |

@@ -14,7 +14,7 @@ Leia quando o humano pede para parar, quando o contexto do chat pesa, num chat n
 
 Vale sem subagentes, com perfil exigido ausente ou não carregado (`SKILL.md`, seção 5), ou quando o humano pede um passo por run. Informe a limitação em uma linha. O líder executa inline uma etapa ou um passo por run, com o Git e as marcações, seguindo a referência da etapa, e indica a próxima pelo disco.
 
-No implement, cada run executa um passo, o primeiro aberto ou o que o humano nomeou: o chat assume o papel do implementador conforme `references/implementador.md`, roda a `Prova:`, marca a caixa e commita, sem push. Grupo paralelo roda em sequência. Correção de R* segue o passo 4 de `references/implement.md` inline, uma rodada por run; medium segue a Rota medium de `references/implement.md` inline.
+No implement, cada run executa um passo, o primeiro aberto ou o que o humano nomeou: o chat assume o papel do implementador conforme `references/implementador.md`, roda a `Prova:`, marca a caixa e commita (`references/disco.md`, Commits). O passo inline não tem conferência própria: vale a `Prova:` do passo, e o checkpoint e a review em contexto limpo certificam. Grupo paralelo roda em sequência. Correção de R* segue o passo 4 de `references/implement.md` inline, uma rodada por run; medium segue a Rota medium de `references/implement.md` inline.
 
 ### Contexto limpo
 

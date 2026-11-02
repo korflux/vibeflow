@@ -9,7 +9,7 @@
 //                     references/disco.md (Commits), critérios no corpo do task(medium),
 //                     caixas e R* marcados no índice,
 //                     paths em staging dentro do recorte e `git diff --cached --check`
-//                     limpo (references/implement.md, passo 4).
+//                     limpo (references/disco.md, Commits).
 // Não faz staging nem commit e não decide nada: devolve achados para o líder. Divergência
 // entre este script e a prosa é bug do script.
 //

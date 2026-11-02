@@ -11,7 +11,7 @@ A interview abre a phase `high` ou o MVP (`references/disco.md`, Abrir phase ou 
 | Sinal | Modo |
 |---|---|
 | Documento, briefing, artigo, proposta ou texto em Markdown com intenção ambígua | Modo documento |
-| Produto digital novo com escopo a descobrir | MVP; site institucional, landing page ou site estático com escopo claro segue a tabela de esforço |
+| Produto digital novo com escopo a descobrir | MVP, pela seção 2 do `SKILL.md` |
 | Mudança num produto existente | Phase |
 | Dúvida real entre produto e feature | Perguntar uma vez, com recomendação |
 | CI, loop ou agendado sem humano e pedido subespecificado | Bloquear, sem chutar |

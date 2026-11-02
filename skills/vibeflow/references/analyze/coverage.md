@@ -1,6 +1,6 @@
 # Conferências do analyze (mapa interno)
 
-Abrir só na etapa analyze. Ache a instância concreta, não o padrão genérico. Não copie esta tabela para o chat nem para o `plan.md`.
+Abrir só na etapa analyze. O revisor lê `spec.md`, `plan.md`, `AGENTS.md` e o código que os passos citam, com consumidores e testes. Ache a instância concreta, não o padrão genérico. Não copie esta tabela para o chat nem para o `plan.md`.
 
 | Conferência | Sinal de achado | Ajuste no `plan.md` |
 |---|---|---|

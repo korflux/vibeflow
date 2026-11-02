@@ -8,28 +8,7 @@ O revisor de contexto limpo julga o produto e grava o `review.md`, sem editar c�
 - Sem alvo e sem diff, peça path, branch ou PR. Não grude review nova no `n` de outro pedido.
 - Medium: o líder fixa o alvo de uma phase nova e o `review.md` nasce com `# Rota: medium`. `review.md` existente recebe a próxima etapa no mesmo arquivo.
 
-| O revisor lê | Fonte |
-|---|---|
-| Critérios de aceite | `spec.md`; em medium, o corpo do commit `task(medium): ...` (`git log -1 --format=%B <commit>`), e commit sem eles volta ao líder, que informa os critérios do brief |
-| Contexto | `plan.md`, `AGENTS.md` e o `git log` com os commits do alvo |
-| Diff | Do commit anterior ao primeiro `task(<alvo>:...)` até `HEAD`, ou da base que o líder informar; em medium, o revisor registra o `task(medium): ...` como base e o diff parte do commit anterior a ele |
-
-Declare em uma linha: rota, tipo, alvo e diff.
-
-```text
-rota: high · final · alvo: .vibeflow/phases/phase-2-agenda-online/ · diff: a1b2c3d..HEAD
-```
-
-## Tipo
-
-| Sinal | Ação |
-|---|---|
-| Passo ou checkpoint aberto | Não revise; devolva ao implement com o que falta |
-| Todos marcados, ou entrega medium commitada | Review final |
-| Correção de Critical ou Required commitada com `task(<alvo>:Rn,...)` | Re-review |
-| Etapa `### Ajuste N` medium com os R* `[x]` e commit | Re-review de ajuste: só o diff desses commits, contra o pedido do ajuste |
-| Critério de aceite não verificável | Devolva à spec |
-| MVP sem `# Risco:` na spec ou sem `## Achados do analyze` no plan | Recuse e aponte a etapa ausente |
+O revisor lê as fontes, classifica o tipo da review e declara rota, tipo, alvo e diff por `references/review/passos.md` (Fontes e Tipo).
 
 ## Rodadas de correção
 

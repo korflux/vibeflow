@@ -1,6 +1,31 @@
 # Passos do revisor na review
 
-Leitura do revisor na etapa review, depois de `references/review.md` (Entrada, Tipo e Rodadas de correção). O líder não lê este arquivo.
+Leitura do revisor na etapa review, depois de `references/review.md` (Entrada e Rodadas de correção). O líder não lê este arquivo.
+
+## Fontes
+
+| O revisor lê | Fonte |
+|---|---|
+| Critérios de aceite | `spec.md`; em medium, o corpo do commit `task(medium): ...` (`git log -1 --format=%B <commit>`), e commit sem eles volta ao líder, que informa os critérios do brief |
+| Contexto | `plan.md`, `AGENTS.md` e o `git log` com os commits do alvo |
+| Diff | Do commit anterior ao primeiro `task(<alvo>:...)` até `HEAD`, ou da base que o líder informar; em medium, o revisor registra o `task(medium): ...` como base e o diff parte do commit anterior a ele |
+
+Declare em uma linha: rota, tipo, alvo e diff.
+
+```text
+rota: high · final · alvo: .vibeflow/phases/phase-2-agenda-online/ · diff: a1b2c3d..HEAD
+```
+
+## Tipo
+
+| Sinal | Ação |
+|---|---|
+| Passo ou checkpoint aberto | Não revise; devolva ao implement com o que falta |
+| Todos marcados, ou entrega medium commitada | Review final |
+| Correção de Critical ou Required commitada com `task(<alvo>:Rn,...)` | Re-review |
+| Etapa `### Ajuste N` medium com os R* `[x]` e commit | Re-review de ajuste: só o diff desses commits, contra o pedido do ajuste |
+| Critério de aceite não verificável | Devolva à spec |
+| MVP sem `# Risco:` na spec ou sem `## Achados do analyze` no plan | Recuse e aponte a etapa ausente |
 
 ## Passos
 
