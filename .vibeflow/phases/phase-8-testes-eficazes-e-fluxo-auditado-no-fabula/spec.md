@@ -42,6 +42,7 @@ O líder e os analistas da skill `vibeflow` passam a conduzir implementações c
 14. O texto novo é testado com Haiku em cenários como na phase-7, com base na 5.5.0 (origem: humano), cobrindo checkpoint por motivo, trabalho alheio, gate no passo e caso adversarial. Pergunta: o texto novo é testado com modelo fraco? Motivo: decisão do humano, mesma prova de não regressão da phase-7.
 15. A versão sobe para minor 5.6.0 (origem: assumida). Pergunta: qual versão? Motivo: assumida; seção opcional nova, campo de R* compatível e teto maior, sem quebrar artefatos existentes.
 16. Depois do analyze, o líder apresenta o plan como guia: um tópico curto por passo e por checkpoint, dizendo o que cada um entrega, antes de seguir para o implement. Pergunta: como o humano acompanha o que vai acontecer? Motivo: pedido do humano durante o implement ("falar de forma concisa em tópicos o que é cada passo, para ter uma guia").
+17. Regras da reclassificação do fabula: o passo que cria ou altera componente compartilhado leva, no próprio passo, um teste que renderiza uma tela que o usa ou, sem tela ainda, uma página de amostra, com vermelho e verde; com IDs repetidos entre specs, o título do teste leva o alvo junto do ID. Pergunta: como fechar o defeito de `ui/` do passo 1 e as regras trazidas pelo passo 11? Motivo: decisão do humano na review ("aceito o recomendado"); pega o único defeito real que escapava.
 
 ## Critérios de aceite
 
