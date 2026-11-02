@@ -20,7 +20,7 @@ import {
   lerLinhas, cabecalho, carregarAlvos, alvoPadrao, alvoNomeado, listarPhases, proximoN, normalizarSlug, slugValido, ROTAS,
   linksNoCaminho, lerPlan, achadosDoPlan, grupos, recorte, segmentos, sobrepoe, lerRs, vereditoReview, ultimoAjuste,
   commits, classificarCommit, naoCommitados, naoEnviados, commitQueAdicionou, jsonAscii, executadoDireto,
-  semTrabalhoAlheio, alheiosAbertos,
+  semTrabalhoAlheio, alheiosVigentes,
 } from './_disco.mjs';
 
 // ---------------------------------------------------------------------------
@@ -311,12 +311,16 @@ export function estado(raiz, nomeAlvo = null) {
   const alterados = temGit ? naoCommitados(raiz) : null;
   const enviar = temGit ? naoEnviados(raiz) : null;
   // Código e teste: tudo fora de .vibeflow/ (artefatos da cadeia), de .erros-encontrados/
-  // (registros de achado fora do recorte) e do `## Trabalho alheio` declarado nos plans
-  // abertos, como na linha 3 de references/disco.md. Trabalho alheio sai também da retomada
-  // do passo, porque não é código da phase.
+  // (registros de achado fora do recorte) e do `## Trabalho alheio` vigente do alvo lido, como
+  // na linha 3 de references/disco.md (declaração sobreposta ao recorte de passo ou R* aberto
+  // não vale; ver alheiosVigentes). Trabalho alheio sai também da retomada do passo, porque
+  // não é código da phase. Só o alvo lido declara, como no conferir: o alheio de uma phase
+  // não esconde o recorte da outra.
+  const nomeado = nomeAlvo ? alvoNomeado(alvos, nomeAlvo) : null;
+  const alvo = nomeado || alvoPadrao(alvos);
   const fora = semTrabalhoAlheio(
     (alterados || []).filter((p) => !p.startsWith('.vibeflow/') && !p.startsWith('.erros-encontrados/')),
-    alheiosAbertos(alvos),
+    alheiosVigentes(alvo),
   );
 
   const rel = {
@@ -331,7 +335,6 @@ export function estado(raiz, nomeAlvo = null) {
     progresso: null,
   };
 
-  const nomeado = nomeAlvo ? alvoNomeado(alvos, nomeAlvo) : null;
   if (nomeAlvo && !nomeado) return { ...rel, erro: `alvo não encontrado: ${nomeAlvo}` };
 
   // Linhas globais da tabela, na ordem de references/disco.md.
@@ -343,7 +346,6 @@ export function estado(raiz, nomeAlvo = null) {
   else if (!nomeado && pushes.length) rel.etapa = { etapa: 'push pendente', situacao: pushes.join(', '), proximo: 'Líder, com a confirmação humana' };
   else if (!nomeado && orfaos.length) rel.etapa = { etapa: 'alteração sem dono', situacao: orfaos.join(', '), proximo: 'Líder pergunta ao humano se retoma a entrega ou isola o trabalho' };
 
-  const alvo = nomeado || alvoPadrao(alvos);
   if (alvo) {
     rel.alvo = resumoAlvo(raiz, alvo);
     rel.artefatos = {};

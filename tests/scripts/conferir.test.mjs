@@ -148,6 +148,70 @@ test('commit: o staging de trabalho alheio declarado continua acusado, com a mar
   ]);
 });
 
+// Declaração sobreposta ao recorte de passo ou R* aberto não vale (disco.md, Plan > Trabalho alheio).
+test('passo: alheio sobreposto ao recorte do passo aberto não esconde o código do passo', (t) => {
+  const raiz = fase(t, [passo('1')]);
+  escrever(raiz, `${PH}/plan.md`, planComAlheio([passo('1')], ['src/p1.js', 'docs/humano.md']));
+  commit(raiz, 'docs: trabalho alheio');
+  escrever(raiz, 'src/p1.js', 'x\n');
+  escrever(raiz, 'docs/humano.md', 'x\n');
+  const r = conferirPasso(raiz, ['1']);
+  assert.deepEqual(r.achados, []);
+  assert.deepEqual(r.alterados, ['src/p1.js']);
+  assert.ok(!r.avisos.some((a) => /nenhuma alteração/.test(a)));
+});
+
+test('passo: alheio sobreposto ao path de R* aberto não esconde o código da correção', (t) => {
+  const raiz = fase(t, [passo('1', { caixa: true })]);
+  escrever(raiz, `${PH}/plan.md`, planComAlheio([passo('1', { caixa: true })], ['src/r.js']));
+  escrever(raiz, `${PH}/review.md`, review('request-changes', veredito(false) + achados('- [ ] R1: `src/r.js` corrigir. papel: implementador')));
+  commit(raiz, 'docs: alheio e R1');
+  escrever(raiz, 'src/r.js', 'x\n');
+  const r = conferirPasso(raiz, ['R1']);
+  assert.deepEqual(r.alterados, ['src/r.js']);
+  assert.deepEqual(r.achados, []);
+});
+
+test('commit do passo com o path alheio declarado em staging, mesmo dentro do recorte, é acusado', (t) => {
+  const raiz = fase(t, [passo('1')]);
+  escrever(raiz, `${PH}/plan.md`, planComAlheio([passo('1')], ['src/p1.js']));
+  commit(raiz, 'docs: trabalho alheio');
+  escrever(raiz, 'src/p1.js', 'x\n');
+  escrever(raiz, `${PH}/plan.md`, planComAlheio([passo('1', { caixa: true })], ['src/p1.js']));
+  stage(raiz, 'src/p1.js', `${PH}/plan.md`);
+  const achadosDoCommit = conferirCommit(raiz, 'task(phase-1:1): entrega 1').achados;
+  assert.equal(achadosDoCommit.length, 1);
+  assert.match(achadosDoCommit[0], /src\/p1\.js.*declarado em ## Trabalho alheio/);
+});
+
+test('duas phases abertas: o alheio de uma não esconde o recorte da outra', (t) => {
+  const raiz = fase(t, [passo('1')]);
+  escrever(raiz, `${PH}/plan.md`, planComAlheio([passo('1')], ['src/p2.js']));
+  escrever(raiz, '.vibeflow/phases/phase-2-nova/spec.md', spec('aprovado'));
+  escrever(raiz, '.vibeflow/phases/phase-2-nova/plan.md', plan([passo('1', { arquivos: '`src/p2.js`' })]));
+  commit(raiz, 'docs: phase 2 e alheio da 1');
+  escrever(raiz, 'src/p2.js', 'x\n');
+  const r = conferirPasso(raiz, ['1'], 'phase-2');
+  assert.deepEqual(r.alterados, ['src/p2.js']);
+  assert.deepEqual(r.achados, []);
+  // No commit do passo da phase 2, só o alheio da própria phase 2 acusa staging.
+  escrever(raiz, '.vibeflow/phases/phase-2-nova/plan.md', plan([passo('1', { caixa: true, arquivos: '`src/p2.js`' })]));
+  stage(raiz, 'src/p2.js', '.vibeflow/phases/phase-2-nova/plan.md');
+  assert.deepEqual(conferirCommit(raiz, 'task(phase-2:1): entrega 1').achados, []);
+});
+
+test('linha de ## Trabalho alheio com dois paths declara os dois', (t) => {
+  const raiz = fase(t, [passo('1')]);
+  escrever(raiz, `${PH}/plan.md`, plan([passo('1')]).replace('\n## Achados do analyze', '\n## Trabalho alheio\n\n- `docs/a.md`, `docs/b.md`\n\n## Achados do analyze'));
+  commit(raiz, 'docs: trabalho alheio');
+  escrever(raiz, 'src/p1.js', 'x\n');
+  escrever(raiz, 'docs/a.md', 'x\n');
+  escrever(raiz, 'docs/b.md', 'x\n');
+  const r = conferirPasso(raiz, ['1']);
+  assert.deepEqual(r.alterados, ['src/p1.js']);
+  assert.deepEqual(r.achados, []);
+});
+
 test('IDs fora da ordem do plan são achado; correção de passo já marcado no HEAD é aceita', (t) => {
   const raiz = fase(t, [passo('1', { caixa: true }), passo('2a'), passo('2b')]);
   escrever(raiz, 'src/p2a.js', 'x\n');

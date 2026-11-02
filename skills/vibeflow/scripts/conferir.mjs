@@ -5,8 +5,10 @@
 //   --passo <ids>     compara as alterações não commitadas com os `Arquivos:` dos passos
 //                     (ou os paths dos R*, um ou mais) indicados: Conferência do líder de
 //                     references/delegation.md e passo 3 de references/implement.md.
-//                     Path de `## Trabalho alheio` do plan não é acusado, mas o staging
-//                     dele continua acusado no --commit (references/disco.md, Plan).
+//                     Path de `## Trabalho alheio` do plan não é acusado, salvo declaração
+//                     sobreposta ao recorte de passo ou R* aberto, que não vale; o staging
+//                     de path declarado alheio é sempre acusado no --commit
+//                     (references/disco.md, Plan > Trabalho alheio).
 //   --commit <msg>    confere a mensagem e o índice antes do commit: formatos de
 //                     references/disco.md (Commits), critérios no corpo do task(medium),
 //                     caixas e R* marcados no índice,
@@ -25,7 +27,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { resolve, relative } from 'node:path';
 import {
   carregarAlvos, alvoPadrao, alvoNomeado, lerPlan, lerRs, recorte, normalizarPath, segmentos, dentroDoRecorte,
-  classificarCommit, naoCommitados, emStaging, linhasNoGit, gitComCodigo, jsonAscii, executadoDireto, semTrabalhoAlheio,
+  classificarCommit, naoCommitados, emStaging, linhasNoGit, gitComCodigo, jsonAscii, executadoDireto, semTrabalhoAlheio, alheiosVigentes,
 } from './_disco.mjs';
 
 // Pastas que nunca são código do passo: artefatos da cadeia e registros de achado fora do
@@ -75,7 +77,7 @@ function recorteDosIds(ids, passos, rs) {
 
 /**
  * Alterações não commitadas fora de .vibeflow/, .erros-encontrados/ e do `## Trabalho alheio`
- * do plan do alvo, comparadas ao recorte dos IDs.
+ * vigente do plan do alvo (alheiosVigentes), comparadas ao recorte dos IDs.
  */
 export function conferirPasso(raiz, ids, nomeAlvo = null) {
   const alvos = carregarAlvos(raiz);
@@ -86,7 +88,7 @@ export function conferirPasso(raiz, ids, nomeAlvo = null) {
 
   const plan = lerPlan(alvo.art.plan);
   const { recortes, achados, avisos } = recorteDosIds(ids, plan.passos, lerRs(alvo.art.review));
-  const codigo = semTrabalhoAlheio(alterados.filter((p) => !dentroDePrefixo(p, FORA_DO_CODIGO)), plan.alheios);
+  const codigo = semTrabalhoAlheio(alterados.filter((p) => !dentroDePrefixo(p, FORA_DO_CODIGO)), alheiosVigentes(alvo));
   // Sem nenhum recorte comparável, não há contra o que julgar: só os avisos valem.
   const fora = recortes.length ? codigo.filter((p) => !dentroDoRecorte(segmentos(p), recortes)) : [];
   for (const p of fora) achados.push(`path fora do recorte: ${p}`);
@@ -134,7 +136,7 @@ export function conferirCommit(raiz, mensagem) {
 
   let permitidos = null; // null: sem recorte no disco para conferir os paths
   let recortes = [];
-  let alheios = []; // trabalho alheio declarado no plan: continua fora do staging
+  let alheios = []; // trabalho alheio declarado no plan: fora do staging, mesmo dentro do recorte
   if (tipo && (tipo.tipo === 'task' || tipo.tipo === 'finalize' || tipo.tipo === 'push-adiado')) {
     const alvo = alvoNomeado(carregarAlvos(raiz), tipo.alvo);
     if (!alvo) {
@@ -184,10 +186,14 @@ export function conferirCommit(raiz, mensagem) {
     avisos.push(`entrega ${tipo.tipo} sem recorte no disco: confira o staging contra o brief`);
   }
 
-  if (permitidos) {
-    for (const p of staging) {
-      if (!dentroDePrefixo(p, permitidos) && !dentroDoRecorte(segmentos(p), recortes)) achados.push(`path em staging fora do recorte: ${p}${dentroDoRecorte(segmentos(p), alheios) ? ' (declarado em ## Trabalho alheio)' : ''}`);
-    }
+  // O path declarado alheio é acusado mesmo dentro do recorte (a declaração sobreposta ao
+  // recorte não vale para esconder o código do passo, mas o staging dela exige decisão).
+  const MARCA = ' (declarado em ## Trabalho alheio)';
+  for (const p of staging) {
+    const alheio = dentroDoRecorte(segmentos(p), alheios);
+    const dentro = (permitidos && dentroDePrefixo(p, permitidos)) || dentroDoRecorte(segmentos(p), recortes);
+    if (permitidos && !dentro) achados.push(`path em staging fora do recorte: ${p}${alheio ? MARCA : ''}`);
+    else if (alheio) achados.push(`path em staging do recorte, mas declarado alheio: ${p}${MARCA}`);
   }
   return { modo: 'commit', assunto, tipo: tipo ? tipo.tipo : null, staging, achados, avisos };
 }

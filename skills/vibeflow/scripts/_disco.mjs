@@ -210,8 +210,8 @@ export function lerPlan(linhasPlan) {
 
 /**
  * Paths da seção opcional `## Trabalho alheio` do plan (references/disco.md, Plan >
- * Trabalho alheio), normalizados como os de `Arquivos:`: o primeiro trecho entre crases de
- * cada linha, fora de comentário HTML, até o próximo `## `. Path incomparável e path que vale
+ * Trabalho alheio), normalizados como os de `Arquivos:`: todo trecho entre crases de cada
+ * linha, fora de comentário HTML, até o próximo `## `. Path incomparável e path que vale
  * a raiz inteira não declaram nada, para uma linha errada não calar a conferência do repo.
  */
 function lerAlheios(linhasPlan) {
@@ -220,9 +220,8 @@ function lerAlheios(linhasPlan) {
   const fim = linhasPlan.findIndex((l, j) => j > i && /^## /.test(l));
   const corpo = linhasPlan.slice(i + 1, fim < 0 ? linhasPlan.length : fim).join('\n')
     .replace(/<!--[\s\S]*?-->/g, '').replace(/<!--[\s\S]*$/, '');
-  return corpo.split('\n')
-    .map((l) => (l.match(/`([^`]+)`/) || [])[1])
-    .filter(Boolean)
+  return [...corpo.matchAll(/`([^`\n]+)`/g)]
+    .map((m) => m[1])
     .map(normalizarPath)
     .filter((n) => n && n.length);
 }
@@ -232,9 +231,22 @@ export function semTrabalhoAlheio(paths, alheios) {
   return paths.filter((p) => !dentroDoRecorte(segmentos(p), alheios));
 }
 
-/** Trabalho alheio declarado nos plans dos alvos abertos; alvo fechado ou antigo não declara. */
-export function alheiosAbertos(alvos) {
-  return alvos.filter((a) => !a.antigo && !a.fechado).flatMap((a) => lerPlan(a.art.plan).alheios);
+/**
+ * Trabalho alheio declarado no plan de UM alvo que vale hoje: a declaração que se sobrepõe ao
+ * recorte de passo aberto ou aos paths de R* aberto do mesmo alvo não vale, porque esconderia
+ * trabalho do próprio passo (references/disco.md, Plan > Trabalho alheio). Alvo fechado ou
+ * antigo não declara. Passo ou R* sem path comparável não tem recorte contra o que sobrepor.
+ * ponytail: a declaração inteira cai, não só o trecho sobreposto; refinar se um path de pasta
+ * (`src/`) precisar valer fora do recorte.
+ */
+export function alheiosVigentes(alvo) {
+  if (!alvo || alvo.antigo || alvo.fechado) return [];
+  const plan = lerPlan(alvo.art.plan);
+  const abertos = [
+    ...plan.passos.filter((p) => !p.caixa).map(recorte),
+    ...lerRs(alvo.art.review).filter((r) => !r.feito).map((r) => (r.paths.length ? r.paths.map(normalizarPath) : null)),
+  ].filter((r) => r && !r.some((n) => n === null)).flat();
+  return plan.alheios.filter((a) => !abertos.some((r) => sobrepoe(a, r)));
 }
 
 /** Passos agrupados por número, na ordem do arquivo: passo sozinho e grupo paralelo são ambos grupos. */

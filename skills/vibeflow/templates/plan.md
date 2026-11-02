@@ -17,6 +17,6 @@ Isolamento do E2E: <a, b ou c, conforme references/verificador.md (Desenho do E2
 ## Trabalho alheio
 
 - <path do trabalho alheio, entre crases>
-<!-- Seção opcional, gravada pelo líder só com a declaração do humano de que a alteração fora do recorte não é da phase (references/disco.md, Plan > Trabalho alheio): um path por linha. Sem declaração, apague a seção inteira. -->
+<!-- Seção opcional, gravada pelo líder só com a declaração do humano de que a alteração fora do recorte não é da phase (references/disco.md, Plan > Trabalho alheio): um ou mais paths por linha, cada um entre crases. Sem declaração, apague a seção inteira. -->
 
 <!-- ## Achados do analyze é a última seção deste arquivo e é criada pelo analyze ao concluir; não a crie no plan. -->

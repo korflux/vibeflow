@@ -221,6 +221,40 @@ test('trabalho alheio não é dono do passo: o código do passo ainda manda reto
   assert.deepEqual(r.etapa.passos, ['1']);
 });
 
+test('alheio sobreposto ao recorte do passo aberto não vale: o código do passo manda retomar', (t) => {
+  const raiz = faseComAlheio(t, [passo('1', { arquivos: '`src/p1.js`' })], ['- `src/p1.js`']);
+  escrever(raiz, 'src/p1.js', 'x');
+  const r = estado(raiz);
+  assert.equal(r.etapa.situacao, 'retomar o passo');
+  assert.deepEqual(r.etapa.passos, ['1']);
+});
+
+test('alheio de pasta que contém o recorte do passo aberto também não vale', (t) => {
+  const raiz = faseComAlheio(t, [passo('1', { arquivos: '`src/p1.js`' })], ['- `src/`']);
+  escrever(raiz, 'src/p1.js', 'x');
+  assert.equal(estado(raiz).etapa.situacao, 'retomar o passo');
+});
+
+test('duas phases abertas: o alheio de uma não esconde o recorte da outra', (t) => {
+  const raiz = faseComAlheio(t, [passo('1')], ['- `src/p2.js`']);
+  escrever(raiz, '.vibeflow/phases/phase-2-nova/spec.md', spec('aprovado'));
+  escrever(raiz, '.vibeflow/phases/phase-2-nova/plan.md', plan([passo('1', { arquivos: '`src/p2.js`' })]));
+  commit(raiz, 'docs: phase 2');
+  escrever(raiz, 'src/p2.js', 'x');
+  const r = estado(raiz);
+  assert.equal(r.alvo.alvo, 'phase-2');
+  assert.equal(r.etapa.situacao, 'retomar o passo');
+});
+
+test('linha de ## Trabalho alheio com dois paths declara os dois', (t) => {
+  const raiz = faseComAlheio(t, [passo('1')], ['- `docs/a.md`, `docs/b.md`']);
+  escrever(raiz, 'docs/a.md', 'x');
+  escrever(raiz, 'docs/b.md', 'x');
+  const r = estado(raiz);
+  assert.equal(r.etapa.etapa, 'implement');
+  assert.equal(r.etapa.situacao, 'implementar o passo 1');
+});
+
 test('comentário, raiz e path incomparável em ## Trabalho alheio não declaram nada', (t) => {
   const raiz = faseComAlheio(t, [passo('1')], ['<!-- exemplo: `solto.js` -->', '- `.`', '- `/abs/solto.js`', '- sem crase solto.js']);
   escrever(raiz, 'solto.js', 'x');

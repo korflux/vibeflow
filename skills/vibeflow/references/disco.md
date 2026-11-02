@@ -102,7 +102,7 @@ Uma linha física por passo, com os campos nesta ordem, separados por ` · `:
 
 ### Trabalho alheio
 
-Seção opcional `## Trabalho alheio`, depois de `## Passos` e antes de `## Achados do analyze`, que continua a última. O líder a grava a partir da declaração do humano de que uma alteração fora do recorte não é da phase (`SKILL.md`, seção 5, item 3): um path por linha, entre crases, com as regras de path de `Arquivos:` (path incomparável e path que vale a raiz inteira não declaram nada). Sem declaração, a seção não existe.
+Seção opcional `## Trabalho alheio`, depois de `## Passos` e antes de `## Achados do analyze`, que continua a última. O líder a grava a partir da declaração do humano de que uma alteração fora do recorte não é da phase (`SKILL.md`, seção 5, item 3): um ou mais paths por linha, cada um entre crases, com as regras de path de `Arquivos:` (path incomparável e path que vale a raiz inteira não declaram nada). Declaração que se sobrepõe ao recorte de passo aberto ou ao path de R* aberto do mesmo plan não vale: o path continua sendo código da phase. Sem declaração, a seção não existe.
 
 ```text
 ## Trabalho alheio
@@ -110,8 +110,8 @@ Seção opcional `## Trabalho alheio`, depois de `## Passos` e antes de `## Acha
 - `docs/humano.md`
 ```
 
-- `scripts/estado.mjs` tira o path de "sem dono" e da retomada do passo, e `scripts/conferir.mjs --passo` não o acusa.
-- O staging continua sem ele: `scripts/conferir.mjs --commit` o acusa, com a marca da declaração, e a finalização da review o deixa fora do commit.
+- `scripts/estado.mjs` tira o path de "sem dono" e da retomada do passo, e `scripts/conferir.mjs --passo` não o acusa; ambos leem só o plan do alvo em curso, e a declaração sobreposta ao recorte aberto não vale.
+- O staging continua sem ele: `scripts/conferir.mjs --commit` acusa o path declarado, com a marca da declaração, mesmo dentro do recorte, e a finalização da review o deixa fora do commit.
 - A regressão da review roda com o path presente e o cita em Notas (`references/review/passos.md`, Disparar a regressão completa).
 - Vale só na phase aberta e só onde há `plan.md`. Em entrega low ou medium e sem phase, vale a linha "sem dono" da tabela de Estado da phase: o líder pergunta e o humano isola.
 
