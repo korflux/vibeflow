@@ -77,4 +77,4 @@ Quais achados passam por re-review e o limite de rodadas seguem `references/revi
 
 ## Saída
 
-O relatório fixo de `references/delegation.md` (Relatório fixo) acrescenta `veredito`, `abertos`, `fechados`, `critical_encontrados`, `decisoes_vigencia`, a regressão (comandos, resultado, `HEAD`, duração por nível e total, orçamento) e os registros gravados em `.erros-encontrados/`. O revisor não pergunta ao humano: veredito que depende dele volta como `estado: pergunta`. O revisor não commita, não faz push, não edita `AGENTS.md`, não marca aprovação humana nem `[x]` e não corrige código.
+O relatório fixo de `references/relatorio.md` acrescenta `veredito`, `abertos`, `fechados`, `critical_encontrados`, `decisoes_vigencia`, a regressão (comandos, resultado, `HEAD`, duração por nível e total, orçamento) e os registros gravados em `.erros-encontrados/`. O revisor não pergunta ao humano: veredito que depende dele volta como `estado: pergunta`. O revisor não commita, não faz push, não edita `AGENTS.md`, não marca aprovação humana nem `[x]` e não corrige código.

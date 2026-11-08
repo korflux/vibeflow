@@ -61,10 +61,11 @@ Saem do low, seguindo a rota aplicável: comportamento, rota, interação, crit�
 
 ## Estrutura
 <!-- SLOT:estrutura -->
+<!-- Primeiro nível da árvore, uma linha por pasta. Mapa detalhado e inventário de ferramentas vão para docs/, apontados aqui, para o arquivo ficar abaixo do limite de tamanho da skill vibeflow. -->
 
 ## Fluxos e invariantes
 <!-- SLOT:fluxos -->
-<!-- Onde entram dados, permissões e persistência; registrar só o que o projeto comprova. -->
+<!-- Onde entram dados, permissões e persistência; registrar só o que o projeto comprova, uma linha por fluxo. Descrição longa e histórico por phase vão para docs/. -->
 
 ## Regras deste repo
 <!-- SLOT:regras -->

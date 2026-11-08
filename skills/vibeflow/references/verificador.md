@@ -32,4 +32,4 @@ O E2E é leve e roda em paralelo. O implementador o escreve por esta seção e p
 
 ## Relatório
 
-Devolva o relatório fixo de `references/delegation.md` (Relatório fixo).
+Devolva o relatório fixo de `references/relatorio.md`.

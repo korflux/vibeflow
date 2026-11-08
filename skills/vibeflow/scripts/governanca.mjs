@@ -8,8 +8,9 @@
 // perfil global (ausente, idêntico ou diferente da fonte), perfil `corretor` obsoleto e
 // perfil de projeto que difere da fonte. `AGENTS.md` regular e não vazio sem uma linha de
 // título `## Núcleo do projeto` gera só aviso: o projeto existente ainda sem a seção segue
-// funcionando, o init a monta com o explorador e o humano a confirma. Aviso nunca muda o
-// código de saída (só `achados` muda).
+// funcionando, o init a monta com o explorador e o humano a confirma. `AGENTS.md` acima do
+// limite de references/disco.md (Tamanho), 32 KiB, também é aviso: o re-init propõe mover o
+// que não é regra para docs/. Aviso nunca muda o código de saída (só `achados` muda).
 // Modo --backup (references/init.md, Backup de arquivo de regra): cópia regular
 // com o mesmo tamanho e o mesmo SHA-256 do original.
 // Só lê: não cria, copia, substitui nem remove nada. Perfil presente no disco não prova
@@ -21,7 +22,7 @@
 //   node governanca.mjs --backup <original> <copia> [--json]
 // Saída: 0 sem achado, 1 com achado, 2 em erro de uso.
 
-import { existsSync, lstatSync, readFileSync } from 'node:fs';
+import { existsSync, lstatSync, readFileSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -34,6 +35,8 @@ const PONTE = '@../../AGENTS.md\n';
 const INICIO = '<!-- VIBEFLOW:CADEIA start -->';
 const FIM = '<!-- VIBEFLOW:CADEIA end -->';
 const TITULO_NUCLEO = '## Núcleo do projeto';
+// Limite de references/disco.md (Tamanho): o padrão de leitura do Codex (project_doc_max_bytes).
+const LIMITE_AGENTS = 32 * 1024;
 
 /**
  * Hosts com perfis globais (references/init.md, Entrada): a pasta vem da variável do host
@@ -92,6 +95,9 @@ export function conferirGovernanca(raiz) {
     else if (b.bloco.join('\n') !== modelo.bloco.join('\n')) { achados.push('bloco VIBEFLOW:CADEIA diferente de templates/AGENTS.md'); agentsEstado = 'bloco desatualizado'; }
     // Núcleo do projeto: aviso, nunca achado, porque o projeto sem a seção ainda funciona.
     if (!linhas.some((l) => l.trim() === TITULO_NUCLEO)) avisos.push(`AGENTS.md sem a seção ${TITULO_NUCLEO}: o init monta a seção com o explorador e o humano a confirma`);
+    // Tamanho (references/disco.md, Tamanho): aviso, porque o arquivo grande ainda funciona.
+    const bytes = statSync(agents).size;
+    if (bytes > LIMITE_AGENTS) avisos.push(`AGENTS.md com ${(bytes / 1024).toFixed(1)} KiB; o limite é ${LIMITE_AGENTS / 1024} KiB, e o re-init propõe mover para docs/ o que não é regra (references/init.md)`);
   }
 
   // Ponte Antigravity (init, passo 4)

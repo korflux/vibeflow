@@ -3,7 +3,7 @@
 // Confere AGENTS.md e o bloco da cadeia, a ponte, o .gitkeep, os perfis globais por host
 // (com CLAUDE_CONFIG_DIR e CODEX_HOME apontando para pastas temporárias), o perfil
 // corretor obsoleto, o perfil de projeto customizado, o aviso (sem falha) de AGENTS.md sem a
-// seção `## Núcleo do projeto` e o backup por tamanho e SHA-256 (references/init.md, passos
+// seção `## Núcleo do projeto` ou acima de 32 KiB (references/disco.md, Tamanho) e o backup por tamanho e SHA-256 (references/init.md, passos
 // e Backup de arquivo de regra). Rodar com: node --test
 
 import { test } from 'node:test';
@@ -174,4 +174,22 @@ test('AGENTS.md vazio é achado e não soma aviso de núcleo', (t) => {
   const r = conferirGovernanca(raiz);
   assert.equal(r.achados[0], 'AGENTS.md vazio');
   assert.deepEqual(avisosDeNucleo(r), []);
+});
+
+test('AGENTS.md acima de 32 KiB é aviso e não muda os achados nem o código de saída', (t) => {
+  instalar(hosts(t));
+  const raiz = completo(t);
+  escrever(raiz, 'AGENTS.md', `${agentsDoTemplate({ nucleo: true })}\n## Ferramentas implementadas\n\n${'x'.repeat(32 * 1024)}\n`);
+  const r = conferirGovernanca(raiz);
+  assert.deepEqual(r.achados, []);
+  const tamanho = r.avisos.filter((a) => /KiB/.test(a));
+  assert.equal(tamanho.length, 1);
+  assert.match(tamanho[0], /^AGENTS\.md com .* KiB; o limite é 32 KiB/);
+  assert.equal(cli('governanca.mjs', ['--raiz', raiz]).codigo, 0);
+});
+
+test('AGENTS.md do template, abaixo de 32 KiB, não tem aviso de tamanho', (t) => {
+  instalar(hosts(t));
+  const r = conferirGovernanca(completo(t));
+  assert.deepEqual(r.avisos.filter((a) => /KiB/.test(a)), []);
 });

@@ -30,6 +30,7 @@ Ao mesmo tempo, o líder abre os itens do núcleo que o pedido toca (`references
 
 ### 2. Perguntar
 
+- Uma phase cobre um assunto. Quando o pedido junta assuntos independentes (cada um entrega valor sozinho), ou o mapa do explorador já indica mais de 8 passos ou mais de 12 critérios, a primeira pergunta é a divisão: proponha as phases, na ordem, com a primeira recomendada; a phase atual segue só com a primeira. Phase menor fecha com menos checkpoints, menos releitura e menos retrabalho.
 - Pergunte só o que o código e o pedido não decidem e que muda o resultado, nunca o já respondido. Pedido claro tem uma ou duas perguntas; ambíguo, até as decisões restantes serem previsíveis. No MVP, feche o núcleo e os módulos acionados de `references/interview/mvp-discovery.md`.
 - Um turno por vez, neste formato:
 

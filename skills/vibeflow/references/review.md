@@ -23,7 +23,7 @@ Com Approve proposto e nenhum R* aberto, o líder resume no chat, em poucas linh
 Depois da confirmação humana explícita, com o gate da Entrada atendido e nenhum R* aberto, o líder:
 
 1. Marca `# Status: aprovado` e a aprovação humana no `review.md`, sem mudar o veredito do revisor.
-2. Com Decisões para vigência preenchida, aplica patch mínimo em `AGENTS.md`: uma única seção `## Decisões vigentes` com a tabela `ID | Decisão vigente | Fonte`, atualizada por ID, com as linhas não citadas preservadas e o review aprovado como fonte; relê e confirma que só os IDs aprovados mudaram. Sem decisões, não toca regras.
+2. Com Decisões para vigência preenchida, aplica patch mínimo em `AGENTS.md`: uma única seção `## Decisões vigentes` com a tabela `ID | Decisão vigente | Fonte`, atualizada por ID, com as linhas não citadas preservadas e o review aprovado como fonte; cada decisão em até 200 caracteres, com o detalhe no artefato que a Fonte aponta, nunca no `AGENTS.md`; relê e confirma que só os IDs aprovados mudaram. Sem decisões, não toca regras.
 3. Confere, sem executar prova, que a regressão registrada no `review.md` cobre o HEAD final, inclusive `git diff --check` e gitleaks quando o repo prevê.
 4. Compara `git status` com o estado registrado: registro novo em `.erros-encontrados/` é aceito; path declarado em `## Trabalho alheio` do plan segue fora do commit, citado nas Notas do `review.md`; outro path fora da phase, das decisões aprovadas e das correções interrompe e pede isolamento.
 5. Commita `chore(<alvo>): finalize review` (`references/disco.md`, Commits) só com os paths residuais, registros novos incluídos (`git add -- <path da phase> AGENTS.md <registros>`); sem residual, não cria commit vazio.

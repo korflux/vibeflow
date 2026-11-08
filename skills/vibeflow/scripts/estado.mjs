@@ -12,9 +12,12 @@
 // --slug normaliza a frase pela regra de references/disco.md (Abrir phase) e devolve o path
 // da próxima phase; frase que não vira slug válido é erro de uso. --linha imprime só uma
 // linha de progresso, vazia fora de um repo com .vibeflow/, para a statusline do host.
+// Arquivo na pasta do alvo além de spec.md, plan.md e review.md (references/disco.md, Paths)
+// sai em `avisos`, sem efeito no código de saída: o líder o leva ao humano, e phase antiga
+// com arquivo a mais não vira inconsistência.
 // Saída: 0 sem inconsistência, 1 com inconsistência a diagnosticar, 2 em erro de uso.
 
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { join, resolve, relative } from 'node:path';
 import {
   lerLinhas, cabecalho, carregarAlvos, alvoPadrao, alvoNomeado, listarPhases, proximoN, normalizarSlug, slugValido, ROTAS,
@@ -57,6 +60,14 @@ function commitsPorAlvo(lista) {
 // ---------------------------------------------------------------------------
 // Inconsistências (disco.md: Cabeçalho, Plan, Estado da phase e Compatibilidade)
 // ---------------------------------------------------------------------------
+
+/** Entradas da pasta do alvo que não são artefato do contrato (references/disco.md, Paths). */
+function arquivosAMais(raiz, alvo) {
+  let nomes = [];
+  try { nomes = readdirSync(alvo.pasta); } catch { return []; }
+  const contrato = new Set(['spec.md', 'plan.md', 'review.md']);
+  return nomes.filter((n) => !contrato.has(n)).sort().map((n) => relative(raiz, join(alvo.pasta, n)).split('\\').join('/'));
+}
 
 /**
  * Achados a diagnosticar antes de seguir. Alvo antigo fechado fica intocado e não gera
@@ -349,6 +360,8 @@ export function estado(raiz, nomeAlvo = null) {
     if (alvo.art.review) rel.artefatos.review = cabecalho(alvo.art.review, 'Status') || 'sem status';
     rel.rAbertos = lerRs(alvo.art.review).filter((r) => !r.feito).map((r) => r.id);
     rel.progresso = progresso(alvo);
+    const extras = alvo.antigo ? [] : arquivosAMais(raiz, alvo);
+    if (extras.length) rel.avisos = [`arquivo fora do contrato na pasta do alvo (spec.md, plan.md e review.md): ${extras.join(', ')}; o conteúdo útil vai ao review.md, e remover pede o humano`];
     if (!rel.etapa) rel.etapa = alvo.fechado ? { etapa: 'fechada', situacao: 'phase fechada', proximo: 'Líder' } : etapaDoAlvo(alvo, porAlvo, fora);
     if (abertos.filter((a) => a.n !== null).length > 1 && !nomeado) rel.aviso = 'mais de uma phase aberta: pergunte qual retomar, recomendando a de maior n';
   } else if (!rel.etapa) {
@@ -375,6 +388,7 @@ function texto(r) {
   if (r.etapa.checkpoint) l.push(`checkpoint cobre os passos ${r.etapa.checkpoint.passos.join(', ') || 'nenhum'} e os critérios ${r.etapa.checkpoint.aceite.join(', ') || 'nenhum'}`);
   if (r.rAbertos && r.rAbertos.length) l.push(`R* abertos: ${r.rAbertos.join(', ')}`);
   if (r.aviso) l.push(`aviso: ${r.aviso}`);
+  for (const a of r.avisos || []) l.push(`aviso: ${a}`);
   if (r.init) l.push(`init: ${r.init}`);
   if (!r.git) l.push('git: indisponível; linhas de commit, push e alteração não avaliadas');
   for (const i of r.inconsistencias) l.push(`inconsistência: ${i}`);

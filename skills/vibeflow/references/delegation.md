@@ -56,24 +56,13 @@ Conferência aprovada aparece só na linha de progresso (`SKILL.md`, seção 9);
 
 ## Pedido autocontido
 
-Inclua etapa, resultado, passo ou R*, critérios de aceite, prova, inputs conhecidos, paths exclusivos, interlocutores, pendências de origem e o relatório abaixo. Ao implementador, inclua também o mapa do explorador para o recorte (consumidores, testes afetados e padrão a seguir) e os itens de `## Núcleo do projeto` que ele abre. Ao verificador, entregue só o diff do grupo e os critérios do checkpoint. Ao redator de spec ou plan, entregue o path do alvo, a rota, o risco, as decisões e respostas do humano e o template; ao de plan, também `references/testes.md`. Informe que há outros agentes e que o destinatário preserva trabalho alheio. Não copie o plan inteiro nem logs: dê referências e o recorte suficiente.
+Inclua etapa, resultado, passo ou R*, critérios de aceite, prova, inputs conhecidos, paths exclusivos, interlocutores, pendências de origem e o relatório fixo (`references/relatorio.md`). Ao implementador, inclua também a linha do passo copiada do plan, o texto de cada critério do `Aceite:` copiado da spec, o detalhe técnico que não cabe na linha (padrão a seguir, linha de referência, ressalva), o mapa do explorador para o recorte (consumidores, testes afetados e padrão a seguir) e os itens de `## Núcleo do projeto` que ele abre; assim ele não abre o plan nem a spec inteiros (`references/implementador.md`, Proibido no passo). Ao verificador, entregue só o diff do grupo e os critérios do checkpoint. Ao redator de spec ou plan, entregue o path do alvo, a rota, o risco, as decisões e respostas do humano e o template; ao de plan, também `references/testes.md`. Informe que há outros agentes e que o destinatário preserva trabalho alheio. Não copie o plan inteiro nem logs: dê referências e o recorte suficiente.
 
 Regra de instalação, para todo papel: instale ferramenta ausente necessária à prova pelo gerenciador do projeto ou por fonte oficial, quando o ambiente e as permissões permitirem, sem alterar manifesto nem lockfile fora do recorte. Credencial, criação de conta, pagamento, elevação administrativa ou configuração persistente de integração (por exemplo, registrar um MCP) é impedimento real e vai ao humano.
 
 ## Relatório fixo
 
-```text
-estado: verde | bloqueado | pergunta
-etapa: init | interview | spec | plan | analyze | passo | checkpoint | correcao | review | exploracao | texto
-paths: <alterados, um por linha, ou nenhum>
-prova: <comando e resumo do resultado, só com as falhas, sem log completo; saída do teste do critério vermelho antes da mudança e verde depois, ou motivo da isenção; inputs reais; gates estáticos rodados sobre os arquivos alterados, conforme references/implementador.md (Codar e provar); quando o papel captura ou cita capturas, paths das imagens finais conforme references/chrome-devtools.md>
-cobertura: <critérios certificados e limites do recorte>
-pendencias: <nenhuma ou falha/impedimento concreto>
-proximo: <ação e responsável>
-pergunta: <somente quando pergunta; recomendação>
-```
-
-Verde certifica só o recorte: o relatório distingue etapa implementada de entrega comprovada, e prova do passo verde não é entrega comprovada. Bloqueado é impedimento real; pergunta, decisão humana material. O revisor acrescenta os campos de `references/analyze.md` (Saída) ou `references/review/passos.md` (Saída).
+O formato mora em `references/relatorio.md`, que cada papel abre sozinho.
 
 ## Níveis de prova
 

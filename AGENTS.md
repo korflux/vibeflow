@@ -49,7 +49,7 @@ Sem banco, migration nem tráfego de usuário: mudança aqui altera contrato de 
 - **Major:** quebra contrato (path ou nome de artefato, linha de cabeçalho como `# Status:` ou `# Rota:`, comportamento do líder que o humano já usa).
 - **Minor:** adiciona sem quebrar (nova seção opcional no artefato, nova referência de etapa).
 - **Patch:** correção sem mudança de contrato.
-- Versão atual: 5.6.0 (checkpoint por motivo, até quatro; trabalho alheio declarado no plan; R* com vários paths; política de testes por qualidade; gate estático na prova do passo; decisão de segurança e dados sempre perguntada).
+- Versão atual: 5.7.0 (limites de tamanho de AGENTS.md, spec, plan e linha de passo; pasta da phase só com os três artefatos; relatório fixo em arquivo próprio; prova do passo sem suíte inteira, E2E nem espera; um assunto por phase).
 
 ## Git
 

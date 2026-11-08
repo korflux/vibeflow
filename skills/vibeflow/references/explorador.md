@@ -25,4 +25,4 @@ Sonde só para leitura e consulta, pelo meio que o host permite (shell, busca we
 
 ## Relatório
 
-Devolva o relatório fixo de `references/delegation.md` (Relatório fixo).
+Devolva o relatório fixo de `references/relatorio.md`.

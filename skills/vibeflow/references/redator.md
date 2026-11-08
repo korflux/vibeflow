@@ -31,4 +31,4 @@
 
 ## Relatório
 
-Devolva o relatório fixo de `references/delegation.md` (Relatório fixo).
+Devolva o relatório fixo de `references/relatorio.md`.

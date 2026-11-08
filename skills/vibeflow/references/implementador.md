@@ -2,6 +2,16 @@
 
 Única leitura do implementador num passo, numa entrega low ou medium e numa correção do checkpoint ou da review. Abra as referências apontadas aqui só quando o trabalho chegar a elas.
 
+## Proibido no passo
+
+Vale no passo do plan e na correção de checkpoint ou de R*. Em low e medium, a prova do brief e a captura de `references/chrome-devtools.md` (Captura e reaproveitamento) seguem como estão; os demais itens valem também lá.
+
+- Rodar a suíte inteira, o E2E ou a regressão completa: são do checkpoint e da review (`references/delegation.md`, Níveis de prova). E2E de critério com tela é escrito no passo e rodado pelo verificador.
+- Rodar comandos além da `Prova:` do brief e dos gates estáticos, ou rodar de novo um comando já verde sem o código ter mudado depois dele.
+- Esperar por loop (`until`, `while`, `sleep`, `for` com pausa) ou ler log de comando em andamento repetidas vezes. Comando que passa de cerca de 2 minutos roda em segundo plano, com o aviso de término do host; sem esse recurso, roda em primeiro plano com o tempo limite do host.
+- Abrir `plan.md` ou `spec.md` inteiros: o brief traz a linha do passo, o texto dos critérios do `Aceite:` e o mapa. Abra-os só para a dúvida que o brief não resolve, e só a seção dela.
+- Gravar arquivo na pasta da phase: medição e evidência vão no relatório (`references/relatorio.md`).
+
 ## Recorte
 
 - Escreva só nos `Arquivos:` do passo, no recorte do brief ou nos paths do R*; path fora dele volta ao líder antes de editar.
@@ -18,9 +28,9 @@
 - Acabamento: `references/definition-of-done.md`; banco ou dinheiro: `references/database-and-migrations.md`.
 - Testes e prova por `references/testes.md` (Política de testes, Desenho de casos, Execução e O que não testar): a `Prova:` do passo, os testes afetados da correção ou, em low ou medium, a prova do brief, com saída resumida (só falhas e totais).
 - Teste com banco ou serviço: `references/ambiente.md`, nativo ou embutido, banco limpo sem recriar container, nunca Docker sem decisão registrada. E2E de critério com tela ou jornada: `references/verificador.md` (Desenho do E2E). Prova visual e captura por rota: `references/chrome-devtools.md` (Captura e reaproveitamento).
-- Gate estático: em passo que toca código, rode também, sobre os arquivos alterados, os gates estáticos (lint, tipos, segurança) que o `AGENTS.md` declara na seção de comandos do projeto, seja Comandos do projeto ou equivalente, como Comandos do painel, e cite no campo `prova` cada gate rodado com o resultado. Projeto sem gate declarado não roda nada a mais; a regressão completa da review não muda.
+- Gate estático: em passo que toca código, rode também, sobre os arquivos alterados, os gates estáticos (lint, tipos, segurança) que o `AGENTS.md` declara na seção de comandos do projeto, seja Comandos do projeto ou equivalente, como Comandos do painel, e cite no campo `prova` cada gate rodado com o resultado. Cada gate roda uma vez, no fim do passo, depois da prova verde, e de novo só se o código mudou depois dele; com comando por pacote ou por arquivo declarado, use-o em vez do comando do repositório inteiro. Varredura de segredos é da review. Projeto sem gate declarado não roda nada a mais; a regressão completa da review não muda.
 - Prova vermelha: corrija pela causa raiz e rode de novo, até verde ou impedimento real.
 
 ## Relatório
 
-Devolva o relatório fixo de `references/delegation.md` (Relatório fixo).
+Devolva o relatório fixo de `references/relatorio.md`.

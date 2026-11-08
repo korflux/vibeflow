@@ -5,7 +5,8 @@
 // critérios inexistentes ou sem passo, seções obrigatórias e placeholder de template
 // esquecido, além dos limites de tamanho do plan (teto de 12 entradas de código por passo,
 // no máximo quatro checkpoints, cada um com motivo da tabela fechada de disco.md, e nenhum em
-// plan de até 5 passos; checkpoint sem motivo é aviso, não achado). Com --spec, confere a forma
+// plan de até 5 passos; checkpoint sem motivo é aviso, não achado) e os avisos de
+// references/disco.md (Tamanho): spec, plan, linha de passo e `Nota:`. Com --spec, confere a forma
 // da spec em rascunho, inclusive o valor sem origem em Decisões e Critérios de aceite.
 // Rodar com: node --test
 
@@ -369,4 +370,46 @@ test('checkpoint em plan de até 5 passos é achado; com 6 passos não (A7)', (t
   assert.deepEqual(conferirPlan(fase(t, grupo)).achados, ['checkpoint em plan de 5 passos; phase com até 5 passos não tem checkpoint']);
   const seis = [passo('1', { aceite: 'A1' }), checkpoint('A1'), ...semAceite(2, 6)];
   assert.deepEqual(conferirPlan(fase(t, seis)).achados, []);
+});
+
+// ---------------------------------------------------------------------------
+// Limites de tamanho (references/disco.md, Tamanho): aviso, nunca achado
+// ---------------------------------------------------------------------------
+
+const avisosDeTamanho = (r) => r.avisos.filter((a) => /KiB|caracteres fora de Arquivos|Nota:/.test(a));
+
+test('spec acima de 8 KiB, plan acima de 12 KiB, linha longa e Nota: são aviso, sem mudar os achados', (t) => {
+  const longo = 'x'.repeat(401);
+  const raiz = fase(t, [
+    `- [ ] 1: ${longo} · Aceite: A1 · Arquivos: \`src/a.js\` · Prova: \`node --test\``,
+    '- [ ] 2: entrega · Aceite: nenhum · Arquivos: `src/b.js` · Prova: `node --test`. Nota: padrão de c.js',
+    `- [ ] 3: entrega · Aceite: nenhum · Arquivos: ${arquivosDe(12)} · Prova: \`node --test\``,
+  ], { extraSpec: '\n' + 'y'.repeat(8 * 1024) });
+  escrever(raiz, `${PH}/plan.md`, plan([
+    `- [ ] 1: ${longo} · Aceite: A1 · Arquivos: \`src/a.js\` · Prova: \`node --test\``,
+    '- [ ] 2: entrega · Aceite: nenhum · Arquivos: `src/b.js` · Prova: `node --test`. Nota: padrão de c.js',
+    `- [ ] 3: entrega · Aceite: nenhum · Arquivos: ${arquivosDe(12)} · Prova: \`node --test\``,
+  ]) + `\n<!-- ${'z'.repeat(12 * 1024)} -->\n`);
+  const r = conferirPlan(raiz);
+  assert.deepEqual(r.achados, []);
+  const avisos = avisosDeTamanho(r);
+  assert.equal(avisos.length, 4);
+  assert.match(avisos.find((a) => a.startsWith('spec.md')), /limite é 8 KiB/);
+  assert.match(avisos.find((a) => a.startsWith('plan.md')), /limite é 12 KiB/);
+  assert.ok(avisos.some((a) => /^passo 1: linha com 4\d\d caracteres fora de Arquivos:/.test(a)));
+  assert.ok(avisos.some((a) => a.startsWith('passo 2: campo Nota:')));
+  // Doze paths de código cabem no teto e não contam para a linha.
+  assert.ok(!avisos.some((a) => a.startsWith('passo 3')));
+  assert.equal(cli('plan.mjs', ['--raiz', raiz]).codigo, 0);
+});
+
+test('linha no limite e spec pequena não geram aviso de tamanho; --spec avisa a spec grande', (t) => {
+  const resto = ' · Aceite: A1 · Arquivos: `src/a.js` · Prova: `node --test`';
+  const cabe = `- [ ] 1: ${'x'.repeat(400 - '- [ ] 1: '.length - ' · Prova: `node --test`'.length - ' · Aceite: A1'.length)}${resto}`;
+  const raiz = fase(t, [cabe]);
+  assert.deepEqual(avisosDeTamanho(conferirPlan(raiz)), []);
+  const grande = fase(t, [cabe], { extraSpec: '\n' + 'y'.repeat(8 * 1024) });
+  const r = conferirSpec(grande);
+  assert.equal(r.avisos.length, 1);
+  assert.match(r.avisos[0], /^spec\.md com .* KiB; o limite é 8 KiB/);
 });

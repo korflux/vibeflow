@@ -17,7 +17,7 @@ Quem faz: o líder delega ao revisor o path do alvo, confere a seção gravada e
 
 ## Saída
 
-O relatório fixo de `references/delegation.md`, com a quantidade de achados corrigidos e as perguntas pendentes.
+O relatório fixo de `references/relatorio.md`, com a quantidade de achados corrigidos e as perguntas pendentes.
 
 Ao fechar o analyze, o líder mostra ao humano o plan como guia, antes de seguir para o implement: um tópico curto por passo e por checkpoint, na ordem do plan, com o que cada um entrega.
 

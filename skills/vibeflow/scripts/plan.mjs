@@ -10,8 +10,10 @@
 // código, mais de quatro checkpoints, motivo de checkpoint fora da tabela fechada e
 // checkpoint em plan de até 5 passos. Checkpoint sem motivo é aviso (campo `avisos`, sem
 // efeito no código de saída), para que plan anterior à tabela de motivos siga com o mesmo
-// resultado. O julgamento do analyze (prova que exercita o critério, arquivo ou consumidor
-// esquecido, ordem, contradição com a spec, e se a condição do motivo vale: tela depois do
+// resultado. Os limites de references/disco.md (Tamanho) também são aviso, pelo mesmo
+// motivo: spec acima de 8 KiB, plan acima de 12 KiB, linha de passo acima de 400 caracteres
+// sem contar o campo `Arquivos:` e campo `Nota:` na linha do passo. O julgamento do analyze (prova que exercita o
+// critério, arquivo ou consumidor esquecido, ordem, contradição com a spec, e se a condição do motivo vale: tela depois do
 // visual, segundo grupo de risco, integração acima de 10 passos) continua do revisor. Só
 // lê; divergência entre este script e a prosa é bug do script.
 //
@@ -19,12 +21,14 @@
 // obrigatórias, decisão sem Pergunta: ou Motivo:, critério repetido, adjetivo vago no
 // critério, valor sem origem em Decisões e Critérios de aceite (só em spec com
 // `# Status: rascunho`; a origem é o marcador `(origem: humano | assumida | verificado
-// <fonte>)` na mesma linha) e placeholder esquecido. Não exige plan.md.
+// <fonte>)` na mesma linha) e placeholder esquecido; spec acima de 8 KiB é aviso. Não exige
+// plan.md.
 //
 // Uso:
 //   node plan.mjs [--spec] [--alvo phase-N|mvp] [--raiz <dir>] [--json]
 // Saída: 0 sem achado (aviso não conta), 1 com achado, 2 em erro de uso.
 
+import { statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -127,6 +131,10 @@ function criteriosDaSpec(linhasSpec) {
 // Limites de tamanho do plan (references/disco.md, Plan > Arquivos e Plan > Checkpoint).
 const TETO_CODIGO = 12;
 const MAX_CHECKPOINTS = 4;
+// Limites de references/disco.md (Tamanho), em bytes do arquivo e caracteres da linha.
+const LIMITE_SPEC = 8 * 1024;
+const LIMITE_PLAN = 12 * 1024;
+const LIMITE_LINHA_PASSO = 400;
 const PASSOS_SEM_CHECKPOINT = 5;
 // Tabela fechada de motivos de checkpoint (references/disco.md, Plan > Checkpoint). A primeira
 // linha da tabela tem dois nomes, `caminho fino` e `primeiro grupo de risco`.
@@ -194,6 +202,32 @@ function formaDosCheckpoints(itens, criterios) {
   if (checkpoints > MAX_CHECKPOINTS) achados.push(`${checkpoints} checkpoints; o máximo é ${MAX_CHECKPOINTS} por phase`);
   if (checkpoints && passos <= PASSOS_SEM_CHECKPOINT) achados.push(`checkpoint em plan de ${passos} ${passos === 1 ? 'passo' : 'passos'}; phase com até ${PASSOS_SEM_CHECKPOINT} passos não tem checkpoint`);
   return { achados, avisos };
+}
+
+/**
+ * Avisos de tamanho de references/disco.md (Tamanho): o arquivo pelo tamanho em disco e,
+ * no plan, cada linha de passo pelo comprimento e pelo campo `Nota:` (a palavra com
+ * maiúscula e dois-pontos, em qualquer ponto da linha), que a linha não tem.
+ * Aviso e não achado, para que artefato gravado antes do limite siga válido.
+ */
+function avisosDeTamanho(pasta, artefato, linhas) {
+  const avisos = [];
+  const limite = artefato === 'spec' ? LIMITE_SPEC : LIMITE_PLAN;
+  let bytes = 0;
+  try { bytes = statSync(join(pasta, `${artefato}.md`)).size; } catch { bytes = 0; }
+  if (bytes > limite) avisos.push(`${artefato}.md com ${(bytes / 1024).toFixed(1)} KiB; o limite é ${limite / 1024} KiB (references/disco.md, Tamanho)`);
+  if (artefato !== 'plan') return avisos;
+  for (const l of linhas || []) {
+    const m = l.match(RE_PASSO);
+    if (!m) continue;
+    const id = `${m[2]}${m[3] || ''}`;
+    // O campo Arquivos: não conta: o teto de 12 entradas de código já o limita.
+    const semArquivos = l.replace(/ · Arquivos:.*?(?= · Prova:|$)/, '');
+    const tamanho = [...semArquivos].length;
+    if (tamanho > LIMITE_LINHA_PASSO) avisos.push(`passo ${id}: linha com ${tamanho} caracteres fora de Arquivos:; o limite é ${LIMITE_LINHA_PASSO}, e o detalhe vai no brief`);
+    if (/(?:^|[\s·.;(])Nota:/.test(l)) avisos.push(`passo ${id}: campo Nota: na linha; o detalhe vai no brief do despacho`);
+  }
+  return avisos;
 }
 
 /** Linhas da seção `## Passos` que não são passo nem checkpoint (fora comentário e linha vazia). */
@@ -310,7 +344,7 @@ export function conferirSpec(raiz, nomeAlvo = null) {
   const { alvo, erro } = resolverAlvo(raiz, nomeAlvo);
   if (erro) return { erro };
   if (!alvo.art.spec) return { erro: `${alvo.alvo} sem spec.md` };
-  return { alvo: alvo.alvo, ...formaDaSpec(alvo.art.spec) };
+  return { alvo: alvo.alvo, ...formaDaSpec(alvo.art.spec), avisos: avisosDeTamanho(alvo.pasta, 'spec', alvo.art.spec) };
 }
 
 /** Confere o plan do alvo; exportado para os testes. */
@@ -348,7 +382,8 @@ export function conferirPlan(raiz, nomeAlvo = null) {
   achados.push(...placeholdersEsquecidos(alvo.art.spec, 'spec.md', 'spec.md'));
   achados.push(...placeholdersEsquecidos(alvo.art.plan, 'plan.md', 'plan.md'));
 
-  return { alvo: alvo.alvo, criterios, passos: plan.passos.length, checkpoints: plan.itens.length - plan.passos.length, achados, avisos: cps.avisos };
+  return { alvo: alvo.alvo, criterios, passos: plan.passos.length, checkpoints: plan.itens.length - plan.passos.length, achados,
+    avisos: [...cps.avisos, ...avisosDeTamanho(alvo.pasta, 'spec', alvo.art.spec), ...avisosDeTamanho(alvo.pasta, 'plan', alvo.art.plan)] };
 }
 
 // ---------------------------------------------------------------------------

@@ -18,7 +18,22 @@ AGENTS.md                                 fonte única de regras do projeto
 .vibeflow/old/                            backups de arquivos de regra substituídos
 ```
 
-Artefatos de uma phase ou do MVP, sempre com estes nomes: `spec.md`, `plan.md` e `review.md`. O nome é o tipo, não o título. Não grave artefato em `docs/`, na raiz nem em outro path. Não crie `interview.md`, `design.md`, `analyze.md`, `implement.md`, `todo.md`, `tasks.md`, `CLAUDE.md` ou `GEMINI.md`.
+Artefatos de uma phase ou do MVP, sempre com estes nomes: `spec.md`, `plan.md` e `review.md`. O nome é o tipo, não o título. Não grave artefato em `docs/`, na raiz nem em outro path. Não crie `interview.md`, `design.md`, `analyze.md`, `implement.md`, `todo.md`, `tasks.md`, `CLAUDE.md` ou `GEMINI.md`. A pasta da phase ou do MVP guarda só esses três artefatos: evidência, medição e anotação de passo vão no relatório do papel e, quando a review as cita, no `review.md`, nunca num arquivo próprio como `passo-<n>.md` ou `baseline.md`; `scripts/estado.mjs` avisa arquivo a mais na pasta do alvo.
+
+## Tamanho
+
+Todo papel lê estes arquivos a cada despacho; o tamanho pesa em cada turno e no que o host chega a ler.
+
+| Arquivo | Limite | Quem confere |
+|---|---|---|
+| `AGENTS.md` | 32 KiB, o limite padrão de leitura do Codex | `scripts/governanca.mjs` |
+| `spec.md` | 8 KiB | `scripts/plan.mjs --spec` e `scripts/plan.mjs` |
+| `plan.md` | 12 KiB | `scripts/plan.mjs` |
+| Linha de passo do plan, sem o campo `Arquivos:`, que o teto de Plan > Arquivos já limita | 400 caracteres | `scripts/plan.mjs` |
+
+- O limite é aviso, sem efeito no código de saída, para que artefato gravado antes dele siga válido; ninguém reescreve artefato antigo só pelo tamanho.
+- Em artefato recém-gravado, o aviso volta a quem gravou, que corta o texto sem tirar decisão nem critério. Spec que não cabe sem perder critério é phase grande demais: o líder propõe ao humano dividi-la (`references/interview.md`).
+- `AGENTS.md` acima do limite: no re-init, o redator propõe mover para `docs/` o que não é regra, núcleo, comando nem decisão vigente (`references/init.md`, Passos).
 
 | Rota | Artefatos |
 |---|---|
@@ -70,7 +85,8 @@ Uma linha física por passo, com os campos nesta ordem, separados por ` · `:
 
 - ID: número inteiro sem zero à esquerda, seguido de uma letra minúscula quando o passo pertence a um grupo paralelo. Números crescem de 1 em 1 na ordem do arquivo. Passo sozinho não leva letra; um grupo usa `a`, `b`, `c` em sequência.
 - `Aceite:` lista os critérios de aceite da spec que o passo entrega, ou `nenhum`.
-- `Prova:` é o comando ou a checagem que o implementador roda no passo.
+- `Prova:` é o comando ou a checagem que o implementador roda no passo; o que entra nela segue `references/plan.md` (Prova do passo).
+- A linha tem só esses campos. Detalhe técnico (padrão a seguir, linha de referência, ressalva) vai no brief do despacho, nunca num campo `Nota:` nem num arquivo da pasta.
 - Estado: só a caixa, marcada `- [x]` pelo líder no commit do passo, sem `Estado:`, `Resumo:` nem IDs `T*`.
 - Um grupo começa quando todos os passos e checkpoints anteriores a ele estão marcados.
 

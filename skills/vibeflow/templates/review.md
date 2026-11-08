@@ -40,7 +40,7 @@
 
 ## Decisões para vigência
 
-<!-- Omitir quando a entrega não cria nem substitui decisão crítica. É proposta até a confirmação humana. -->
+<!-- Omitir quando a entrega não cria nem substitui decisão crítica. É proposta até a confirmação humana. Decisão em até 200 caracteres, porque a linha vai para o AGENTS.md (references/review.md, Finalizar); o detalhe fica na spec ou nas Notas deste arquivo, que a Fonte aponta. -->
 
 | ID | Ação | Decisão | Fonte |
 |---|---|---|---|

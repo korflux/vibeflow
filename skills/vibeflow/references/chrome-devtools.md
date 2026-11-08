@@ -23,7 +23,7 @@ A regra de que a captura sai da execução do E2E de quem o roda mora em `refere
 | Revisor | Na regressão completa, cita as capturas que a execução do E2E gravou para os critérios com tela; sem execução nova, reaproveita a evidência citada e recaptura só quando ela não existe mais (por exemplo, em chat novo) ou os inputs renderizados mudaram |
 | Líder | Só abre as imagens finais citadas, que a conferência exige (`references/delegation.md`, Conferência do líder), e nunca captura |
 
-Quem captura grava as imagens na pasta temporária do sistema, fora do repositório, e cita os paths no campo `prova` do relatório fixo (`references/delegation.md`). Evidência verde vale enquanto os inputs renderizados não mudarem; não repita a captura apenas para produzir outra. Imagem capturada nunca entra em commit.
+Quem captura grava as imagens na pasta temporária do sistema, fora do repositório, e cita os paths no campo `prova` do relatório fixo (`references/relatorio.md`). Evidência verde vale enquanto os inputs renderizados não mudarem; não repita a captura apenas para produzir outra. Imagem capturada nunca entra em commit.
 
 ## Checklist renderizada
 

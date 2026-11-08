@@ -22,4 +22,4 @@ Nas duas etapas, grave em `.erros-encontrados/` um arquivo por flake ou achado f
 
 ## Relatório
 
-Devolva o relatório fixo de `references/delegation.md` (Relatório fixo), com os campos da saída da etapa.
+Devolva o relatório fixo de `references/relatorio.md`, com os campos da saída da etapa.

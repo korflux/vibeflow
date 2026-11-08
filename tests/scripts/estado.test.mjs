@@ -3,7 +3,8 @@
 // Cada cenário monta um repositório Git temporário com artefatos mínimos no contrato
 // 5.0.0 e confere etapa, progresso, próximo passo e inconsistências contra a tabela
 // "Estado da phase" de references/disco.md e o progresso de SKILL.md, seção 9. Também
-// cobre a compatibilidade com phase antiga (fechada é fechada; aberta é inconsistência).
+// cobre a compatibilidade com phase antiga (fechada é fechada; aberta é inconsistência) e o
+// aviso de arquivo fora do contrato na pasta do alvo (references/disco.md, Paths).
 // Rodar com: node --test
 
 import { test } from 'node:test';
@@ -588,4 +589,27 @@ test('--linha imprime uma linha de progresso, e nada fora de um repo com .vibefl
   const vazio = repo(t);
   rmSync(join(vazio, '.vibeflow'), { recursive: true, force: true });
   assert.equal(cli('estado.mjs', ['--raiz', vazio, '--linha']).out, '');
+});
+
+// ---------------------------------------------------------------------------
+// Arquivo fora do contrato na pasta do alvo (references/disco.md, Paths)
+// ---------------------------------------------------------------------------
+
+test('arquivo além de spec, plan e review na pasta do alvo é aviso, não inconsistência', (t) => {
+  const raiz = fase(t, [passo('1')]);
+  escrever(raiz, `${PH}/passo-1.md`, 'medição');
+  escrever(raiz, `${PH}/baseline.md`, 'linha de base');
+  commit(raiz, 'docs: anotações');
+  const r = estado(raiz);
+  assert.deepEqual(r.inconsistencias, []);
+  assert.equal(r.avisos.length, 1);
+  assert.match(r.avisos[0], new RegExp(`${PH}/baseline\.md, ${PH}/passo-1\.md`));
+  const texto = cli('estado.mjs', ['--raiz', raiz]);
+  assert.equal(texto.codigo, 0);
+  assert.match(texto.out, /aviso: arquivo fora do contrato/);
+});
+
+test('pasta só com os artefatos do contrato não tem aviso de arquivo a mais', (t) => {
+  const r = estado(fase(t, [passo('1')]));
+  assert.equal(r.avisos, undefined);
 });

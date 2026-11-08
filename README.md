@@ -130,6 +130,17 @@ node "<pasta da skill>/scripts/conferir.mjs" --commit-arquivo "$1"
 
 Aprovar a review, publicar decisões vigentes e fazer push sempre exigem a sua confirmação.
 
+## Novidades da 5.7.0
+
+A 5.7.0 é uma versão minor, sem migração de artefato, com foco em tempo por phase. O bloco `VIBEFLOW:CADEIA` e os perfis de subagente não mudam; o re-init só é útil para receber a proposta de enxugar um `AGENTS.md` acima do limite.
+
+- Limites de tamanho em `skills/vibeflow/references/disco.md` (Tamanho): `AGENTS.md` até 32 KiB, `spec.md` até 8 KiB, `plan.md` até 12 KiB e linha de passo até 400 caracteres sem contar `Arquivos:`, sem campo `Nota:`. São avisos de `governanca.mjs` e `plan.mjs`, sem mudar o código de saída; artefato antigo segue válido.
+- A pasta da phase guarda só `spec.md`, `plan.md` e `review.md`; `estado.mjs` avisa arquivo a mais, como `passo-<n>.md` ou `baseline.md`.
+- Decisão vigente em até 200 caracteres no `AGENTS.md`, com o detalhe no artefato da Fonte. Com `AGENTS.md` acima do limite, o re-init propõe mover para `docs/` o que não é regra, núcleo, comando nem decisão vigente.
+- O relatório fixo mora em `skills/vibeflow/references/relatorio.md`, e o brief do implementador traz a linha do passo e o texto dos critérios: o implementador deixa de abrir `delegation.md`, `plan.md` e `spec.md` inteiros a cada passo.
+- No passo: um comando de prova só com os testes que o passo cria, altera ou quebra; sem suíte inteira, E2E nem loop de espera; comando longo em segundo plano; cada gate estático uma vez, no fim do passo; varredura de segredos na review.
+- Um assunto por phase: com assuntos independentes, ou mais de 8 passos ou 12 critérios previstos, a interview propõe dividir.
+
 ## Novidades da 5.6.0
 
 A 5.6.0 é uma versão minor, sem migração de artefato. Rode `/vibeflow init` em cada projeto consumidor para receber o bloco `VIBEFLOW:CADEIA` novo do `AGENTS.md`: o init acusa o bloco diferente do template e o substitui, com backup. O mesmo comando entrega os perfis atualizados de subagente, entre eles o do verificador: o init mostra os perfis globais instalados como diferentes da fonte e pede a sua decisão, com backup em `~/.vibeflow/old/`. Depois de atualizar os perfis, recarregue o host.
