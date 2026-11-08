@@ -137,6 +137,7 @@ A 6.1.0 é uma versão minor, sem migração de artefato, com base no relatório
 
 - Esforço de raciocínio menor: implementador em `medium`, explorador e verificador em `high`. O líder sobe o implementador para `high` só em phase com `# Risco:` ou na segunda prova vermelha do mesmo passo, nunca acima disso.
 - `medir.mjs` mede a phase pelo Git: horas de relógio e ativas, passos com retrabalho, intervalo mediano e passo mais lento, R* por severidade. O líder grava a linha em `## Medição` do `review.md` na finalização, para comparar phases e versões.
+- O plan vai ao redator que gravou a spec, continuado na mesma thread quando o host permite, com brief só do que mudou e do fatiamento.
 - A review julga o diff: o revisor lê do `plan.md` e do `AGENTS.md` só o que a review usa, abre arquivo fora do diff só para seguir um consumidor ou um teste citado, e usa a saída de lint, tipos e testes como prova do achado.
 
 ## Novidades da 6.0.0
