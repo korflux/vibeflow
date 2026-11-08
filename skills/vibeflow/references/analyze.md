@@ -5,6 +5,7 @@ Conferência independente do plan contra a spec e o código, antes do implement,
 ## Entrada
 
 - Gate: rota `high` ou `mvp`, `spec.md` aprovada e `plan.md` sem `## Achados do analyze`.
+- Obrigatório com `# Risco:` na spec (sempre no MVP) ou com plan acima de 8 passos. Nos demais, o analyze é dispensado: com `scripts/plan.mjs` sem achado no alvo (o campo `analyze` diz `dispensavel`), o líder grava a seção com a linha de dispensa de `references/disco.md` (Plan > Achados do analyze) e segue para o implement. Sem Node, ou com achado do `plan.mjs`, o analyze roda.
 - Contexto limpo: revisor em subagente. Sem subagentes ou com o revisor ausente, o líder grava o estado e instrui abrir chat novo com `/vibeflow analyze` (`references/retomada.md`, Modo B).
 
 Quem faz: o líder delega ao revisor o path do alvo, confere a seção gravada e o diff do plan e leva ao humano o achado que muda a spec; o revisor confere e corrige.

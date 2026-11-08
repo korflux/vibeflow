@@ -22,7 +22,7 @@ Quem faz: o explorador mapeia e sonda, o líder abre o núcleo e conduz as pergu
 
 ### 1. Explorar
 
-Antes da primeira pergunta, o explorador mapeia o que o pedido toca: fluxos, consumidores, comportamento atual, bordas e testes existentes, com path e evidência; no MVP sem código, o estado do repositório e o que já existe de stack, design system e infraestrutura. Cada ponto relevante vira linha de Pontos do projeto, com o que implica.
+Antes da primeira pergunta, o explorador mapeia o que o pedido toca: fluxos, consumidores, comportamento atual, bordas e testes existentes, com path e evidência; no MVP sem código, o estado do repositório e o que já existe de stack, design system e infraestrutura. Cada ponto relevante vira linha de Pontos do projeto, com o que implica. Registre ali, por fluxo, os arquivos, consumidores, testes afetados e o padrão a seguir: é o mapa que o plan reaproveita (`references/plan.md`, Mapa), para a mesma leitura não ser pedida duas vezes.
 
 Fato verificável (valor, limite de API, prazo, comportamento de biblioteca ou serviço, formato de dado) não é assumido nem perguntado: o explorador o sonda, só com leitura e consulta, e a evidência (comando ou fonte e resultado) entra em Pontos do projeto. Fato que só se prova implementando, ou que volta "não verificado", segue `references/spec.md` (Origem dos valores).
 

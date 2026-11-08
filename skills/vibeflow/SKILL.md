@@ -31,7 +31,7 @@ Declare o estado em cerca de cinco linhas:
 ```text
 rota: high · risco: pagamento · alvo: .vibeflow/phases/phase-3-agenda-online/
 artefatos: spec aprovado, plan com achados do analyze, review ausente
-progresso: 64% · etapa: implement · próximo: implementador no grupo 2 (2a, 2b)
+progresso: 64% · etapa: implement · próximo: implementador no trecho 2a a 3 (2a, 2b, 3)
 pendências: nenhuma
 ```
 
@@ -63,7 +63,7 @@ Em `/vibeflow <argumento>`, primeira palavra `init`, `interview`, `spec`, `plan`
 | spec | `spec.md` gravada pela interview |
 | plan | Spec aprovada |
 | analyze | `plan.md` presente |
-| implement | `high` e MVP: `## Achados do analyze` no `plan.md`. Low e medium: nenhum |
+| implement | `high` e MVP: `## Achados do analyze` no `plan.md`, do analyze ou da dispensa (`references/analyze.md`, Entrada). Low e medium: nenhum |
 | review | Todos os passos e checkpoints concluídos (`references/disco.md`, Estado da phase e Plan > Checkpoint); em medium, o commit `task(medium): ...` |
 
 Aprovação da spec: o humano leu e confirmou, ou pediu o plan ("pode ir pro plan", `/vibeflow plan`) com ela completa em `rascunho`; "ok" isolado não aprova. O líder marca `# Status: aprovado` e a aprovação humana com o texto dela.
@@ -78,7 +78,7 @@ Estado que o disco não sustenta, como caixa marcada sem commit, vai a diagnóst
 
 1. Leia `references/delegation.md` antes da primeira delegação e confira nas ferramentas do host os perfis que a situação exige (`references/delegation.md`, Papéis); perfil só no disco não conta. Depois do init que a seção 1 exige, perfil ausente ou não carregado leva ao Modo B, com aviso de uma linha e a sugestão de rodar `/vibeflow init` e recarregar o host, sem bloquear; sem init e sem redator, o init roda inline no Modo B.
 2. Delegue toda execução com pedido autocontido; leitura ampla vai ao explorador, salvo os itens do núcleo que o pedido toca, que você abre (`references/delegation.md`, Delegar e colaborar). "Esforço" sozinho nomeia a rota; o de raciocínio do despacho segue `references/delegation.md`.
-3. Faça direto só: marcações (`# Status:` que `references/disco.md` (Cabeçalho) dá ao líder, aprovação humana, caixas, `[x]` de R*, push adiado, `## Trabalho alheio` do `plan.md` pela declaração do humano (`references/disco.md`, Plan) e o que `references/review.md` e `references/ajuste.md` dão ao líder); índice Git, commits nos formatos de `references/disco.md` (Commits) e finalização confirmada; ajuste pontual de prosa já decidida, em cerca de 10 linhas de até dois arquivos sem dono no passo, nunca no `review.md` nem em `## Achados do analyze`. Código, teste, prova e outro texto são delegados.
+3. Faça direto só: marcações (`# Status:` que `references/disco.md` (Cabeçalho) dá ao líder, aprovação humana, caixas, `[x]` de R*, push adiado, `## Trabalho alheio` do `plan.md` pela declaração do humano (`references/disco.md`, Plan) e o que `references/review.md` e `references/ajuste.md` dão ao líder); índice Git, commits nos formatos de `references/disco.md` (Commits), salvo o commit do passo, que é do implementador, e finalização confirmada; ajuste pontual de prosa já decidida, em cerca de 10 linhas de até dois arquivos sem dono no passo, nunca no `review.md` nem em `## Achados do analyze`. Código, teste, prova e outro texto são delegados.
 4. Confira cada devolutiva que muda o estado (`references/delegation.md`, Conferência do líder): forma e direção, sem microgerência, que reabre código, teste ou prova que o relatório certifica, e sem distância, que aceita sem conferir. Correção técnica é do verificador e do revisor. Crítica volta ao dono com apontamento específico; prova vermelha, ao mesmo implementador; acerto reaproveita o analista como padrão. Nenhum cria artefato ou seção.
 5. Com o humano, uma pergunta por vez, com opções e recomendação; decisão que não muda o resultado, assuma e avise.
 
@@ -99,7 +99,7 @@ Informe os paths gravados e um resumo factual. Em commit, diga o hash, os paths 
 Informe em uma linha, calculado pelo disco com ferramenta e arredondado para baixo (campo `progresso` de `scripts/estado.mjs`):
 
 ```text
-progresso: 64% · etapa: implement · passos 3/6 · agora: grupo 2 (2a, 2b) com o implementador
+progresso: 64% · etapa: implement · passos 3/6 · agora: trecho 2a a 3 (2a, 2b, 3) com o implementador
 ```
 
 | Rota | Etapas, cada uma com parte igual |

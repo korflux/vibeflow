@@ -15,20 +15,21 @@ Um passo só é concluído com prova verde e commit real. Formatos de passo, che
 
 Ajuste de phase segue `references/ajuste.md`, e o Modo B, `references/retomada.md`.
 
-Quem faz: o implementador coda e prova (o redator, na prosa), o verificador confere o checkpoint, o revisor faz a review, e o líder confere, marca e commita.
+Quem faz: o implementador coda, prova e commita cada passo (o redator, na prosa, com o commit pelo líder), o verificador confere o checkpoint, o revisor faz a review, e o líder delega, confere, marca checkpoint e R* e faz os demais commits.
 
 ## Passos
 
-### 1. Executar o passo
+### 1. Executar o trecho
 
-1. Pegue o primeiro número com caixa aberta. Passo sozinho vai a um implementador; grupo paralelo (`2a`, `2b`) vai num único despacho, em chamadas paralelas, um implementador por passo, cada um com ownership exclusivo dos `Arquivos:` do seu passo.
-2. O implementador coda, escreve os testes e roda a `Prova:` do passo (`references/implementador.md`). Prova vermelha volta ao mesmo implementador, que tem o contexto, até ficar verde ou virar impedimento real.
-3. O líder lê o relatório e confere que os arquivos alterados batem com o `Arquivos:` do passo (`references/delegation.md`, Conferência do líder). Divergência volta ao implementador.
-4. Com o passo verde, ou com todos os passos do grupo verdes, o líder marca as caixas e faz um commit para o passo ou para o grupo, com o staging e a conferência de `references/disco.md` (Commits). Falha de commit mantém a caixa aberta.
+1. O trecho são os passos abertos do primeiro com caixa aberta até o próximo checkpoint ou o fim (`references/disco.md`, Glossário). Um implementador recebe o trecho inteiro num despacho, com o brief de cada passo (`references/delegation.md`, Pedido autocontido), e faz os passos em ordem, na mesma thread: o contexto do código lido num passo serve aos seguintes.
+2. Grupo paralelo (`2a`, `2b`) dentro do trecho: o implementador do trecho o faz em sequência, por padrão. Só quando os passos irmãos são grandes e independentes o líder os despacha em chamadas paralelas, um implementador por passo, cada um com ownership exclusivo dos `Arquivos:` do seu passo, e o trecho continua depois de todos verdes.
+3. Em cada passo, o implementador coda, escreve os testes, roda a `Prova:` e commita o passo com a caixa marcada (`references/implementador.md`, Commit do passo). Prova vermelha é corrigida por ele mesmo, até verde ou impedimento real. Impedimento, pergunta ou path fora do recorte param o trecho: os passos já commitados ficam, e o relatório diz onde parou.
+4. Passo de prosa no trecho vai ao redator, que não commita: o líder commita o passo dele e devolve o trecho ao implementador.
+5. Ao fim do trecho, o líder lê o relatório e confere cada commit do trecho contra os `Arquivos:` do passo do ID (`references/delegation.md`, Conferência do líder). Divergência volta ao implementador, que a corrige num commit do mesmo passo.
 
 ### 2. Checkpoint
 
-Com todos os passos anteriores a uma linha `Checkpoint:` marcados, o líder despacha um verificador de contexto limpo com brief que traz só o diff do grupo e os critérios listados; ele segue `references/verificador.md`. Falha volta ao dono do passo que a causou (implementador, ou redator no passo de prosa), e a correção entra no commit seguinte do grupo, no formato de passo; o checkpoint roda de novo sobre a correção. Verde em todos os critérios listados, com evidência, o líder marca a caixa conforme `references/disco.md` (Plan > Checkpoint); flake e achado fora do recorte seguem o Glossário dele. Phase sem checkpoint segue direto para a review.
+Com todos os passos anteriores a uma linha `Checkpoint:` marcados, o líder despacha um verificador de contexto limpo com brief que traz só o diff do grupo e os critérios listados; ele segue `references/verificador.md`. Falha volta ao dono do passo que a causou (implementador, ou redator no passo de prosa), e a correção entra num commit novo do mesmo passo, no formato de passo, feito pelo implementador ou, na prosa, pelo líder; o checkpoint roda de novo sobre a correção. Verde em todos os critérios listados, com evidência, o líder marca a caixa conforme `references/disco.md` (Plan > Checkpoint); flake e achado fora do recorte seguem o Glossário dele. Phase sem checkpoint segue direto para a review.
 
 O líder não move critério entre checkpoints nem marca checkpoint com evidência pendente. Critério mal atribuído no plan, listado num checkpoint anterior ao passo que o entrega, é corrigido no `plan.md` pelo redator, a pedido do líder, antes de o checkpoint rodar de novo.
 

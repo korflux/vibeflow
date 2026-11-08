@@ -8,7 +8,10 @@
 // última seção e placeholder de template esquecido na spec ou no plan. Também aplica os
 // limites de tamanho de Plan > Arquivos e Plan > Checkpoint: passo acima de 12 entradas de
 // código, mais de quatro checkpoints, motivo de checkpoint fora da tabela fechada e
-// checkpoint em plan de até 5 passos. Checkpoint sem motivo é aviso (campo `avisos`, sem
+// checkpoint em plan de até 5 passos são achado; o 3º e o 4º checkpoint e o checkpoint em
+// plan sem `# Risco:` de 6 a 8 passos são aviso, para que plan anterior à 6.0.0 siga
+// válido. O campo `analyze` diz se o analyze é obrigatório (`# Risco:` na spec ou mais
+// de 8 passos) ou dispensável (references/analyze.md, Entrada); com achado, ele roda. Checkpoint sem motivo é aviso (campo `avisos`, sem
 // efeito no código de saída), para que plan anterior à tabela de motivos siga com o mesmo
 // resultado. Os limites de references/disco.md (Tamanho) também são aviso, pelo mesmo
 // motivo: spec acima de 8 KiB, plan acima de 12 KiB, linha de passo acima de 400 caracteres
@@ -130,7 +133,11 @@ function criteriosDaSpec(linhasSpec) {
 
 // Limites de tamanho do plan (references/disco.md, Plan > Arquivos e Plan > Checkpoint).
 const TETO_CODIGO = 12;
+// Até 2 checkpoints por phase; o 3º e o 4º são aviso (plan anterior à 6.0.0) e o 5º é achado.
 const MAX_CHECKPOINTS = 4;
+const CHECKPOINTS_DA_PHASE = 2;
+// Phase sem `# Risco:` com até 8 passos não tem checkpoint e dispensa o analyze.
+const PASSOS_SEM_RISCO = 8;
 // Limites de references/disco.md (Tamanho), em bytes do arquivo e caracteres da linha.
 const LIMITE_SPEC = 8 * 1024;
 const LIMITE_PLAN = 12 * 1024;
@@ -174,12 +181,13 @@ function formaDoPasso(p, criterios) {
  * Checkpoints: linha depois de passo (nunca no início nem logo após outro checkpoint),
  * com critérios que existem na spec e que algum passo do trecho coberto entrega, e motivo da
  * tabela (`MOTIVOS`): fora da tabela é achado, sem motivo é aviso. Depois da forma, a
- * contagem: no máximo quatro checkpoints por phase e nenhum em plan de até 5 passos (passo
+ * contagem: o 5º checkpoint e o checkpoint em plan de até 5 passos são achado; o 3º e o 4º
+ * e o checkpoint em plan sem `# Risco:` (`risco` vazio) de 6 a 8 passos são aviso (passo
  * de grupo paralelo, como `2a` e `2b`, conta um a um). Se a condição do motivo vale (tela
  * depois do visual, segundo grupo de risco, integração acima de 10 passos) é julgamento do
  * analyze, não deste script. Devolve { achados, avisos }.
  */
-function formaDosCheckpoints(itens, criterios) {
+function formaDosCheckpoints(itens, criterios, risco) {
   const achados = [];
   const avisos = [];
   let trecho = [];
@@ -201,6 +209,8 @@ function formaDosCheckpoints(itens, criterios) {
   const checkpoints = itens.length - passos;
   if (checkpoints > MAX_CHECKPOINTS) achados.push(`${checkpoints} checkpoints; o máximo é ${MAX_CHECKPOINTS} por phase`);
   if (checkpoints && passos <= PASSOS_SEM_CHECKPOINT) achados.push(`checkpoint em plan de ${passos} ${passos === 1 ? 'passo' : 'passos'}; phase com até ${PASSOS_SEM_CHECKPOINT} passos não tem checkpoint`);
+  else if (checkpoints && !risco && passos <= PASSOS_SEM_RISCO) avisos.push(`checkpoint em plan sem # Risco: de ${passos} passos; phase sem risco com até ${PASSOS_SEM_RISCO} passos não tem checkpoint`);
+  if (checkpoints > CHECKPOINTS_DA_PHASE && checkpoints <= MAX_CHECKPOINTS) avisos.push(`${checkpoints} checkpoints; o limite é ${CHECKPOINTS_DA_PHASE} por phase (plan anterior à 6.0.0 segue válido)`);
   return { achados, avisos };
 }
 
@@ -365,7 +375,7 @@ export function conferirPlan(raiz, nomeAlvo = null) {
   achados.push(...linhasEstranhas(alvo.art.plan));
   achados.push(...achadosDoPlan(plan.passos));
   for (const p of plan.passos) achados.push(...formaDoPasso(p, criterios));
-  const cps = formaDosCheckpoints(plan.itens, criterios);
+  const cps = formaDosCheckpoints(plan.itens, criterios, alvo.risco);
   achados.push(...cps.achados);
 
   const cobertos = new Set(plan.passos.flatMap((p) => (p.aceite ? p.aceite.ids : [])));
@@ -382,7 +392,8 @@ export function conferirPlan(raiz, nomeAlvo = null) {
   achados.push(...placeholdersEsquecidos(alvo.art.spec, 'spec.md', 'spec.md'));
   achados.push(...placeholdersEsquecidos(alvo.art.plan, 'plan.md', 'plan.md'));
 
-  return { alvo: alvo.alvo, criterios, passos: plan.passos.length, checkpoints: plan.itens.length - plan.passos.length, achados,
+  const analyze = alvo.risco || alvo.alvo === 'mvp' || plan.passos.length > PASSOS_SEM_RISCO || achados.length ? 'obrigatorio' : 'dispensavel';
+  return { alvo: alvo.alvo, criterios, passos: plan.passos.length, checkpoints: plan.itens.length - plan.passos.length, analyze, achados,
     avisos: [...cps.avisos, ...avisosDeTamanho(alvo.pasta, 'spec', alvo.art.spec), ...avisosDeTamanho(alvo.pasta, 'plan', alvo.art.plan)] };
 }
 
@@ -403,7 +414,7 @@ function lerArgs(argv) {
 }
 
 function texto(r) {
-  const contagem = r.passos === undefined ? '' : ` · passos: ${r.passos} · checkpoints: ${r.checkpoints}`;
+  const contagem = r.passos === undefined ? '' : ` · passos: ${r.passos} · checkpoints: ${r.checkpoints} · analyze: ${r.analyze}`;
   const l = [`alvo: ${r.alvo} · critérios: ${r.criterios.join(', ') || 'nenhum'}${contagem}`];
   for (const a of r.achados) l.push(`achado: ${a}`);
   for (const a of r.avisos || []) l.push(`aviso: ${a}`);

@@ -6,7 +6,7 @@ Skill única `vibeflow`, com um coordenador-líder que conduz o trabalho de agen
 
 ## O que é
 
-O vibeflow é uma skill para quem programa com agentes (Grok Build, Claude Code, Codex, OpenCode, Pi, Antigravity e qualquer cliente que leia `SKILL.md`). Ela roda só quando você a chama. O líder conversa com você, entende o projeto, escolhe uma rota proporcional ao pedido, planeja e delega a execução a subagentes: redação de artefatos, código, testes e provas. O líder confere cada entrega, marca o progresso e faz os commits; código e teste ficam sempre com os subagentes. Analyze, checkpoints e review são feitos em contexto limpo. O pedido vira trilha no disco, não recap no chat.
+O vibeflow é uma skill para quem programa com agentes (Grok Build, Claude Code, Codex, OpenCode, Pi, Antigravity e qualquer cliente que leia `SKILL.md`). Ela roda só quando você a chama. O líder conversa com você, entende o projeto, escolhe uma rota proporcional ao pedido, planeja e delega a execução a subagentes: redação de artefatos, código, testes e provas. O líder confere cada entrega, marca o progresso e faz os commits, salvo o de cada passo, que o implementador faz ao entregá-lo; código e teste ficam sempre com os subagentes, e o push, sempre com o líder. Analyze, checkpoints e review são feitos em contexto limpo. O pedido vira trilha no disco, não recap no chat.
 
 O pacote é `SKILL.md`, referências por etapa, templates, perfis de subagente e scripts de leitura em Node (`estado`, `conferir`, `plan` e `governanca`), sem dependências. No repo do consumidor, o trabalho vive em disco:
 
@@ -74,7 +74,7 @@ A rota é proporcional ao pedido:
 |---|---|
 | `low` | implement direto, com prova proporcional, sem criar `.vibeflow/` |
 | `medium` | implement e review |
-| `high` | interview, spec, plan, analyze, implement com até quatro checkpoints e review |
+| `high` | interview, spec, plan, analyze (com `# Risco:` ou mais de 8 passos), implement com até dois checkpoints e review |
 
 Na `high`, a linha `# Risco:` marca mudanças que tocam autenticação, autorização, pagamento, segredo, perda de dados ou produção; ela não acrescenta etapa, mas aprofunda a interview, os checkpoints e a review. A aprovação da `spec.md` é a única antes do código: com ela, o líder segue até a review sem pedir outras aprovações. A tabela de rotas fica no `AGENTS.md` que a etapa `init` grava no projeto, a partir de [`skills/vibeflow/templates/AGENTS.md`](skills/vibeflow/templates/AGENTS.md).
 
@@ -88,10 +88,10 @@ Com Node 18 ou superior, a skill usa os scripts da pasta `scripts/`, sempre na r
 
 | Script | Quem roda e quando | O que confere |
 |---|---|---|
-| `estado.mjs [--alvo phase-N\|mvp] [--slug "<frase>"] [--linha]` | Líder, ao abrir e retomar | Alvo padrão, rota, risco, status dos artefatos, etapa atual, progresso, próximo passo ou grupo paralelo, R* abertos, push pendente, inconsistências e o path da próxima phase; `--slug` normaliza a frase do slug e `--linha` imprime só a linha de progresso |
+| `estado.mjs [--alvo phase-N\|mvp] [--slug "<frase>"] [--linha]` | Líder, ao abrir e retomar | Alvo padrão, rota, risco, status dos artefatos, etapa atual, progresso, próximo trecho de passos, R* abertos, push pendente, inconsistências e o path da próxima phase; `--slug` normaliza a frase do slug e `--linha` imprime só a linha de progresso |
 | `conferir.mjs --passo <IDs>` | Líder, ao receber um passo ou um R* | Alterações não commitadas fora dos `Arquivos:` do passo ou dos paths do R* (um ou mais entre crases, logo depois da severidade) |
-| `conferir.mjs --commit "<mensagem>"` | Líder, depois do staging e antes de cada commit | Formato da mensagem, ausência de `Co-Authored-By`, critérios de aceite no corpo do `task(medium): ...`, caixas e R* marcados no índice contra os IDs, paths em staging contra o recorte e `git diff --cached --check` |
-| `plan.mjs [--alvo phase-N\|mvp]` | Líder depois de gravar o plan; revisor no analyze | Forma dos passos e checkpoints, passo acima de 12 entradas de código, mais de quatro checkpoints, motivo de checkpoint fora da tabela ou checkpoint em plan de até 5 passos, critérios inexistentes ou sem passo, seções obrigatórias e placeholder de template esquecido |
+| `conferir.mjs --commit "<mensagem>"` | Implementador antes do commit de cada passo; líder antes dos demais commits | Formato da mensagem, ausência de `Co-Authored-By`, critérios de aceite no corpo do `task(medium): ...`, caixas e R* marcados no índice contra os IDs, paths em staging contra o recorte e `git diff --cached --check` |
+| `plan.mjs [--alvo phase-N\|mvp]` | Líder depois de gravar o plan; revisor no analyze | Forma dos passos e checkpoints, passo acima de 12 entradas de código, mais de quatro checkpoints (o 3º e o 4º como aviso), se o analyze é obrigatório ou dispensável, motivo de checkpoint fora da tabela ou checkpoint em plan de até 5 passos, critérios inexistentes ou sem passo, seções obrigatórias e placeholder de template esquecido |
 | `plan.mjs --spec [--alvo phase-N\|mvp]` | Líder antes de apresentar a spec para aprovação | Seções obrigatórias da spec, decisão sem pergunta ou motivo, critério repetido, adjetivo vago no critério, valor sem origem em Decisões e Critérios de aceite de spec em rascunho e placeholder esquecido |
 | `governanca.mjs` e `governanca.mjs --backup <original> <cópia>` | Líder no init | `AGENTS.md` e bloco da cadeia, ponte, `.gitkeep`, perfis globais contra a fonte, perfil `corretor` obsoleto, perfis de projeto customizados e, como aviso sem falha, `AGENTS.md` sem a seção `## Núcleo do projeto`; no modo `--backup`, tamanho e SHA-256 da cópia |
 
@@ -129,6 +129,16 @@ node "<pasta da skill>/scripts/conferir.mjs" --commit-arquivo "$1"
 ```
 
 Aprovar a review, publicar decisões vigentes e fazer push sempre exigem a sua confirmação.
+
+## Novidades da 6.0.0
+
+A 6.0.0 é uma versão major: muda quem commita o passo, a tabela de rotas e o limite de checkpoints. Artefatos existentes seguem válidos: plan com 3 ou 4 checkpoints só gera aviso, e o formato de commit é o mesmo. Rode `/vibeflow init` em cada projeto consumidor para receber o bloco `VIBEFLOW:CADEIA` novo do `AGENTS.md` e os perfis novos do implementador (o init mostra os perfis globais como diferentes da fonte e pede a sua decisão); depois, recarregue o host.
+
+- Um implementador recebe o trecho inteiro, os passos abertos até o próximo checkpoint ou o fim, e faz os passos em ordem na mesma thread, com um commit por passo: marca a caixa do passo, faz staging só dos `Arquivos:` dele, roda `conferir.mjs --commit` e commita. O líder confere os commits do trecho e continua dono dos demais commits e do push.
+- No máximo 2 checkpoints por phase. Phase sem `# Risco:` com até 8 passos não tem checkpoint; o E2E dela roda na regressão completa da review.
+- Analyze só com `# Risco:` na spec (sempre no MVP) ou com plan acima de 8 passos. Nos demais casos, com `plan.mjs` sem achado, o líder grava a dispensa em `## Achados do analyze`.
+- O plan reaproveita o mapa do explorador feito na interview; o explorador só volta para o critério que o mapa não confirma.
+- Tabela de rotas: `high` para pedido ambíguo, migration de schema, autenticação, autorização, pagamento, dado pessoal, segredo, risco de perda de dados, backend cujo fluxo tocado não tem testes ou tela nova sem design system. Backend e banco sem migration, com testes no fluxo tocado, ficam em `medium`.
 
 ## Novidades da 5.7.0
 

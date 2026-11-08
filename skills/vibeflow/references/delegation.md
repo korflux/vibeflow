@@ -18,7 +18,7 @@ Use perfis realmente disponíveis; o modelo vem do perfil instalado, e o líder 
 | Papel | Despacho |
 |---|---|
 | explorador | Leitura ampla, sondagem de fato, diagnóstico de estado e proposta do núcleo no init |
-| implementador | Passo de código, entrega low ou medium e correção de código |
+| implementador | Trecho de passos de código, com o commit de cada passo; entrega low ou medium e correção de código |
 | redator | Spec, plan, governança do init, texto avulso, passo de prosa e R* de prosa |
 | verificador | Checkpoint, com contexto limpo |
 | revisor | Analyze e review, com contexto limpo |
@@ -35,14 +35,14 @@ Escrita paralela de código só ocorre em grupo paralelo, com ownership exclusiv
 
 ### Conferência do líder
 
-Antes de aceitar devolutiva que muda o estado da phase, confira forma e direção: a entrega é o que o humano pediu e o plan prevê. Consuma resultado, cobertura, exceções e próximo responsável, sem repetir prova. O `git diff --stat` é checagem de forma, paths contra `Arquivos:`, não reexame do conteúdo; com Node, `scripts/conferir.mjs --passo <IDs>` faz essa comparação para passos e R*, e path fora do recorte volta ao dono.
+Antes de aceitar devolutiva que muda o estado da phase, confira forma e direção: a entrega é o que o humano pediu e o plan prevê. Consuma resultado, cobertura, exceções e próximo responsável, sem repetir prova. O `git diff --stat` e o `git log --stat` são checagem de forma, paths contra `Arquivos:`, não reexame do conteúdo; com Node, `scripts/conferir.mjs --passo <IDs>` faz essa comparação para alteração não commitada de passos e R*, o `--commit` que o implementador roda antes de cada commit a faz para o staging, e path fora do recorte volta ao dono.
 
 Entrega que toca o núcleo do projeto: antes de conferir, abra o item do núcleo daquela área e compare com ele a evidência anexada (capturas, resposta da API, texto renderizado). Divergência volta ao dono com o item, o trecho da evidência e o que diverge.
 
 | Entrega | Leia | Confronte com |
 |---|---|---|
 | Prosa de spec, plan, init ou texto avulso | O arquivo gravado | As decisões e respostas do humano do brief: cada uma presente e nada além delas; não reescreva o artefato |
-| Passo ou grupo paralelo | O relatório fixo e o `git diff --stat`; um trecho do diff só quando o relatório citar algo estranho | Os `Arquivos:` de cada passo: nenhum path fora do recorte; o campo `prova` verde, com a saída da execução vermelha anterior do teste do critério ou o motivo da isenção (`references/testes.md`, Política de testes), e o gate estático rodado quando o projeto o declara (`references/implementador.md`, Codar e provar) |
+| Trecho de passos | O relatório fixo e `git log --stat` dos commits do trecho; um trecho do diff só quando o relatório citar algo estranho | Cada commit `task(<alvo>:<id>)` contra os `Arquivos:` do passo do ID, com a caixa dele marcada no mesmo commit: nenhum path fora do recorte; o campo `prova` verde, com a saída da execução vermelha anterior do teste do critério ou o motivo da isenção (`references/testes.md`, Política de testes), e o gate estático rodado quando o projeto o declara (`references/implementador.md`, Codar e provar) |
 | Checkpoint | O relatório fixo do verificador | Os critérios listados na linha do checkpoint, todos verdes com evidência; falha ou evidência pendente segue `references/implement.md` (Checkpoint) |
 | Aceite visual | As imagens finais citadas no campo `prova` de quem captura (`references/chrome-devtools.md`, Captura e reaproveitamento): em `high` e `mvp`, o relatório do verificador ou do revisor; em low e medium, o do implementador; uma por critério com tela | O aceite visual da spec ou do brief; falta de imagem final de critério com tela reprova; iterações intermediárias não são exigidas |
 | API ou CLI | A evidência anexada: chamada real com resposta ou saída de comando | O critério do plan ou do brief; evidência ausente reprova |
@@ -56,7 +56,7 @@ Conferência aprovada aparece só na linha de progresso (`SKILL.md`, seção 9);
 
 ## Pedido autocontido
 
-Inclua etapa, resultado, passo ou R*, critérios de aceite, prova, inputs conhecidos, paths exclusivos, interlocutores, pendências de origem e o relatório fixo (`references/relatorio.md`). Ao implementador, inclua também a linha do passo copiada do plan, o texto de cada critério do `Aceite:` copiado da spec, o detalhe técnico que não cabe na linha (padrão a seguir, linha de referência, ressalva), o mapa do explorador para o recorte (consumidores, testes afetados e padrão a seguir) e os itens de `## Núcleo do projeto` que ele abre; assim ele não abre o plan nem a spec inteiros (`references/implementador.md`, Proibido no passo). Ao verificador, entregue só o diff do grupo e os critérios do checkpoint. Ao redator de spec ou plan, entregue o path do alvo, a rota, o risco, as decisões e respostas do humano e o template; ao de plan, também `references/testes.md`. Informe que há outros agentes e que o destinatário preserva trabalho alheio. Não copie o plan inteiro nem logs: dê referências e o recorte suficiente.
+Inclua etapa, resultado, passo ou R*, critérios de aceite, prova, inputs conhecidos, paths exclusivos, interlocutores, pendências de origem e o relatório fixo (`references/relatorio.md`). Ao implementador, entregue o trecho inteiro e, por passo, a linha do passo copiada do plan, o texto de cada critério do `Aceite:` copiado da spec, o detalhe técnico que não cabe na linha (padrão a seguir, linha de referência, ressalva), o mapa do explorador para o recorte (consumidores, testes afetados e padrão a seguir) e os itens de `## Núcleo do projeto` que ele abre; assim ele não abre o plan nem a spec inteiros (`references/implementador.md`, Proibido no passo). Ao verificador, entregue só o diff do grupo e os critérios do checkpoint. Ao redator de spec ou plan, entregue o path do alvo, a rota, o risco, as decisões e respostas do humano e o template; ao de plan, também `references/testes.md`. Informe que há outros agentes e que o destinatário preserva trabalho alheio. Não copie o plan inteiro nem logs: dê referências e o recorte suficiente.
 
 Regra de instalação, para todo papel: instale ferramenta ausente necessária à prova pelo gerenciador do projeto ou por fonte oficial, quando o ambiente e as permissões permitirem, sem alterar manifesto nem lockfile fora do recorte. Credencial, criação de conta, pagamento, elevação administrativa ou configuração persistente de integração (por exemplo, registrar um MCP) é impedimento real e vai ao humano.
 
@@ -76,9 +76,9 @@ O que cada nível testa, inclusive onde roda o E2E, segue `references/testes.md`
 
 ## Ownership e proibições
 
-O líder tem ownership exclusivo do que o `SKILL.md` (seção 5, item 3) lhe dá, inclusive índice Git e marcações; o revisor, do `review.md` e de `## Achados do analyze`; o dono de cada passo, dos `Arquivos:` dele. Nunca altere perfis instalados para contornar proibição.
+O líder tem ownership exclusivo do que o `SKILL.md` (seção 5, item 3) lhe dá, inclusive índice Git e marcações, salvo a caixa e o commit do passo, que são do implementador; o revisor, do `review.md` e de `## Achados do analyze`; o dono de cada passo, dos `Arquivos:` dele. Nunca altere perfis instalados para contornar proibição.
 
-Só o líder faz staging, commit, push ou outra operação que altere o índice ou o histórico Git.
+Só o líder faz staging, commit ou outra operação que altere o índice ou o histórico Git, salvo o commit do passo, que é do implementador (`references/implementador.md`, Commit do passo). Push é só do líder.
 
 Todos, inclusive o líder, proíbem:
 

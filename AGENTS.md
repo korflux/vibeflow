@@ -8,8 +8,8 @@ A cadeia da skill `vibeflow` vale só quando o humano a chama com `/vibeflow` (`
 | esforço | etapas | quando |
 |---|---|---|
 | low | implement, sem init, `.vibeflow/`, phase nem artefato | mudança clara e localizada de código de software sem comportamento novo, como cor, texto ou layout de página estática |
-| medium | implement → review | pedido claro e direto, com comportamento novo pequeno, sem banco nem risco de regressão de backend, ou página visual cujo aceite dependa de validação renderizada |
-| high | interview → spec → plan → analyze → implement com até quatro checkpoints → review | pedido ambíguo ou de execução difícil, mudança que altera banco ou painel admin, risco de regressão de backend, ou tela que o design system e as telas existentes não cobrem |
+| medium | implement → review | pedido claro e direto, com comportamento novo pequeno ou médio, inclusive em backend e banco sem migration de schema quando o fluxo tocado tem testes, ou página visual cujo aceite dependa de validação renderizada |
+| high | interview → spec → plan → analyze, com `# Risco:` ou mais de 8 passos → implement com até dois checkpoints → review | pedido ambíguo, migration de schema, autenticação, autorização, pagamento, dado pessoal, segredo ou risco de perda de dados, backend cujo fluxo tocado não tem testes, ou tela que o design system e as telas existentes não cobrem |
 
 Saem do low, seguindo a rota aplicável: comportamento, rota, interação, critério de aceite ou acessibilidade alterados, e mudanças que toquem privacidade, dado pessoal, consentimento, retenção, direitos, obrigação jurídica, autenticação, autorização, pagamento, segredo, persistência ou risco de perda de dados.
 <!-- VIBEFLOW:CADEIA end -->
@@ -49,7 +49,7 @@ Sem banco, migration nem tráfego de usuário: mudança aqui altera contrato de 
 - **Major:** quebra contrato (path ou nome de artefato, linha de cabeçalho como `# Status:` ou `# Rota:`, comportamento do líder que o humano já usa).
 - **Minor:** adiciona sem quebrar (nova seção opcional no artefato, nova referência de etapa).
 - **Patch:** correção sem mudança de contrato.
-- Versão atual: 5.7.0 (limites de tamanho de AGENTS.md, spec, plan e linha de passo; pasta da phase só com os três artefatos; relatório fixo em arquivo próprio; prova do passo sem suíte inteira, E2E nem espera; um assunto por phase).
+- Versão atual: 6.0.0 (implementador por trecho com commit por passo; até dois checkpoints; analyze só com risco ou acima de 8 passos; mapa da interview reaproveitado no plan; tabela de rotas com high só por risco concreto).
 
 ## Git
 

@@ -4,8 +4,9 @@
 // critérios da spec (references/analyze/coverage.md): forma do passo e do checkpoint,
 // critérios inexistentes ou sem passo, seções obrigatórias e placeholder de template
 // esquecido, além dos limites de tamanho do plan (teto de 12 entradas de código por passo,
-// no máximo quatro checkpoints, cada um com motivo da tabela fechada de disco.md, e nenhum em
-// plan de até 5 passos; checkpoint sem motivo é aviso, não achado) e os avisos de
+// 2 checkpoints por phase, com o 3º e o 4º como aviso e o 5º como achado, cada um com motivo
+// da tabela fechada de disco.md, nenhum em plan de até 5 passos e aviso em plan sem # Risco:
+// de 6 a 8 passos; checkpoint sem motivo é aviso, não achado), o campo analyze e os avisos de
 // references/disco.md (Tamanho): spec, plan, linha de passo e `Nota:`. Com --spec, confere a forma
 // da spec em rascunho, inclusive o valor sem origem em Decisões e Critérios de aceite.
 // Rodar com: node --test
@@ -28,9 +29,11 @@ const arquivosDe = (codigo, testes = 0) => [
 /** Passos de `de` a `ate`, sem critério, para o plan ter o tamanho que o teste precisa. */
 const semAceite = (de, ate) => Array.from({ length: ate - de + 1 }, (_, i) => passo(String(de + i), { aceite: 'nenhum' }));
 
-function fase(t, linhas, { criterios = ['A1'], planTexto, extraSpec } = {}) {
+function fase(t, linhas, { criterios = ['A1'], planTexto, extraSpec, risco = false } = {}) {
   const raiz = repo(t);
-  escrever(raiz, `${PH}/spec.md`, specCom(criterios, extraSpec));
+  // risco: a spec ganha `# Risco:` logo depois de `# Rota:` (references/disco.md, Cabeçalho).
+  const textoSpec = specCom(criterios, extraSpec);
+  escrever(raiz, `${PH}/spec.md`, risco ? textoSpec.replace('# Rota: high\n', '# Rota: high\n# Risco: pagamento\n') : textoSpec);
   escrever(raiz, `${PH}/plan.md`, planTexto ?? plan(linhas));
   return raiz;
 }
@@ -321,13 +324,17 @@ const planDeDez = (motivos) => {
 const CRITERIOS_DE_DEZ = { criterios: ['A1', 'A2', 'A3', 'A4', 'A5'] };
 const TABELA = 'caminho fino, primeiro grupo de risco, segundo grupo de risco, tela, integração';
 
-test('até 4 checkpoints, cada um com motivo da tabela, são aceitos (A1)', (t) => {
-  const r = conferirPlan(fase(t, planDeDez(['caminho fino', 'segundo grupo de risco', 'tela', 'integração']), CRITERIOS_DE_DEZ));
-  assert.deepEqual([r.achados, r.avisos], [[], []]);
-  assert.deepEqual([r.passos, r.checkpoints], [10, 4]);
+test('2 checkpoints com motivo da tabela são aceitos; o 3º e o 4º são aviso, sem achado (A1)', (t) => {
+  const dois = conferirPlan(fase(t, planDeDez(['caminho fino', 'tela']), CRITERIOS_DE_DEZ));
+  assert.deepEqual([dois.achados, dois.avisos], [[], []]);
+  assert.deepEqual([dois.passos, dois.checkpoints], [10, 2]);
+  const quatro = conferirPlan(fase(t, planDeDez(['caminho fino', 'segundo grupo de risco', 'tela', 'integração']), CRITERIOS_DE_DEZ));
+  assert.deepEqual(quatro.achados, []);
+  assert.deepEqual(quatro.avisos, ['4 checkpoints; o limite é 2 por phase (plan anterior à 6.0.0 segue válido)']);
   // O primeiro grupo de risco é o outro nome do primeiro motivo da tabela; maiúscula e acento não importam.
   const outro = conferirPlan(fase(t, planDeDez(['Primeiro grupo de risco', 'TELA', 'Integracao']), CRITERIOS_DE_DEZ));
-  assert.deepEqual([outro.achados, outro.avisos], [[], []]);
+  assert.deepEqual(outro.achados, []);
+  assert.deepEqual(outro.avisos, ['3 checkpoints; o limite é 2 por phase (plan anterior à 6.0.0 segue válido)']);
 });
 
 test('o 5º checkpoint é achado, mesmo com motivo da tabela (A1)', (t) => {
@@ -358,8 +365,28 @@ test('checkpoint sem motivo é aviso e não muda o código de saída (A1, A5)', 
 
 test('A<n> no texto do motivo não entra no aceite do checkpoint (A1)', (t) => {
   // O trecho coberto entrega só A1; se o A2 do motivo fosse lido como critério, o checkpoint o acusaria.
-  const r = conferirPlan(fase(t, [passo('1', { aceite: 'A1' }), checkpoint('A1', false, 'caminho fino, A2 vem depois'), passo('2', { aceite: 'A2' }), ...semAceite(3, 6)], { criterios: ['A1', 'A2'] }));
+  // Nove passos, para o checkpoint não cair no aviso de phase sem # Risco: de até 8 passos.
+  const r = conferirPlan(fase(t, [passo('1', { aceite: 'A1' }), checkpoint('A1', false, 'caminho fino, A2 vem depois'), passo('2', { aceite: 'A2' }), ...semAceite(3, 9)], { criterios: ['A1', 'A2'] }));
   assert.deepEqual([r.achados, r.avisos], [[], []]);
+});
+
+test('checkpoint em phase sem # Risco: de 6 a 8 passos é aviso; com # Risco: ou com 9 passos não', (t) => {
+  const oito = [passo('1', { aceite: 'A1' }), checkpoint('A1', false, 'caminho fino'), ...semAceite(2, 8)];
+  const r = conferirPlan(fase(t, oito));
+  assert.deepEqual(r.achados, []);
+  assert.deepEqual(r.avisos, ['checkpoint em plan sem # Risco: de 8 passos; phase sem risco com até 8 passos não tem checkpoint']);
+  assert.deepEqual(conferirPlan(fase(t, oito, { risco: true })).avisos, []);
+  const nove = conferirPlan(fase(t, [passo('1', { aceite: 'A1' }), checkpoint('A1', false, 'caminho fino'), ...semAceite(2, 9)]));
+  assert.deepEqual(nove.avisos, []);
+});
+
+test('analyze: dispensável sem # Risco: e com até 8 passos sem achado; obrigatório com risco, acima de 8 passos ou com achado', (t) => {
+  assert.equal(conferirPlan(fase(t, [passo('1', { aceite: 'A1' }), ...semAceite(2, 8)])).analyze, 'dispensavel');
+  assert.equal(conferirPlan(fase(t, [passo('1', { aceite: 'A1' }), ...semAceite(2, 9)])).analyze, 'obrigatorio');
+  assert.equal(conferirPlan(fase(t, [passo('1', { aceite: 'A1' })], { risco: true })).analyze, 'obrigatorio');
+  assert.equal(conferirPlan(fase(t, [passo('1', { aceite: 'A9' })])).analyze, 'obrigatorio');
+  const texto = cli('plan.mjs', ['--raiz', fase(t, [passo('1', { aceite: 'A1' })])]);
+  assert.match(texto.out, / · analyze: dispensavel$/m);
 });
 
 test('checkpoint em plan de até 5 passos é achado; com 6 passos não (A7)', (t) => {

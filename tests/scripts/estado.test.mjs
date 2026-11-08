@@ -67,11 +67,12 @@ test('plan sem Achados do analyze: analyze pelo revisor, sem aprovação do plan
   assert.deepEqual(r.artefatos, { spec: 'aprovado', plan: 'sem analyze' });
 });
 
-test('plan com Achados do analyze: o analyze conta e o primeiro passo é o próximo', (t) => {
+test('plan com Achados do analyze: o analyze conta e o trecho começa no primeiro passo', (t) => {
   const r = estado(fase(t, [passo('1'), passo('2')]));
   assert.equal(r.etapa.etapa, 'implement');
-  assert.equal(r.etapa.situacao, 'implementar o passo 1');
-  assert.deepEqual(r.etapa.passos, ['1']);
+  assert.equal(r.etapa.situacao, 'implementar o trecho 1 a 2 (1, 2)');
+  assert.deepEqual(r.etapa.passos, ['1', '2']);
+  assert.equal(r.etapa.proximo, 'Líder delega o trecho a um implementador');
   assert.equal(r.progresso.percentual, 60); // spec, plan e analyze
   assert.equal(r.artefatos.plan, 'analisado');
 });
@@ -83,35 +84,44 @@ test('plan analisado sem nenhum passo reconhecido: indeterminado', (t) => {
 });
 
 // ---------------------------------------------------------------------------
-// Implement: passo, grupo paralelo, checkpoint e progresso
+// Implement: trecho, grupo paralelo, checkpoint e progresso
 // ---------------------------------------------------------------------------
 
-test('passo pendente: próximo é o primeiro número com caixa aberta e o progresso usa a fração de passos', (t) => {
+test('passo pendente: o trecho vai do primeiro passo aberto ao fim e o progresso usa a fração de passos', (t) => {
   const raiz = fase(t, [passo('1', { caixa: true }), passo('2'), passo('3')], { commits: ['task(phase-1:1): entrega 1'] });
   const r = estado(raiz);
-  assert.equal(r.etapa.situacao, 'implementar o passo 2');
-  assert.deepEqual(r.etapa.passos, ['2']);
+  assert.equal(r.etapa.situacao, 'implementar o trecho 2 a 3 (2, 3)');
+  assert.deepEqual(r.etapa.passos, ['2', '3']);
   assert.equal(r.progresso.passos, '1/3');
   assert.equal(r.progresso.percentual, 66); // (3 + 3 + 3 + 1) / 15
   assert.deepEqual(r.inconsistencias, []);
 });
 
-test('grupo paralelo: o próximo é o grupo inteiro, com os passos abertos', (t) => {
+test('grupo paralelo dentro do trecho: entra inteiro, com os passos seguintes', (t) => {
   const raiz = fase(t, [passo('1', { caixa: true }), passo('2a'), passo('2b'), passo('3')], { commits: ['task(phase-1:1): entrega 1'] });
   const r = estado(raiz);
-  assert.equal(r.etapa.situacao, 'implementar o grupo paralelo 2 (2a, 2b)');
-  assert.deepEqual(r.etapa.passos, ['2a', '2b']);
+  assert.equal(r.etapa.situacao, 'implementar o trecho 2a a 3 (2a, 2b, 3)');
+  assert.deepEqual(r.etapa.passos, ['2a', '2b', '3']);
   assert.equal(r.progresso.percentual, 65); // (4 + 4 + 4 + 1) / 20
 });
 
-test('grupo paralelo parcial: só o passo ainda aberto', (t) => {
+test('grupo paralelo parcial: o trecho leva só os passos ainda abertos', (t) => {
   const raiz = fase(t, [passo('1', { caixa: true }), passo('2a', { caixa: true }), passo('2b'), passo('3')], {
     commits: ['task(phase-1:1): a', 'task(phase-1:2a): b'],
   });
   const r = estado(raiz);
-  assert.equal(r.etapa.situacao, 'implementar o grupo paralelo 2 (2b)');
-  assert.deepEqual(r.etapa.passos, ['2b']);
+  assert.equal(r.etapa.situacao, 'implementar o trecho 2b a 3 (2b, 3)');
+  assert.deepEqual(r.etapa.passos, ['2b', '3']);
   assert.deepEqual(r.inconsistencias, []);
+});
+
+test('o trecho para no próximo checkpoint; passo único é passo, não trecho', (t) => {
+  const r = estado(fase(t, [passo('1'), passo('2'), checkpoint('A1', false, 'caminho fino'), passo('3')]));
+  assert.equal(r.etapa.situacao, 'implementar o trecho 1 a 2 (1, 2)');
+  assert.deepEqual(r.etapa.passos, ['1', '2']);
+  const so = estado(fase(t, [passo('1', { caixa: true }), passo('2'), checkpoint('A1', false, 'caminho fino'), passo('3')], { commits: ['task(phase-1:1): a'] }));
+  assert.equal(so.etapa.situacao, 'implementar o passo 2');
+  assert.deepEqual(so.etapa.passos, ['2']);
 });
 
 test('checkpoint pendente: verificador de contexto limpo, com os passos e critérios cobertos', (t) => {
@@ -543,7 +553,7 @@ test('CRLF e BOM nos artefatos não mudam a etapa nem o progresso', (t) => {
   commit(raiz, 'task(phase-1:1): entrega');
   const r = estado(raiz);
   assert.equal(r.alvo.rota, 'high');
-  assert.equal(r.etapa.situacao, 'implementar o grupo paralelo 2 (2a, 2b)');
+  assert.equal(r.etapa.situacao, 'implementar o trecho 2a a 2b (2a, 2b)');
   assert.equal(r.progresso.percentual, 66); // (3 + 3 + 3 + 1) / 15
   assert.deepEqual(r.inconsistencias, []);
 });
@@ -562,11 +572,11 @@ test('CLI: códigos 0, 1 e 2 e --json só com ASCII', (t) => {
   assert.equal(cli('estado.mjs', ['--raiz', raiz]).codigo, 1);
 });
 
-test('CLI: texto com o próximo grupo paralelo e a fração de passos', (t) => {
+test('CLI: texto com o próximo trecho e a fração de passos', (t) => {
   const raiz = fase(t, [passo('1', { caixa: true }), passo('2a'), passo('2b')], { commits: ['task(phase-1:1): entrega'] });
   const { codigo, out } = cli('estado.mjs', ['--raiz', raiz]);
   assert.equal(codigo, 0);
-  assert.match(out, /progresso: 66% · etapa: implement, implementar o grupo paralelo 2 \(2a, 2b\) · passos 1\/3 marcados/);
+  assert.match(out, /progresso: 66% · etapa: implement, implementar o trecho 2a a 2b \(2a, 2b\) · passos 1\/3 marcados/);
   assert.match(out, /^passos: 2a, 2b$/m);
 });
 
@@ -585,7 +595,7 @@ test('--slug normaliza a frase no path da próxima phase; frase sem slug válido
 test('--linha imprime uma linha de progresso, e nada fora de um repo com .vibeflow/', (t) => {
   const raiz = fase(t, [passo('1'), passo('2')]);
   const r = cli('estado.mjs', ['--raiz', raiz, '--linha']);
-  assert.equal(r.out, 'vibeflow · phase-1 · 60% · etapa: implement · próximo: Líder delega ao implementador\n');
+  assert.equal(r.out, 'vibeflow · phase-1 · 60% · etapa: implement · próximo: Líder delega o trecho a um implementador\n');
   const vazio = repo(t);
   rmSync(join(vazio, '.vibeflow'), { recursive: true, force: true });
   assert.equal(cli('estado.mjs', ['--raiz', vazio, '--linha']).out, '');

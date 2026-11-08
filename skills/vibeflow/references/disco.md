@@ -87,7 +87,7 @@ Uma linha física por passo, com os campos nesta ordem, separados por ` · `:
 - `Aceite:` lista os critérios de aceite da spec que o passo entrega, ou `nenhum`.
 - `Prova:` é o comando ou a checagem que o implementador roda no passo; o que entra nela segue `references/plan.md` (Prova do passo).
 - A linha tem só esses campos. Detalhe técnico (padrão a seguir, linha de referência, ressalva) vai no brief do despacho, nunca num campo `Nota:` nem num arquivo da pasta.
-- Estado: só a caixa, marcada `- [x]` pelo líder no commit do passo, sem `Estado:`, `Resumo:` nem IDs `T*`.
+- Estado: só a caixa, marcada `- [x]` pelo implementador no commit do passo (Commits), sem `Estado:`, `Resumo:` nem IDs `T*`.
 - Um grupo começa quando todos os passos e checkpoints anteriores a ele estão marcados.
 
 ### Arquivos
@@ -107,7 +107,7 @@ Uma linha física por passo, com os campos nesta ordem, separados por ` · `:
 - Linha própria, logo depois do último passo do grupo que fecha os critérios listados. Cobre os passos entre o checkpoint anterior, ou o início do checklist, e ela.
 - O motivo vem depois dos critérios, em ` · Motivo:`, e começa por um nome da tabela abaixo; o que vier depois dele é explicação livre. O aceite do checkpoint são os `A<n>` antes do motivo, e um `A<n>` no texto do motivo não é critério. Plan anterior a esta tabela, sem motivo, segue válido: `scripts/plan.mjs` só avisa; plan novo grava o motivo.
 - O líder marca a caixa quando o verificador devolve verde; a marcação entra no commit seguinte da phase, sem commit próprio. Checkpoint concluído é o de caixa marcada com a marcação já commitada.
-- Checkpoint só por um motivo desta tabela fechada, no máximo 4 por phase, cada um citando o motivo. Phase com até 5 passos não tem checkpoint. `scripts/plan.mjs` acusa o 5º checkpoint, o motivo fora da tabela e o checkpoint em phase de até 5 passos; se a condição do motivo vale é julgamento do analyze (`references/analyze/coverage.md`, Checkpoint fora da regra).
+- Checkpoint só por um motivo desta tabela fechada, no máximo 2 por phase, cada um citando o motivo. Phase com até 5 passos não tem checkpoint, nem phase sem `# Risco:` com até 8 passos. `scripts/plan.mjs` acusa o 5º checkpoint, o motivo fora da tabela e o checkpoint em phase de até 5 passos, e avisa o 3º e o 4º checkpoint e o checkpoint em phase sem `# Risco:` de 6 a 8 passos: aviso, para que plan gravado antes da 6.0.0 siga válido; plan novo segue o limite. Se a condição do motivo vale é julgamento do analyze (`references/analyze/coverage.md`, Checkpoint fora da regra).
 
 | Motivo | Quando cabe e onde fica |
 |---|---|
@@ -143,15 +143,15 @@ Seção `## Achados do analyze`, a última do `plan.md`, gravada pelo analyze ao
 |---|---|---|
 ```
 
-Sem achado, a seção traz a linha `Nenhum achado.`; a presença dela indica que o analyze rodou. Achado que muda decisão do humano na spec não é gravado: o analyze para, o líder pergunta, e a seção só nasce na rodada que conclui.
+Sem achado, a seção traz a linha `Nenhum achado.`; a presença dela indica que o analyze rodou ou foi dispensado. Analyze dispensado (`references/analyze.md`, Entrada): a seção traz só a linha `Analyze dispensado: sem # Risco: e com até 8 passos.`, gravada pelo líder depois de `scripts/plan.mjs` sem achado. Achado que muda decisão do humano na spec não é gravado: o analyze para, o líder pergunta, e a seção só nasce na rodada que conclui.
 
 ## Commits
 
-Única casa dos formatos de mensagem e da regra de staging. `<alvo>` é `phase-<n>` ou `mvp`. O líder faz todos os commits: staging explícito só dos paths conferidos, com trabalho alheio fora (Plan > Trabalho alheio), e `git diff --cached --check` limpo antes de commitar. O commit fica local; push só na finalização da review (`references/review.md`, Finalizar).
+Única casa dos formatos de mensagem e da regra de staging. `<alvo>` é `phase-<n>` ou `mvp`. O implementador commita cada passo que entrega, inclusive a correção devolvida pelo checkpoint, com a caixa do passo marcada no `plan.md` no mesmo commit (`references/implementador.md`, Commit do passo); o líder faz os demais commits. Quem commita faz staging explícito só dos paths do recorte, com trabalho alheio fora (Plan > Trabalho alheio), e `git diff --cached --check` limpo antes de commitar. O commit fica local; push só o líder, na finalização da review (`references/review.md`, Finalizar).
 
 | Commit | Mensagem |
 |---|---|
-| Passo ou grupo paralelo, inclusive correção devolvida pelo checkpoint | `task(<alvo>:2a,2b): <resultado>`, IDs na ordem do plan |
+| Passo, inclusive correção devolvida pelo checkpoint; grupo paralelo entregue junto | `task(<alvo>:2a): <resultado>` ou `task(<alvo>:2a,2b): <resultado>`, IDs na ordem do plan |
 | Correção de R* | `task(<alvo>:R1,R2): <resultado>` |
 | Entrega medium, antes de a phase existir | `task(medium): <resultado>` |
 | Entrega low, sem phase | `task(low): <resultado>` |
@@ -163,7 +163,7 @@ O commit `task(medium): ...` leva no corpo, depois de uma linha em branco, os cr
 
 Os commits de uma phase são os que levam o seu `<alvo>` e, no medium, o `task(medium): ...` que o `review.md` registra como base. ID de passo ou de R* só vale no commit do mesmo `<alvo>`. Nenhuma mensagem leva `Co-Authored-By`.
 
-Com Node, depois do staging e antes de cada commit, o líder roda `scripts/conferir.mjs --commit "<mensagem>"`, que confere a mensagem, os critérios no corpo do `task(medium): ...`, caixas e R* marcados no índice contra os IDs, paths em staging contra o recorte e o `git diff --cached --check`. Achado se resolve no staging, na marcação ou na mensagem antes do commit; aviso indica conferência indisponível pelo disco e segue pelo relatório.
+Com Node, depois do staging e antes de cada commit, quem commita roda `scripts/conferir.mjs --commit "<mensagem>"`, que confere a mensagem, os critérios no corpo do `task(medium): ...`, caixas e R* marcados no índice contra os IDs, paths em staging contra o recorte e o `git diff --cached --check`. Achado se resolve no staging, na marcação ou na mensagem antes do commit; aviso indica conferência indisponível pelo disco e segue pelo relatório.
 
 ## Estado da phase
 
@@ -187,9 +187,9 @@ Leia a etapa atual na primeira linha da tabela que se aplica. As linhas de spec 
 | `spec.md` em `rascunho` | spec, aguardando ajuste ou aprovação | Líder apresenta ao humano |
 | `spec.md` aprovada e `plan.md` ausente | plan | Líder define; redator grava |
 | `plan.md` sem `## Achados do analyze` | analyze | Revisor de contexto limpo |
-| Código não commitado nos `Arquivos:` de passos abertos | implement, retomar o passo | Implementador conclui a prova; líder confere e commita; código válido não é refeito |
+| Código não commitado nos `Arquivos:` de passos abertos | implement, retomar o passo | Implementador conclui a prova e commita o passo; código válido não é refeito |
 | Checkpoint aberto com todos os passos anteriores marcados | implement, checkpoint | Verificador de contexto limpo |
-| Passo aberto | implement, primeiro número com caixa aberta (passo ou grupo paralelo) | Líder delega ao implementador |
+| Passo aberto | implement, trecho do primeiro passo aberto até o próximo checkpoint ou o fim | Líder delega o trecho a um implementador |
 | Todos os passos e checkpoints marcados e sem `review.md` | review | Revisor |
 | `review.md` com R* aberto `- [ ]` | implement, corrigir | Implementador ou redator, pelo `papel:` |
 | `review.md` em `request-changes` com todos os R* `[x]` e sem commit `task(<alvo>:Rn,...)` com os R* marcados desde a etapa anterior | implement, commitar a correção | Líder commita se a prova da correção está verde; senão, volta ao implementador ou redator |
@@ -208,10 +208,11 @@ Formato antigo: alvo com `interview.md`, `design.md` ou `analyze.md`, `# Rota:` 
 
 | Termo | Significado |
 |---|---|
-| Passo | Linha do checklist do `plan.md`; unidade de delegação ao implementador e de commit |
+| Passo | Linha do checklist do `plan.md`; unidade de prova e de commit |
+| Trecho | Os passos abertos do primeiro com caixa aberta até o próximo checkpoint, ou até o fim do checklist; unidade de delegação a um implementador, que os faz em ordem, um commit por passo |
 | Grupo paralelo | Passos irmãos, com o mesmo número e letras diferentes, que rodam juntos sem `Arquivos:` sobrepostos |
 | Checkpoint | Linha do plan depois de um grupo de passos, por um motivo de Plan (Checkpoint), conferida por um verificador de contexto limpo |
-| Risco | Linha `# Risco:` da spec; não acrescenta etapa, mas obriga a interview a cobrir modelo de ameaça e rollback, o plan a pôr checkpoint depois do primeiro grupo de risco e a review a abrir segurança e banco |
+| Risco | Linha `# Risco:` da spec; não acrescenta etapa, mas obriga a interview a cobrir modelo de ameaça e rollback, o plan a pôr checkpoint depois do primeiro grupo de risco, o analyze a rodar e a review a abrir segurança e banco |
 | Achado fora do recorte | Defeito fora dos critérios e do diff da phase; vai para `.erros-encontrados/`, um arquivo por achado, gravado por quem o encontrou (verificador ou revisor), e não bloqueia. O líder inclui o registro no commit seguinte da phase, inclusive no `chore(<alvo>): finalize review` |
 | Flake | Teste que falha e passa na reexecução; vai para `.erros-encontrados/` e não bloqueia |
 | Regressão completa | A suíte inteira do projeto (lint e tipos, unitários, E2E), executada uma vez na review (`references/review/passos.md`) |

@@ -21,7 +21,7 @@ import { existsSync, readdirSync } from 'node:fs';
 import { join, resolve, relative } from 'node:path';
 import {
   lerLinhas, cabecalho, carregarAlvos, alvoPadrao, alvoNomeado, listarPhases, proximoN, normalizarSlug, slugValido, ROTAS,
-  linksNoCaminho, lerPlan, achadosDoPlan, grupos, recorte, segmentos, sobrepoe, lerRs, vereditoReview, ultimoAjuste,
+  linksNoCaminho, lerPlan, achadosDoPlan, recorte, segmentos, sobrepoe, lerRs, vereditoReview, ultimoAjuste,
   commits, classificarCommit, naoCommitados, naoEnviados, commitQueAdicionou, jsonAscii, executadoDireto,
   semTrabalhoAlheio, alheiosVigentes, idsCommitados,
 } from './_disco.mjs';
@@ -184,10 +184,11 @@ function etapaDeSpecAPassos(alvo, fora) {
   const tocados = fora.map(segmentos);
   const retomar = plan.passos.filter((p) => !p.caixa && recorte(p)?.some((r) => tocados.some((t) => sobrepoe(r, t))));
   if (retomar.length) {
-    return { etapa: 'implement', situacao: 'retomar o passo', proximo: 'Implementador conclui a prova; líder confere e commita', passos: retomar.map((p) => p.id) };
+    return { etapa: 'implement', situacao: 'retomar o passo', proximo: 'Implementador conclui a prova e commita o passo', passos: retomar.map((p) => p.id) };
   }
 
-  // Primeiro item aberto na ordem do arquivo: checkpoint ou passo (grupo paralelo inteiro).
+  // Primeiro item aberto na ordem do arquivo: checkpoint, ou o trecho que começa nele
+  // (references/disco.md, Glossário): os passos abertos até o próximo checkpoint ou o fim.
   const aberto = plan.itens.find((i) => !i.caixa);
   if (aberto?.tipo === 'checkpoint') {
     const anteriores = plan.itens.slice(0, plan.itens.indexOf(aberto));
@@ -196,10 +197,11 @@ function etapaDeSpecAPassos(alvo, fora) {
     return { etapa: 'implement', situacao: 'checkpoint', proximo: 'Verificador de contexto limpo', checkpoint: { aceite: aberto.aceite, passos: cobertos } };
   }
   if (aberto) {
-    const grupo = grupos(plan.passos).find((g) => g.passos.includes(aberto));
-    const abertos = grupo.passos.filter((p) => !p.caixa).map((p) => p.id);
-    const situacao = grupo.passos.length > 1 ? `implementar o grupo paralelo ${grupo.num} (${abertos.join(', ')})` : `implementar o passo ${grupo.num}`;
-    return { etapa: 'implement', situacao, proximo: 'Líder delega ao implementador', passos: abertos };
+    const seguintes = plan.itens.slice(plan.itens.indexOf(aberto));
+    const fim = seguintes.findIndex((i) => i.tipo === 'checkpoint');
+    const trecho = (fim < 0 ? seguintes : seguintes.slice(0, fim)).filter((i) => !i.caixa).map((i) => i.id);
+    const situacao = trecho.length > 1 ? `implementar o trecho ${trecho[0]} a ${trecho[trecho.length - 1]} (${trecho.join(', ')})` : `implementar o passo ${trecho[0]}`;
+    return { etapa: 'implement', situacao, proximo: 'Líder delega o trecho a um implementador', passos: trecho };
   }
   return null; // todos os passos e checkpoints marcados: segue para as linhas do review.md
 }

@@ -8,8 +8,8 @@ A cadeia da skill `vibeflow` vale só quando o humano a chama com `/vibeflow` (`
 | esforço | etapas | quando |
 |---|---|---|
 | low | implement, sem init, `.vibeflow/`, phase nem artefato | mudança clara e localizada de código de software sem comportamento novo, como cor, texto ou layout de página estática |
-| medium | implement → review | pedido claro e direto, com comportamento novo pequeno, sem banco nem risco de regressão de backend, ou página visual cujo aceite dependa de validação renderizada |
-| high | interview → spec → plan → analyze → implement com até quatro checkpoints → review | pedido ambíguo ou de execução difícil, mudança que altera banco ou painel admin, risco de regressão de backend, ou tela que o design system e as telas existentes não cobrem |
+| medium | implement → review | pedido claro e direto, com comportamento novo pequeno ou médio, inclusive em backend e banco sem migration de schema quando o fluxo tocado tem testes, ou página visual cujo aceite dependa de validação renderizada |
+| high | interview → spec → plan → analyze, com `# Risco:` ou mais de 8 passos → implement com até dois checkpoints → review | pedido ambíguo, migration de schema, autenticação, autorização, pagamento, dado pessoal, segredo ou risco de perda de dados, backend cujo fluxo tocado não tem testes, ou tela que o design system e as telas existentes não cobrem |
 
 Saem do low, seguindo a rota aplicável: comportamento, rota, interação, critério de aceite ou acessibilidade alterados, e mudanças que toquem privacidade, dado pessoal, consentimento, retenção, direitos, obrigação jurídica, autenticação, autorização, pagamento, segredo, persistência ou risco de perda de dados.
 <!-- VIBEFLOW:CADEIA end -->
