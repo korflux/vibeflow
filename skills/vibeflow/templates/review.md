@@ -46,6 +46,12 @@
 |---|---|---|---|
 | <DOMINIO-01> | <cria ou substitui> | <decisão compacta> | <critério ou decisão da spec> |
 
+## Medição
+
+<!-- Líder, na finalização, com a linha de scripts/medir.mjs (references/review.md, Finalizar). Sem Node, apague a seção. -->
+
+- <linha de medir.mjs>
+
 ## Aprovação humana
 
 - [ ] Aprovação humana (confirmou no chat o resumo do líder)

@@ -2,7 +2,7 @@
 name = "explorador"
 description = "Localiza fluxos, consumidores e testes afetados, verifica fato por sondagem e propõe o núcleo do projeto no init, sem escrever."
 model = "gpt-6-luna"
-model_reasoning_effort = "max"
+model_reasoning_effort = "high"
 # read-only: os comandos rodam, mas escrita e rede ficam bloqueadas pelo sandbox (documentação oficial do Codex).
 sandbox_mode = "read-only"
 developer_instructions = """

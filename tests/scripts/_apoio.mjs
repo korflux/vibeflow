@@ -30,10 +30,14 @@ export function escrever(raiz, rel, conteudo) {
   writeFileSync(join(raiz, rel), conteudo);
 }
 
-/** Staging de tudo e commit com identidade fixa e sem assinatura, para rodar em qualquer máquina. */
-export function commit(raiz, msg) {
+/**
+ * Staging de tudo e commit com identidade fixa e sem assinatura, para rodar em qualquer máquina.
+ * `data` (ISO 8601) fixa a data de autor e de commit, para testes que medem tempo entre commits.
+ */
+export function commit(raiz, msg, { data } = {}) {
   execFileSync('git', ['add', '--', '.'], { cwd: raiz });
-  execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false', 'commit', '-q', '--allow-empty', '-m', msg], { cwd: raiz });
+  const env = data ? { ...process.env, GIT_AUTHOR_DATE: data, GIT_COMMITTER_DATE: data } : process.env;
+  execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false', 'commit', '-q', '--allow-empty', '-m', msg], { cwd: raiz, env });
 }
 
 // ---------------------------------------------------------------------------

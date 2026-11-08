@@ -26,12 +26,13 @@ Depois da confirmação humana explícita, com o gate da Entrada atendido e nenh
 2. Com Decisões para vigência preenchida, aplica patch mínimo em `AGENTS.md`: uma única seção `## Decisões vigentes` com a tabela `ID | Decisão vigente | Fonte`, atualizada por ID, com as linhas não citadas preservadas e o review aprovado como fonte; cada decisão em até 200 caracteres, com o detalhe no artefato que a Fonte aponta, nunca no `AGENTS.md`; relê e confirma que só os IDs aprovados mudaram. Sem decisões, não toca regras.
 3. Confere, sem executar prova, que a regressão registrada no `review.md` cobre o HEAD final, inclusive `git diff --check` e gitleaks quando o repo prevê.
 4. Compara `git status` com o estado registrado: registro novo em `.erros-encontrados/` é aceito; path declarado em `## Trabalho alheio` do plan segue fora do commit, citado nas Notas do `review.md`; outro path fora da phase, das decisões aprovadas e das correções interrompe e pede isolamento.
-5. Commita `chore(<alvo>): finalize review` (`references/disco.md`, Commits) só com os paths residuais, registros novos incluídos (`git add -- <path da phase> AGENTS.md <registros>`); sem residual, não cria commit vazio.
-6. Confere o intervalo como no passo 2 da retomada abaixo e executa `git push` para o upstream do branch atual, sem `--force`. Push recusado ou adiado pelo humano: grave a linha de push adiado (`references/disco.md`, Estado da phase) e commite `chore(<alvo>): push adiado`, sem push. Sem upstream ou com falha de push, a phase fica fechada com push pendente e a causa segura é relatada.
-7. Relata o hash final, o resultado do push e os paths enviados.
+5. Com Node, roda `scripts/medir.mjs --alvo <alvo>` e grava a linha que ele imprime em `## Medição` do `review.md`; sem Node, omite a seção. A medição não entra no veredito.
+6. Commita `chore(<alvo>): finalize review` (`references/disco.md`, Commits) só com os paths residuais, registros novos incluídos (`git add -- <path da phase> AGENTS.md <registros>`); sem residual, não cria commit vazio.
+7. Confere o intervalo como no passo 2 da retomada abaixo e executa `git push` para o upstream do branch atual, sem `--force`. Push recusado ou adiado pelo humano: grave a linha de push adiado (`references/disco.md`, Estado da phase) e commite `chore(<alvo>): push adiado`, sem push. Sem upstream ou com falha de push, a phase fica fechada com push pendente e a causa segura é relatada.
+8. Relata o hash final, o resultado do push, os paths enviados e a linha de medição.
 
 Retomada de push pendente, com a confirmação humana:
 
-1. Residual da finalização ainda não commitado é commitado como no passo 5.
+1. Residual da finalização ainda não commitado é commitado como no passo 6.
 2. Confira `git log @{u}..HEAD` ou, sem upstream, os commits desde a base da phase. Commits de alvo fechado e de entrega low podem seguir; commit de phase ou MVP aberto, ou `task(medium): ...` sem phase fechada que o registre, nunca entra: havendo um, pare e relate.
 3. Execute `git push` sem `--force`; sem upstream, `git push -u origin <branch>`.

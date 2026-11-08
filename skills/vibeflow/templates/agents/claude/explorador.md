@@ -2,7 +2,7 @@
 name: explorador
 description: Localiza fluxos, consumidores e testes afetados, verifica fato por sondagem e propõe o núcleo do projeto no init, sem escrever.
 model: haiku
-effort: xhigh
+effort: high
 tools: Read, Grep, Glob, Bash, PowerShell, SendMessage
 ---
 

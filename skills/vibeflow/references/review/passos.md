@@ -7,8 +7,10 @@ Leitura do revisor na etapa review, depois de `references/review.md` (Entrada e 
 | O revisor lê | Fonte |
 |---|---|
 | Critérios de aceite | `spec.md`; em medium, o corpo do commit `task(medium): ...` (`git log -1 --format=%B <commit>`), e commit sem eles volta ao líder, que informa os critérios do brief |
-| Contexto | `plan.md`, `AGENTS.md` e o `git log` com os commits do alvo |
+| Contexto | Do `plan.md`, só `## Regressão completa`, as linhas de passo e checkpoint e `## Trabalho alheio`; do `AGENTS.md`, só Comandos do projeto e as linhas de `## Decisões vigentes` que o diff toca; o `git log` com os commits do alvo |
 | Diff | Do commit anterior ao primeiro `task(<alvo>:...)` até `HEAD`, ou da base que o líder informar; em medium, o revisor registra o `task(medium): ...` como base e o diff parte do commit anterior a ele |
+
+Julgue o diff, não o repositório: abra arquivo fora do diff só para seguir um consumidor de símbolo alterado ou o teste citado como prova.
 
 Declare em uma linha: rota, tipo, alvo e diff.
 
@@ -45,7 +47,7 @@ A execução registrada vale para o Approve enquanto as correções posteriores 
 ### 2. Julgar o produto
 
 1. **Critérios de aceite:** cada critério da spec, ou do corpo do commit em medium, está atendido e provado por ao menos um teste cuja asserção você comparou com o texto do critério (`references/testes.md`, Política de testes). Preencha a tabela de critérios com o teste e o resultado. Critério não atendido, sem teste que o prove ou provado por asserção que diverge do texto dele abre R* Required; só o humano retira um critério, com a decisão citada.
-2. **Defeitos no código alterado:** correção, bordas e erros das superfícies tocadas; teste enfraquecido, pulado ou apagado, teste da seção O que não testar e duplicata sem ganho (`references/testes.md`, Política de testes e O que não testar); caso ausente do Desenho de casos de `references/testes.md`: Required quando é caso adversarial que o tipo de entrada do critério aciona ou quando a spec traz a tabela de exemplos que o exige, e Nit nos demais; barra de `references/definition-of-done.md`.
+2. **Defeitos no código alterado:** defeito que lint, tipos ou teste da regressão apontam é achado com a saída do comando como prova; a leitura cobre o que as ferramentas não cobrem: correção, bordas e erros das superfícies tocadas; teste enfraquecido, pulado ou apagado, teste da seção O que não testar e duplicata sem ganho (`references/testes.md`, Política de testes e O que não testar); caso ausente do Desenho de casos de `references/testes.md`: Required quando é caso adversarial que o tipo de entrada do critério aciona ou quando a spec traz a tabela de exemplos que o exige, e Nit nos demais; barra de `references/definition-of-done.md`.
 3. **Segurança:** só quando o diff toca input, auth, sessão, permissão, segredo, upload, integração externa ou dado pessoal, conforme `references/review/security-and-hardening.md`.
 4. **Banco e precisão:** só quando o diff toca persistência ou valor monetário, conforme `references/database-and-migrations.md`.
 5. **Visual:** quando um critério depende da interface renderizada, conforme `references/review/ui-visual-quality.md`, reaproveitando a evidência válida.

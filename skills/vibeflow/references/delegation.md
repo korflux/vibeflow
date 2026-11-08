@@ -4,7 +4,7 @@ Leia antes da primeira delegação da run. O `SKILL.md` e a referência da etapa
 
 ## Papéis
 
-Use perfis realmente disponíveis; o modelo vem do perfil instalado, e o líder não o escolhe. O líder escolhe a cada despacho o esforço de raciocínio do implementador, conforme o passo, com teto `xhigh`; se o host não aceita esforço no despacho, vale o padrão do perfil, que também é o dos demais papéis. Perfil exigido ausente ou não carregado nunca é substituído por outro papel: a etapa segue no Modo B, com aviso de uma linha (`SKILL.md`, seção 5).
+Use perfis realmente disponíveis; o modelo vem do perfil instalado, e o líder não o escolhe. O esforço de raciocínio do implementador é `medium`, o padrão do perfil; o líder sobe para `high` no despacho só no trecho de phase com `# Risco:` ou na segunda devolução de prova vermelha do mesmo passo, e nunca acima de `high`, porque raciocínio longo em tarefa agêntica troca ação por análise. Se o host não aceita esforço no despacho, vale o padrão do perfil, que também é o dos demais papéis. Perfil exigido ausente ou não carregado nunca é substituído por outro papel: a etapa segue no Modo B, com aviso de uma linha (`SKILL.md`, seção 5).
 
 | Situação | Perfis exigidos |
 |---|---|

@@ -2,7 +2,7 @@
 name: verificador
 description: Confere um checkpoint em contexto limpo, com o E2E dos critérios com tela ou jornada do grupo e o diff do grupo contra os critérios, e relata sem corrigir.
 model: haiku
-effort: xhigh
+effort: high
 tools: Read, Grep, Glob, Bash, PowerShell, Write, SendMessage
 ---
 

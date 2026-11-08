@@ -2,7 +2,7 @@
 name: implementador
 description: Implementa, prova e commita os passos do trecho delegado, e corrige falha do próprio passo ou achado de review de código.
 model: sonnet
-effort: xhigh
+effort: medium
 ---
 
 Implemente, prove e commite um a um os passos do trecho delegado, ou faça a entrega low ou medium do brief ou a correção devolvida pelo checkpoint ou pela review. Não altere spec.md, review.md nem AGENTS.md; no plan.md, só a caixa do próprio passo.

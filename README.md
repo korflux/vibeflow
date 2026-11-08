@@ -8,7 +8,7 @@ Skill única `vibeflow`, com um coordenador-líder que conduz o trabalho de agen
 
 O vibeflow é uma skill para quem programa com agentes (Grok Build, Claude Code, Codex, OpenCode, Pi, Antigravity e qualquer cliente que leia `SKILL.md`). Ela roda só quando você a chama. O líder conversa com você, entende o projeto, escolhe uma rota proporcional ao pedido, planeja e delega a execução a subagentes: redação de artefatos, código, testes e provas. O líder confere cada entrega, marca o progresso e faz os commits, salvo o de cada passo, que o implementador faz ao entregá-lo; código e teste ficam sempre com os subagentes, e o push, sempre com o líder. Analyze, checkpoints e review são feitos em contexto limpo. O pedido vira trilha no disco, não recap no chat.
 
-O pacote é `SKILL.md`, referências por etapa, templates, perfis de subagente e scripts de leitura em Node (`estado`, `conferir`, `plan` e `governanca`), sem dependências. No repo do consumidor, o trabalho vive em disco:
+O pacote é `SKILL.md`, referências por etapa, templates, perfis de subagente e scripts de leitura em Node (`estado`, `conferir`, `plan`, `governanca` e `medir`), sem dependências. No repo do consumidor, o trabalho vive em disco:
 
 ```text
 AGENTS.md                                  fonte única de regras do projeto
@@ -84,7 +84,7 @@ Durante a phase, o líder informa o progresso em percentual, calculado pelas eta
 
 ### Scripts de leitura
 
-Com Node 18 ou superior, a skill usa os scripts da pasta `scripts/`, sempre na raiz do repo. Eles só leem o disco e o Git, nunca escrevem, fazem staging ou commit, e funcionam em Windows e Linux. Cada um acelera uma regra já escrita nas referências; quando divergem, vale a regra escrita. Sem Node, a skill segue as regras escritas. Todos aceitam `--json` e saem com 0 sem achado, 1 com achado e 2 em erro de uso.
+Com Node 18 ou superior, a skill usa os scripts da pasta `scripts/`, sempre na raiz do repo. Eles só leem o disco e o Git, nunca escrevem, fazem staging ou commit, e funcionam em Windows e Linux. Cada um acelera uma regra já escrita nas referências; quando divergem, vale a regra escrita. Sem Node, a skill segue as regras escritas. Todos aceitam `--json` e saem com 0 sem achado, 1 com achado e 2 em erro de uso; `medir.mjs` não tem achado e sai com 0 ou 2.
 
 | Script | Quem roda e quando | O que confere |
 |---|---|---|
@@ -93,6 +93,7 @@ Com Node 18 ou superior, a skill usa os scripts da pasta `scripts/`, sempre na r
 | `conferir.mjs --commit "<mensagem>"` | Implementador antes do commit de cada passo; líder antes dos demais commits | Formato da mensagem, ausência de `Co-Authored-By`, critérios de aceite no corpo do `task(medium): ...`, caixas e R* marcados no índice contra os IDs, paths em staging contra o recorte e `git diff --cached --check` |
 | `plan.mjs [--alvo phase-N\|mvp]` | Líder depois de gravar o plan; revisor no analyze | Forma dos passos e checkpoints, passo acima de 12 entradas de código, mais de quatro checkpoints (o 3º e o 4º como aviso), se o analyze é obrigatório ou dispensável, motivo de checkpoint fora da tabela ou checkpoint em plan de até 5 passos, critérios inexistentes ou sem passo, seções obrigatórias e placeholder de template esquecido |
 | `plan.mjs --spec [--alvo phase-N\|mvp]` | Líder antes de apresentar a spec para aprovação | Seções obrigatórias da spec, decisão sem pergunta ou motivo, critério repetido, adjetivo vago no critério, valor sem origem em Decisões e Critérios de aceite de spec em rascunho e placeholder esquecido |
+| `medir.mjs [--alvo phase-N|mvp]` | Líder na finalização da review | Horas de relógio e ativas entre o primeiro e o último commit do alvo, passos e checkpoints, passos com mais de um commit, intervalo mediano e passo mais lento, R* por severidade e etapas da review |
 | `governanca.mjs` e `governanca.mjs --backup <original> <cópia>` | Líder no init | `AGENTS.md` e bloco da cadeia, ponte, `.gitkeep`, perfis globais contra a fonte, perfil `corretor` obsoleto, perfis de projeto customizados e, como aviso sem falha, `AGENTS.md` sem a seção `## Núcleo do projeto`; no modo `--backup`, tamanho e SHA-256 da cópia |
 
 ### Apoios opcionais do host
@@ -129,6 +130,14 @@ node "<pasta da skill>/scripts/conferir.mjs" --commit-arquivo "$1"
 ```
 
 Aprovar a review, publicar decisões vigentes e fazer push sempre exigem a sua confirmação.
+
+## Novidades da 6.1.0
+
+A 6.1.0 é uma versão minor, sem migração de artefato, com base no relatório de papers sobre workflow com agentes de código. O bloco `VIBEFLOW:CADEIA` não muda. Rode `/vibeflow init` para receber os perfis novos de implementador, explorador e verificador (o init mostra os globais como diferentes da fonte e pede a sua decisão) e recarregue o host.
+
+- Esforço de raciocínio menor: implementador em `medium`, explorador e verificador em `high`. O líder sobe o implementador para `high` só em phase com `# Risco:` ou na segunda prova vermelha do mesmo passo, nunca acima disso.
+- `medir.mjs` mede a phase pelo Git: horas de relógio e ativas, passos com retrabalho, intervalo mediano e passo mais lento, R* por severidade. O líder grava a linha em `## Medição` do `review.md` na finalização, para comparar phases e versões.
+- A review julga o diff: o revisor lê do `plan.md` e do `AGENTS.md` só o que a review usa, abre arquivo fora do diff só para seguir um consumidor ou um teste citado, e usa a saída de lint, tipos e testes como prova do achado.
 
 ## Novidades da 6.0.0
 
@@ -183,7 +192,7 @@ A 5.4.0 é uma versão minor, sem migração. Rode `/vibeflow init` para atualiz
 - Um passo tem no máximo 12 entradas de código em `Arquivos:`, sem contar testes; acima disso, o plan divide o passo. `plan.mjs` aponta o passo acima do teto e o excesso de checkpoints.
 - Fato verificável é conferido pelo explorador antes da spec, e todo valor em Decisões e Critérios de aceite traz a origem (`humano`, `assumida` ou `verificado`). O fechamento da spec lista as assumidas, e `plan.mjs --spec` aponta valor sem origem em spec nova.
 - Na interview, tela nova, site ou fluxo novo cobre navegação, páginas e jornada; o limite de duas perguntas vale só para ajuste de tela.
-- O implementador lê só a referência própria, `references/implementador.md`, e recebe no brief o mapa do explorador e os itens do núcleo que abre. O líder escolhe o esforço de raciocínio do implementador a cada despacho, até `xhigh`.
+- O implementador lê só a referência própria, `references/implementador.md`, e recebe no brief o mapa do explorador e os itens do núcleo que abre. O líder escolhe o esforço de raciocínio do implementador a cada despacho, até `xhigh`. Desde a 6.1.0, o padrão é `medium` e o teto é `high`.
 - O `AGENTS.md` ganha a seção `## Núcleo do projeto`, que o líder abre ele mesmo quando o pedido a toca e usa para conferir a direção das entregas; `governanca.mjs` avisa quando ela falta.
 
 ## Novidades da 5.3.0
