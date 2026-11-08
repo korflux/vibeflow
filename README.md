@@ -121,6 +121,8 @@ node "<pasta da skill>/scripts/conferir.mjs" --commit-arquivo "$1"
 }
 ```
 
+**Saída de teste filtrada no Claude Code.** Um hook `PreToolUse` com `matcher` `Bash` pode reescrever o comando de teste para passar ao contexto só as linhas de falha, como no exemplo da página de custos do Claude Code (https://code.claude.com/docs/en/costs). A skill já pede reporter mínimo e só falhas no contexto (`skills/vibeflow/references/testes.md`, Execução); o hook garante isso mesmo quando o agente esquece.
+
 **Statusline no Claude Code.** Mostra a linha de progresso da phase abaixo do prompt e fica vazia em repo sem `.vibeflow/`. No `settings.json` do usuário ou do projeto (no Windows, a statusline roda pelo Git Bash):
 
 ```json
@@ -130,6 +132,16 @@ node "<pasta da skill>/scripts/conferir.mjs" --commit-arquivo "$1"
 ```
 
 Aprovar a review, publicar decisões vigentes e fazer push sempre exigem a sua confirmação.
+
+## Novidades da 6.2.0
+
+A 6.2.0 é uma versão minor, sem migração de artefato e sem mudança de perfil, com base no relatório sobre testes como gargalo. O bloco `VIBEFLOW:CADEIA` não muda; o re-init só é útil para receber o comentário novo de Comandos do projeto no template do `AGENTS.md`.
+
+- Saída curta em toda execução de teste: reporter mínimo e só falhas e totais no contexto.
+- Avaliação com modelo real, benchmark ou medição longa nunca é prova de passo: vira passo próprio de medição, rodado uma vez em segundo plano, com repetições e corte da spec.
+- Gate de tipos no pacote tocado e incremental, nunca na forma recursiva do monorepo.
+- A execução vermelha roda só o teste novo.
+- Poda de testes (`skills/vibeflow/references/testes.md`, Poda): pedido medium próprio, proposto quando a regressão passa do orçamento, que remove duplicata, E2E repetido, teste proibido e teste de comportamento removido, sempre citando o teste que fica, e nunca toca prova de critério vigente, caso adversarial, autorização, dinheiro, dado pessoal ou preservação.
 
 ## Novidades da 6.1.0
 

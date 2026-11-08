@@ -75,7 +75,7 @@ Quais achados passam por re-review e o limite de rodadas seguem `references/revi
 ## Orçamento de duração
 
 - O `AGENTS.md` do projeto declara em Comandos do projeto o orçamento da regressão completa; sem declaração, o orçamento é de 10 minutos.
-- Total acima do orçamento: o revisor grava em `.erros-encontrados/` o tempo total, o nível mais lento e a causa provável, cita o registro em Notas e segue, sem bloquear; o orçamento não entra no veredito.
+- Total acima do orçamento: o revisor grava em `.erros-encontrados/` o tempo total, o nível mais lento e a causa provável, cita o registro em Notas e segue, sem bloquear; o orçamento não entra no veredito. Na confirmação, o líder propõe ao humano a poda de testes como pedido medium próprio (`references/testes.md`, Poda).
 
 ## Saída
 

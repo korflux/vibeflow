@@ -49,7 +49,7 @@ Sem banco, migration nem tráfego de usuário: mudança aqui altera contrato de 
 - **Major:** quebra contrato (path ou nome de artefato, linha de cabeçalho como `# Status:` ou `# Rota:`, comportamento do líder que o humano já usa).
 - **Minor:** adiciona sem quebrar (nova seção opcional no artefato, nova referência de etapa).
 - **Patch:** correção sem mudança de contrato.
-- Versão atual: 6.1.0 (esforço de raciocínio menor nos perfis; medição da phase por `medir.mjs` na finalização; review focada no diff).
+- Versão atual: 6.2.0 (saída de teste curta; medição longa fora da prova do passo; tipos por pacote e incremental; vermelho só do teste novo; poda de testes como pedido medium).
 
 ## Git
 
