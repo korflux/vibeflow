@@ -133,6 +133,18 @@ node "<pasta da skill>/scripts/conferir.mjs" --commit-arquivo "$1"
 
 Aprovar a review, publicar decisões vigentes e fazer push sempre exigem a sua confirmação.
 
+## Novidades da 6.3.0
+
+A 6.3.0 é uma versão minor, sem migração de artefato e sem mudança de perfil, com base na revisão dos testes contra os guias da Anthropic, da OpenAI e do GitHub. O bloco `VIBEFLOW:CADEIA` não muda; o re-init só é útil para receber o comentário novo de Comandos do projeto no template do `AGENTS.md`.
+
+- O título do E2E também começa pelo ID do critério, e o checkpoint roda só o E2E do grupo, filtrado pelo título (`--grep`). E2E antigo sem ID roda num segundo comando, pelo path dos arquivos de teste E2E que o diff do grupo toca.
+- Falha se confirma rerodando só os arquivos de teste que falharam, pelo path e com os mesmos workers, no checkpoint, na regressão e na re-review, nunca o comando inteiro nem o cache de última execução do runner (`skills/vibeflow/references/testes.md`, Execução).
+- A checagem de console em dev roda uma vez, no nível E2E da regressão completa (em low, na prova do brief), e sai do checkpoint.
+- Equivalência (caixa, espaços, forma canônica) em teste novo se prova em teste unitário parametrizado da normalização, com uma variante por contexto na integração; caso adversarial existente não conta como duplicata.
+- Banco limpo de teste com ordem de preferência: banco modelo migrado uma vez e clonado por arquivo, depois transação com rollback, depois volta ao estado migrado sem migrar de novo.
+- Gate de tipos com só a forma recursiva declarada: filtro do gerenciador no pacote tocado, com a recomendação de declarar o comando por pacote.
+- `playwright test --only-changed` fica restrito a teste de componente, porque não seleciona E2E pelo código do app alterado.
+
 ## Novidades da 6.2.0
 
 A 6.2.0 é uma versão minor, sem migração de artefato e sem mudança de perfil, com base no relatório sobre testes como gargalo. O bloco `VIBEFLOW:CADEIA` não muda; o re-init só é útil para receber o comentário novo de Comandos do projeto no template do `AGENTS.md`.

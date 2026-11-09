@@ -24,7 +24,7 @@ Saem do low, seguindo a rota aplicável: comportamento, rota, interação, crit�
 
 ## Comandos do projeto
 <!-- SLOT:comandos -->
-<!-- Registrar só comandos existentes, cada um com onde roda (local, CI ou host): instalar, executar, lintar, validar tipos (por pacote e incremental, quando houver), teste por recorte (arquivo, módulo ou filtro) com reporter de saída curta, suíte completa, E2E, varredura de segredos e CI obrigatório. Com orçamento declarado, registrar a linha `Orçamento da regressão completa: <minutos>`; sem declaração, não registrar a linha, e vale o padrão de `references/review/passos.md` (Orçamento de duração) da skill `vibeflow`. -->
+<!-- Registrar só comandos existentes, cada um com onde roda (local, CI ou host): instalar, executar, lintar, validar tipos (por pacote e incremental, quando houver), teste por recorte (arquivo, módulo ou filtro) com reporter de saída curta, suíte completa, E2E com a forma filtrada por título quando o runner a tem (como `--grep`), varredura de segredos e CI obrigatório. Com orçamento declarado, registrar a linha `Orçamento da regressão completa: <minutos>`; sem declaração, não registrar a linha, e vale o padrão de `references/review/passos.md` (Orçamento de duração) da skill `vibeflow`. -->
 
 ## Ambiente
 <!-- SLOT:ambiente -->
