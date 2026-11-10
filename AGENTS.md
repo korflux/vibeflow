@@ -49,7 +49,7 @@ Sem banco, migration nem tráfego de usuário: mudança aqui altera contrato de 
 - **Major:** quebra contrato (path ou nome de artefato, linha de cabeçalho como `# Status:` ou `# Rota:`, comportamento do líder que o humano já usa).
 - **Minor:** adiciona sem quebrar (nova seção opcional no artefato, nova referência de etapa).
 - **Patch:** correção sem mudança de contrato.
-- Versão atual: 6.3.0 (E2E do checkpoint filtrado pelo ID no título; reexecução só dos arquivos que falharam; console em dev só na regressão; equivalência no unitário; banco modelo clonado; tipos filtrados no pacote tocado).
+- Versão atual: 6.4.0 (seleção de testes do passo com regra única; poda em referência própria; hook opcional `barrar.mjs`; medição de transcripts em `tools/`).
 
 ## Git
 
@@ -65,7 +65,9 @@ skills/vibeflow/      pacote da skill, pasta real
   references/         <etapa>.md, <papel>.md, retomada.md, ajuste.md, review/passos.md e apoio
   templates/          spec, plan, review, AGENTS.md e agents/<host>/
   scripts/            leitura do disco e do Git, cada um com cabeçalho próprio
+tools/                medição de transcripts do host, fora do pacote
 tests/scripts/        testes dos scripts, fora do pacote
+tests/tools/          testes de tools/
 plugin.json           plugin Antigravity
 ```
 
@@ -80,8 +82,8 @@ plugin.json           plugin Antigravity
 
 - A prosa é o contrato; script só acelera regra mecânica já escrita e aponta para a casa dela. Divergência é bug do script.
 - Node 18+, `.mjs`, só módulos nativos, sem build; Git com argumentos em lista, sem shell; tolerante a CRLF e BOM; `node:path`; sem symlink; Windows e Linux.
-- Somente leitura, salvo pedido do humano: não escreve artefato nem opera Git. Saída em texto e em `--json` com não-ASCII escapado; código 0 sem achado, 1 com achado, 2 em erro de uso.
-- Todo script tem teste de comportamento em `tests/scripts/` (`node:test`, disco temporário).
+- Somente leitura, salvo pedido do humano: não escreve artefato nem opera Git. Saída em texto e em `--json` com não-ASCII escapado; código 0 sem achado, 1 com achado, 2 em erro de uso. Exceção: `barrar.mjs` é hook opcional do host e segue o protocolo dele (evento no stdin, decisão em JSON, sempre código 0).
+- Todo script tem teste de comportamento em `tests/scripts/` (`node:test`, disco temporário). Ferramenta que lê arquivo do host, e não o disco nem o Git do projeto, fica em `tools/`, fora do pacote, com teste em `tests/tools/`.
 
 ### 3. Template
 

@@ -1,10 +1,10 @@
 # Testes
 
-Casa única da política de testes do projeto consumidor: o que testar, como desenhar os casos, como executar, o que não testar e como podar a suíte. Fora daqui: ambiente local em `references/ambiente.md`; execução do checkpoint e Desenho do E2E em `references/verificador.md`; regressão completa e Orçamento de duração em `references/review/passos.md`.
+Casa única da política de testes do projeto consumidor: o que testar, como desenhar os casos, como executar e o que não testar. Fora daqui: a poda da suíte em `references/testes/poda.md`, lida só no pedido de poda; ambiente local em `references/ambiente.md`; execução do checkpoint e Desenho do E2E em `references/verificador.md`; regressão completa e Orçamento de duração em `references/review/passos.md`.
 
 ## Política de testes
 
-- No passo, rode só os testes afetados pelo grafo de imports da ferramenta (por exemplo, `vitest run --changed <base>` ou, em teste de componente, `playwright test --only-changed=<ref>`; esse recurso não seleciona E2E pelo código do app alterado, porque o app do E2E roda em outro processo e não é importado pelo teste), num comando, sem E2E e sem suíte inteira; sem esse recurso, a `Prova:` do passo; sem plan, os testes do módulo tocado e dos consumidores diretos.
+- No passo de plan, rode a `Prova:` do passo, que nomeia os testes que o passo cria ou altera (`references/plan.md`, Prova do passo), num comando, sem E2E e sem suíte inteira, e não some a ela a seleção por grafo de imports. Sem plan (low, medium e correção de checkpoint ou de R*), rode os testes afetados pelo grafo de imports da ferramenta (por exemplo, `vitest run --changed <base>` ou, em teste de componente, `playwright test --only-changed=<ref>`; esse recurso não seleciona E2E pelo código do app alterado, porque o app do E2E roda em outro processo e não é importado pelo teste), num comando. Quando a seleção cai na suíte inteira, porque a mudança toca arquivo que todo teste carrega (configuração do runner, `package.json`, setup global), ou sem esse recurso, rode os testes do módulo tocado e dos consumidores diretos.
 - Avaliação com modelo real, benchmark, carga ou outra medição longa ou paga nunca é `Prova:` de passo nem prova de critério no passo: vira um passo próprio de medição, sem outro passo depois dele no mesmo trecho que dependa do resultado, rodado uma vez em segundo plano, com repetições e critério de corte vindos da spec. Falha repete só o caso que falhou, nas repetições que a spec define, sem rerodar o conjunto para confirmar.
 - Uma prova principal por critério de aceite, no nível mais barato que observa o resultado visível do critério: critério de tela se prova na tela, não na API que a alimenta; regra de negócio, validação, autorização e cálculo sem tela se provam sem navegador, em teste unitário ou de integração (API ou serviço com banco real de teste).
 - O título do teste da prova principal e o do E2E começam pelo ID do critério que o teste prova ou cobre, quando o brief ou a spec o tem, e descrevem o comportamento, não a função chamada (`A3: recusa horário ocupado`); E2E de jornada que cobre mais de um critério leva os IDs separados por vírgula (`A3, A5: reserva e confirma`). Quando o projeto tem mais de uma spec com IDs repetidos, o título leva o alvo junto do ID (`phase-1:A3: recusa horário ocupado`). O ID no título é o que o checkpoint usa para filtrar o E2E do grupo (`references/verificador.md`, Checkpoint).
@@ -57,22 +57,3 @@ Os casos saem do critério de aceite, não do código. Os casos adversariais sã
 | Espera fixa por tempo | Espera por condição; espera fixa é lenta quando sobra e instável quando falta |
 | A mesma propriedade em vários arquivos (teste duplicado sem ganho) | O dono do passo que tem a duplicata no recorte a remove, e o relatório cita o teste que fica: sai a cópia no mesmo nível ou num nível mais caro, fica a prova principal. Não é apagar teste para obter verde: o teste que fica prova a propriedade antes e depois. Caso adversarial do Desenho de casos não conta como duplicata, mesmo com um teste unitário parametrizado da mesma propriedade |
 | Teste que não pode falhar no modo em que roda: asserção sobre o que só existe em outro modo, sem asserção real ou que só exercita mock | Rode no modo em que o defeito aparece (seção Execução) e afirme o resultado do critério |
-
-## Poda
-
-A suíte cresce a cada phase; a poda tira o que não prova mais nada, sem perder prova de critério vigente. Ela é um pedido medium próprio (`SKILL.md`, seção 2), nunca parte de outro passo, com estes critérios no brief e no corpo do commit:
-
-- A1: cada teste removido ou fundido cita no relatório o teste que fica e prova a mesma propriedade, ou a decisão aprovada que removeu o comportamento.
-- A2: a regressão completa passa depois da poda, com a duração de cada nível antes e depois.
-
-Gatilho: a regressão completa acima do orçamento (`references/review/passos.md`, Orçamento de duração) ou o pedido do humano. O implementador roda a suíte uma vez com o reporter de duração do runner, lista os candidatos com o motivo e remove só os desta tabela:
-
-| Candidato | Fica no lugar |
-|---|---|
-| Teste da tabela O que não testar | O teste do comportamento que ele tentava observar, se existe; senão, o critério dele entra no relatório para o líder decidir |
-| Duplicata da mesma propriedade em outro arquivo ou nível | A prova principal, no nível mais barato que observa o resultado |
-| E2E que repete o que a integração ou o teste que renderiza a tela já provam | O teste do nível mais barato; o E2E fica só para a jornada |
-| Teste de comportamento que uma spec aprovada removeu ou substituiu | Nada; o relatório cita a decisão e a spec |
-| Teste lento por espera fixa, pilha própria ou login pela interface fora do teste do login | O mesmo teste, reescrito pela seção Execução |
-
-Nunca entram na poda: a prova principal de critério vigente sem substituto, caso adversarial do Desenho de casos (equivalência, borda, negado, concorrência), teste de autorização, de dinheiro ou de dado pessoal e critério de preservação. Teste instável não sai pela poda: segue o registro de flake (`references/disco.md`, Glossário).

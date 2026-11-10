@@ -5,7 +5,7 @@
 // plan.md como checklist de passos e review.md com R*. O formato antigo (T*, interview.md)
 // só aparece nos testes de compatibilidade, montado à mão.
 
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, cpSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -14,14 +14,26 @@ import { execFileSync } from 'node:child_process';
 export const SCRIPTS = resolve(dirname(fileURLToPath(import.meta.url)), '../../skills/vibeflow/scripts');
 export const PH = '.vibeflow/phases/phase-1-agenda';
 
+// Repositório modelo, criado uma vez por processo de teste (um por arquivo) e copiado por
+// `repo`: `git init`, `add` e `commit` custam três processos, caros no Windows, e a cópia de
+// arquivos não custa nenhum. A cópia leva o `.git` inteiro, então cada teste tem histórico próprio.
+let modelo = null;
+function repoModelo() {
+  if (modelo) return modelo;
+  modelo = mkdtempSync(join(tmpdir(), 'vibeflow-modelo-'));
+  process.on('exit', () => rmSync(modelo, { recursive: true, force: true }));
+  execFileSync('git', ['init', '-q'], { cwd: modelo });
+  escrever(modelo, 'AGENTS.md', '# Regras\n<!-- VIBEFLOW:CADEIA start -->\n<!-- VIBEFLOW:CADEIA end -->\n');
+  escrever(modelo, '.vibeflow/phases/.gitkeep', '');
+  commit(modelo, 'chore: base');
+  return modelo;
+}
+
 /** Repositório temporário com AGENTS.md, bloco da cadeia e um commit base; removido ao fim do teste. */
 export function repo(t) {
   const raiz = mkdtempSync(join(tmpdir(), 'vibeflow-'));
   t.after(() => rmSync(raiz, { recursive: true, force: true }));
-  execFileSync('git', ['init', '-q'], { cwd: raiz });
-  escrever(raiz, 'AGENTS.md', '# Regras\n<!-- VIBEFLOW:CADEIA start -->\n<!-- VIBEFLOW:CADEIA end -->\n');
-  escrever(raiz, '.vibeflow/phases/.gitkeep', '');
-  commit(raiz, 'chore: base');
+  cpSync(repoModelo(), raiz, { recursive: true });
   return raiz;
 }
 
@@ -67,6 +79,16 @@ export const veredito = (approve) =>
   `## Veredito\n\n- [${approve ? 'x' : ' '}] **Approve**: ok\n- [${approve ? ' ' : 'x'}] **Request changes**: x\n\n`;
 
 export const achados = (...linhas) => `## Achados\n\n### Required\n\n${linhas.join('\n')}\n\n`;
+
+/** Phase high com spec e plan commitados, mais commits extras de contrato (task, etc.). */
+export function fase(t, linhasPlan, { specStatus = 'aprovado', planOpts, commits = [] } = {}) {
+  const raiz = repo(t);
+  escrever(raiz, `${PH}/spec.md`, spec(specStatus));
+  if (linhasPlan) escrever(raiz, `${PH}/plan.md`, plan(linhasPlan, planOpts));
+  commit(raiz, 'docs: spec e plan');
+  for (const c of commits) commit(raiz, c);
+  return raiz;
+}
 
 /** Executa um script da skill como CLI e devolve { codigo, out }. */
 export function cli(script, args) {

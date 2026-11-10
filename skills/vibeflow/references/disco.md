@@ -2,6 +2,8 @@
 
 Única casa das regras de disco do VibeFlow; as demais referências apontam para cá.
 
+Seções, na ordem do arquivo: Paths; Tamanho; Abrir phase ou MVP; Escrever artefato; Cabeçalho; Plan (Passo, Arquivos, Checkpoint, Trabalho alheio, Achados do analyze); Commits; Estado da phase; Compatibilidade; Glossário. Abra só a seção que a referência de origem cita.
+
 ## Paths
 
 ```text
@@ -172,7 +174,7 @@ Com Node, depois do staging e antes de cada commit, quem commita roda `scripts/c
 - Passo concluído: caixa marcada, confirmada por commit `task(<alvo>:...)` com o ID no `git log`. Caixa marcada sem commit, commit sem caixa ou passos irmãos com `Arquivos:` sobrepostos são inconsistência a diagnosticar antes de seguir.
 - Inconsistência a diagnosticar: o líder despacha o explorador com o pedido de comparar o disco e o Git com a tabela de estados abaixo e relatar a divergência encontrada. Antes do relatório, o líder não marca, desmarca, reabre nem commita nada; só depois dele decide a correção.
 - R* corrigido: o líder marca `[x]` no commit `task(<alvo>:Rn,...)`.
-- Push adiado: o líder grava a recusa ou o adiamento do push pelo humano na seção Finalização Git do `review.md`, na linha `- Push adiado pelo humano: <AAAA-MM-DD>`.
+- Push adiado: o líder grava a recusa ou o adiamento do push pelo humano em `## Aprovação humana` do `review.md`, na linha `- Push adiado pelo humano: <AAAA-MM-DD>`.
 
 Leia a etapa atual na primeira linha da tabela que se aplica. As linhas de spec a checkpoint valem só para `high` e `mvp`.
 

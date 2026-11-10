@@ -121,6 +121,18 @@ node "<pasta da skill>/scripts/conferir.mjs" --commit-arquivo "$1"
 }
 ```
 
+**Espera por loop e gate recursivo barrados no Claude Code.** O hook `PreToolUse` `scripts/barrar.mjs` nega, só dentro do subagente implementador, a espera por loop (`until`, `while` ou `for` com `sleep` ou `Start-Sleep`) e o gate estático ou teste na forma recursiva do monorepo (`pnpm -r typecheck`), que `skills/vibeflow/references/implementador.md` proíbe, e devolve ao agente o motivo e a alternativa. Líder, verificador e revisor não são afetados. Ele não barra E2E nem suíte inteira no passo, porque o implementador roda o E2E da captura em low e medium e o comando da suíte varia por projeto. No `.claude/settings.json` do projeto ou do usuário:
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      { "matcher": "Bash|PowerShell", "hooks": [{ "type": "command", "command": "node \"<pasta da skill>/scripts/barrar.mjs\"" }] }
+    ]
+  }
+}
+```
+
 **Saída de teste filtrada no Claude Code.** Um hook `PreToolUse` com `matcher` `Bash` pode reescrever o comando de teste para passar ao contexto só as linhas de falha, como no exemplo da página de custos do Claude Code (https://code.claude.com/docs/en/costs). A skill já pede reporter mínimo e só falhas no contexto (`skills/vibeflow/references/testes.md`, Execução); o hook garante isso mesmo quando o agente esquece.
 
 **Statusline no Claude Code.** Mostra a linha de progresso da phase abaixo do prompt e fica vazia em repo sem `.vibeflow/`. No `settings.json` do usuário ou do projeto (no Windows, a statusline roda pelo Git Bash):
@@ -132,6 +144,26 @@ node "<pasta da skill>/scripts/conferir.mjs" --commit-arquivo "$1"
 ```
 
 Aprovar a review, publicar decisões vigentes e fazer push sempre exigem a sua confirmação.
+
+### Medir o tempo de teste de uma phase
+
+`tools/tempo-transcripts.mjs` fica fora do pacote instalado, só neste repositório, porque lê os transcripts do Claude Code e não o disco do projeto. Ele soma, por papel e por tipo de comando (teste, E2E, tipos, lint, build, espera), o tempo entre cada chamada de ferramenta e o resultado, e serve para comparar o custo de teste de uma phase entre versões da skill; `medir.mjs` só enxerga o intervalo entre commits.
+
+```bash
+node tools/tempo-transcripts.mjs "<pasta do host>/projects/<projeto>" --de 2026-11-07T00:00:00Z --ate 2026-11-08T23:59:59Z
+```
+
+A saída cita comandos do projeto, cortados e com valor de segredo evidente mascarado; leia antes de publicar.
+
+## Novidades da 6.4.0
+
+A 6.4.0 é uma versão minor, sem migração de artefato e sem mudança de perfil, com base na avaliação do workflow e dos testes de 2026-11-09. O bloco `VIBEFLOW:CADEIA` não muda e o re-init não é necessário.
+
+- A seleção de testes do passo tem uma regra só: em passo de plan vale a `Prova:`, que nomeia os testes, sem somar a seleção por grafo de imports; sem plan (low, medium e correção), vale a seleção por grafo de imports e, quando ela cai na suíte inteira ou não existe, os testes do módulo tocado e dos consumidores diretos.
+- A poda de testes sai de `references/testes.md` para `skills/vibeflow/references/testes/poda.md`, lida só no pedido de poda.
+- Hook opcional `scripts/barrar.mjs` para o Claude Code, que nega espera por loop e gate recursivo do monorepo no implementador (Apoios opcionais do host).
+- `tools/tempo-transcripts.mjs`, fora do pacote, mede o tempo de teste por papel nos transcripts do Claude Code.
+- `references/disco.md` abre com a lista das seções e grava o push adiado em `## Aprovação humana` do `review.md`, como o template já dizia.
 
 ## Novidades da 6.3.0
 
@@ -153,7 +185,7 @@ A 6.2.0 é uma versão minor, sem migração de artefato e sem mudança de perfi
 - Avaliação com modelo real, benchmark ou medição longa nunca é prova de passo: vira passo próprio de medição, rodado uma vez em segundo plano, com repetições e corte da spec.
 - Gate de tipos no pacote tocado e incremental, nunca na forma recursiva do monorepo.
 - A execução vermelha roda só o teste novo.
-- Poda de testes (`skills/vibeflow/references/testes.md`, Poda): pedido medium próprio, proposto quando a regressão passa do orçamento, que remove duplicata, E2E repetido, teste proibido e teste de comportamento removido, sempre citando o teste que fica, e nunca toca prova de critério vigente, caso adversarial, autorização, dinheiro, dado pessoal ou preservação.
+- Poda de testes (`skills/vibeflow/references/testes/poda.md`): pedido medium próprio, proposto quando a regressão passa do orçamento, que remove duplicata, E2E repetido, teste proibido e teste de comportamento removido, sempre citando o teste que fica, e nunca toca prova de critério vigente, caso adversarial, autorização, dinheiro, dado pessoal ou preservação.
 
 ## Novidades da 6.1.0
 
@@ -263,7 +295,8 @@ A 5.0.0 é uma versão major: muda artefatos, rotas e papéis.
 ```text
 vibeflow/
 ├── skills/vibeflow/      pacote instalável (SKILL.md, agents/, references/, templates/, scripts/)
-├── tests/scripts/        testes dos scripts (não instala)
+├── tools/                medição de transcripts do host (não instala)
+├── tests/                testes dos scripts e de tools/ (não instala)
 ├── plugin.json           plugin Antigravity
 ├── AGENTS.md             regras deste repo (fonte viva)
 └── LICENSE
@@ -272,7 +305,7 @@ vibeflow/
 ## Como contribuir
 
 1. Contrato antes de prosa: mudança de disco começa em `skills/vibeflow/references/disco.md`.
-2. Scripts só leem, usam Node 18+ sem dependências e têm teste em `tests/scripts/` (`node --test`). Não adicione testes de presença de texto.
+2. Scripts só leem, usam Node 18+ sem dependências e têm teste em `tests/` (`node --test`). Não adicione testes de presença de texto.
 3. Antes do push, rode a revisão de consistência e a varredura de segredos descritas em `AGENTS.md`. O repositório não usa CI no GitHub, por decisão de custo.
 4. `AGENTS.md` é a única fonte de regras do projeto. Artefatos só em `.vibeflow/phases/phase-N-slug/` ou no baseline `.vibeflow/mvp/`.
 
