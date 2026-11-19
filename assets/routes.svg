@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 430" width="1200" height="430" role="img" aria-labelledby="t d">
+  <title id="t">vibeflow routes</title>
+  <desc id="d">Three routes sized to the request. Low: implement only. Medium: implement then review. High: interview, spec, plan, analyze, implement with up to two checkpoints, review. The human approves the spec and confirms the push.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1020"/>
+      <stop offset="1" stop-color="#151a36"/>
+    </linearGradient>
+    <marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0L8 4L0 8Z" fill="#64748b"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="430" rx="18" fill="url(#bg)"/>
+
+  <g font-family="'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif">
+    <!-- Lane labels -->
+    <g font-family="ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, Consolas, monospace" font-size="20" font-weight="700">
+      <text x="48" y="92" fill="#86efac">low</text>
+      <text x="48" y="202" fill="#fcd34d">medium</text>
+      <text x="48" y="312" fill="#f0abfc">high</text>
+    </g>
+    <g font-size="14" fill="#94a3b8">
+      <text x="48" y="114">clear, local change</text>
+      <text x="48" y="224">small new behavior</text>
+      <text x="48" y="334">ambiguous or risky</text>
+    </g>
+
+    <g stroke="#ffffff" stroke-opacity="0.07">
+      <path d="M40 148H1160"/>
+      <path d="M40 258H1160"/>
+    </g>
+
+    <g font-family="ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, Consolas, monospace" font-size="15" font-weight="600" text-anchor="middle">
+      <!-- low -->
+      <rect x="850" y="66" width="130" height="42" rx="21" fill="#052e1a" stroke="#86efac" stroke-opacity="0.8"/>
+      <text x="915" y="92" fill="#bbf7d0">implement</text>
+
+      <!-- medium -->
+      <rect x="850" y="176" width="130" height="42" rx="21" fill="#3a2a05" stroke="#fcd34d" stroke-opacity="0.8"/>
+      <text x="915" y="202" fill="#fde68a">implement</text>
+      <path d="M984 197H1022" stroke="#64748b" stroke-width="1.6" marker-end="url(#a)"/>
+      <rect x="1028" y="176" width="110" height="42" rx="21" fill="#3a2a05" stroke="#fcd34d" stroke-opacity="0.8"/>
+      <text x="1083" y="202" fill="#fde68a">review</text>
+
+      <!-- high -->
+      <rect x="250" y="286" width="120" height="42" rx="21" fill="#2e1065" stroke="#f0abfc" stroke-opacity="0.8"/>
+      <text x="310" y="312" fill="#f5d0fe">interview</text>
+      <path d="M374 307H398" stroke="#64748b" stroke-width="1.6" marker-end="url(#a)"/>
+      <rect x="404" y="286" width="90" height="42" rx="21" fill="#2e1065" stroke="#f0abfc" stroke-opacity="0.8"/>
+      <text x="449" y="312" fill="#f5d0fe">spec</text>
+      <path d="M498 307H522" stroke="#64748b" stroke-width="1.6" marker-end="url(#a)"/>
+      <rect x="528" y="286" width="90" height="42" rx="21" fill="#2e1065" stroke="#f0abfc" stroke-opacity="0.8"/>
+      <text x="573" y="312" fill="#f5d0fe">plan</text>
+      <path d="M622 307H646" stroke="#64748b" stroke-width="1.6" marker-end="url(#a)"/>
+      <rect x="652" y="286" width="110" height="42" rx="21" fill="#2e1065" stroke="#f0abfc" stroke-opacity="0.8"/>
+      <text x="707" y="312" fill="#f5d0fe">analyze</text>
+      <path d="M766 307H844" stroke="#64748b" stroke-width="1.6" marker-end="url(#a)"/>
+      <rect x="850" y="286" width="130" height="42" rx="21" fill="#2e1065" stroke="#f0abfc" stroke-opacity="0.8"/>
+      <text x="915" y="312" fill="#f5d0fe">implement</text>
+      <path d="M984 307H1022" stroke="#64748b" stroke-width="1.6" marker-end="url(#a)"/>
+      <rect x="1028" y="286" width="110" height="42" rx="21" fill="#2e1065" stroke="#f0abfc" stroke-opacity="0.8"/>
+      <text x="1083" y="312" fill="#f5d0fe">review</text>
+    </g>
+
+    <!-- Human gates and notes -->
+    <g font-size="13" text-anchor="middle">
+      <path d="M449 334V356" stroke="#7dd3fc" stroke-width="1.4"/>
+      <circle cx="449" cy="362" r="5" fill="#7dd3fc"/>
+      <text x="449" y="386" fill="#bae6fd">you approve the spec</text>
+      <text x="449" y="404" fill="#64748b">the only approval before code</text>
+
+      <path d="M1083 334V356" stroke="#7dd3fc" stroke-width="1.4"/>
+      <circle cx="1083" cy="362" r="5" fill="#7dd3fc"/>
+      <text x="1083" y="386" fill="#bae6fd">you confirm the push</text>
+
+      <text x="915" y="352" fill="#94a3b8">up to two checkpoints,</text>
+      <text x="915" y="370" fill="#94a3b8">checked in a clean context</text>
+
+      <text x="707" y="352" fill="#94a3b8">when there is risk</text>
+      <text x="707" y="370" fill="#94a3b8">or more than 8 steps</text>
+    </g>
+
+    <text x="1160" y="38" text-anchor="end" font-size="14" fill="#64748b">the lead picks the smallest route that delivers safely</text>
+  </g>
+</svg>

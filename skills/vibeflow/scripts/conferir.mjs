@@ -1,0 +1,303 @@
+#!/usr/bin/env node
+// conferir.mjs: confere, para o líder, o recorte de um passo e o commit antes de criá-lo.
+//
+// Dois modos, ambos somente leitura:
+//   --passo <ids>     compara as alterações não commitadas com os `Arquivos:` dos passos
+//                     (ou os paths dos R*, um ou mais) indicados: Conferência do líder de
+//                     references/delegation.md e passo 3 de references/implement.md.
+//                     Path de `## Trabalho alheio` do plan não é acusado, salvo declaração
+//                     sobreposta ao recorte de passo ou R* aberto (inclusive R* [x] sem
+//                     commit), que não vale e deixa o path como comum. No --commit o
+//                     staging de path de declaração vigente é acusado, mesmo dentro do
+//                     recorte; o de declaração sem vigência é comum: aceito no recorte e
+//                     acusado fora dele (references/disco.md, Plan > Trabalho alheio).
+//   --commit <msg>    confere a mensagem e o índice antes do commit: formatos de
+//                     references/disco.md (Commits), critérios no corpo do task(medium),
+//                     caixas e R* marcados no índice,
+//                     paths em staging dentro do recorte, spec.md do alvo high ou mvp
+//                     rastreada ou em staging e `git diff --cached --check` limpo
+//                     (references/disco.md, Commits). Em arquivo de teste do staging,
+//                     acusa marca de exclusividade nova (`.only`) e avisa marca de pulo
+//                     nova e arquivo apagado (references/testes.md, Política de testes).
+// Não faz staging nem commit e não decide nada: devolve achados para o líder. Divergência
+// entre este script e a prosa é bug do script.
+//
+// Uso:
+//   node conferir.mjs --passo 2a,2b [--alvo phase-N|mvp] [--raiz <dir>] [--json]
+//   node conferir.mjs --commit "<mensagem>" [--raiz <dir>] [--json]
+//   node conferir.mjs --commit-arquivo <path da mensagem> [--raiz <dir>] [--json]
+// Saída: 0 sem achado, 1 com achado, 2 em erro de uso.
+
+import { readFileSync, existsSync } from 'node:fs';
+import { resolve, relative } from 'node:path';
+import {
+  carregarAlvos, alvoPadrao, alvoNomeado, lerPlan, lerRs, recorte, normalizarPath, segmentos, dentroDoRecorte,
+  classificarCommit, naoCommitados, emStaging, linhasNoGit, git, gitComCodigo, ehEntradaDeTeste, jsonAscii, executadoDireto, semTrabalhoAlheio, alheiosVigentes, idsCommitados, commits,
+} from './_disco.mjs';
+
+// Pastas que nunca são código do passo: artefatos da cadeia e registros de achado fora do
+// recorte (references/disco.md, Estado da phase e Glossário).
+const FORA_DO_CODIGO = ['.vibeflow/', '.erros-encontrados/'];
+// Paths que o commit `chore(init): ...` pode levar (references/init.md, passo 7).
+const PATHS_INIT = ['AGENTS.md', '.agents/rules/vibeflow.md', '.vibeflow/phases/.gitkeep', '.vibeflow/old/', '.claude/settings.json'];
+
+// Marcas em arquivo de teste (references/testes.md, Política de testes). Exclusividade faz o
+// runner ignorar os demais testes do arquivo e nunca é estado de commit; pulo e arquivo apagado
+// têm caso legítimo (duplicata sem ganho, pulo condicional por plataforma), que o disco não
+// distingue, e por isso são aviso a justificar no relatório.
+// ponytail: padrões dos runners mais comuns de JS e TS, pytest, unittest, Go e JUnit, lidos como
+//   texto da linha acrescentada; marca em string ou comentário também casa. Ampliar ou trocar
+//   por leitura da sintaxe quando um projeto usar runner fora desta lista ou o falso positivo
+//   aparecer numa phase.
+const RE_EXCLUSIVO = /\b(?:describe|it|test|context|suite)\.only\b|\b(?:fdescribe|fit)\s*\(/;
+const RE_PULO = /\b(?:describe|it|test|context|suite)\.(?:skip|fixme)\b|\b(?:xdescribe|xit|xtest)\s*\(|@pytest\.mark\.(?:skip|skipif|xfail)\b|@(?:unittest\.)?skip\b|\bt\.Skip(?:f|Now)?\(|@(?:Disabled|Ignore)\b/;
+
+const relPasta = (raiz, alvo) => relative(raiz, alvo.pasta).replace(/\\/g, '/');
+const dentroDePrefixo = (path, prefixos) => prefixos.some((p) => (p.endsWith('/') ? path.startsWith(p) : path === p));
+
+// ---------------------------------------------------------------------------
+// Recorte dos IDs (references/disco.md, Plan > Arquivos; R* em templates/review.md)
+// ---------------------------------------------------------------------------
+
+/**
+ * Recorte combinado de uma lista de IDs de passo (`2a`) e de R* (`R1`).
+ * Devolve { recortes, achados, avisos }; um ID sem recorte comparável vira aviso, porque a
+ * conferência de paths fica indisponível para ele, não errada.
+ */
+function recorteDosIds(ids, passos, rs) {
+  const recortes = [];
+  const achados = [];
+  const avisos = [];
+  for (const id of ids) {
+    if (/^R[1-9][0-9]*$/.test(id)) {
+      const r = rs.find((x) => x.id === id);
+      if (!r) { achados.push(`${id} não existe no review.md do alvo`); continue; }
+      // Um path incomparável deixa o R* inteiro sem recorte, como o passo.
+      const norm = r.paths.map(normalizarPath);
+      if (!norm.length || norm.some((n) => n === null)) avisos.push(`${id} sem path comparável: confira o recorte dele pelo relatório`);
+      else recortes.push(...norm);
+      continue;
+    }
+    const p = passos.find((x) => x.id === id);
+    if (!p) { achados.push(`passo ${id} não existe no plan.md do alvo`); continue; }
+    const rec = recorte(p);
+    if (!rec) avisos.push(`passo ${id} sem Arquivos: comparáveis: confira o recorte dele pelo relatório`);
+    else recortes.push(...rec);
+  }
+  return { recortes, achados, avisos };
+}
+
+// ---------------------------------------------------------------------------
+// Modo --passo
+// ---------------------------------------------------------------------------
+
+/** Commits do contrato do alvo (classificarCommit), para saber quais R* já têm commit task. */
+function classificadosDoAlvo(raiz, alvo) {
+  return (commits(raiz) || []).map((c) => classificarCommit(c.assunto)).filter((k) => k && k.alvo === alvo.alvo);
+}
+
+/**
+ * Alterações não commitadas fora de .vibeflow/, .erros-encontrados/ e do `## Trabalho alheio`
+ * vigente do plan do alvo (alheiosVigentes), comparadas ao recorte dos IDs.
+ */
+export function conferirPasso(raiz, ids, nomeAlvo = null) {
+  const alvos = carregarAlvos(raiz);
+  const alvo = nomeAlvo ? alvoNomeado(alvos, nomeAlvo) : alvoPadrao(alvos);
+  if (!alvo) return { erro: nomeAlvo ? `alvo não encontrado: ${nomeAlvo}` : 'sem alvo aberto; informe --alvo' };
+  const alterados = naoCommitados(raiz);
+  if (alterados === null) return { erro: 'git indisponível na raiz' };
+
+  const plan = lerPlan(alvo.art.plan);
+  const { recortes, achados, avisos } = recorteDosIds(ids, plan.passos, lerRs(alvo.art.review));
+  const codigo = semTrabalhoAlheio(alterados.filter((p) => !dentroDePrefixo(p, FORA_DO_CODIGO)), alheiosVigentes(alvo, idsCommitados(classificadosDoAlvo(raiz, alvo))));
+  // Sem nenhum recorte comparável, não há contra o que julgar: só os avisos valem.
+  const fora = recortes.length ? codigo.filter((p) => !dentroDoRecorte(segmentos(p), recortes)) : [];
+  for (const p of fora) achados.push(`path fora do recorte: ${p}`);
+  if (!codigo.length) avisos.push('nenhuma alteração de código ou teste fora de .vibeflow/ e .erros-encontrados/');
+  return { modo: 'passo', alvo: alvo.alvo, ids, alterados: codigo, achados, avisos };
+}
+
+// ---------------------------------------------------------------------------
+// Modo --commit
+// ---------------------------------------------------------------------------
+
+/** IDs com a caixa marcada: passos de um plan ou R* de um review. */
+const marcados = (lista) => new Set(lista.filter((x) => x.caixa ?? x.feito).map((x) => x.id));
+
+/**
+ * Confere caixas (ou R*) no índice contra os IDs da mensagem: todo ID citado está marcado
+ * no índice, e toda marcação nova no índice (aberta no HEAD) está citada. ID já marcado
+ * no HEAD é aceito: é a correção devolvida pelo checkpoint (references/disco.md, Commits).
+ */
+function conferirMarcacoes(ids, noIndice, noHead, rotulo) {
+  const achados = [];
+  const indice = marcados(noIndice);
+  const head = marcados(noHead);
+  for (const id of ids) if (!indice.has(id)) achados.push(`${id} citado na mensagem, mas ${rotulo} aberto no índice (marque e faça staging do artefato)`);
+  for (const id of indice) if (!head.has(id) && !ids.includes(id)) achados.push(`${id} marcado no índice e ausente da mensagem`);
+  return achados;
+}
+
+/** Confere uma mensagem de commit e o índice atual contra o contrato. */
+export function conferirCommit(raiz, mensagem) {
+  const achados = [];
+  const avisos = [];
+  const assunto = (mensagem.replace(/^﻿/, '').split(/\r?\n/)[0] || '').trim();
+  if (/co-authored-by/i.test(mensagem)) achados.push('mensagem com Co-Authored-By');
+
+  const tipo = classificarCommit(assunto) || (/^chore\(init\): /.test(assunto) ? { tipo: 'init', alvo: null, ids: [] } : null);
+  if (!tipo) achados.push(`assunto fora dos formatos de references/disco.md (Commits): ${assunto || '(vazio)'}`);
+  else if (!/\): \S/.test(assunto)) achados.push('assunto sem o resultado depois de "): "');
+
+  const staging = emStaging(raiz);
+  if (staging === null) return { erro: 'git indisponível na raiz' };
+  if (!staging.length) achados.push('nada em staging');
+  const check = gitComCodigo(raiz, ['diff', '--cached', '--check']);
+  if (check.codigo !== 0) achados.push(`git diff --cached --check acusou: ${check.out.trim().split(/\r?\n/).slice(0, 3).join(' | ') || 'erro'}`);
+
+  let permitidos = null; // null: sem recorte no disco para conferir os paths
+  let recortes = [];
+  let alheios = []; // trabalho alheio vigente do plan (alheiosVigentes): fora do staging, mesmo dentro do recorte
+  if (tipo && (tipo.tipo === 'task' || tipo.tipo === 'finalize' || tipo.tipo === 'push-adiado')) {
+    const alvo = alvoNomeado(carregarAlvos(raiz), tipo.alvo);
+    if (!alvo) {
+      achados.push(`alvo ${tipo.alvo} não existe no disco`);
+    } else {
+      const pasta = relPasta(raiz, alvo);
+      permitidos = [`${pasta}/`, '.erros-encontrados/'];
+      // A spec.md de high e mvp entra no Git pelo primeiro commit do alvo (references/disco.md,
+      // Commits). O índice (`:path`) tem tanto o que já está no HEAD quanto o que está em staging;
+      // medium não tem spec.md e não é conferido.
+      if (alvo.art.spec && linhasNoGit(raiz, '', `${pasta}/spec.md`) === null) {
+        achados.push(`spec.md do alvo fora do Git: inclua ${pasta}/spec.md no staging`);
+      }
+      // Mesma vigência do --passo e do estado: declaração sobreposta ao recorte de passo ou R*
+      // aberto não vale, e o path dela segue a regra comum (ids commitados definem o R* aberto).
+      alheios = alheiosVigentes(alvo, idsCommitados(classificadosDoAlvo(raiz, alvo)));
+      if (tipo.tipo === 'task') {
+        // O recorte vem do artefato na árvore de trabalho (a definição do passo); as
+        // marcações vêm do índice e do HEAD, porque é o índice que vira commit. Artefato
+        // fora do índice, como o plan.md ainda não commitado e sem staging, conta como
+        // tudo aberto e acusa a falta de staging.
+        const planIdx = lerPlan(linhasNoGit(raiz, '', `${pasta}/plan.md`)).passos;
+        const planHead = lerPlan(linhasNoGit(raiz, 'HEAD', `${pasta}/plan.md`)).passos;
+        const rsIdx = lerRs(linhasNoGit(raiz, '', `${pasta}/review.md`));
+        const rsHead = lerRs(linhasNoGit(raiz, 'HEAD', `${pasta}/review.md`));
+        const planArvore = lerPlan(alvo.art.plan).passos;
+        const idsPasso = tipo.ids.filter((id) => !/^R/.test(id));
+        const idsR = tipo.ids.filter((id) => /^R/.test(id));
+        if (!tipo.ids.length) achados.push('task sem IDs de passo ou de R*');
+
+        const r = recorteDosIds(tipo.ids, planArvore, lerRs(alvo.art.review));
+        achados.push(...r.achados);
+        avisos.push(...r.avisos);
+        recortes = r.recortes;
+        if (r.avisos.length) permitidos = null; // um ID sem recorte deixa o conjunto indefinido
+
+        const ordem = planArvore.map((p) => p.id).filter((id) => idsPasso.includes(id));
+        if (ordem.length === idsPasso.length && ordem.join() !== idsPasso.join()) achados.push(`IDs fora da ordem do plan: esperado ${ordem.join(',')}`);
+        achados.push(...conferirMarcacoes(idsPasso, planIdx, planHead, 'caixa'));
+        achados.push(...conferirMarcacoes(idsR, rsIdx, rsHead, 'R*'));
+      } else {
+        permitidos.push('AGENTS.md');
+      }
+    }
+  } else if (tipo && tipo.tipo === 'init') {
+    permitidos = PATHS_INIT;
+  } else if (tipo) {
+    // O corpo do task(medium) é a única cópia em disco do aceite da entrega
+    // (references/disco.md, Commits); a review o lê para julgar o diff.
+    if (tipo.tipo === 'medium') {
+      const linhas = mensagem.replace(/^﻿/, '').split(/\r?\n/);
+      if (linhas.length > 1 && linhas[1].trim()) achados.push('task(medium) sem linha em branco entre o assunto e o corpo');
+      if (!linhas.slice(2).some((l) => /^- A[1-9][0-9]*: \S/.test(l.trim()))) achados.push('task(medium) sem critérios de aceite no corpo (- A1: <critério>)');
+    }
+    avisos.push(`entrega ${tipo.tipo} sem recorte no disco: confira o staging contra o brief`);
+  }
+
+  // O path de declaração vigente é acusado mesmo dentro do recorte: trabalho alheio não entra no
+  // commit e o staging dele exige decisão. Declaração sem vigência já saiu de `alheios`, e o
+  // path dela segue a regra comum (aceito no recorte, acusado fora dele, sem a marca).
+  const MARCA = ' (declarado em ## Trabalho alheio)';
+  for (const p of staging) {
+    const alheio = dentroDoRecorte(segmentos(p), alheios);
+    const dentro = (permitidos && dentroDePrefixo(p, permitidos)) || dentroDoRecorte(segmentos(p), recortes);
+    if (permitidos && !dentro) achados.push(`path em staging fora do recorte: ${p}${alheio ? MARCA : ''}`);
+    else if (alheio) achados.push(`path em staging do recorte, mas declarado alheio: ${p}${MARCA}`);
+  }
+  const testes = conferirTestes(raiz, staging);
+  achados.push(...testes.achados);
+  avisos.push(...testes.avisos);
+  return { modo: 'commit', assunto, tipo: tipo ? tipo.tipo : null, staging, achados, avisos };
+}
+
+/**
+ * Marcas novas e arquivos apagados nos arquivos de teste do staging. Arquivo de teste é a
+ * entrada de teste de references/disco.md (Plan > Arquivos). Só as linhas acrescentadas contam:
+ * marca que já estava no HEAD não é deste commit.
+ */
+function conferirTestes(raiz, staging) {
+  const achados = [];
+  const avisos = [];
+  const apagados = new Set((git(raiz, ['diff', '--cached', '--name-only', '--diff-filter=D', '-z']) || '').split('\0').filter(Boolean));
+  for (const p of staging.filter(ehEntradaDeTeste)) {
+    if (apagados.has(p)) {
+      avisos.push(`arquivo de teste apagado em staging: ${p}; cite no relatório o teste que fica com a prova (references/testes.md, O que não testar)`);
+      continue;
+    }
+    const novas = (git(raiz, ['diff', '--cached', '-U0', '--no-color', '--', p]) || '').split(/\r?\n/)
+      .filter((l) => l.startsWith('+') && !l.startsWith('+++'));
+    if (novas.some((l) => RE_EXCLUSIVO.test(l))) achados.push(`marca de exclusividade nova em teste: ${p} (.only ou equivalente; os demais testes do arquivo deixam de rodar)`);
+    if (novas.some((l) => RE_PULO.test(l))) avisos.push(`marca de pulo nova em teste: ${p}; cite no relatório o motivo pelo critério (references/testes.md, Política de testes)`);
+  }
+  return { achados, avisos };
+}
+
+// ---------------------------------------------------------------------------
+// Execução
+// ---------------------------------------------------------------------------
+
+function lerArgs(argv) {
+  const args = { raiz: process.cwd(), alvo: null, json: false, passo: null, commit: null };
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === '--json') args.json = true;
+    else if (['--raiz', '--alvo', '--passo', '--commit', '--commit-arquivo'].includes(a) && argv[i + 1] !== undefined) {
+      const v = argv[++i];
+      if (a === '--commit-arquivo') {
+        if (!existsSync(v)) return { erro: `arquivo de mensagem não encontrado: ${v}` };
+        args.commit = readFileSync(v, 'utf8');
+      } else {
+        args[a.slice(2)] = v;
+      }
+    } else return { erro: `argumento desconhecido ou sem valor: ${a}` };
+  }
+  if ((args.passo === null) === (args.commit === null)) return { erro: 'use exatamente um modo: --passo <ids> ou --commit <mensagem>' };
+  if (args.passo !== null) {
+    args.ids = args.passo.split(',').map((s) => s.trim()).filter(Boolean);
+    if (!args.ids.length) return { erro: '--passo sem IDs' };
+  }
+  return args;
+}
+
+function texto(r) {
+  const l = [r.modo === 'passo' ? `alvo: ${r.alvo} · passos: ${r.ids.join(', ')} · alterados: ${r.alterados.length}` : `commit: ${r.assunto} · staging: ${r.staging.length} path(s)`];
+  for (const a of r.achados) l.push(`achado: ${a}`);
+  for (const a of r.avisos) l.push(`aviso: ${a}`);
+  if (!r.achados.length) l.push('sem achado');
+  return `${l.join('\n')}\n`;
+}
+
+function principal() {
+  const args = lerArgs(process.argv.slice(2));
+  if (args.erro) { console.error(args.erro); return 2; }
+  const raiz = resolve(args.raiz);
+  const r = args.passo !== null ? conferirPasso(raiz, args.ids, args.alvo) : conferirCommit(raiz, args.commit);
+  if (r.erro) { console.error(r.erro); return 2; }
+  process.stdout.write(args.json ? `${jsonAscii(r)}\n` : texto(r));
+  return r.achados.length ? 1 : 0;
+}
+
+if (executadoDireto(import.meta.url)) {
+  process.exitCode = principal();
+}

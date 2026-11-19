@@ -1,0 +1,204 @@
+{
+  "descricao": "Divisão de phase na interview (references/interview.md, Perguntar): com o mapa do explorador pronto, o líder decide se a primeira pergunta é a divisão. Cada grupo tem um caso core, usado durante a edição da skill, e duas variações, rodadas só na conferência final. Os grupos separam assunto independente de tamanho, em passos e em critérios.",
+  "instrucao": "O humano chamou /vibeflow com o pedido abaixo. A rota é high, a phase está aberta e você é o líder da skill vibeflow, na interview, com o mapa do explorador pronto. Usando só as regras do contexto, decida se a primeira pergunta ao humano propõe dividir o pedido em phases. Não escreva a pergunta: responda só com o rótulo da decisão.\n\nmotivo: primeiro, uma frase com a regra que decidiu.\n\ndivisao, depois do motivo e coerente com ele:\n- dividir: a primeira pergunta propõe dividir o pedido em phases\n- seguir: o pedido segue numa phase só, e a primeira pergunta é sobre o conteúdo\n\nResponda só com um objeto JSON no formato {\"motivo\": \"...\", \"divisao\": \"dividir\" ou \"seguir\"}, sem texto antes ou depois.",
+  "campos": {
+    "divisao": [
+      "dividir",
+      "seguir"
+    ]
+  },
+  "casos": [
+    {
+      "id": "D01",
+      "grupo": "um-assunto-grande-em-criterios",
+      "tipo": "core",
+      "critico": true,
+      "estado": "Site institucional em Astro. O mapa do explorador prevê 17 passos e 45 critérios para a home nova: layout estático e camada de movimento da mesma proposta aprovada, que só entrega valor junta.",
+      "pedido": "Refaz a home inteira conforme a proposta aprovada no canvas, com o layout e as animações.",
+      "esperado": {
+        "divisao": "seguir"
+      },
+      "casa": "references/interview.md, Perguntar, primeiro item"
+    },
+    {
+      "id": "D01a",
+      "grupo": "um-assunto-grande-em-criterios",
+      "tipo": "var",
+      "critico": true,
+      "estado": "App web de agenda. O mapa do explorador prevê 15 passos e 32 critérios para a tela de reservas nova, com listagem, filtro e formulário, que só funcionam juntos.",
+      "pedido": "Troca a tela de reservas pela versão nova do design, com filtro e formulário.",
+      "esperado": {
+        "divisao": "seguir"
+      },
+      "casa": "references/interview.md, Perguntar, primeiro item"
+    },
+    {
+      "id": "D01b",
+      "grupo": "um-assunto-grande-em-criterios",
+      "tipo": "var",
+      "critico": true,
+      "estado": "CLI de edição de vídeo. O mapa do explorador prevê 18 passos e 40 critérios para o suporte a legendas, de leitura do arquivo à renderização, um fluxo só.",
+      "pedido": "Adiciona legendas embutidas na exportação.",
+      "esperado": {
+        "divisao": "seguir"
+      },
+      "casa": "references/interview.md, Perguntar, primeiro item"
+    },
+    {
+      "id": "D02",
+      "grupo": "assuntos-independentes",
+      "tipo": "core",
+      "critico": true,
+      "estado": "App web de agenda. O mapa do explorador prevê 6 passos e 10 critérios: 3 passos para exportar a agenda em CSV e 3 para trocar o tema de cores, sem arquivo em comum.",
+      "pedido": "Quero exportar a agenda em CSV e também trocar o tema de cores do app.",
+      "esperado": {
+        "divisao": "dividir"
+      },
+      "casa": "references/interview.md, Perguntar, primeiro item"
+    },
+    {
+      "id": "D02a",
+      "grupo": "assuntos-independentes",
+      "tipo": "var",
+      "critico": true,
+      "estado": "API de pedidos. O mapa do explorador prevê 7 passos e 11 critérios: notificação por e-mail do pedido enviado e um relatório mensal de vendas, cada um útil sozinho.",
+      "pedido": "Manda e-mail quando o pedido sai e cria o relatório mensal de vendas.",
+      "esperado": {
+        "divisao": "dividir"
+      },
+      "casa": "references/interview.md, Perguntar, primeiro item"
+    },
+    {
+      "id": "D02b",
+      "grupo": "assuntos-independentes",
+      "tipo": "var",
+      "critico": true,
+      "estado": "Bot de atendimento. O mapa do explorador prevê 5 passos e 9 critérios: login por Google no painel e a troca do modelo usado nas respostas, sem dependência entre eles.",
+      "pedido": "Coloca login com Google no painel e troca o modelo das respostas.",
+      "esperado": {
+        "divisao": "dividir"
+      },
+      "casa": "references/interview.md, Perguntar, primeiro item"
+    },
+    {
+      "id": "D03",
+      "grupo": "um-assunto-acima-do-teto-de-passos",
+      "tipo": "core",
+      "critico": true,
+      "estado": "Plataforma de cursos. O mapa do explorador prevê 26 passos e 50 critérios para a área do aluno nova, um assunto só, com progresso, certificados, fórum e perfil.",
+      "pedido": "Refaz a área do aluno completa.",
+      "esperado": {
+        "divisao": "dividir"
+      },
+      "casa": "references/interview.md, Perguntar, primeiro item"
+    },
+    {
+      "id": "D03a",
+      "grupo": "um-assunto-acima-do-teto-de-passos",
+      "tipo": "var",
+      "critico": true,
+      "estado": "ERP interno. O mapa do explorador prevê 24 passos e 38 critérios para o módulo de estoque novo, um assunto só, com entradas, saídas, inventário e relatórios.",
+      "pedido": "Cria o módulo de estoque.",
+      "esperado": {
+        "divisao": "dividir"
+      },
+      "casa": "references/interview.md, Perguntar, primeiro item"
+    },
+    {
+      "id": "D03b",
+      "grupo": "um-assunto-acima-do-teto-de-passos",
+      "tipo": "var",
+      "critico": true,
+      "estado": "App de finanças pessoais. O mapa do explorador prevê 30 passos e 44 critérios para a importação de extratos de todos os bancos suportados, um assunto só.",
+      "pedido": "Importa extratos de todos os bancos.",
+      "esperado": {
+        "divisao": "dividir"
+      },
+      "casa": "references/interview.md, Perguntar, primeiro item"
+    },
+    {
+      "id": "D04",
+      "grupo": "um-assunto-medio",
+      "tipo": "core",
+      "critico": true,
+      "estado": "Site institucional em Astro. O mapa do explorador prevê 9 passos e 20 critérios para a camada de movimento da home, um assunto só.",
+      "pedido": "Coloca as animações da proposta na home.",
+      "esperado": {
+        "divisao": "seguir"
+      },
+      "casa": "references/interview.md, Perguntar, primeiro item"
+    },
+    {
+      "id": "D04a",
+      "grupo": "um-assunto-medio",
+      "tipo": "var",
+      "critico": true,
+      "estado": "Bot de atendimento. O mapa do explorador prevê 11 passos e 24 critérios para as notificações por push, um assunto só.",
+      "pedido": "Faz as notificações por push funcionarem direito.",
+      "esperado": {
+        "divisao": "seguir"
+      },
+      "casa": "references/interview.md, Perguntar, primeiro item"
+    },
+    {
+      "id": "D04b",
+      "grupo": "um-assunto-medio",
+      "tipo": "var",
+      "critico": true,
+      "estado": "CLI de edição de vídeo. O mapa do explorador prevê 10 passos e 16 critérios para o cache de proxies, um assunto só.",
+      "pedido": "Cria cache dos proxies para a revisão abrir mais rápido.",
+      "esperado": {
+        "divisao": "seguir"
+      },
+      "casa": "references/interview.md, Perguntar, primeiro item"
+    },
+    {
+      "id": "D04c",
+      "grupo": "um-assunto-medio",
+      "tipo": "var",
+      "critico": true,
+      "estado": "App web de agenda. O mapa do explorador prevê exatamente 20 passos e 30 critérios para o painel do administrador novo, um assunto só.",
+      "pedido": "Cria o painel do administrador.",
+      "esperado": {
+        "divisao": "seguir"
+      },
+      "casa": "references/interview.md, Perguntar, primeiro item"
+    },
+    {
+      "id": "D05",
+      "grupo": "um-assunto-pequeno",
+      "tipo": "core",
+      "critico": false,
+      "estado": "App web de agenda. O mapa do explorador prevê 4 passos e 7 critérios para o lembrete por e-mail um dia antes da reserva.",
+      "pedido": "Manda lembrete por e-mail um dia antes da reserva.",
+      "esperado": {
+        "divisao": "seguir"
+      },
+      "casa": "references/interview.md, Perguntar, primeiro item"
+    },
+    {
+      "id": "D05a",
+      "grupo": "um-assunto-pequeno",
+      "tipo": "var",
+      "critico": false,
+      "estado": "API de pedidos. O mapa do explorador prevê 3 passos e 6 critérios para o cancelamento de pedido pelo cliente.",
+      "pedido": "Deixa o cliente cancelar o pedido antes do envio.",
+      "esperado": {
+        "divisao": "seguir"
+      },
+      "casa": "references/interview.md, Perguntar, primeiro item"
+    },
+    {
+      "id": "D05b",
+      "grupo": "um-assunto-pequeno",
+      "tipo": "var",
+      "critico": false,
+      "estado": "Site institucional em Astro. O mapa do explorador prevê 5 passos e 9 critérios para o formulário de contato com envio ao WhatsApp.",
+      "pedido": "Coloca um formulário de contato que manda para o WhatsApp.",
+      "esperado": {
+        "divisao": "seguir"
+      },
+      "casa": "references/interview.md, Perguntar, primeiro item"
+    }
+  ]
+}

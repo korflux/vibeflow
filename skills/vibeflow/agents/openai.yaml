@@ -1,0 +1,5 @@
+interface:
+  display_name: "VibeFlow"
+  short_description: "Conduz entregas de software pelo /vibeflow"
+policy:
+  allow_implicit_invocation: false

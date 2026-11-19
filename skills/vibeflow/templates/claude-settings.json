@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(git add -A*)",
+      "Bash(git add --all*)",
+      "Bash(git add .)",
+      "Bash(git add . *)",
+      "Bash(git commit --amend*)",
+      "Bash(git commit * --amend*)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git push * --force*)",
+      "Bash(git push * -f*)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean*)",
+      "Bash(git checkout .)",
+      "Bash(git checkout -- .)",
+      "Bash(git restore .)",
+      "Bash(git stash clear*)",
+      "PowerShell(git add -A*)",
+      "PowerShell(git add --all*)",
+      "PowerShell(git add .)",
+      "PowerShell(git add . *)",
+      "PowerShell(git commit --amend*)",
+      "PowerShell(git commit * --amend*)",
+      "PowerShell(git push --force*)",
+      "PowerShell(git push -f*)",
+      "PowerShell(git push * --force*)",
+      "PowerShell(git push * -f*)",
+      "PowerShell(git reset --hard*)",
+      "PowerShell(git clean*)",
+      "PowerShell(git checkout .)",
+      "PowerShell(git checkout -- .)",
+      "PowerShell(git restore .)",
+      "PowerShell(git stash clear*)",
+      "Read(./.env)",
+      "Read(./.env.local)",
+      "Read(./.env.*.local)",
+      "Read(./.env.production)"
+    ]
+  }
+}
