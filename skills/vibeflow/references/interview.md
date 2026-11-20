@@ -32,6 +32,15 @@ Ao mesmo tempo, o líder abre os itens do núcleo que o pedido toca (`references
 
 - Uma phase cobre um assunto. Quando o pedido junta assuntos independentes (cada um entrega valor sozinho), ou o mapa do explorador já indica mais de 20 passos, a primeira pergunta é a divisão: proponha as phases, na ordem, com a primeira recomendada; a phase atual segue só com a primeira. O número de critérios não divide a phase.
 - Pergunte só o que o código e o pedido não decidem e que muda o resultado, nunca o já respondido. Pedido claro tem uma ou duas perguntas; ambíguo, até as decisões restantes serem previsíveis. No MVP, feche o núcleo e os módulos acionados de `references/interview/mvp-discovery.md`.
+- Antes de cada pergunta, classifique a decisão pelo que o humano tem base para escolher:
+
+| Decisão | Conduta |
+|---|---|
+| Comportamento: o que o usuário, o cliente ou o agente que consome o produto vê, faz, recebe ou perde | Pergunte |
+| Construção com efeito que o humano sente: custo, velocidade, qualidade percebida, prazo, perda de dado ou quebra para quem já usa | Pergunte pelo efeito; as opções descrevem a consequência, sem o nome técnico |
+| Construção sem esse efeito: forma de dado ou de schema, filtro, biblioteca, ponto do grafo, chave de cache, reaproveitar ou duplicar | Assuma pela recomendação, com o padrão do projeto e o mapa do explorador, e registre como decisão assumida com o motivo; se for difícil de desfazer, diga isso no motivo |
+
+- Escreva pergunta e opções no vocabulário do produto. Termo técnico só quando não houver outro, explicado em meia linha.
 - Um turno por vez, neste formato:
 
 ```text
@@ -42,7 +51,7 @@ Opções: <duas ou três, cada uma com o impacto em uma linha>
 ```
 
 - Sem base para recomendar, diga isso. Várias respostas de uma vez valem: registre tudo e siga com o que falta. "Tanto faz" crava a recomendação.
-- Lacuna reversível e de baixo risco: o líder assume a recomendação, avisa e a registra como decisão assumida. Decisão cara, sensível, irreversível ou que altera a lógica central é perguntada; recomendação não é autorização.
+- Lacuna de comportamento reversível e de baixo risco: o líder assume a recomendação, avisa e a registra como decisão assumida. Decisão de comportamento cara, sensível, irreversível ou que altera o comportamento central é perguntada; recomendação não é autorização.
 - Decisão de autenticação, autorização, segurança ou dados, inclusive privacidade e dado pessoal, é sempre perguntada ao humano e nunca assumida, na phase e no MVP. N/A nesses temas exige fundamento e confirmação do humano.
 
 ### 3. Cobrir o que o pedido aciona

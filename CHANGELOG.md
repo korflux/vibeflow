@@ -2,6 +2,14 @@
 
 O que mudou em cada versão do vibeflow, da mais nova para a mais antiga. Quebra de contrato é major, acréscimo sem quebra é minor e correção é patch.
 
+## 6.7.1
+
+A 6.7.1 é uma versão patch, sem migração de artefato nem mudança de contrato: corrige o tipo de pergunta da interview.
+
+- A interview classifica cada decisão antes de perguntar (`skills/vibeflow/references/interview.md`, Perguntar). Comportamento, o que o usuário ou o agente consumidor vê, faz, recebe ou perde, é perguntado. Construção com efeito que o humano sente, como custo, velocidade, qualidade ou quebra para quem já usa, é perguntada pelo efeito, sem o nome técnico nas opções. Construção sem esse efeito, como forma de schema, filtro, chave de cache ou reaproveitar ou duplicar, é assumida pelo líder e registrada com o motivo, para o humano revisar ao aprovar a spec. Segurança e dados continuam sempre perguntados.
+- Pergunta e opções vão no vocabulário do produto, com termo técnico só quando não houver outro.
+- Terceira suíte do benchmark, `tools/bench/pergunta.json`, para a decisão entre perguntar e assumir. No modelo padrão do benchmark, a taxa foi de 80,6% para 100%, com os casos de schema e de cache passando de 0 de 3 para 3 de 3; a suíte de divisão manteve 100%.
+
 ## 6.7.0
 
 A 6.7.0 é uma versão minor, sem migração de artefato e com mudança no perfil do verificador, com base na palestra "Rethinking Claude Code Best Practices" (Lydia Hallie, Anthropic): o que não se desfaz sai da prosa e vai para o host. O bloco `VIBEFLOW:CADEIA` não muda. O re-init (`/vibeflow init`) é o que oferece os bloqueios a um projeto já inicializado e o que relata o perfil global do verificador como diferente da fonte; a troca dele pede a sua decisão, como toda substituição de perfil.

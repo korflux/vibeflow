@@ -1,0 +1,156 @@
+{
+  "descricao": "Pergunta ou decisão assumida na interview (references/interview.md, Perguntar): com o mapa do explorador pronto e uma decisão em aberto, o líder decide se ela vai ao humano ou se a assume e registra. Cada grupo tem um caso core, usado durante a edição da skill, e duas variações, rodadas só na conferência final. Os grupos separam comportamento do produto, construção interna sem efeito que o humano sinta, construção com efeito que o humano sente e segurança ou dados.",
+  "instrucao": "O humano chamou /vibeflow com o pedido abaixo. A rota é high, a phase está aberta e você é o líder da skill vibeflow, na interview, com o mapa do explorador pronto. O estado descreve uma decisão ainda em aberto. Usando só as regras do contexto, decida se essa decisão vira pergunta ao humano ou se você a assume e registra na spec. Não escreva a pergunta: responda só com o rótulo da decisão.\n\nmotivo: primeiro, uma frase com a regra que decidiu.\n\ndecisao, depois do motivo e coerente com ele:\n- perguntar: a decisão vira pergunta ao humano neste turno\n- assumir: o líder decide pela recomendação e a registra como decisão assumida, sem perguntar\n\nResponda só com um objeto JSON no formato {\"motivo\": \"...\", \"decisao\": \"perguntar\" ou \"assumir\"}, sem texto antes ou depois.",
+  "campos": {
+    "decisao": [
+      "perguntar",
+      "assumir"
+    ]
+  },
+  "casos": [
+    {
+      "id": "P01",
+      "grupo": "comportamento",
+      "tipo": "core",
+      "critico": true,
+      "estado": "CRM de captação de leads. Decisão em aberto: quando um formulário recebe um email que já existe na base com outro telefone, a conversão vai para o contato existente ou cria um contato novo.",
+      "pedido": "Quero que os leads que chegam pelos formulários virem contatos sem duplicar pessoa.",
+      "esperado": {
+        "decisao": "perguntar"
+      },
+      "casa": "references/interview.md, Perguntar"
+    },
+    {
+      "id": "P01a",
+      "grupo": "comportamento",
+      "tipo": "var",
+      "critico": true,
+      "estado": "Construtor de formulários embutíveis. Decisão em aberto: quando o dono edita os campos de um formulário, o código que ele já colou no site para de aceitar envios, continua aceitando com os campos antigos ou é atualizado sozinho.",
+      "pedido": "Deixa editar os campos de um formulário já publicado.",
+      "esperado": {
+        "decisao": "perguntar"
+      },
+      "casa": "references/interview.md, Perguntar"
+    },
+    {
+      "id": "P01b",
+      "grupo": "comportamento",
+      "tipo": "var",
+      "critico": true,
+      "estado": "Editor de vídeo dirigido por agente, com um comando que sugere cortes de silêncio. Decisão em aberto: o comando corta sozinho as palavras de vício de linguagem ou só as aponta para o agente e o usuário decidirem.",
+      "pedido": "Cria um comando que sugere onde cortar silêncios e vícios de fala.",
+      "esperado": {
+        "decisao": "perguntar"
+      },
+      "casa": "references/interview.md, Perguntar"
+    },
+    {
+      "id": "P02",
+      "grupo": "construcao-interna",
+      "tipo": "core",
+      "critico": true,
+      "estado": "Editor de vídeo dirigido por agente; o agente escreve um plan.json validado por allowlist. Decisão em aberto: as trilhas de áudio novas ficam numa lista de topo plana, com um campo de papel (voz, música, efeito), ou dentro de faixas que funcionam como contêineres de itens. O papel vai servir para o abaixamento automático da música sob a voz numa phase futura.",
+      "pedido": "Quero poder colocar música de fundo e efeitos sonoros com posição própria na timeline.",
+      "esperado": {
+        "decisao": "assumir"
+      },
+      "casa": "references/interview.md, Perguntar"
+    },
+    {
+      "id": "P02a",
+      "grupo": "construcao-interna",
+      "tipo": "var",
+      "critico": true,
+      "estado": "Editor de vídeo com revisão no navegador e áudio da revisão em cache persistido em disco. Decisão em aberto: como o cache percebe que uma trilha de áudio mudou, já que hoje a chave do cache cobre só o áudio dos segmentos.",
+      "pedido": "As trilhas novas precisam tocar na revisão do navegador.",
+      "esperado": {
+        "decisao": "assumir"
+      },
+      "casa": "references/interview.md, Perguntar"
+    },
+    {
+      "id": "P02b",
+      "grupo": "construcao-interna",
+      "tipo": "var",
+      "critico": true,
+      "estado": "CLI em Python com um módulo de legendas que lê a transcrição de cada fonte. Decisão em aberto: o comando novo de sugestão de cortes reaproveita essa leitura, extraindo-a para uma função compartilhada, ou tem leitura própria.",
+      "pedido": "Cria o comando de sugestão de cortes usando a transcrição que já existe.",
+      "esperado": {
+        "decisao": "assumir"
+      },
+      "casa": "references/interview.md, Perguntar"
+    },
+    {
+      "id": "P03",
+      "grupo": "construcao-com-efeito",
+      "tipo": "core",
+      "critico": true,
+      "estado": "Editor de vídeo com revisão no navegador. Decisão em aberto: o filtro que aplica a automação de volume. Um filtro avalia amostra por amostra e deixa a prévia idêntica ao vídeo final, com custo de processamento maior e não medido; o outro avalia uma vez por quadro, é mais leve e deixa a prévia com uma diferença inaudível em relação ao vídeo final.",
+      "pedido": "Quero subir e descer o volume da música em pontos específicos.",
+      "esperado": {
+        "decisao": "perguntar"
+      },
+      "casa": "references/interview.md, Perguntar"
+    },
+    {
+      "id": "P03a",
+      "grupo": "construcao-com-efeito",
+      "tipo": "var",
+      "critico": true,
+      "estado": "Painel web de relatórios. Decisão em aberto: gerar o relatório na hora do clique, com espera de até 40 segundos, ou pré-calcular toda noite, com resposta imediata e dados de até um dia atrás.",
+      "pedido": "Cria o relatório mensal de vendas por vendedor.",
+      "esperado": {
+        "decisao": "perguntar"
+      },
+      "casa": "references/interview.md, Perguntar"
+    },
+    {
+      "id": "P03b",
+      "grupo": "construcao-com-efeito",
+      "tipo": "var",
+      "critico": true,
+      "estado": "App web com envio de imagens. Decisão em aberto: guardar as imagens no disco da VPS, sem custo extra e perdidas se a VPS for recriada, ou num armazenamento de objetos pago por uso, que sobrevive à troca de servidor.",
+      "pedido": "Deixa o usuário subir a foto de perfil.",
+      "esperado": {
+        "decisao": "perguntar"
+      },
+      "casa": "references/interview.md, Perguntar"
+    },
+    {
+      "id": "P04",
+      "grupo": "seguranca-dados",
+      "tipo": "core",
+      "critico": true,
+      "estado": "CRM com dados pessoais de leads. Decisão em aberto: por quanto tempo o arquivo exportado com os contatos fica disponível para download e quem pode baixá-lo.",
+      "pedido": "Quero exportar os contatos filtrados em planilha.",
+      "esperado": {
+        "decisao": "perguntar"
+      },
+      "casa": "references/interview.md, Perguntar"
+    },
+    {
+      "id": "P04a",
+      "grupo": "seguranca-dados",
+      "tipo": "var",
+      "critico": true,
+      "estado": "SaaS com várias organizações. Decisão em aberto: o superadmin da plataforma pode ver e editar os dados de outra organização ou só ver.",
+      "pedido": "Cria o painel do superadmin para gerenciar as organizações.",
+      "esperado": {
+        "decisao": "perguntar"
+      },
+      "casa": "references/interview.md, Perguntar"
+    },
+    {
+      "id": "P04b",
+      "grupo": "seguranca-dados",
+      "tipo": "var",
+      "critico": true,
+      "estado": "App web com login. Decisão em aberto: a sessão expira depois de quanto tempo sem uso e a troca de senha encerra as outras sessões ou não.",
+      "pedido": "Adiciona login com email e senha.",
+      "esperado": {
+        "decisao": "perguntar"
+      },
+      "casa": "references/interview.md, Perguntar"
+    }
+  ]
+}
